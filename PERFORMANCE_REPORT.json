@@ -1,0 +1,44 @@
+{
+  "baseline": {
+    "version": "PICU_Handoff_v6_52_AntiXa_Bilirubin",
+    "seconds": [
+      0.18455157699997926,
+      0.18484332799994263,
+      0.18517703300005905,
+      0.18265336799993293,
+      0.17958014500004538,
+      0.19750824499999453,
+      0.18388713800004552
+    ],
+    "median_seconds": 0.18455157699997926,
+    "counts": {
+      "controls": 206,
+      "pdf_fits": 1,
+      "html_previews": 1
+    },
+    "medication_orders": 13,
+    "method": "local Python UI simulation, preview selected, no network or browser, download callbacks deferred, 1 warm-up then 7 runs"
+  },
+  "updated": {
+    "version": "PICU_Handoff_v6_53_Compact_Workspace",
+    "seconds": [
+      0.057670258000143804,
+      0.052757573999997476,
+      0.05308869500004221,
+      0.056265725999992355,
+      0.05485100800001419,
+      0.05334157700008291,
+      0.05432176899989827
+    ],
+    "median_seconds": 0.05432176899989827,
+    "counts": {
+      "controls": 3,
+      "pdf_fits": 0,
+      "html_previews": 1
+    },
+    "medication_orders": 13,
+    "method": "local Python UI simulation, preview selected, no network or browser, download callbacks deferred, 1 warm-up then 7 runs"
+  },
+  "relative_render_time_reduction_percent": 70.6,
+  "limits": "Widget simulation only. No live Streamlit runtime, browser, server-network or shared-storage timings. Measurements are not a guarantee of end-to-end application speed."
+}

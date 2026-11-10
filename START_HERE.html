@@ -1,13 +1,9 @@
-<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><title>PICU Handoff 6.51</title>
-<style>body{font:17px/1.6 system-ui,sans-serif;max-width:780px;margin:40px auto;padding:0 20px}code{background:#eee;padding:2px 5px}</style></head>
-<body><h1>PICU Handoff 6.51</h1>
-<p>Any signed-in user can now clear the patient handoffs without the separate Admin password.</p>
-<p>In Handoff, open <strong>Delete all handoff data</strong> and press the button with the same name. The action clears immediately. It affects the shared patient list, not just the selected room.</p>
-<p>Patient handoffs and this session's drafts are cleared. Custom rooms are removed. Preset rooms remain blank. Medication mappings, categories, SmartPhrase settings, passwords and technical logs remain unchanged.</p>
-<p>Other team members must reload the saved archive. Earlier archive versions, downloads and printouts are not erased. Session-only mode clears only that session.</p>
-<h2>Update an existing 6.50 installation</h2>
-<p>Replace <code>app.py</code>, restart the app, and refresh the browser. No other application module changed. Keep your existing Secrets, encryption key, passwords, mappings, BMI reference data and shared archive. Do not rerun setup generators. No new dependencies or re-pasting are required.</p>
-<p>The app login and separate Admin password for editing settings are unchanged. Installing this update does not delete handoffs.</p>
-<p>Details: <code>CLEAR_ALL_UPDATE.md</code>. Verification: <code>DELIVERY_VERIFICATION.txt</code>.</p>
-</body></html>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PICU Handoff 6.53</title>
+<style>body{font:17px/1.55 system-ui,sans-serif;max-width:780px;margin:40px auto;padding:0 20px;color:#172c3d}code{background:#f1f5f7;padding:2px 5px}h1{font-size:28px}h2{font-size:21px}</style></head>
+<body><h1>PICU Handoff 6.53</h1><p>Compact workspace, quiet Alerts and on-demand tabs.</p>
+<h2>Update your existing app</h2><p>Upload this folder's contents, including <code>app.py</code>, <code>workspace_ui.py</code> and <code>requirements.txt</code>. Rebuild/restart the deployment to install Streamlit 1.55 or later, then refresh the browser.</p>
+<p>Keep your existing Secrets, passwords, encryption key, medication mappings, categories, BMI reference data and shared archive. Do not rerun the setup generators. No re-pasting is needed.</p>
+<h2>Daily workflow</h2><p>Select the room, paste the populated Epic SmartPhrase, choose Create / update handoff and review Preview / print. Change rooms to save automatically, or select Save handoff.</p>
+<p>Alerts is next to Difficult airway. Room actions contains secondary controls, including Delete all handoff data. Clearing still affects the shared patient list and requires no Admin password. Save conflicts and failed actions remain visible.</p>
+<p>The clinical calculations and printed handoff layout are unchanged. PDF fitting runs when downloaded, or when you request Check page count in Print options.</p>
+<p>Details: <code>COMPACT_WORKSPACE_UPDATE.md</code>. Verification: <code>TEST_REPORT.md</code>.</p></body></html>

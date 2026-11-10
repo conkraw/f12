@@ -1,14 +1,17 @@
-Version 6.52, based on PICU651.zip
+Version 6.53, based on PICU652.zip
 
-Replace these application modules when updating from 6.51:
+Changed application/deployment files:
 app.py
-categories.py
-lab_windows.py
-problem_review.py
+workspace_ui.py (new)
+requirements.txt (Streamlit minimum is now 1.55)
 
-The full ZIP includes all application files and historical functionality.
-Other application modules, dependencies and archive schema are unchanged.
-Restart and refresh. Keep existing Secrets, encryption key, passwords, mappings,
-custom categories, BMI reference data and shared archive unchanged.
-No re-pasting is needed for laboratory rows already saved.
-Read ANTIXA_BILIRUBIN_UPDATE.md for details.
+Replace all three, or upload the full folder contents. Restart/rebuild and
+refresh. Existing installations must install the updated requirements.
+
+No changes to clinical parsers, calculations, exports, archive schema,
+encryption, saved handoffs, medication mappings or categories.
+No re-pasting or archive migration is required.
+Keep existing Secrets and BMI reference file. Do not rerun setup generators.
+
+Room actions now contains secondary and destructive actions.
+Alerts follows Difficult airway. Preview / print is the first tab.

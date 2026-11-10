@@ -322,10 +322,12 @@ def test_room_page_places_timestamp_next_to_room_heading_and_in_all_room_list(ap
     seed(app, 'P4301')
     events = capture_page(app, monkeypatch)
     app.handoff_page(Store())
-    heading = events.index(('subheader', 'Room P4301'))
-    assert events[heading + 1] == ('caption', 'Age: -- | Sex: --')
-    assert events[heading + 2] == ('caption', 'Last saved to shared storage: ' + DISPLAY)
-    assert events[heading + 3] == ('caption', 'Saved')
+    assert ('subheader', 'Handoff') in events
+    # The room selector now replaces the repeated heading. Save metadata stays
+    # visible in one compact status line, not three separate captions.
+    assert any(kind == 'caption' and 'Age: -- | Sex: --' in text and
+               'Last saved to shared storage: ' + DISPLAY in text and
+               text.endswith(' | Saved') for kind, text in events)
     tables = [text for kind, text in events if kind == 'markdown' and 'Handoff save status' in text]
     assert len(tables) == 1 and 'P4301' in tables[0] and 'P4102' in tables[0]
 

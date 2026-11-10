@@ -236,7 +236,7 @@ def test_handoff_omits_source_sample_and_publish_stamp_but_keeps_instructions(ap
     def no_source(*args,**kwargs): raise AssertionError('Source sample must not render on Handoff')
     monkeypatch.setattr(app,'render_smartphrase',no_source)
     app.handoff_page(None)
-    assert any('PICUHANDOFFSMARTPHRASE' in t for t in seen)
+    assert any('PICUHANDOFFSMARTPHRASE' in t for t in captions)
     assert not any('SmartPhrase saved in this session only:' in t or 'SmartPhrase published:' in t for t in captions)
     assert 'SmartPhrase source' not in panels
     assert not any('SmartPhrase source' in label for label,_ in downloads)

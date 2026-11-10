@@ -184,7 +184,7 @@ def test_airway_tab_immediately_after_problems_with_no_admin_gate(app,monkeypatc
     open_room(app);ss=app.st.session_state;app.set_editor('P4102',populated())
     ss.pop('admin_unlocked',None);equip(app,monkeypatch)
     names=[];original=app.st.tabs
-    app.st.tabs=lambda labels: (names.extend(labels) or original(labels))
+    app.st.tabs=lambda labels,**kwargs: (names.extend(labels) or original(labels,**kwargs))
     app.handoff_page(None)
     assert names[names.index('Problems')+1]=='Difficult airway'
 

@@ -9,7 +9,7 @@ import types
 from test_callbacks import app,open_room
 
 class Panel:
-    def __init__(self, st): self.st=st
+    def __init__(self, st, opened=True): self.st=st; self.open=opened
     def __enter__(self): return self
     def __exit__(self,*args): return False
     def __getattr__(self,name): return getattr(self.st,name)
@@ -44,8 +44,11 @@ def equip(app,monkeypatch):
         setattr(st,name,control)
     st.expander=lambda *a,**k:Panel(st)
     st.form=lambda *a,**k:Panel(st)
+    st.popover=lambda *a,**k:Panel(st)
     st.columns=lambda n,*a,**k:[Panel(st) for _ in range(n if isinstance(n,int) else len(n))]
-    st.tabs=lambda names:[Panel(st) for _ in names]
+    # Broad smoke mode intentionally traverses every tab. Focused 6.53 tests
+    # separately simulate Streamlit 1.55 active-tab state and widget cleanup.
+    st.tabs=lambda names,**kwargs:[Panel(st) for _ in names]
     st.button=lambda *a,**k:False
     st.form_submit_button=lambda *a,**k:False
     st.download_button=lambda label,data,*a,**k:downloads.append((label,data() if callable(data) else data))

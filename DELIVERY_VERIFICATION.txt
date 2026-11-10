@@ -1,10 +1,12 @@
-PICU Handoff 6.52
-Base: supplied PICU651.zip, original ZIP and 316 manifest checks verified.
-Full regression suite: 4310 passed in 94.74s.
-New focused regression suite: 77 passed.
-Unmodified 6.51 synthetic encrypted archive opens unchanged in 6.52.
-Two-page synthetic preview rendered and visually inspected, one page per room.
-Only app.py, categories.py, lab_windows.py and problem_review.py changed among
-application modules. Schema and dependencies are unchanged.
-No live deployment or patient archive accessed or modified.
+PICU Handoff 6.53
+Base: supplied PICU652.zip, CRC and 320 manifest entries verified.
+Full clean-extraction regression suite: 4380 passed in 94.32s.
+New focused regression tests: 70.
+Runtime changes: app.py, workspace_ui.py (new), requirements.txt.
+Minimum Streamlit version: 1.55. Archive schema unchanged.
+Clinical parsers, export code and storage modules unchanged byte-for-byte.
+Synthetic text/HTML output is identical. PDF rendered pixels are identical.
+Local UI simulation median preview render: 0.185s to 0.054s.
+No live Streamlit/browser or production shared-storage test was performed.
+No credentials or production patient archive accessed or modified.
 SHA256SUMS.txt covers every other delivered file.

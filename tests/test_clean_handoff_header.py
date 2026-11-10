@@ -33,7 +33,7 @@ def test_removed_header_controls_all_guide_and_room_states(app, monkeypatch, roo
     monkeypatch.setattr(app, 'smartphrase_publish_caption', forbidden)
     monkeypatch.setattr(app, 'render_smartphrase', forbidden)
     app.handoff_page(None)
-    assert 'SHORT_INSTRUCTIONS_STAY' in markdown
+    assert 'SHORT_INSTRUCTIONS_STAY' in captions
     assert not any(text.startswith(('SmartPhrase published:', 'SmartPhrase saved in this session only:', 'SmartPhrase:')) for text in captions)
     assert 'Refresh SmartPhrase publication' not in buttons
     assert 'refresh_handoff_guide' not in inspect.getsource(app.handoff_page)

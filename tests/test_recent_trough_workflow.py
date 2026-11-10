@@ -148,7 +148,7 @@ def test_admin_custom_instructions_remain_supported():
 def test_instructions_are_visible_before_room_selection_no_old_tab(app, monkeypatch):
     equip(app, monkeypatch)
     seen = []
-    app.st.markdown = lambda text, **kw: seen.append(text)
+    app.st.caption = lambda text, **kw: seen.append(text)
     app.handoff_page(None)
     assert any('SmartPhrase author Streamlit' in t and 'PICUHANDOFFSMARTPHRASE' in t for t in seen)
     assert not app.st.session_state.get('current_room')
