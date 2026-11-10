@@ -1,19 +1,19 @@
-# PICU Handoff 6.51
+# PICU Handoff 6.52
 
-This complete app package is built from Version 6.50. Any signed-in user can
-clear all patient handoffs without the separate Admin password.
+Built from the supplied Version 6.51 package.
 
-Open Handoff > Delete all handoff data and press Delete all handoff data.
-The button clears the current shared patient list and this session's patient
-drafts. Custom rooms are removed. Preset rooms remain blank. Saved medication
-mappings, categories, SmartPhrase settings, passwords and technical logs remain.
-Other users must reload the saved archive. Earlier archive versions, downloads
-and printouts are not deleted.
+Today's latest HEPLMW prints in HEME under DVT Prophylaxis. Older results print
+in the lower coagulation area. Today uses the Eastern calendar date, not a
+rolling 24-hour interval. The result is not duplicated.
 
-Only app.py changes among application modules. The app login and protected
-Admin settings remain unchanged. No new dependencies, schema migration, or
-re-pasting are required. Replace app.py in an existing 6.50 deployment, restart,
-and refresh. Keep existing Secrets, keys and stored settings unchanged.
+A latest total bilirubin explicitly flagged high adds Hyperbilirubinemia to the
+compact Problems line. The original laboratory data and diagnoses are unchanged.
 
-See CLEAR_ALL_UPDATE.md for details. Test results are in DELIVERY_VERIFICATION.txt.
-The package does not contain live patient data or deployment credentials.
+See ANTIXA_BILIRUBIN_UPDATE.md for behavior and installation. UPDATE_FILES.txt
+lists the four changed application modules. No new dependencies are needed.
+Existing app login, password-free patient clearing, protected Admin settings,
+medication categories, SBS behavior and ventilator handling remain unchanged.
+
+No live deployment, credentials or patient archive were accessed. Tests and the
+new preview use synthetic data. Current verification is in TEST_REPORT.md and
+DELIVERY_VERIFICATION.txt. Historical update notes describe earlier releases.

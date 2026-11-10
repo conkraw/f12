@@ -301,6 +301,29 @@ def medication_blocks(section: str, notes: str, rows: list[dict], sheet: dict | 
                     order=path["order"], rows=[], empty=True))
             else:
                 root["empty"] = True
+    if sheet is not None and section == "Hematology":
+        from lab_windows import anti_xa_today_summary
+        level = anti_xa_today_summary(sheet)
+        if level:
+            # Prefer an already rendered DVT root/subcategory, including a
+            # renamed category. A lab never counts as a medication order.
+            bucket = roots.get("group:dvt")
+            if bucket is None:
+                bucket = next((root["children"]["group:dvt"] for root in roots.values()
+                               if "group:dvt" in root["children"]), None)
+            if bucket is None:
+                path = target_snapshot("group:dvt", default_categories())
+                candidates = list(sheet.get("empty_group_layout", []))
+                candidates += [placement(row) for row in rows]
+                for candidate in candidates:
+                    if candidate["id"] == "group:dvt" and candidate["section"] == section:
+                        path = candidate
+                root_id = path["parent_id"] or path["id"]
+                root = roots.setdefault(root_id, dict(name=path["parent_name"] or path["name"],
+                    order=path["parent_order"], direct=[], children={}))
+                bucket = (root["children"].setdefault(path["id"], dict(name=path["name"],
+                    order=path["order"], rows=[])) if path["parent_id"] else root)
+            bucket.setdefault("labs", []).append(("lab", level))
     anchor = theophylline_anchor(sheet) if sheet else ""
     def entries(items):
         blocks = []
@@ -326,6 +349,8 @@ def medication_blocks(section: str, notes: str, rows: list[dict], sheet: dict | 
                 block += [("empty_group", child["name"])]
             else:
                 block += [("subheading", child["name"])] + entries(child["rows"])
+            block += child.get("labs", [])
+        block += root.get("labs", [])
         groups.append(block)
     if notes.strip():
         groups.append([("notes", notes.rstrip())])

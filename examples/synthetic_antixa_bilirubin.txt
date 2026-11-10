@@ -1,0 +1,58 @@
+aaaaaaaaaaaaaaaaaaaaaaaa
+Diagnoses:
+1. SYNTHETIC DISPLAY EXAMPLE
+Age: 8 y.o.
+Sex: Female
+aaaaaaaaaaaaaaaaaaaaaaaa
+bbbbbbbbbbbbbbbbbbbbbbbb
+Medications:
+Current Facility-Administered Medications
+Medication	Dose	Route	Frequency	Provider	Last Rate	Last Admin
+•	enoxaparin (Lovenox) injection 12 mg	12 mg	Subcutaneous	q12h	Synthetic provider	 	12 mg at 11/09/26 0800
+•	pantoprazole (Protonix) injection 20 mg	20 mg	Intravenous	Daily	Synthetic provider	 	20 mg at 11/09/26 0800
+•	polyethylene glycol (Miralax) packet 8.5 g	8.5 g	Oral	Daily	Synthetic provider	 	8.5 g at 11/09/26 0800
+bbbbbbbbbbbbbbbbbbbbbbbb
+eeeeeeeeeeeeeeeeeeeeeeee
+VITALS:
+Temp: [36.5-37.1] 36.8 C
+Heart Rate: [84-106] 92
+Resp: [18-25] 20
+BP: (95-110)/(50-65) 103/60
+SpO2 Avg: 98 % Min: 96 % Max: 100 %
+Last SPO2: SpO2: 99 %
+eeeeeeeeeeeeeeeeeeeeeeee
+gggggggggggggggggggggggg
+LABS:
+Component	Value	Date
+WBC	8.0	11/09/2026
+HGB	12.1	11/09/2026
+HCT	36.0	11/09/2026
+PLT	220	11/09/2026
+NA	139	11/09/2026
+K	4.0	11/09/2026
+CL	104	11/09/2026
+CO2	23	11/09/2026
+BUN	12	11/09/2026
+CREATININE	0.42	11/09/2026
+GLUCOSE	96	11/09/2026
+ALT	22	11/09/2026
+AST	28	11/09/2026
+BILITOT	2.3 (H)	11/09/2026
+ALBUMIN	3.8	11/09/2026
+PT	13.4	11/09/2026
+INR	1.0	11/09/2026
+PTT	31	11/09/2026
+HEPLMW	0.62 IU/mL	11/09/2026 14:10
+HEPLMW	0.48 IU/mL	11/08/2026 14:10
+gggggggggggggggggggggggg
+kkkkkkkkkkkkkkkkkkkkkkkk
+Target Arousal Level:
+SBS Last 24 Hours: SBS 0
+Last SBS Ever:
+kkkkkkkkkkkkkkkkkkkkkkkk
+nnnnnnnnnnnnnnnnnnnnnnnn
+Date of Admission: 11/01/2026
+nnnnnnnnnnnnnnnnnnnnnnnn
+yyyyyyyyyyyyyyyyyyyyyyyy
+CAPD: Cornell Assessment of Pediatric Delirium Score: 0
+yyyyyyyyyyyyyyyyyyyyyyyy

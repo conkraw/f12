@@ -1,9 +1,14 @@
-Version 6.51, based on PICU650.zip
+Version 6.52, based on PICU651.zip
 
-For an existing 6.50 app, replace app.py, restart, and refresh.
-All other application modules are byte-identical to the supplied 6.50 package.
-This full ZIP also includes updated documentation and regression tests.
+Replace these application modules when updating from 6.51:
+app.py
+categories.py
+lab_windows.py
+problem_review.py
 
-Keep existing Secrets, passwords, encryption key, medication/category mappings,
-BMI reference data and shared archive unchanged. No setup generators required.
-Installing this update does not clear any patient handoffs automatically.
+The full ZIP includes all application files and historical functionality.
+Other application modules, dependencies and archive schema are unchanged.
+Restart and refresh. Keep existing Secrets, encryption key, passwords, mappings,
+custom categories, BMI reference data and shared archive unchanged.
+No re-pasting is needed for laboratory rows already saved.
+Read ANTIXA_BILIRUBIN_UPDATE.md for details.

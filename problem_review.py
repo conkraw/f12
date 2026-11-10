@@ -18,7 +18,7 @@ from labs import canonical, date_parts, ordered_components
 from cbc import cbc_cards
 from medications import visible
 from fen_gi import effective_section, group_for as gi_group
-from lab_windows import clock, eligible_time
+from lab_windows import clock, eligible_time, measured
 
 TITLE = 'Problems'
 STATUSES = ('review', 'confirmed', 'dismissed')
@@ -29,11 +29,13 @@ RULES = {
     'NA': 'Hyponatremia', 'K': 'Hypokalemia', 'ALBUMIN': 'Hypoalbuminemia',
     'CO2': 'Metabolic acidosis', 'MG': 'Hypomagnesemia', 'PHOS': 'Hypophosphatemia',
     'HGB': 'Anemia', 'PLT': 'Thrombocytopenia', 'constipation': 'Constipation',
+    'BILITOT': 'Hyperbilirubinemia',
 }
 LOW_RULES = tuple(k for k in RULES if k in ('NA','K','ALBUMIN','CO2','MG','PHOS','HGB','PLT'))
 LABELS = {'NA':'Sodium', 'K':'Potassium', 'ALBUMIN':'Albumin', 'CO2':'Serum CO2',
           'MG':'Magnesium', 'PHOS':'Phosphorus', 'HGB':'Hemoglobin', 'PLT':'Platelets'}
 LOW = re.compile(r'\((?:L|LL|LOW)\)', re.I)
+HIGH = re.compile(r'\((?:H|HH|HIGH)\)', re.I)
 # Clinician-requested workflow cutoffs, not age-specific reference ranges.
 # These defaults apply only to asterisk-flagged values with documented units.
 STAR_LOW_LIMITS = {
@@ -225,6 +227,13 @@ def suggestions(sheet: dict, as_of: datetime | None = None) -> list[dict]:
             caution = ('Low serum CO2 does not alone determine the acid-base disorder. Review pH, PCO2 and the clinical context.'
                        if key == 'CO2' else 'Verify the applicable reference range and clinical context.')
             add(key, evidence, caution)
+    bilirubin = latest.get('BILITOT')
+    if (bilirubin and measured(bilirubin['value']) and HIGH.search(bilirubin['value'])
+            and not re.search(r'\b(?:pending|cancelled|canceled|hemolyzed|haemolysed|rejected|invalid)\b', bilirubin['value'], re.I)
+            and not LOW.search(bilirubin['value'])
+            and numeric(bilirubin['value'])[1] >= 0):
+        add('BILITOT', 'Total bilirubin ' + bilirubin['value'] + ' [' + bilirubin['date'] + '], source marked high',
+            'User-requested total-bilirubin high-flag rule. Verify the source reference range and clinical context.')
     if 'g' not in sheet.get('import_warnings', {}):
         rows = [r for r in sheet['labs']['rows'] if r['include'] and canonical(r['component']) == 'CREATININE'
                 and eligible_time(r, now, admission=sheet.get('admission_date', ''))]

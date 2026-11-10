@@ -1,4 +1,4 @@
-"""PICU SmartPhrase v6.51: clear all handoffs without an Admin password."""
+"""PICU SmartPhrase v6.52: same-day anti-Xa placement and high bilirubin flag."""
 from __future__ import annotations
 from copy import deepcopy
 from empty_groups import refresh_empty_group_layout
@@ -1523,7 +1523,7 @@ def main() -> None:
     upgrade_existing_session()
     with st.sidebar:
         st.header("PICU Handoff")
-        st.caption("Version 6.51 | Clear all without Admin password")
+        st.caption("Version 6.52 | Anti-Xa placement and bilirubin problems")
         # Retire the old instructions workspace without discarding room drafts.
         if st.session_state.get("page") == "Instructions / SmartPhrase":
             st.session_state["page"] = "Handoff"

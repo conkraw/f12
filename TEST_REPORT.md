@@ -1,21 +1,30 @@
-# Version 6.51 verification
+# Version 6.52 verification
 
-Base: supplied Version 6.50 ZIP, with ZIP and SHA-256 manifest verification.
+Base archive: supplied PICU651.zip. ZIP integrity and all 316 source-manifest
+entries verified before packaging.
 
-Full local regression suite: 4233 passed in 91.95s (0:01:31)
-Focused reset, workflow and header suite: 128 passed in 19.56s
+Full local regression suite: 4310 passed in 94.74 seconds.
+New focused suite: 77 passed. Test file: tests/test_antixa_bilirubin.py.
 
-The new test_clear_all_no_admin.py includes 21 checks covering signed-in users
-with locked, expired or unlocked Admin grants, expired/logged-out app sessions,
-missing Admin configuration, storage failures and version conflicts, empty
-censuses, preserved settings, removal of obsolete password-widget state, no
-unintended Admin unlock, and reset-generation handling for stale sessions.
+Checks cover Eastern calendar dates, midnight rollover, UTC-host handling,
+multiple same-day values, date-only source order, numeric zero, supplied units
+and flags, excluded results, pending/canceled/future values, failed imports,
+no duplication between HEME and lower labs, empty/hidden DVT medication groups,
+renamed and nested DVT categories, high total versus direct bilirubin, normal
+newer results, admission boundaries, explicit high flags versus asterisk-only
+flags, problem editing/dismissal, and text/HTML/PDF/batch export consistency.
 
-The action remains explicit. Merely rendering the control does not delete data.
-The shared archive is saved successfully before this session's drafts and
-pending downloads are discarded. Failed writes retain the open patient work.
+A synthetic encrypted archive created by the unmodified Version 6.51 code
+opened in 6.52 with exact equality of the complete archive object. Re-encryption
+and reopening also preserved it, including custom categories/rooms, timestamps
+and source lab rows.
 
-Only app.py changed among application modules. Remaining application code was
-compared byte-for-byte with Version 6.50. No new schema or dependency changes.
-UI and storage tests use simulations. No live deployment or patient archive was
-tested, opened or modified.
+The generated preview has two landscape pages, one per synthetic room. Both
+were rendered to images and visually inspected. Page 1 shows a current-day
+HEPLMW beneath the DVT medications. Page 2 shows a preceding-day HEPLMW in the
+lower coagulation area. Each has one anti-Xa result and the new problem label.
+
+Four application modules changed: app.py, categories.py, lab_windows.py and
+problem_review.py. All other application modules are byte-identical to 6.51.
+No live Streamlit deployment, private storage connection or patient archive was
+accessed or modified. These tests are not clinical validation.

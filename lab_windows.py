@@ -103,6 +103,8 @@ def rows_for(sheet: dict, component: str, as_of: datetime | None = None) -> list
         if (not row['include'] or analyte(row['component']) != component
                 or not measured(row['value'])):
             continue
+        if component == 'HEPLMW' and re.search(r'\b(?:pending|cancelled|canceled|hemolyzed|haemolysed|rejected|invalid)\b', row['value'], re.I):
+            continue
         hours = 24 if component in RECENT | {'LACTATE'} else None
         if eligible_time(row, now, hours, admission if component in ADMISSION else ''):
             rows.append(row)
@@ -175,16 +177,41 @@ def id_drug_levels(sheet: dict, as_of: datetime | None = None) -> str:
     return 'Drug Levels\nVancomycin trough: ' + values[0]['value'] + ' ' + stamp(values[0], now)
 
 
+def anti_xa_today(sheet: dict, as_of: datetime | None = None) -> dict | None:
+    """Latest included numeric HEPLMW on today's Eastern calendar date.
+
+    This is intentionally not a rolling 24-hour window. Supplied collection
+    times are used when available, otherwise keep Epic's source ordering.
+    Generic ANTI-XA and other heparin assays are not substituted for HEPLMW.
+    """
+    now = clock(as_of)
+    values = ordered([row for row in rows_for(sheet, 'HEPLMW', now)
+                      if date_parts(row['date'])[0].date() == now.date()])
+    return values[0] if values else None
+
+
+def anti_xa_today_summary(sheet: dict, as_of: datetime | None = None) -> str:
+    now = clock(as_of)
+    row = anti_xa_today(sheet, now)
+    return ('Anti-Xa (HEPLMW): ' + row['value'] + ' ' + stamp(row, now)) if row else ''
+
+
 def laboratory_data(sheet: dict, as_of: datetime | None = None) -> dict:
     """Filter only new special displays. CBC, BMP and gas inputs stay untouched."""
     now = clock(as_of)
     data = deepcopy(sheet['labs'])
     ck = {r['id'] for r in rows_for(sheet, 'CK', now)}
+    # When promoted to HEME, do not also show an older HEPLMW below. Once its
+    # date is no longer today, the existing coagulation card selects it below.
+    anti_xa_in_heme = anti_xa_today(sheet, now) is not None
+    anti_xa_ids = {r['id'] for r in rows_for(sheet, 'HEPLMW', now)}
     out = []
     for row in data['rows']:
         key = analyte(row['component'])
         if key in {'NTPROBNP', 'VANCOTROUGH'}:
             continue  # shown only in the appropriate system column
+        if key == 'HEPLMW' and (anti_xa_in_heme or row['id'] not in anti_xa_ids):
+            continue
         if key == 'CK':
             if row['id'] not in ck:
                 continue
@@ -200,6 +227,7 @@ def window_help(sheet: dict, as_of: datetime | None = None) -> str:
     return ('Display windows as of ' + now.strftime('%m/%d/%Y %H:%M %Z') +
             '. Lactate, theophylline, CK and vancomycin trough: rolling 24 hours. '
             'CRP/procalcitonin: admission onward. NT-proBNP: latest from all supplied dates. '
+            'HEPLMW: today in HEME, older results in the lower coagulation area. '
             'Original rows remain available below.')
 
 
