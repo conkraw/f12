@@ -1,24 +1,26 @@
-# PICU Handoff 6.58
+# PICU Handoff 6.59
 
-Built from PICU657.zip. This update adds MRSA screening in demographics,
-Epidural placement for bupivacaine, hypernatremia in Problems, and current
-vascular line day numbers.
+Built from PICU658.zip. This update adds MRSANPADM to the MRSA screen and
+compares both supported MRSA components by their laboratory collection date
+and time. The 6.58 medication, sodium, line-day and saving features are included.
 
 ## MRSA screening
 
-The newest included MRSADNA result in the G laboratory block appears in
-Demographics / Weight as MRSA Screen: followed by the original result and
+The newest included result across MRSADNA and MRSANPADM in the G laboratory
+block appears in Demographics / Weight as MRSA Screen: followed by the original result and
 collection date. Only the label is bold in the preview and PDF.
 
 Negative, Not detected, Positive, Detected, and Pending retain their original
-wording. Dated results are ordered by date and time. If same-day collection
+wording. Both lab codes are compared together by collection date and time,
+regardless of code or where a result appears in the pasted text. Upload time
+and handoff-save time do not determine the chosen result. If same-day collection
 times are incomplete, the existing Epic source order is retained. A newer
 negative or pending result replaces an older positive result. A missing or
 excluded result is not presented as a negative screen.
 
-MRSADNA must be present in the pasted G laboratory block with its collection
-date. Both tab-separated rows and rows whose tabs became spaces are accepted.
-Existing saved MRSADNA rows work immediately. Edit or exclude the source result
+A MRSADNA or MRSANPADM result must be present in the pasted G laboratory block
+with its collection date. Both tab-separated rows and rows whose tabs became spaces are accepted.
+Existing saved rows for either component work immediately. Edit or exclude the source result
 using the existing laboratory editor. A failed G-block import hides the old
 screen until that block is successfully refreshed or reviewed.
 

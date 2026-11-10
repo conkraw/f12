@@ -19,6 +19,7 @@ ARTERIAL = ('PHA', 'PCO2A', 'PO2ART', 'HCO3A', 'BEART', 'O2SATA')
 VENOUS = ('PHV', 'PCO2V', 'PO2VEN', 'HCO3V', 'BEV', 'O2SATV')
 CAPILLARY = ('PHC', 'PCO2C', 'PO2CAP', 'HCO3C', 'BEC')
 INFLAMMATORY = ('CRP', 'PROCAL', 'ESR')
+MRSA_COMPONENTS = frozenset(('MRSADNA', 'MRSANPADM'))
 PANELS = {'CBC': CBC, 'BMP': BMP, 'Hepatic': HEPATIC, 'Coagulation': COAG,
           'Arterial gas': ARTERIAL, 'Venous gas': VENOUS,
           'Capillary gas': CAPILLARY, 'Inflammatory': INFLAMMATORY}
@@ -32,7 +33,7 @@ PANEL_HEADINGS = {
     'lactate': 'Lactate', 'other labs': 'Other labs',
 }
 ALIASES = {
-    'MRSADNA:': 'MRSADNA',
+    'MRSADNA:': 'MRSADNA', 'MRSANPADM:': 'MRSANPADM',
     'HEMOGLOBIN': 'HGB', 'HB': 'HGB', 'HEMATOCRIT': 'HCT', 'PLATELETS': 'PLT',
     'SODIUM': 'NA', 'POTASSIUM': 'K', 'CHLORIDE': 'CL', 'BICARBONATE': 'CO2',
     'CARBON DIOXIDE': 'CO2', 'CREAT': 'CREATININE', 'CR': 'CREATININE',
@@ -164,11 +165,11 @@ def parse_labs(block: str) -> LabResult:
         else:
             # Copy/paste may replace tabs. The date tail and a numeric result
             # boundary allow deterministic parsing without medication-like guessing.
-            # MRSADNA is an explicitly requested text-result component. Its
-            # exact code provides a safe boundary for negative/pending results.
+            # The requested MRSA codes provide an exact component boundary
+            # for text results, including negative and pending results.
             tail = DATE_TAIL.search(line)
             body = line[:tail.start()].rstrip() if tail else ''
-            match = (re.match(r'^(MRSADNA)(?:\s*:\s*|\s+)(.+)$', body, re.I)
+            match = (re.match(r'^(MRSADNA|MRSANPADM)(?:\s*:\s*|\s+)(.+)$', body, re.I)
                      or re.match(r'^(.*?)\s+([<>≤≥]?\s*[-+]?\d.*)$', body)) if tail else None
             if not match:
                 out.error = f'Lab block line {number} could not be separated into component, value and date. Nothing was imported.'
@@ -228,7 +229,7 @@ def result_cards(data: dict, include_id_panels: bool = True, blood_gas: dict | N
     # Theophylline is displayed once in RESP, not again in the bottom lab area.
     consumed.add('THEOPH')
     consumed.add('VANCOTROUGH')
-    consumed.add('MRSADNA')  # latest screen is displayed in demographics
+    consumed.update(MRSA_COMPONENTS)  # latest combined screen is in demographics
     for name, components, count, kind in (('BMP', BMP, 2, 'bmp'),):
         if not any(key in groups for key in components):
             continue

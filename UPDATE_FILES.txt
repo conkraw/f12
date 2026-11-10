@@ -1,25 +1,11 @@
-Version 6.58, based on PICU657.zip
+Version 6.59, based on PICU658.zip
 
 Changed application files:
 app.py
-categories.py
-clinical_style.py
-devices.py
-exports.py
-fen_gi.py
-infusions.py
 labs.py
-medication_groups.py
-medications.py
-models.py
 mrsa.py
-print_time.py
-problem_review.py
 
-mrsa.py is new. Upload the full folder contents, or replace every file listed
-above together. Keep app.py at the repository root. Restart the app and refresh
-the browser. Preserve existing Secrets, passwords, encryption key, mappings,
-custom categories, BMI reference data and the shared archive.
-
-No new dependencies or archive-schema migration are required. Existing stored
-source data gains the new displays without re-pasting.
+Replace all three files together, or upload the full application folder.
+Keep app.py at the repository root. Restart Streamlit and refresh the browser.
+Keep existing Secrets and encryption key. No new dependencies or archive-schema
+change are required. Existing stored MRSANPADM and MRSADNA rows work immediately.

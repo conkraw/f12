@@ -1,59 +1,29 @@
-# PICU Handoff 6.58 verification
+# PICU Handoff 6.59 verification
 
-Base package: PICU657.zip. All verification used synthetic data.
+Base: PICU658.zip. All checks used synthetic data.
 
-## Automated checks
+219 focused MRSA, demographics, laboratory routing and styling tests passed in
+2.11 seconds. This includes 35 new combined-code cases and 22 existing MRSA
+cases. There was one unrelated anyio pytest plugin deprecation warning.
 
-The full suite passed 4,805 tests and 12 subtests in 114.70 seconds.
-After the final custom-category compatibility corrections, 607 affected tests
-and 14 subtests passed in 16.50 seconds. This follow-up covered new features,
-medication routing and categories, batch exports, line days, saved-print
-callbacks and the existing Streamlit UI simulations.
+Coverage includes both MRSADNA and MRSANPADM, tab and collapsed-space parsing,
+case and colon handling, either component as newest, reversed paste order,
+newer negative or pending results after an older positive result, complete
+same-day times, month/year/leap boundaries, excluded and future rows, and
+unchanged source rows and lab component names.
 
-The full suite and focused reruns reported one unrelated anyio pytest plugin
-deprecation warning, with no failing tests.
+When same-day times are incomplete, tests confirm the existing source-order
+convention without manufacturing a time. The selected laboratory result date
+remains visible. Upload and handoff-save dates do not select the result.
 
-Feature coverage includes MRSA result polarity, latest-result selection,
-source escaping, text and PDF label emphasis, bupivacaine combinations and stale
-mappings, retained source dose/route/rate, old custom category catalogs at their
-size limit, renamed category collisions, sodium thresholds and date ordering,
-normal sodium after an older high value, excluded and invalid results, urine
-sodium exclusion, and preservation of clinician-entered diagnoses.
+Text, HTML, single-sheet PDF and Print All checks show a single MRSA Screen.
+PDF font inspection confirms the label is bold and the value is regular.
+Both lab codes remain in the source lab editor and are omitted from duplicate
+bottom lab cards. An encrypted archive round trip preserves all source rows.
 
-Line checks cover PIV, PICC, CVC/CVL, arterial access, old CVLs stored as Other,
-insertion Day 1, calendar and year rollover, leap day, daylight saving changes,
-UTC versus Eastern midnight, missing or future dates, date edits, saved-record
-reload, unchanged source data, and single-room plus Print All output.
+Only app.py, labs.py and mrsa.py changed among application modules. Archive
+schema, dependencies and the other 6.58 features are unchanged. The running
+hosted app and patient archive were not accessed.
 
-## Actual original-package archive compatibility
-
-The actual original 6.57 code from PICU657.zip generated and encrypted two
-synthetic schema34 records. The updated app opened that archive with every
-stored field and setting unchanged, including old custom categories, stale
-bupivacaine placement, raw labs, old CVL kind Other, notes, IDs and save times.
-
-The expected MRSA, Epidural, Hypernatremia and CVL Day3 displays appeared in text,
-HTML, single-sheet PDF and Print All PDF. A newer normal sodium suppressed an
-older high sodium. Rendering did not modify the archive. Re-encryption and
-reopening with the same test key returned the exact original archive object.
-
-## Export and layout verification
-
-The combined synthetic PDF was rendered to PNG and visually inspected. The MRSA
-label, Epidural group, Problems line and dated vascular inventory fit within the
-existing landscape layout without clipping or overlap.
-
-The actual JavaScript extracted from the generated HTML was executed in Node
-with a minimal DOM fixture and a controlled clock. It passed Eastern midnight,
-one-minute refresh, focus, visibility and repeated beforeprint events without
-duplicate day labels. The print timestamp advanced independently of saved time.
-A native browser could not be launched in this environment, so this JavaScript
-check is not a full browser UI test. The Streamlit callback tests use widget
-simulations. The hosted app and shared patient archive were not accessed.
-
-## Delivery
-
-The ZIP includes all original application content, the changed modules, new
-mrsa.py, focused regression tests, release notes and a synthetic PDF/HTML example.
-Generated caches and compiled bytecode are excluded. SHA256SUMS.txt records
-package file hashes, excluding itself. ZIP member hashes and CRCs were verified.
+The packaged ZIP CRC and SHA256 file manifest were verified. Generated caches,
+compiled bytecode and local test data are excluded.
