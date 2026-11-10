@@ -14,6 +14,23 @@ def eastern_print_time(instant: datetime | None = None) -> str:
 # timestamps in downloaded HTML even when it is opened/printed much later.
 PRINT_TIME_SCRIPT = """<script>
 (function () {
+  function updateLineDays() {
+    try {
+      const parts = new Intl.DateTimeFormat('en-US', {timeZone: 'America/New_York',
+        year: 'numeric', month: '2-digit', day: '2-digit'}).formatToParts(new Date());
+      const get = type => Number(parts.find(part => part.type === type).value);
+      const today = Date.UTC(get('year'), get('month') - 1, get('day'));
+      document.querySelectorAll('[data-line-insertion]').forEach(node => {
+        const value = node.getAttribute('data-line-insertion');
+        if (!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(value)) return;
+        const values = value.split('-').map(Number);
+        const inserted = Date.UTC(values[0], values[1] - 1, values[2]);
+        const day = Math.floor((today - inserted) / 86400000) + 1;
+        const label = node.getAttribute('data-line-date') || value;
+        node.textContent = label + (day >= 1 ? ', Day ' + day : '');
+      });
+    } catch (error) { /* Preserve the last calculated line days on failure. */ }
+  }
   function updatePrintTime() {
     try {
       const options = {timeZone: 'America/New_York', year: 'numeric', month: '2-digit',
@@ -27,5 +44,12 @@ PRINT_TIME_SCRIPT = """<script>
     } catch (error) { /* Preserve the clearly labeled export time on failure. */ }
   }
   window.addEventListener('beforeprint', updatePrintTime);
+  window.addEventListener('beforeprint', updateLineDays);
+  window.addEventListener('focus', updateLineDays);
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) updateLineDays();
+  });
+  updateLineDays();
+  window.setInterval(updateLineDays, 60000);
 }());
 </script>"""

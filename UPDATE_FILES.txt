@@ -1,12 +1,25 @@
-Version 6.56, based on PICU655.zip
+Version 6.58, based on PICU657.zip
 
 Changed application files:
 app.py
-difficult_airway.py
-handoff_reset.py
+categories.py
+clinical_style.py
+devices.py
+exports.py
+fen_gi.py
+infusions.py
+labs.py
+medication_groups.py
+medications.py
+models.py
+mrsa.py
+print_time.py
+problem_review.py
 
-Upload the full folder contents or replace all three files above.
-Restart the app and refresh the browser.
-Keep existing Secrets, passwords, encryption key, BMI reference data,
-mappings, custom categories and shared archive unchanged.
-No new dependencies, archive-schema changes or re-pasting required.
+mrsa.py is new. Upload the full folder contents, or replace every file listed
+above together. Keep app.py at the repository root. Restart the app and refresh
+the browser. Preserve existing Secrets, passwords, encryption key, mappings,
+custom categories, BMI reference data and the shared archive.
+
+No new dependencies or archive-schema migration are required. Existing stored
+source data gains the new displays without re-pasting.

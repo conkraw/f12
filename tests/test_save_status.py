@@ -338,17 +338,22 @@ def test_print_table_precedes_download_buttons_and_lists_custom_room(app, monkey
     ss['drafts']['P4301']['fields']['Neurologic'] = 'Still unsaved'
     events = capture_page(app, monkeypatch)
     before = deepcopy(ss['vault'])
+    monkeypatch.setattr('models.utc_now', lambda: LATER)
     store = Store()
     app.print_all_page(store)
     table_index = next(i for i, (kind, text) in enumerate(events) if kind == 'markdown' and 'Handoff save status' in text)
     download_index = next(i for i, (kind, text) in enumerate(events) if kind == 'download')
     assert table_index < download_index
     table = events[table_index][1]
-    assert 'P4102' in table and 'P4301' in table and table.count(DISPLAY) == 2
-    assert 'Unsaved changes' in table
-    assert any(kind == 'warning' and 'Downloading alone does not save' in text for kind, text in events)
-    assert any(kind == 'caption' and 'Most recent handoff save' in text and DISPLAY in text for kind, text in events)
-    assert ss['vault'] == before and not store.calls
+    assert 'P4102' in table and 'P4301' in table and table.count(DISPLAY) == 1 and LATER_DISPLAY in table
+    # 6.57 saves changed open rooms before offering Print all downloads.
+    assert 'Unsaved changes' not in table
+    assert not any(kind == 'warning' and 'Downloading alone does not save' in text for kind, text in events)
+    assert any(kind == 'caption' and 'Most recent handoff save' in text and LATER_DISPLAY in text for kind, text in events)
+    assert ss['vault']['rooms']['P4102'] == before['rooms']['P4102']
+    assert ss['vault']['rooms']['P4301']['fields']['Neurologic'] == 'Still unsaved'
+    assert ss['vault']['rooms']['P4301']['updated_at'] == LATER
+    assert len(store.calls) == 1
 
 
 def test_print_selection_timestamp_list_does_not_include_deselected_rooms(app, monkeypatch):

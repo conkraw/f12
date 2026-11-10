@@ -19,7 +19,7 @@ LOW = re.compile(r"\((?:L|LL|LOW)\)", re.I)
 # Restrict emphasis to generated clinical labels. Arbitrary notes are not
 # interpreted as a vital sign, and a colon in a collection time is untouched.
 LABEL = re.compile(
-    r"^(?:Room|Age|Sex|Admission|Diagnoses|Weight|Z-score|Dosing weight|Height|BSA|EVD|"
+    r"^(?:Room|Age|Sex|Admission|Diagnoses|Weight|Z-score|Dosing weight|Height|BSA|BMI|MRSA Screen|EVD|"
     r"SBS(?: target)?|RASS|Target Arousal Level(?: \(SBS\))?|"
     r"WAT(?:-1)?(?: total score)?(?: \(0-12\))?|CAPD|"
     r"ICP(?: Mean)?(?: \(mmHg\))?|CPP|Resp(?:iratory Rate)?|RR|"

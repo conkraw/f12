@@ -59,6 +59,15 @@ def match_name(value: str) -> str:
     return normalized(_without_context(value, strip_schedule=True))
 
 
+def is_bupivacaine(name: str) -> bool:
+    """Match the named ingredient, including combination products.
+
+    This is the requested display placement only. The recorded route is never
+    inferred or changed, even when it is not an epidural route.
+    """
+    return bool(re.search(r"(?<![a-z0-9])bupivacaine(?![a-z0-9])", match_name(name)))
+
+
 def visibility_name(value: str) -> str:
     return normalized(_without_context(value, strip_schedule=False))
 
@@ -85,6 +94,8 @@ def suggested_key(name: str) -> str:
 
 
 def destination_for(name: str, rules: list[dict]) -> str:
+    if is_bupivacaine(name):
+        return "Neurologic"
     choices = []
     for rule in rules:
         term = normalized(rule["name"])

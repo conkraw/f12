@@ -9,7 +9,7 @@ from __future__ import annotations
 from copy import deepcopy
 import re
 import uuid
-from medications import DESTINATIONS, match_name, normalized, visible
+from medications import DESTINATIONS, is_bupivacaine, match_name, normalized, visible
 
 SETTINGS_KEYS = {"medication_categories", "medication_category_rules"}
 CATEGORY_SYSTEMS = tuple(x for x in DESTINATIONS if x != "Labs")
@@ -68,7 +68,20 @@ def add_missing_builtin_categories(settings: dict) -> dict:
 
 
 def catalog(settings: dict) -> list[dict]:
-    return deepcopy(settings.get("medication_categories", default_categories()))
+    items = deepcopy(settings.get("medication_categories", default_categories()))
+    # Version 6.57 archives can have a complete saved catalog without Epidural.
+    # Expose this new category without rewriting the archive or its other
+    # categories. The next intentional category edit can persist the addition.
+    if isinstance(items, list) and not any(isinstance(c, dict) and c.get("id") == "group:epidural" for c in items):
+        item = next(c for c in default_categories() if c["id"] == "group:epidural")
+        occupied = {(c.get("section"), c.get("parent"), normalized(c.get("name", "")))
+                    for c in items if isinstance(c, dict) and isinstance(c.get("name"), str)}
+        n = 0
+        while (item["section"], item["parent"], normalized(item["name"])) in occupied:
+            n += 1
+            item["name"] = "Epidural (default" + (" " + str(n) if n > 1 else "") + ")"
+        items.append(item)
+    return items
 
 
 def _text(value: object, maximum: int = 80, empty: bool = False) -> bool:
@@ -76,8 +89,12 @@ def _text(value: object, maximum: int = 80, empty: bool = False) -> bool:
 
 
 def validate_catalog(items: list[dict]) -> None:
-    if not isinstance(items, list) or len(items) > 250:
-        raise ValueError("Use at most 250 medication categories and subcategories.")
+    # Preserve all 250 pre-6.58 slots when the new required Epidural category
+    # is added. Duplicate IDs and every other catalog rule are still checked.
+    extra_builtin = (isinstance(items, list) and
+                     any(isinstance(item, dict) and item.get("id") == "group:epidural" for item in items))
+    if not isinstance(items, list) or len(items) > 250 + int(extra_builtin):
+        raise ValueError("Use at most 250 medication categories and subcategories, plus the Epidural built-in.")
     ids, labels = {}, set()
     for item in items:
         if not isinstance(item, dict) or set(item) != {"id", "name", "section", "parent", "order"}:
@@ -219,6 +236,12 @@ def apply_category_rules(rows: list[dict], settings: dict) -> list[dict]:
     result = deepcopy(rows)
     for row in result:
         row.pop("category_path", None)
+        if is_bupivacaine(row.get("name", "")):
+            row["section"] = "Neurologic"
+            # The explicit bupivacaine placement takes precedence over older
+            # name, group, and category assignments. No source amount changes.
+            row["category_path"] = target_snapshot("group:epidural", default_categories())
+            continue
         target = matching_target(row, settings)
         if target:
             row["category_path"] = target_snapshot(target, items)
@@ -230,6 +253,9 @@ def apply_category_rules(rows: list[dict], settings: dict) -> list[dict]:
 
 
 def placement(row: dict) -> dict:
+    # Render saved handoffs correctly before any reimport or settings save.
+    if is_bupivacaine(row.get("name", "")):
+        return target_snapshot("group:epidural", default_categories())
     if row.get("category_path") is not None:
         return row["category_path"]
     target = legacy_target(row)
@@ -265,6 +291,20 @@ def delete_category(settings: dict, ident: str) -> dict:
     return result
 
 
+def _display_root_key(path: dict):
+    """Keep the fixed Epidural heading separate from a renamed saved category.
+
+    A bupivacaine order always uses the canonical snapshot. Other drugs may
+    intentionally use a renamed group:epidural category or its children. Their
+    saved IDs stay intact, but different displayed roots must not merge just
+    because their IDs match. Matching default Epidural snapshots still merge.
+    """
+    ident = path["parent_id"] or path["id"]
+    if ident == "group:epidural":
+        return ident, path["parent_name"] or path["name"]
+    return ident
+
+
 def medication_blocks(section: str, notes: str, rows: list[dict], sheet: dict | None = None) -> list[tuple]:
     """One emitted entry per visible source order, never one per matching rule."""
     from fen_gi import effective_section
@@ -279,7 +319,7 @@ def medication_blocks(section: str, notes: str, rows: list[dict], sheet: dict | 
         if not path["name"]:
             plain.append(row)
             continue
-        root_id = path["parent_id"] or path["id"]
+        root_id = _display_root_key(path)
         root_name = path["parent_name"] or path["name"]
         root_order = path["parent_order"]
         root = roots.setdefault(root_id, dict(name=root_name, order=root_order, direct=[], children={}))
@@ -293,7 +333,7 @@ def medication_blocks(section: str, notes: str, rows: list[dict], sheet: dict | 
         for path in empty_group_paths(sheet, rows):
             if path["section"] != section:
                 continue
-            root_id = path["parent_id"] or path["id"]
+            root_id = _display_root_key(path)
             root = roots.setdefault(root_id, dict(name=path["parent_name"] or path["name"],
                 order=path["parent_order"], direct=[], children={}))
             if path["parent_id"]:
@@ -318,7 +358,7 @@ def medication_blocks(section: str, notes: str, rows: list[dict], sheet: dict | 
                 for candidate in candidates:
                     if candidate["id"] == "group:dvt" and candidate["section"] == section:
                         path = candidate
-                root_id = path["parent_id"] or path["id"]
+                root_id = _display_root_key(path)
                 root = roots.setdefault(root_id, dict(name=path["parent_name"] or path["name"],
                     order=path["parent_order"], direct=[], children={}))
                 bucket = (root["children"].setdefault(path["id"], dict(name=path["name"],

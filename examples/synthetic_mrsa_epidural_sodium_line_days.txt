@@ -1,0 +1,31 @@
+Age: 8 years
+Sex: Female
+aaaaaaaaaaaa
+Diagnoses:
+1. SYNTHETIC EXAMPLE ONLY
+2. Postoperative recovery
+AAAAAAAAAAAA
+bbbbbbbbbbbb
+Medications:
+bupivacaine 0.1% epidural infusion	4 mL/hr	Epidural	Continuous		4 mL/hr	
+BBBBBBBBBBBB
+gggggggggggg
+LABS:
+MRSADNA	Not detected	11/10/2026 08:30
+NA	148 (H)	11/10/2026 08:00
+NA	143	11/09/2026 06:00
+K	4.1	11/10/2026 08:00
+CL	110	11/10/2026 08:00
+CO2	24	11/10/2026 08:00
+BUN	10	11/10/2026 08:00
+CREATININE	0.4	11/10/2026 08:00
+GLUCOSE	100	11/10/2026 08:00
+GGGGGGGGGGGG
+nnnnnnnnnnnn
+Date of Admission: 11/08/2026
+NNNNNNNNNNNN
+uuuuuuuuuuuu
+PIV 11/10/26 Right Hand
+PICC 11/08/26 Left Basilic
+CVL 11/09/26 Right Femoral
+UUUUUUUUUUUU

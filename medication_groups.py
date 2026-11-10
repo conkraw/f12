@@ -6,7 +6,7 @@ pump rate. A grouping changes presentation, not the source order or clinical use
 from __future__ import annotations
 from copy import deepcopy
 import re
-from medications import match_name, normalized
+from medications import is_bupivacaine, match_name, normalized
 
 ID_GROUPS = ("antibiotic", "antifungal", "antiviral")
 HEME_GROUPS = ("dvt", "antiplatelet", "gcsf")
@@ -16,10 +16,10 @@ RESP_GROUPS = ("airway_cerebral_steroid", "airway_tone", "antisialorrhea", "beta
                "pulmonary_hypertension", "allergy_immunology", "airway_vasoconstrictor")
 # These groups follow the bedside sedation/PRN/paralytic blocks alphabetically.
 NEURO_OTHER_GROUPS = ("antiepileptic", "antispasmodic",
-                      "fever", "insomnia", "neuromodulation")
+                      "epidural", "fever", "insomnia", "neuromodulation")
 NEURO_PRIORITY_GROUPS = ("sedative_prn", "paralytic_infusion", "paralytic_prn")
 MODES = (("auto", "dvt", "fever", "sedative_prn", "paralytic_prn", "antiepileptic",
-          "insomnia", "antispasmodic", "neuromodulation",
+          "insomnia", "antispasmodic", "neuromodulation", "epidural",
           "paralytic_infusion") + RESP_GROUPS + CV_GROUPS + ID_GROUPS + ("antiplatelet", "gcsf", "other",))
 MODE_LABELS = {
     "auto": "Automatic", "dvt": "DVT Prophylaxis",
@@ -29,6 +29,7 @@ MODE_LABELS = {
     "airway_cerebral_steroid": "Airway/Cerebral Steroids",
     "insomnia": "Insomnia", "antispasmodic": "Antispasmodic",
     "neuromodulation": "Neuromodulation",
+    "epidural": "Epidural",
     "beta_agonist": "Beta-Agonist", "anticholinergic": "Anticholinergic",
     "methylxanthine": "Methylxanthine", "corticosteroid": "Corticosteroid",
     "inhaled_corticosteroid": "Inhaled Corticosteroids", "airway_tone": "Airway Tone Modulator",
@@ -93,8 +94,10 @@ def _local_form(row: dict, name: str) -> bool:
 
 
 def automatic_system_group(row: dict) -> str:
-    """Requested defaults. Explicit per-order choices remain authoritative."""
+    """Requested defaults, including the fixed bupivacaine placement."""
     name = match_name(row.get("name", ""))
+    if is_bupivacaine(name):
+        return "epidural"
     # Filgrastim is G-CSF, not GM-CSF. Match the generic and its biosimilar
     # suffixes without accidentally matching pegfilgrastim or a mixture.
     if re.match(r"^(?:filgrastim(?:-[a-z]{4})?|tbo-filgrastim|nivestym|neupogen|zarxio|releuko|nypozi|filkri)(?=$|[\s(,])", name):
@@ -216,6 +219,10 @@ def automatic_group(row: dict) -> str:
 
 
 def group_for(row: dict) -> str:
+    # The user's bupivacaine rule also applies to existing saved orders with
+    # older group choices. Leave those source choices untouched in storage.
+    if is_bupivacaine(row.get("name", "")):
+        return "epidural"
     mode = row.get("group_mode", "auto")
     # An explicit GI override wins over automatic defaults, not over an explicit
     # special-group choice. UI callbacks clear the competing explicit choice.

@@ -6,18 +6,20 @@ not used to infer device removal or placement. Values never cross devices.
 """
 from __future__ import annotations
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import date, datetime
 from html import escape
 import re
 import uuid
 
 from feeds import feeding_method
 from import_review import diagnostic
+from lab_windows import clock
 
 KINDS = ('ETT', 'Trach', 'PIV', 'PICC', 'CVC', 'Arterial line',
          'Urinary catheter', 'Feeding tube', 'Drain', 'EVD', 'ICP monitor', 'Other')
 ROW_KEYS = {'id', 'kind', 'label', 'date', 'size', 'secured', 'status', 'removed', 'include'}
 EDIT_FIELDS = ('label', 'date', 'size', 'secured', 'status', 'include')
+VASCULAR_KINDS = frozenset(('PIV', 'PICC', 'CVC', 'Arterial line'))
 REMOVED = re.compile(r'\[\s*removed\s*\]', re.I)
 DATE = re.compile(r'(?<!\d)(?:\d{1,2}/\d{1,2}/(?:\d{4}|\d{2}))(?!\d)')
 PROPERTY = re.compile(r'\s*[-\u2013\u2014]\s*(?P<field>Site\s+Assessment|Secured\s+at\s*\(cm\)|'
@@ -59,7 +61,7 @@ def _kind(label: str, section: str) -> str:
         return 'Trach'
     for kind, pat in (('PIV', r'^(?:Peripheral\s+IV|PIV)\b'),
                       ('PICC', r'^(?:PICC|Peripherally\s+inserted\s+central\s+catheter)\b'),
-                      ('CVC', r'^(?:CVC|Central\s+(?:Venous\s+)?(?:Line|Catheter)|Port[- ]?a[- ]?cath|Implanted\s+Port|Hemodialysis\s+Catheter)\b'),
+                      ('CVC', r'^(?:CVC|CVL|Central\s+(?:Venous\s+)?(?:Line|Catheter)|Port[- ]?a[- ]?cath|Implanted\s+Port|Hemodialysis\s+Catheter)\b'),
                       ('Arterial line', r'^(?:Arterial\s+(?:Line|Catheter)|A[- ]line)\b'),
                       ('Urinary catheter', r'^(?:Urethral\s+Catheter|Urinary\s+Catheter|Foley|Suprapubic\s+Catheter)\b')):
         if re.search(pat, label, re.I):
@@ -249,13 +251,47 @@ def _rows(sheet: dict, section: str):
     return [row for row in (data or {}).get('rows', []) if row['include'] and (not row['removed'] or row['kind'] == 'ETT')]
 
 
-def device_line(row: dict) -> str:
+def insertion_date(value: str) -> date | None:
+    """Read a complete documented date without inventing missing components."""
+    if not isinstance(value, str) or not DATE.fullmatch(value):
+        return None
+    try:
+        return datetime.strptime(value, '%m/%d/%Y' if len(value.split('/')[-1]) == 4 else '%m/%d/%y').date()
+    except ValueError:
+        return None
+
+
+def line_day_number(value: str, as_of: datetime | None = None) -> int | None:
+    """Calendar days in Eastern time. Insertion is Day 1, not elapsed 24 hours."""
+    inserted = insertion_date(value)
+    if inserted is None:
+        return None
+    elapsed = (clock(as_of).date() - inserted).days
+    return elapsed + 1 if elapsed >= 0 else None
+
+
+def _output_kind(row: dict) -> str:
+    """Recognize old saved CVL rows without rewriting their stored category."""
+    if row['kind'] == 'Other':
+        detected = _kind(row['label'], 'u')
+        if detected in VASCULAR_KINDS:
+            return detected
+    return row['kind']
+
+
+def _date_label(row: dict, as_of: datetime | None = None) -> str:
+    label = row['date']
+    day = line_day_number(label, as_of) if _output_kind(row) in VASCULAR_KINDS and not row['removed'] else None
+    return label + (', Day ' + str(day) if day is not None else '')
+
+
+def device_line(row: dict, as_of: datetime | None = None) -> str:
     if row['kind'] == 'ETT':
         label = 'ETT history (removed)' if row['removed'] else 'ETT'
         return label + ' | Last Airway Size: ' + (row['size'] or 'UNK') + ' | Last Secure Site: ' + (row['secured'] or 'UNK') + (' | ' + row['date'] if row['date'] else '')
     text = row['label']
     if row['date']:
-        text += ' (' + row['date'] + ')'
+        text += ' (' + _date_label(row, as_of) + ')'
     if row['secured']:
         text += ' | Secured: ' + row['secured']
     if row['kind'] == 'EVD':
@@ -273,26 +309,39 @@ def evd_text(sheet: dict) -> str:
     return '\n'.join('EVD ' + str(i) + ': ' + (r['status'] or 'UNK') + ' | ' + r['label'] for i, r in enumerate(rows, 1))
 
 
-def device_groups(sheet: dict) -> list[tuple[str, list[str]]]:
+def _device_groups(sheet: dict, render) -> list[tuple[str, list[str]]]:
     groups = {name: [] for name in ('Airway', 'Vascular access', 'Tubes / drains', 'Other devices')}
     rows = _rows(sheet, 'u') + [r for r in _rows(sheet, 'v') if r['kind'] != 'EVD']
     # Stable source ordering within each category. Active ETTs/trachs before history.
     rows.sort(key=lambda r: r['removed'])
     for row in rows:
-        kind = row['kind']
+        kind = _output_kind(row)
         category = ('Airway' if kind in ('ETT', 'Trach') else
                     'Vascular access' if kind in ('PIV', 'PICC', 'CVC', 'Arterial line') else
                     'Tubes / drains' if kind in ('Urinary catheter', 'Feeding tube', 'Drain') else 'Other devices')
-        line = device_line(row)
+        line = render(row)
         if line not in groups[category]:
             groups[category].append(line)
     return [(name, lines) for name, lines in groups.items() if lines]
 
 
-def devices_text(sheet: dict) -> str:
-    return '\n'.join(name + ': ' + ' / '.join(lines) for name, lines in device_groups(sheet))
+def device_groups(sheet: dict, as_of: datetime | None = None) -> list[tuple[str, list[str]]]:
+    return _device_groups(sheet, lambda row: device_line(row, as_of))
 
 
-def devices_markup(sheet: dict, esc=escape) -> str:
-    return '\n'.join('<b>' + esc(name) + ':</b> ' + ' / '.join(esc(line) for line in lines)
-                     for name, lines in device_groups(sheet))
+def devices_text(sheet: dict, as_of: datetime | None = None) -> str:
+    return '\n'.join(name + ': ' + ' / '.join(lines) for name, lines in device_groups(sheet, as_of))
+
+
+def devices_markup(sheet: dict, esc=escape, as_of: datetime | None = None, *, live_days: bool = False) -> str:
+    def render(row):
+        markup = esc(device_line(row, as_of))
+        inserted = insertion_date(row['date'])
+        if live_days and inserted is not None and _output_kind(row) in VASCULAR_KINDS and not row['removed']:
+            label = _date_label(row, as_of)
+            span = ('<span data-line-insertion="' + inserted.isoformat() + '" data-line-date="' + escape(row['date'], quote=True) + '">'
+                    + esc(label) + '</span>')
+            markup = markup.replace(esc('(' + label + ')'), '(' + span + ')', 1)
+        return markup
+    return '\n'.join('<b>' + esc(name) + ':</b> ' + ' / '.join(lines)
+                     for name, lines in _device_groups(sheet, render))

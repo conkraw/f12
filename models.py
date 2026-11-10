@@ -41,6 +41,7 @@ SCHEMA_VERSION = 34
 from problem_review import validate_review, empty_review
 from difficult_airway import validate_airway
 from lab_windows import cardiac_labs_summary, theophylline_summary, id_summary, laboratory_data
+from mrsa import mrsa_screen_text
 from anthropometrics import empty_anthropometrics, validate_anthropometrics, measurements_text
 
 
@@ -522,6 +523,10 @@ def fields_with_medications(sheet: dict, include_lab_text: bool = True) -> dict[
     if sheet["admission_date"]:
         text = "Admission: " + sheet["admission_date"]
         result["Demographics / Weight"] = text + ("\n" + result["Demographics / Weight"] if result["Demographics / Weight"].strip() else "")
+    screen = mrsa_screen_text(sheet)
+    if screen:
+        demographic_notes = result["Demographics / Weight"].rstrip()
+        result["Demographics / Weight"] = (demographic_notes + "\n" if demographic_notes else "") + screen
     nutrition = demographic_weight_text(sheet["nutrition"], sheet["dosing_weight"])
     if nutrition:
         diagnosis = result["Diagnoses"].rstrip()

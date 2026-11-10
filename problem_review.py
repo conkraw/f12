@@ -26,7 +26,8 @@ RULES = {
     'sepsis': 'Sepsis',
     'respiratory': 'Acute hypoxemic respiratory failure',
     'aki': 'Acute kidney injury',
-    'NA': 'Hyponatremia', 'K': 'Hypokalemia', 'ALBUMIN': 'Hypoalbuminemia',
+    'NA': 'Hyponatremia', 'NA_HIGH': 'Hypernatremia',
+    'K': 'Hypokalemia', 'ALBUMIN': 'Hypoalbuminemia',
     'CO2': 'Metabolic acidosis', 'MG': 'Hypomagnesemia', 'PHOS': 'Hypophosphatemia',
     'HGB': 'Anemia', 'PLT': 'Thrombocytopenia', 'constipation': 'Constipation',
     'BILITOT': 'Hyperbilirubinemia',
@@ -139,6 +140,29 @@ def _is_low(row: dict, limit: dict | None, key: str = '') -> tuple[bool, str]:
     return low, reason + limit['value'] + ' ' + limit['unit'] if low else ''
 
 
+def _is_high_sodium(row: dict | None) -> bool:
+    """Apply >145 only to the latest usable standard blood sodium result.
+
+    NA/SODIUM in the Epic lab block uses mmol/L or equivalent mEq/L. Pasted
+    rows commonly omit units. An explicit incompatible unit is not converted.
+    The caller selects the newest row before validating its result, so an
+    unusable latest result cannot resurrect a historical abnormal value.
+    """
+    if not row or canonical(row['component']) != 'NA' or LOW.search(row['value']):
+        return False
+    parsed = numeric(row['value'])
+    if not parsed or not measured(row['value']):
+        return False
+    comparator, number, units = parsed
+    if unit_key(row.get('unit') or units) not in ('', 'mmol/l', 'meq/l'):
+        return False
+    if comparator == '>':
+        return number >= Decimal('145')
+    if comparator in ('', '≥'):
+        return number > Decimal('145')
+    return False
+
+
 def _medication_active(row: dict, now: datetime) -> bool:
     if not visible(row):
         return False
@@ -229,6 +253,11 @@ def suggestions(sheet: dict, as_of: datetime | None = None) -> list[dict]:
             caution = ('Low serum CO2 does not alone determine the acid-base disorder. Review pH, PCO2 and the clinical context.'
                        if key == 'CO2' else 'Verify the applicable reference range and clinical context.')
             add(key, evidence, caution)
+    sodium = latest.get('NA')
+    if _is_high_sodium(sodium):
+        units = (' ' + sodium['unit']) if sodium.get('unit') else ''
+        add('NA_HIGH', 'Sodium ' + sodium['value'] + units + ' [' + sodium['date'] + '], above 145',
+            'Blood sodium >145 mmol/L or mEq/L review rule. Verify the reference range and clinical context.')
     bilirubin = latest.get('BILITOT')
     if (bilirubin and measured(bilirubin['value']) and HIGH.search(bilirubin['value'])
             and not re.search(r'\b(?:pending|cancelled|canceled|hemolyzed|haemolysed|rejected|invalid)\b', bilirubin['value'], re.I)

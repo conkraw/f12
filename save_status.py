@@ -115,3 +115,22 @@ def save_status_table(statuses: list[RoomSaveStatus], *, session_only: bool = Fa
     return ('<div style="overflow-x:auto;margin:6px 0 12px;">'
             '<table aria-label="Handoff save status" style="border-collapse:collapse;width:100%;font-size:0.92rem;">'
             '<thead><tr>' + header + '</tr></thead><tbody>' + ''.join(rows) + '</tbody></table></div>')
+
+
+def handoff_save_caption(sheet: Mapping, status: RoomSaveStatus | None = None) -> str:
+    """Export-only save label, never calculated from the printing/import time.
+
+    The UI supplies confirmed archive metadata, including unsaved/new-patient
+    and session-only state. Standalone exports use the sheet's stored saved
+    timestamp. No new storage fields or patient content are introduced.
+    """
+    if status is not None:
+        if status.room != sheet.get("room"):
+            raise ValueError("Save status does not match the handoff room.")
+        label = "Last session save: " if status.session_only else "Last saved: "
+        text = label + status.last_saved
+        if status.unsaved:
+            text += " | Unsaved changes"
+        return text
+    value = sheet.get("updated_at")
+    return "Last saved: " + (saved_time_text(value) if value else "Not saved yet")

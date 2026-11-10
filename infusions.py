@@ -41,7 +41,7 @@ def supports_infusion_display(row: dict) -> bool:
     if section == "FEN / GI":
         return gi_group(row) in {"endocrine", "tpn"}
     return section in INFUSION_HEADINGS and (not group or group in {"dvt", "antiplatelet"}
-                                            or group in CV_GROUPS + RESP_GROUPS + ("paralytic_infusion",))
+                                            or group in CV_GROUPS + RESP_GROUPS + ("paralytic_infusion", "epidural"))
 
 
 def infusion_key(row: dict) -> tuple[str, str, str]:

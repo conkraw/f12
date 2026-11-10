@@ -1,12 +1,16 @@
-<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>PICU Handoff 6.56</title><style>body{max-width:850px;margin:40px auto;padding:0 20px;font:17px/1.6 system-ui;color:#172c3d}code{background:#f1f5f7;padding:2px 6px}h1,h2{line-height:1.2}</style></head>
-<body><h1>PICU Handoff 6.56</h1><h2>Difficult-airway choices</h2>
-<p>Updating a handoff with existing difficult-airway details now asks whether to keep or delete them. Cancel leaves the handoff unchanged. Save handoff or change rooms after making your choice.</p>
-<p>Under Room actions, Delete all handoff data offers full deletion and a second option that clears other patient data while keeping difficult-airway details in their original rooms. Custom rooms remain only when they contain retained airway details.</p>
-<p>Both reset options work without an Admin password. Confirm that retained details belong to the current patient before keeping them on a new import.</p>
-<h2>Install</h2><p>Replace the application files with this folder's contents. Keep <code>app.py</code> at the root, restart the app, and refresh your browser.</p>
-<p>Only <code>app.py</code>, <code>difficult_airway.py</code>, and <code>handoff_reset.py</code> changed among application code files.</p>
-<p>Keep existing Secrets, passwords, encryption key, mappings, categories and reference data unchanged. Do not rerun setup generators. No new dependencies or re-pasting are required.</p>
-<p>Settings remain intact after either reset. Other team members should reload the saved archive. Earlier archive versions and downloaded copies are not erased.</p>
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<title>PICU Handoff 6.58</title><style>body{max-width:850px;margin:40px auto;padding:0 20px;font:17px/1.6 system-ui;color:#172c3d}code{background:#f1f5f7;padding:2px 6px}h1,h2{line-height:1.2}</style></head>
+<body><h1>PICU Handoff 6.58</h1>
+<h2>What changed</h2><ul>
+<li>MRSA Screen: appears in demographics, with a bold label and the latest supplied MRSADNA result and collection date.</li>
+<li>Bupivacaine orders appear once under Neuro &gt; Epidural, preserving their documented dose, route and rate.</li>
+<li>Hypernatremia appears in Problems when the latest usable blood sodium is above 145.</li>
+<li>Vascular lines keep their insertion date and gain the current Day number. Insertion is Day 1, using Eastern calendar dates.</li>
+</ul>
+<h2>Install</h2><p>Upload this folder's contents to your existing code repository, keeping <code>app.py</code> at the root. Include the new <code>mrsa.py</code> file. Restart the app and refresh your browser.</p>
+<p>Keep your existing Streamlit Secrets, passwords, encryption key, mappings, custom categories, BMI reference data and shared archive. Do not rerun setup generators. No new dependencies or archive-schema changes are needed.</p>
+<p>The existing save-before-Print-All behavior, per-room saved timestamps and difficult-airway workflow remain in place.</p>
+<h2>Source data and printing</h2><p>MRSADNA must be included in the G laboratory block with a collection date. Existing saved results, orders and line dates gain the new displays immediately. Paste a fresh SmartPhrase to add data that was not previously included.</p>
+<p>The preview and new downloads calculate current line days. Previously downloaded PDFs remain fixed snapshots.</p>
+<p>See <a href="README.md">README.md</a> for details and <a href="examples/mrsa_epidural_sodium_line_days_preview.pdf">the synthetic example</a> for the printed layout.</p>
 </body></html>
