@@ -72,7 +72,7 @@ from medication_groups import (MODES as GROUP_MODES, MODE_LABELS as GROUP_MODE_L
     apply_group_rules, set_group_rule, group_key, group_mode_for)
 
 ROOT = Path(__file__).resolve().parent
-st.set_page_config(page_title="PICU Handoff", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="PICU Handoff for Division", layout="wide", initial_sidebar_state="expanded")
 
 
 def note(text: str, kind: str = "info") -> None:
