@@ -219,7 +219,7 @@ def test_encrypted_roundtrip_and_original26_migration_preserve_source():
     before=deepcopy(original);key=Fernet.generate_key().decode()
     token=Fernet(key.encode()).encrypt(json.dumps(original).encode())
     restored=open_vault(token,key)
-    assert restored['schema']==32 and restored['rooms']==before['rooms'] and original==before
+    assert restored['schema']==33 and restored['rooms']==before['rooms'] and original==before
     restored['settings']=configured()
     restored['settings']=set_category_rule(restored['settings'],'aminophylline','custom:child')
     restored['rooms']['P4102']['medications']=apply_category_rules(restored['rooms']['P4102']['medications'],restored['settings'])

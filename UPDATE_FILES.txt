@@ -1,17 +1,17 @@
-Version 6.53, based on PICU652.zip
+Version 6.54, based on PICU653.zip
 
-Changed application/deployment files:
+Changed application files:
 app.py
-workspace_ui.py (new)
-requirements.txt (Streamlit minimum is now 1.55)
+categories.py
+clinical_style.py (new)
+exports.py
+fen_gi.py
+infusions.py
+lab_layout.py
+medication_groups.py
+models.py
+problem_review.py
 
-Replace all three, or upload the full folder contents. Restart/rebuild and
-refresh. Existing installations must install the updated requirements.
-
-No changes to clinical parsers, calculations, exports, archive schema,
-encryption, saved handoffs, medication mappings or categories.
-No re-pasting or archive migration is required.
-Keep existing Secrets and BMI reference file. Do not rerun setup generators.
-
-Room actions now contains secondary and destructive actions.
-Alerts follows Difficult airway. Preview / print is the first tab.
+Upload the full folder contents, restart and refresh.
+No new dependencies. Keep current Secrets, encryption key and reference data.
+No re-pasting is needed for already stored data. Schema 32 upgrades to 33.

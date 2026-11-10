@@ -1,3 +1,4 @@
+from style_assert_helpers import without_style_tags
 """Display-only coagulation placement with preserved source rows and ID markers."""
 from copy import deepcopy
 from io import BytesIO
@@ -87,7 +88,7 @@ HEPLMW\t0.46\t01/06/2026
 HEPLMW\t0.38\t01/05/2026''').data
     before = deepcopy(d)
     card = next(c for c in result_cards(d, include_id_panels=False) if c['title'].startswith('Coagulation'))
-    markup = horizontal_card_markup(card)
+    markup = without_style_tags(horizontal_card_markup(card))
     for text in ['PT: 14.1 (H) [01/06/26]', 'INR: 1.1 [01/05/26]', 'PTT: 29 [01/04/26]', 'Anti-Xa (HEPLMW): 0.46 [01/06/26]']:
         assert text in markup
     assert '15.2' not in markup and '0.38' not in markup
@@ -113,7 +114,7 @@ def test_no_data_mutation_during_any_export():
     for fn in [handoff_html, handoff_pdf, handoff_text]:
         fn(s)
         assert s == before
-    assert SCHEMA_VERSION ==32
+    assert SCHEMA_VERSION ==33
 
 
 @pytest.mark.parametrize('exporter', [handoff_html, handoff_text])

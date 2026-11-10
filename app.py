@@ -1,4 +1,4 @@
-"""PICU SmartPhrase v6.53: compact workspace, quiet alerts and on-demand tabs."""
+"""PICU SmartPhrase v6.54: bold clinical labels, flagged-result colors and medication groups."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,
@@ -74,7 +74,7 @@ from medication_groups import (MODES as GROUP_MODES, MODE_LABELS as GROUP_MODE_L
     apply_group_rules, set_group_rule, group_key, group_mode_for)
 
 ROOT = Path(__file__).resolve().parent
-st.set_page_config(page_title="PICU Handoff for Division", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="PICU Handoff", layout="wide", initial_sidebar_state="expanded")
 
 
 def note(text: str, kind: str = "info") -> None:
@@ -1509,7 +1509,7 @@ def main() -> None:
     if st.session_state.get("authenticated") and (now - st.session_state.get("last_activity", now) > app["idle_minutes"] * 60 or now - st.session_state.get("login_at", now) > 8 * 3600):
         clear_session()
     if not st.session_state.get("authenticated"):
-        st.title("PICU Handoff for Division")
+        st.title("PICU Handoff")
         with st.form("login"):
             st.text_input("App password", type="password", key="login_password", max_chars=1024)
             st.form_submit_button("Open app", on_click=authenticate, args=(app["password_hash"],))
@@ -1531,7 +1531,7 @@ def main() -> None:
     upgrade_existing_session()
     with st.sidebar:
         st.header("PICU Handoff")
-        st.caption("Version 6.53 | Compact workspace and Alerts")
+        st.caption("Version 6.54 | Labels, result colors and medication groups")
         # Retire the old instructions workspace without discarding room drafts.
         if st.session_state.get("page") == "Instructions / SmartPhrase":
             st.session_state["page"] = "Handoff"

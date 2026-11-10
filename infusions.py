@@ -172,6 +172,9 @@ def render_body_blocks(blocks: list[tuple[str, object]], rich: bool = False, esc
             lines.append("<b>" + encode(item + ":") + "</b> None" if rich else item + ": None")
         elif kind == "subheading":
             lines.append("<b><i>" + encode(item) + "</i></b>" if rich else item)
+        elif kind == "lab" and rich:
+            from clinical_style import clinical_markup
+            lines.append(clinical_markup(item, esc))
         elif kind == "medication":
             lines.append(encode(medication_output(format_medication(item))))
         else:

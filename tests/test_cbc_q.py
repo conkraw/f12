@@ -1,3 +1,4 @@
+from style_assert_helpers import without_style_tags
 """Synthetic Q-matrix regression coverage. No patient records are bundled."""
 from copy import deepcopy
 from datetime import datetime
@@ -224,7 +225,7 @@ def test_trees_still_render_for_timed_columns_and_counts_are_below_nodes():
 def test_exports_cbc_snapshot_no_istat_hgb_or_shifted_hct():
     sheet=imported(); before=deepcopy(sheet)
     text=PdfReader(BytesIO(handoff_pdf(sheet))).pages[0].extract_text()
-    for output in (handoff_text(sheet),handoff_html(sheet),text):
+    for output in (handoff_text(sheet),without_style_tags(handoff_html(sheet)),text):
         assert '7.3*' in output and '22.5*' in output and '10.26*' in output and '1.63' in output
         assert '8.6*' not in output and '25*' not in output
         assert 'ANC' in output and 'ALC' in output
@@ -232,7 +233,7 @@ def test_exports_cbc_snapshot_no_istat_hgb_or_shifted_hct():
     second=deepcopy(sheet);second['room']='P4104'
     pages=PdfReader(BytesIO(handoffs_pdf([sheet,second]))).pages
     assert len(pages)==2
-    assert handoffs_html([sheet,second]).count('10.26*')==2
+    assert without_style_tags(handoffs_html([sheet,second])).count('10.26*')==2
 
 
 def test_cbc_only_room_print_all_and_cleared_q_not_counted_as_content():
@@ -251,7 +252,7 @@ def test_schema12_upgrade_preserves_old_gases_rows_mappings_and_fields():
     key=Fernet.generate_key().decode()
     cipher=Fernet(key.encode()).encrypt(json.dumps(old).encode())
     new=open_vault(cipher,key)
-    assert old==before and new['schema']==SCHEMA_VERSION==32
+    assert old==before and new['schema']==SCHEMA_VERSION==33
     assert new['rooms']['P4102']==dict(sheet,cbc=None,recurring_orders=None,intake_output=None,import_warnings={},feeds=None,devices=None,neuro_devices=None,pacemaker=None,diet=None)
     assert new['settings']==dict(old['settings'], medication_gi_groups=[], medication_groups=[])
     assert open_vault(seal_vault(new,key),key)==new
@@ -342,7 +343,7 @@ def test_conflicting_cbc_alias_cannot_silently_select_one():
 def test_long_result_wraps_without_losing_missing_count_placeholders():
     text=numeric_table('HEMOGLOBIN\tg/dL\t7.123456789012345678901234567890123456789\t8.1')
     sheet=imported(text)
-    output=handoff_html(sheet)
+    output=without_style_tags(handoff_html(sheet))
     assert '7.123456789012345678901234567890123456789' in output
     assert 'ANC: --' in output and 'ALC: --' in output
     assert handoff_pdf(sheet).startswith(b'%PDF')

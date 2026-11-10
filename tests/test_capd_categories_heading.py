@@ -1,3 +1,4 @@
+from style_assert_helpers import without_style_tags
 """Version 6.43: synthetic inputs, isolated callbacks, and in-memory PDF checks."""
 from copy import deepcopy
 from io import BytesIO
@@ -84,7 +85,7 @@ def test_order_sbs_capd_wat_before_medications_in_all_exports():
     observed(s, '0')
     s['medications']=[med('midazolam test infusion')]
     before=deepcopy(s)
-    outputs=[handoff_text(s), handoff_html(s), '\n'.join(p.extract_text() for p in PdfReader(BytesIO(handoff_pdf(s))).pages)]
+    outputs=[handoff_text(s), without_style_tags(handoff_html(s)), '\n'.join(p.extract_text() for p in PdfReader(BytesIO(handoff_pdf(s))).pages)]
     for text in outputs:
         assert text.index('SBS: 0') < text.index('CAPD: 24') < text.index('WAT-1') < text.index('midazolam test infusion')
         assert text.count('CAPD: 24')==1
@@ -94,7 +95,7 @@ def test_order_sbs_capd_wat_before_medications_in_all_exports():
 def test_default_capd_always_on_old_and_blank_records():
     s=new_sheet('P4102')
     assert 'y' not in s['neuro_vitals']
-    for text in (handoff_text(s), handoff_html(s)):
+    for text in (handoff_text(s), without_style_tags(handoff_html(s))):
         assert text.count('CAPD: None')==1
     rows=neuro_rows(empty_neuro())
     assert rows==[{'label':'CAPD','value':'None','section':'Neurologic','include':True}]
@@ -184,7 +185,7 @@ def test_27_archive_adds_only_missing_defaults_and_preserves_customization():
     settings['medication_categories']=[r for r in settings['medication_categories'] if r['id'] not in ('group:allergy_immunology','gi:prokinetic')]
     v['settings']=settings;v['rooms']['P4102']=new_sheet('P4102')
     before=deepcopy(v);u=upgrade_vault(v)
-    assert v==before and u['schema']==32 and u['rooms']==before['rooms']
+    assert v==before and u['schema']==33 and u['rooms']==before['rooms']
     original={x['id']:x for x in before['settings']['medication_categories']}
     updated={x['id']:x for x in u['settings']['medication_categories']}
     assert all(updated[k]==row for k,row in original.items())

@@ -1,3 +1,4 @@
+from style_assert_helpers import without_style_tags
 """ETCO2/CVP E-block import regressions. Inputs and handoffs are synthetic."""
 from copy import deepcopy
 from pathlib import Path
@@ -165,7 +166,7 @@ def test_missing_monitor_markers_on_either_side_do_not_block_other_monitor():
 
 def test_pdf_html_text_and_batch():
     sheet = sample_sheet()
-    html = handoff_html(sheet)
+    html = without_style_tags(handoff_html(sheet))
     text = handoff_text(sheet)
     for content in [html, text]:
         assert 'ETCO2: 28 to 61 mmHg' in content

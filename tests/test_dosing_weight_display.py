@@ -107,7 +107,7 @@ def test_none_is_display_only_and_encrypted_archive_is_unchanged():
     before = deepcopy(saved)
     key = generate_key()
     loaded = open_vault(seal_vault(saved, key), key)
-    assert loaded == before and loaded["schema"] == SCHEMA_VERSION ==32
+    assert loaded == before and loaded["schema"] == SCHEMA_VERSION ==33
     assert loaded["rooms"]["P4102"]["dosing_weight"] == ""
     assert "Dosing weight: none" in handoff_text(loaded["rooms"]["P4102"])
     assert loaded == before

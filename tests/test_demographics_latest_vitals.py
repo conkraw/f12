@@ -1,3 +1,4 @@
+from style_assert_helpers import without_style_tags
 """Synthetic regression cases only. No patient data, credentials or live writes."""
 from copy import deepcopy
 from io import BytesIO
@@ -162,7 +163,7 @@ def test_output_uses_dosing_weight_not_measured_and_no_fallback():
     out=fields_with_medications(s)['FEN / GI']
     assert 'In: 100 mL (10 mL/kg)' in out and 'Out: 200 mL (20 mL/kg)' in out
     assert 'Net: -100 mL' in out
-    assert handoff_html(s).count('Out: 200 mL (20 mL/kg)')==1
+    assert without_style_tags(handoff_html(s)).count('Out: 200 mL (20 mL/kg)')==1
 
 
 def test_failed_weight_refresh_suppresses_calculation():
@@ -244,7 +245,7 @@ def test_additional_names_and_exact_override():
 def test_schema22_upgrade_and_new_fields_encrypted_roundtrip():
     v=new_vault();v['schema']=22;s=new_sheet('P4102');v['rooms'][s['room']]=s
     before=deepcopy(v);up=upgrade_vault(v)
-    assert v==before and up['schema']==32
+    assert v==before and up['schema']==33
     assert up['rooms']==before['rooms'] and up['settings']==before['settings']
     up['rooms']['P4102']['anthropometrics']=dict(age='62 months',sex='Female',bmi='17 kg/m²',height='100 cm',bsa='0.65 m²')
     key=generate_key();assert open_vault(seal_vault(up,key),key)==up
@@ -278,7 +279,7 @@ def test_new_output_all_formats_do_not_mutate_source():
     s=imported('s','Intake 100 mL\nOutput 200 mL\nNet -100 mL',s)
     s=imported('e','ETCO2 Min: 40 mmHg Max: 60 mmHg\nLast ETCO2: 55 mmHg',s)
     s['medications']=[row('levETIRAcetam 10 mg/mL IV syringe','10 mg/kg')]
-    before=deepcopy(s);h=handoff_html(s);t=handoff_text(s);pdf=handoff_pdf(s)
+    before=deepcopy(s);h=without_style_tags(handoff_html(s));t=handoff_text(s);pdf=handoff_pdf(s)
     text='\n'.join(page.extract_text() for page in PdfReader(BytesIO(pdf)).pages)
     for needle in ['Age: 5 years 2 months','BMI: 17.14','Height: 100 cm','Antiepileptic','ETCO2: 40 to 60 mmHg [55]','In: 100 mL (10 mL/kg)']:
         assert needle in h and needle in t and needle in text

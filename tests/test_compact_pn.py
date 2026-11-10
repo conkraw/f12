@@ -1,3 +1,4 @@
+from style_assert_helpers import without_style_tags
 from recovery_helpers import assert_retained
 from models import fields_with_medications
 """Synthetic PN connector and compact print regressions. No patient records."""
@@ -157,7 +158,7 @@ def test_synthetic_18_order_case_is_one_landscape_page_with_all_labs():
 
 
 def test_new_lab_summaries_are_horizontal_and_only_latest_gas():
-    s=sheet();html=handoff_html(s)
+    s=sheet();html=without_style_tags(handoff_html(s))
     assert html.count('<svg ')==4
     assert html.count('class="lab-summary"')==3  # only inflammatory markers print in ID
     fields = fields_with_medications(s)
@@ -178,7 +179,7 @@ def test_mixed_lab_dates_stay_attached_to_each_result():
     card={'title':'Hepatic | latest','kind':'branch','rows':{
         'ALT':{'component':'ALT','value':'21','date':'01/03/2026'},
         'AST':{'component':'AST','value':'32 (H)','date':'01/02/2026'}}}
-    text=horizontal_card_markup(card)
+    text=without_style_tags(horizontal_card_markup(card))
     assert 'ALT: 21 [01/03/26]' in text and 'AST: 32 (H) [01/02/26]' in text
 
 
@@ -233,7 +234,7 @@ def test_same_schema_roundtrip_preserves_mapping_hiding_and_all_order_fields():
     v['settings']['medication_mappings']=upsert_rule([],'fat emulsion','FEN / GI')
     v['settings']['medication_visibility']=set_visibility_rule([],name,True)
     key=generate_key();restored=open_vault(seal_vault(v,key),key)
-    assert restored==v and restored['schema']==32 and upgrade_vault(v)==v
+    assert restored==v and restored['schema']==33 and upgrade_vault(v)==v
 
 
 def test_bounded_small_font_fits_crowded_column_without_deleting_lines():

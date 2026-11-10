@@ -284,7 +284,7 @@ def legacy_v8():
 
 def test_schema8_migration_preserves_all_fields_rules_and_cultures():
     old=legacy_v8();before=deepcopy(old);new=upgrade_vault(old)
-    assert new['schema']==32 and old==before and new['settings']==dict(before['settings'], medication_infusions=[], medication_gi_groups=[], medication_groups=[])
+    assert new['schema']==33 and old==before and new['settings']==dict(before['settings'], medication_infusions=[], medication_gi_groups=[], medication_groups=[])
     for k,val in before['rooms']['P4102'].items():assert new['rooms']['P4102'][k]==val
     assert new['rooms']['P4102']['admission_date']=='' and new['rooms']['P4102']['dosing_weight']==''
     key=generate_key();encrypted=Fernet(key.encode()).encrypt(json.dumps(old).encode())

@@ -1,3 +1,4 @@
+from style_assert_helpers import without_style_tags
 from recovery_helpers import assert_retained
 """Version 6.15 synthetic regressions. No live records or GitHub calls."""
 from copy import deepcopy
@@ -55,7 +56,7 @@ def populated():
 
 def test_source_totals_unchanged_and_top():
     s=populated(); before=deepcopy(s);text=fields_with_medications(s)['FEN / GI']
-    assert text.startswith('Intake: 1200.5 ml\nOutput: 950 ml\nNet: 250.5 ml\n-----\nGI prophylaxis')
+    assert text.startswith('Intake/Output:\nIntake: 1200.5 ml\nOutput: 950 ml\nNet: 250.5 ml\n-----\nGI prophylaxis')
     assert text.index('GI prophylaxis') < text.index('Bowel Regimen') < text.index('Separate nutrition note') < text.index('Synthetic IV fluid')
     assert text.count('sennosides')==2 and 'q24h' in text and 'Nightly' in text
     assert s==before
@@ -200,7 +201,7 @@ def test_latest_archive_migration_preserves_original_fields_and_settings():
     s=new_sheet('P4102');s.pop("feeds", None);s.pop("devices", None);s.pop("neuro_devices", None);s.pop("pacemaker", None);s.pop("diet", None);s.pop("import_warnings", None);s.pop('intake_output');s['fields']['FEN / GI']='Preserve this note'
     old['rooms'][s['room']]=s;original=deepcopy(old)
     new=upgrade_vault(old)
-    assert old==original and new['schema']==SCHEMA_VERSION==32
+    assert old==original and new['schema']==SCHEMA_VERSION==33
     assert new['rooms'][s['room']]==dict(s,intake_output=None,import_warnings={},feeds=None,devices=None,neuro_devices=None,pacemaker=None,diet=None)
     assert new['settings']==dict(old['settings'],medication_gi_groups=[], medication_groups=[])
     key=Fernet.generate_key().decode()
@@ -223,7 +224,7 @@ def test_s_only_sheet_is_not_lost_from_print_all():
 def test_all_exports_match_order_and_keep_repeat_doses():
     s=populated();before=deepcopy(s)
     fields=fields_with_medications(s);text=fields['FEN / GI']
-    html=handoff_html(s);txt=handoff_text(s)
+    html=without_style_tags(handoff_html(s));txt=handoff_text(s)
     pdf=PdfReader(BytesIO(handoff_pdf(s)))
     pdftext='\n'.join(p.extract_text() for p in pdf.pages)
     for result in (text,html,txt,pdftext):

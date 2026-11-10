@@ -10,18 +10,28 @@ from html import escape
 import re
 from medications import match_name, normalized, visible, format_medication
 from output_text import medication_output
+from clinical_style import clinical_markup
 from fluid_balance import balance_text
 from feeds import feeds_text
 from diet import diet_text
 from medication_groups import group_for as special_group, GROUP_SECTIONS
 
-MODES = ("auto", "prophylaxis", "bowel", "diuretic", "antiemetic", "endocrine", "prokinetic", "tpn", "other")
-MODE_LABELS = {"auto": "Automatic", "prophylaxis": "GI prophylaxis", "bowel": "Bowel Regimen", "diuretic": "Diuretics", "antiemetic": "Antiemetics", "endocrine": "Endocrine Medications", "prokinetic": "Prokinetic Agents", "tpn": "TPN", "other": "No GI grouping"}
-GROUP_NAMES = {"prophylaxis": "GI prophylaxis", "bowel": "Bowel Regimen", "diuretic": "Diuretics", "antiemetic": "Antiemetics", "endocrine": "Endocrine Medications", "prokinetic": "Prokinetic Agents", "tpn": "TPN"}
+MODES = ("auto", "prophylaxis", "bowel", "diuretic", "antiemetic", "endocrine", "prokinetic", "tpn", "hypoglycemia", "other")
+MODE_LABELS = {"auto": "Automatic", "prophylaxis": "GI prophylaxis", "bowel": "Bowel Regimen", "diuretic": "Diuretics", "antiemetic": "Antiemetics", "endocrine": "Endocrine Medications", "prokinetic": "Prokinetic Agents", "tpn": "TPN", "hypoglycemia": "Hypoglycemia:", "other": "No GI grouping"}
+GROUP_NAMES = {"prophylaxis": "GI prophylaxis", "bowel": "Bowel Regimen", "diuretic": "Diuretics", "antiemetic": "Antiemetics", "endocrine": "Endocrine Medications", "prokinetic": "Prokinetic Agents", "tpn": "TPN", "hypoglycemia": "Hypoglycemia:"}
 
 
 def automatic_group(row: dict) -> str:
     name = match_name(row.get("name", ""))
+    # Only a documented 50% dextrose infusion. Do not catch D5/D10, a 50 mL
+    # bag, another drug diluted in dextrose, or a one-time D50 rescue bolus.
+    if (re.match(r"^dextrose\s+50(?:\.0+)?\s*%(?=$|[^a-z0-9])", name)
+            and normalized(row.get("route", "")) in {"iv", "intravenous"}
+            and row.get("infusion_mode") != "other"
+            and not re.search(r"\bprn\b|\bas[ -]+needed\b", normalized(row.get("frequency", "")))
+            and (row.get("infusion_mode") == "infusion" or
+                 re.search(r"\bcontinuous\b|\btitrat(?:e|able)\b", normalized(row.get("frequency", ""))))):
+        return "hypoglycemia"
     if (re.match(r"^pediatric\s+2[- ]in[- ]1\s+pn\b", name)
             or re.match(r"^smoflipid\b", name)
             or (name.startswith("fat emulsion ") and "smoflipid" in name)):
@@ -78,7 +88,7 @@ def validate_gi_rules(rules: list[dict]) -> None:
         for key in ("name", "route", "frequency"):
             if not isinstance(rule[key], str) or len(rule[key]) > 4000 or any(c in rule[key] for c in "\n\r\t"):
                 raise ValueError("A FEN/GI display rule contains invalid text.")
-        if not rule["name"] or rule["mode"] not in ("prophylaxis", "bowel", "diuretic", "antiemetic", "endocrine", "prokinetic", "tpn", "other"):
+        if not rule["name"] or rule["mode"] not in ("prophylaxis", "bowel", "diuretic", "antiemetic", "endocrine", "prokinetic", "tpn", "hypoglycemia", "other"):
             raise ValueError("A FEN/GI display rule has an invalid choice.")
         key = (rule["name"], rule["route"], rule["frequency"])
         if key in seen:
@@ -120,7 +130,7 @@ def fen_gi_body(notes: str, rows: list[dict], intake_output: dict | None, rich: 
     sections = []
     totals = balance_text(intake_output, dosing_weight)
     if totals:
-        sections.append(encode(totals))
+        sections.append(("<b>Intake/Output:</b>\n" + clinical_markup(totals, esc)) if rich else "Intake/Output:\n" + totals)
     diet_summary = diet_text(diet, rich, esc)
     if diet_failed:
         diet_summary = ("<b>Diet:</b>" if rich else "Diet:") + " Not updated. Review needed."

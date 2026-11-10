@@ -30,6 +30,7 @@ from viral import viral_text
 from microbiology_display import culture_markup, viral_markup
 from print_time import eastern_print_time, PRINT_TIME_SCRIPT
 from difficult_airway import airway_summary, TITLE as AIRWAY_TITLE
+from clinical_style import clinical_markup as observation_markup
 
 COLUMNS = (("PATIENT", None), ("NEURO", "Neurologic"), ("RESP", "Respiratory"),
            ("CARDIAC", "Cardiovascular"), ("FEN / GI", "FEN / GI"),
@@ -114,7 +115,7 @@ def field_markup(sheet: dict, fields: dict, section: str, esc=escape) -> str:
         return fen_gi_body(sheet["fields"][section], sheet["medications"], sheet["intake_output"], True, esc, feeds=feeds_for_output(sheet), feeds_failed=False, diet=diet_for_output(sheet), diet_failed=False, dosing_weight=sheet["dosing_weight"] if "i" not in sheet["import_warnings"] else "", sheet=sheet)
     if section in INFUSION_SECTIONS:
         body = render_body_blocks(system_body_blocks(section, sheet["fields"][section], sheet["medications"], sheet), True, esc)
-        prefix = esc(infusion_section_prefix(sheet, section, bool(body.strip())))
+        prefix = observation_markup(infusion_section_prefix(sheet, section, bool(body.strip())), esc)
         if section == "Respiratory":
             prefix = re.sub(r"(?m)^Vent Settings$", "<b>Vent Settings</b>", prefix)
         pacing = pacemaker_text(sheet) if section == "Cardiovascular" else ""
@@ -126,7 +127,7 @@ def field_markup(sheet: dict, fields: dict, section: str, esc=escape) -> str:
         if plain and text.endswith(plain):
             return esc(text[:-len(plain)]) + viral_markup(sheet["viral_panel"], esc)
     if section == "Infectious Disease":
-        markup = esc(text)
+        markup = observation_markup(text, esc)
         markup = re.sub(r"(?m)^Drug Levels$", "<b>Drug Levels</b>", markup)
         plain = "" if "f" in sheet["import_warnings"] else cultures_text(sheet["cultures"], empty_none=True)
         if plain:
@@ -284,7 +285,7 @@ def _make_pdf_plan(sheet: dict, page_width: float, font_size: float, *, tight: b
         q = []
         prefix_text = infusion_section_prefix(sheet, section, bool(blocks)).rstrip("\n")
         if prefix_text:
-            prefix_markup = _clinical_markup(prefix_text)
+            prefix_markup = observation_markup(prefix_text, _clinical_markup)
             if section == "Respiratory":
                 prefix_markup = re.sub(r"(?m)^Vent Settings$", "<b>Vent Settings</b>", prefix_markup)
             pacing = pacemaker_text(sheet) if section == "Cardiovascular" else ""

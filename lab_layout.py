@@ -10,6 +10,8 @@ from reportlab.pdfbase.pdfmetrics import stringWidth
 from reportlab.platypus import Flowable, Paragraph
 from reportlab.lib.styles import ParagraphStyle
 from labs import result_cards, short_date, display_component, printable_source_notes
+from clinical_style import clinical_runs, value_markup
+from reportlab.lib.colors import HexColor
 
 NOTE = ('Latest/preceding PER COMPONENT, not confirmed same-draw panels. Dates are shown beside each result. '
         'Same-date ties without collection times follow source order. -- = unavailable or omitted.')
@@ -26,6 +28,28 @@ def ascii_text(s: str) -> str:
     for a, b in {'₂':'2', '−':'-', '–':'-', '—':'-', '≤':'<=', '≥':'>=', 'μ':'u', 'µ':'u'}.items():
         s = s.replace(a, b)
     return s
+
+
+def styled_runs(value, font):
+    """Keep generated labels bold, values normal, and explicit flags colored."""
+    return [(text, 'Times-Bold' if bold else font, color)
+            for text, bold, color in clinical_runs(value)]
+
+
+def styled_width(value, font, size):
+    return sum(stringWidth(text, face, size) for text, face, _ in styled_runs(value, font))
+
+
+def draw_styled_text(c, x, y, value, size, font, align):
+    pieces = styled_runs(value, font)
+    if align == 'center':
+        x -= sum(stringWidth(text, face, size) for text, face, _ in pieces) / 2
+    for text, face, color in pieces:
+        c.setFillColor(HexColor(color or '#000000'))
+        c.setFont(face, size)
+        c.drawString(x, y, text)
+        x += stringWidth(text, face, size)
+    c.setFillColor(HexColor('#000000'))
 
 
 def card_plan(card: dict, width: float) -> tuple[float, list]:
@@ -120,7 +144,7 @@ def tree_text_fits(card: dict, width: float) -> bool:
         row = card['rows'].get(key)
         if row:
             text = row['component'] + ': ' + row['value'] + (' [' + short_date(row['date']) + ']' if row['date'] else '')
-            if stringWidth(ascii_text(text), 'Times-Roman', 6.5) > width-12:
+            if styled_width(ascii_text(text), 'Times-Roman', 6.5) > width-12:
                 return False
     return True
 
@@ -151,9 +175,7 @@ class LabRow(Flowable):
                     _,x1,y1,x2,y2=item;c.line(x0+x1,y0+y1,x0+x2,y0+y2)
                 else:
                     _,x,y,value,size,font,align=item
-                    c.setFont(font,size)
-                    if align=='center':c.drawCentredString(x0+x,y0+y,value)
-                    else:c.drawString(x0+x,y0+y,value)
+                    draw_styled_text(c, x0+x, y0+y, value, size, font, align)
         c.restoreState()
 
 
@@ -171,7 +193,7 @@ def horizontal_card_markup(card: dict) -> str:
         title += (' ' if title else '') + '[' + escape(next(iter(dates))) + ']'
     values = []
     for row in rows:
-        value = escape(display_component(row['component'])) + ': ' + escape(row['value'])
+        value = '<b>' + escape(display_component(row['component'])) + ':</b> ' + value_markup(row['value'])
         if not same_date and row['date']:
             value += ' [' + escape(short_date(row['date'])) + ']'
         values.append(value)
@@ -224,7 +246,10 @@ def laboratory_html(data: dict, include_id_panels: bool = False, blood_gas: dict
                 _, x, y, value, size, font, align = item
                 weight = 'bold' if font == 'Times-Bold' else 'normal'
                 anchor = 'middle' if align == 'center' else 'start'
-                body.append(f'<text x="{x}" y="{height-y}" font-family="Times New Roman,serif" font-size="{size}" font-weight="{weight}" text-anchor="{anchor}">{escape(value)}</text>')
+                spans = ''.join('<tspan font-weight="' + ('bold' if face == 'Times-Bold' else 'normal') +
+                    '" fill="' + (color or '#000000') + '">' + escape(text) + '</tspan>'
+                    for text, face, color in styled_runs(value, font))
+                body.append(f'<text x="{x}" y="{height-y}" font-family="Times New Roman,serif" font-size="{size}" font-weight="{weight}" text-anchor="{anchor}">{spans}</text>')
         pieces.append(f'<svg class="labcard" role="img" aria-label="{escape("Dated laboratory values" if card["kind"] in ("cbc", "bmp") else card["title"], quote=True)}" viewBox="0 0 180 {height}" xmlns="http://www.w3.org/2000/svg">' + ''.join(body) + '</svg>')
     pieces.append('</div>')
     for card in cards:

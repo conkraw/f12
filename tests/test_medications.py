@@ -246,7 +246,7 @@ def legacy_vault():
 def test_legacy_upgrade_keeps_every_note_and_id():
     old=legacy_vault()
     new=upgrade_vault(old)
-    assert new['schema']==32 and old['schema']==1
+    assert new['schema']==33 and old['schema']==1
     assert new['rooms']['P4102']['id']==old['rooms']['P4102']['id']
     for key,value in old['rooms']['P4102']['fields'].items():
         assert new['rooms']['P4102']['fields'][key]==value
@@ -257,7 +257,7 @@ def test_legacy_ciphertext_loads_with_existing_key():
     key=generate_key()
     token=Fernet(key.encode()).encrypt(json.dumps(legacy_vault()).encode())
     loaded=open_vault(token,key)
-    assert loaded['schema']==32
+    assert loaded['schema']==33
     assert 'LEGACY_NOTE' in handoff_text(loaded['rooms']['P4102'])
 
 

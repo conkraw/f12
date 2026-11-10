@@ -37,7 +37,7 @@ from fen_gi import validate_gi_rules, effective_section, fen_gi_body
 
 from import_review import validate_import_warnings, orders_for_output
 
-SCHEMA_VERSION = 32
+SCHEMA_VERSION = 33
 from problem_review import validate_review, empty_review
 from difficult_airway import validate_airway
 from lab_windows import cardiac_labs_summary, theophylline_summary, id_summary, laboratory_data
@@ -209,6 +209,11 @@ def upgrade_vault(vault: dict) -> dict:
         from categories import add_missing_builtin_categories
         vault = deepcopy(vault)
         vault["settings"] = add_missing_builtin_categories(vault["settings"])
+    if version == 32:
+        candidate = deepcopy(vault)
+        candidate["schema"] = SCHEMA_VERSION
+        validate_vault(candidate)
+        return candidate
     if version == 31:
         candidate = deepcopy(vault)
         candidate["schema"] = SCHEMA_VERSION

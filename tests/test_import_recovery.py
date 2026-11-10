@@ -167,7 +167,7 @@ def test_schema15_migration_preserves_every_old_field():
     old['rooms']['P4102']['fields']['FEN / GI'] = 'Keep all notes'
     before = deepcopy(old)
     new = upgrade_vault(old)
-    assert old == before and new['schema'] ==32
+    assert old == before and new['schema'] ==33
     assert new['settings'] == dict(old['settings'], medication_groups=[])
     assert new['rooms']['P4102'] == dict(old['rooms']['P4102'], import_warnings={}, feeds=None,devices=None,neuro_devices=None,pacemaker=None,diet=None)
 

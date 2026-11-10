@@ -289,7 +289,7 @@ def test_review_settings_round_trip_and_schema23_migration_keep_all_old_data():
     old=deepcopy(v);old['schema']=23;old['rooms']['P4102'].pop('problem_review')
     before=deepcopy(old);updated=upgrade_vault(old)
     assert old==before and updated['rooms']==old['rooms'] and updated['settings']==old['settings']
-    assert updated['schema']==32
+    assert updated['schema']==33
 
 
 def test_all_formats_keep_review_separate_and_do_not_mutate():

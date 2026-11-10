@@ -30,6 +30,8 @@ RULES = {
     'CO2': 'Metabolic acidosis', 'MG': 'Hypomagnesemia', 'PHOS': 'Hypophosphatemia',
     'HGB': 'Anemia', 'PLT': 'Thrombocytopenia', 'constipation': 'Constipation',
     'BILITOT': 'Hyperbilirubinemia',
+    'CALCIUM_HIGH': 'Hypercalcemia', 'PHOS_HIGH': 'Hyperphosphatemia',
+    'coagulopathy': 'Coagulopathy',
 }
 LOW_RULES = tuple(k for k in RULES if k in ('NA','K','ALBUMIN','CO2','MG','PHOS','HGB','PLT'))
 LABELS = {'NA':'Sodium', 'K':'Potassium', 'ALBUMIN':'Albumin', 'CO2':'Serum CO2',
@@ -234,6 +236,24 @@ def suggestions(sheet: dict, as_of: datetime | None = None) -> list[dict]:
             and numeric(bilirubin['value'])[1] >= 0):
         add('BILITOT', 'Total bilirubin ' + bilirubin['value'] + ' [' + bilirubin['date'] + '], source marked high',
             'User-requested total-bilirubin high-flag rule. Verify the source reference range and clinical context.')
+    def high_flag(row):
+        if not row or not HIGH.search(row['value']) or LOW.search(row['value']):
+            return False
+        parsed = numeric(row['value'])
+        return bool(parsed and parsed[1] >= 0 and measured(row['value']) and not re.search(
+            r'\b(?:pending|cancelled|canceled|hemolyzed|haemolysed|rejected|invalid)\b', row['value'], re.I))
+    for component, key, label in (("CALCIUM", "CALCIUM_HIGH", "Calcium"),
+                                   ("PHOS", "PHOS_HIGH", "Phosphorus")):
+        row = latest.get(component)
+        if high_flag(row):
+            add(key, label + ' ' + row['value'] + ' [' + row['date'] + '], source marked high',
+                'User-requested high-flag rule. Verify reference range and clinical context.')
+    # PT/INR/aPTT are the coagulation-time screen. A high fibrinogen or an
+    # anti-Xa treatment-monitoring level alone does not establish coagulopathy.
+    coags = [latest[key] for key in ('INR', 'PT', 'PTT') if high_flag(latest.get(key))]
+    if coags:
+        add('coagulopathy', '; '.join(row['component'] + ' ' + row['value'] + ' [' + row['date'] + ']' for row in coags),
+            'High PT/INR/aPTT review rule, not a confirmed diagnosis. Verify anticoagulant treatment, reference ranges and clinical context.')
     if 'g' not in sheet.get('import_warnings', {}):
         rows = [r for r in sheet['labs']['rows'] if r['include'] and canonical(r['component']) == 'CREATININE'
                 and eligible_time(r, now, admission=sheet.get('admission_date', ''))]

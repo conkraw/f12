@@ -1,3 +1,4 @@
+from style_assert_helpers import without_style_tags
 """6.48: recent SBS priority and explicitly documented ventilator-mode fallback.
 
 All source fragments and archive data in this module are synthetic.
@@ -224,7 +225,7 @@ def test_order_is_one_sbs_then_capd_then_wat_in_every_output():
     extra='\n'+block('y','CAPD: 7')+'\n'+block('l','WAT Score:\nWAT-1 total score (0-12): 2')
     s=imported(k='SBS Last 24 Hours:\nLast SBS Ever: SBS -1',extra=extra)
     before=deepcopy(s)
-    outputs=[handoff_text(s,NOW),handoff_html(s,NOW)]
+    outputs=[handoff_text(s,NOW),without_style_tags(handoff_html(s,NOW))]
     for pdf in (handoff_pdf(s,NOW),handoffs_pdf([s],NOW)):
         outputs.append('\n'.join(p.extract_text() for p in PdfReader(BytesIO(pdf)).pages))
     for text in outputs:
@@ -243,7 +244,7 @@ def test_encrypted_roundtrip_and_migration_preserve_existing_data():
     key=generate_key()
     token=Fernet(key.encode()).encrypt(json.dumps(old).encode())
     loaded=open_vault(token,key)
-    assert old==before and loaded['schema']==SCHEMA_VERSION==32
+    assert old==before and loaded['schema']==SCHEMA_VERSION==33
     assert loaded['rooms']==old['rooms'] and loaded['settings']==old['settings']
     loaded['rooms']['P4102']=imported(old=loaded['rooms']['P4102'])
     assert open_vault(seal_vault(loaded,key),key)==loaded

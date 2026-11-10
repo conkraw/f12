@@ -8,7 +8,7 @@ from copy import deepcopy
 import re
 from medications import match_name, normalized
 
-ID_GROUPS = ("antibiotic",)
+ID_GROUPS = ("antibiotic", "antifungal", "antiviral")
 HEME_GROUPS = ("dvt", "antiplatelet", "gcsf")
 CV_GROUPS = ("antiarrhythmic", "antihypertensive", "inotrope", "vasopressor", "adrenocortical", "vasodilator")
 RESP_GROUPS = ("airway_cerebral_steroid", "airway_tone", "antisialorrhea", "beta_agonist",
@@ -23,7 +23,7 @@ MODES = (("auto", "dvt", "fever", "sedative_prn", "paralytic_prn", "antiepilepti
           "paralytic_infusion") + RESP_GROUPS + CV_GROUPS + ID_GROUPS + ("antiplatelet", "gcsf", "other",))
 MODE_LABELS = {
     "auto": "Automatic", "dvt": "DVT Prophylaxis",
-    "antiplatelet": "Antiplatelet Therapy", "gcsf": "G-CSF Stimulator", "antibiotic": "Antibiotics", "fever": "Fever Control",
+    "antiplatelet": "Antiplatelet Therapy", "gcsf": "G-CSF Stimulator", "antibiotic": "Antibiotics", "antifungal": "Antifungals", "antiviral": "Antivirals", "fever": "Fever Control",
     "sedative_prn": "PRN", "paralytic_prn": "Paralytic PRN", "antiepileptic": "Antiepileptic",
     "paralytic_infusion": "Paralytic Infusions",
     "airway_cerebral_steroid": "Airway/Cerebral Steroids",
@@ -41,7 +41,7 @@ MODE_LABELS = {
 }
 GROUP_NAMES = {key: value for key, value in MODE_LABELS.items() if key not in ("auto", "other")}
 GROUP_SECTIONS = {
-    "dvt": "Hematology", "antiplatelet": "Hematology", "gcsf": "Hematology", "antibiotic": "Infectious Disease", "fever": "Neurologic", "sedative_prn": "Neurologic",
+    "dvt": "Hematology", "antiplatelet": "Hematology", "gcsf": "Hematology", "antibiotic": "Infectious Disease", "antifungal": "Infectious Disease", "antiviral": "Infectious Disease", "fever": "Neurologic", "sedative_prn": "Neurologic",
     **{key: "Neurologic" for key in NEURO_PRIORITY_GROUPS + NEURO_OTHER_GROUPS},
     **{key: "Respiratory" for key in RESP_GROUPS},
     **{key: "Cardiovascular" for key in CV_GROUPS},
@@ -102,6 +102,10 @@ def automatic_system_group(row: dict) -> str:
         return "antiplatelet"
     # Organizational defaults only. Existing explicit category assignments win.
     # Erythromycin retains the user's Prokinetic Agents default.
+    if _starts(name, ("micafungin", "fluconazole", "voriconazole", "amphotericin")):
+        return "antifungal"
+    if _starts(name, ("acyclovir", "valacyclovir", "aciclovir", "valaciclovir")):
+        return "antiviral"
     antibiotics = ("cefepime", "ceftriaxone", "cefazolin", "cefotaxime", "ceftazidime",
         "cefuroxime", "cefdinir", "cephalexin", "ceftaroline", "ampicillin",
         "ampicillin-sulbactam", "amoxicillin", "amoxicillin-clavulanate", "penicillin",
@@ -203,7 +207,7 @@ def group_for(row: dict) -> str:
     mode = row.get("group_mode", "auto")
     # An explicit GI override wins over automatic defaults, not over an explicit
     # special-group choice. UI callbacks clear the competing explicit choice.
-    if mode == "auto" and row.get("gi_mode", "auto") in ("prophylaxis", "bowel", "diuretic", "antiemetic", "endocrine", "prokinetic", "tpn"):
+    if mode == "auto" and row.get("gi_mode", "auto") in ("prophylaxis", "bowel", "diuretic", "antiemetic", "endocrine", "prokinetic", "tpn", "hypoglycemia"):
         return ""
     return automatic_group(row) if mode == "auto" else mode if mode in GROUP_NAMES else ""
 

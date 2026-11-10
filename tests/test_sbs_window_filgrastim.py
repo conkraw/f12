@@ -1,3 +1,4 @@
+from style_assert_helpers import without_style_tags
 """6.46: source-scoped SBS boundaries and filgrastim placement. Synthetic data only."""
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
@@ -168,7 +169,7 @@ def test_output_paths_have_no_historical_fallback_and_keep_order(value):
     s = imported('SBS Last 24 Hours: ' + value + '\nLast SBS Ever: SBS 2', extra='\n' + block('y', 'CAPD: 9') + '\n' + block('l', 'WAT Score:\nWAT-1 total score (0-12): 1'))
     before = deepcopy(s)
     expected = 'SBS: ' + (value or 'None')
-    outputs = [handoff_text(s, NOW), handoff_html(s, NOW)]
+    outputs = [handoff_text(s, NOW), without_style_tags(handoff_html(s, NOW))]
     outputs += ['\n'.join(pg.extract_text() for pg in PdfReader(BytesIO(pdf)).pages)
                 for pdf in [handoff_pdf(s, NOW), handoffs_pdf([s], NOW)]]
     for output in outputs:
@@ -217,7 +218,7 @@ def test_migration_adds_group_without_overwriting_custom_settings_or_rooms():
     key = generate_key()
     token = Fernet(key.encode()).encrypt(json.dumps(v).encode())
     restored = open_vault(token, key)
-    assert restored['schema'] == SCHEMA_VERSION == 32 and v == before
+    assert restored['schema'] == SCHEMA_VERSION ==33 and v == before
     assert restored['rooms'] == before['rooms']
     old_settings = deepcopy(restored['settings'])
     old_settings['medication_categories'] = [c for c in old_settings['medication_categories'] if c['id'] != 'group:gcsf']

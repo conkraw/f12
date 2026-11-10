@@ -1,0 +1,136 @@
+aaaaaaaaaaaaaaaaaaaaaaaa
+Diagnoses:
+1. Synthetic formatting demonstration
+Age: 6 y.o. Sex: female
+aaaaaaaaaaaaaaaaaaaaaaaa
+
+bbbbbbbbbbbbbbbbbbbbbbbb
+Medications:
+Medication	Dose	Route	Frequency	Provider	Last Rate	Last Admin
+•	midazolam infusion	0.05 mg/kg/hr	Intravenous	Continuous	Demo Clinician	1 mL/hr at 11/09/26 1500	0.05 mg/kg/hr at 11/09/26 1500
+•	fentanyl injection	10 mcg	Intravenous	q1h PRN	Demo Clinician		
+•	dextrose 50 % infusion	2 mL/hr	Intravenous	Continuous	Demo Clinician	2 mL/hr at 11/09/26 1500	2 mL/hr at 11/09/26 1500
+•	cefepime injection	500 mg	Intravenous	q8h	Demo Clinician		
+•	micafungin IVPB	20 mg	Intravenous	q24h	Demo Clinician		
+•	fluconazole IVPB	100 mg	Intravenous	q24h	Demo Clinician		
+•	acyclovir IVPB	200 mg	Intravenous	q8h	Demo Clinician		
+bbbbbbbbbbbbbbbbbbbbbbbb
+
+cccccccccccccccccccccccc
+Invasive Ventilation:
+Mode: Vent Mode: Pressure Control - Intermittent Mandatory Ventilation
+Respiratory Rate: Resp Rate (Set): 16
+Set PIP: PIP Set (cm H2O): 22 cm H2O
+Set PEEP: PEEP (cm H2O): 6 cm H2O
+FiO2: FiO2 (%): 40 %
+cccccccccccccccccccccccc
+
+dddddddddddddddddddddddd
+Non-invasive Ventilation:
+O2 Delivery Method: Endotracheal tube
+FiO2 (%): 40 %
+dddddddddddddddddddddddd
+
+eeeeeeeeeeeeeeeeeeeeeeee
+VITALS:
+Temp: [36.5 C-38.2 C] 37.1 C
+Heart Rate: [85-122] 99
+Resp: [16-28] 20
+BP: (90-110)/(45-65) 100/60
+FiO2 (%): [30 %-40 %] 40 %
+SpO2 Avg: 98 % Min: 94 % Max: 100 %
+Last SPO2: SpO2: 98 %
+ETCO2 (mmHg) Avg: 37 mmHg Min: 32 mmHg Max: 41 mmHg
+Last ETCO2: ETCO2 (mmHg): 36 mmHg
+CVP (mean) Avg: 8 mmHg Min: 5 mmHg Max: 12 mmHg
+Last CVP: CVP (mean): 8 mmHg
+eeeeeeeeeeeeeeeeeeeeeeee
+
+ffffffffffffffffffffffff
+CULTURES:
+No results found for the last 90 days.
+ffffffffffffffffffffffff
+
+gggggggggggggggggggggggg
+LABS:
+Component	Value	Date
+NA	132 (L)	11/09/2026
+NA	135	11/08/2026
+K	3.1 (L)	11/09/2026
+K	3.8	11/08/2026
+CL	99	11/09/2026
+CO2	24	11/09/2026
+BUN	12	11/09/2026
+CREATININE	0.4	11/09/2026
+GLUCOSE	94	11/09/2026
+CA	11.4 (H)	11/09/2026
+MG	1.5 (L)	11/09/2026
+PHOS	7.1 (H)	11/09/2026
+AST	60 (H)	11/09/2026
+ALT	22	11/09/2026
+ALBUMIN	2.9 (L)	11/09/2026
+BILITOT	1.8 (H)	11/09/2026
+PT	17 (H)	11/09/2026
+INR	1.4 (H)	11/09/2026
+PTT	40 (H)	11/09/2026
+FIB	210	11/09/2026
+CRP	2.1 (H)	11/09/2026
+PROCAL	0.2 (H)	11/09/2026
+VANCOTROUGH	18 (H)	11/09/2026
+gggggggggggggggggggggggg
+
+iiiiiiiiiiiiiiiiiiiiiiii
+NUTRITION:
+Wt Readings from Last 1 Encounters:
+11/09/26	20 kg
+Dosing Weight: 20 kg
+iiiiiiiiiiiiiiiiiiiiiiii
+
+kkkkkkkkkkkkkkkkkkkkkkkk
+SBS Last 24 Hours: SBS -1 [11/09/2026 15:00]
+Last SBS Ever: SBS -2
+kkkkkkkkkkkkkkkkkkkkkkkk
+
+llllllllllllllllllllllll
+WAT Score:
+WAT-1 total score (0-12): 2
+llllllllllllllllllllllll
+
+mmmmmmmmmmmmmmmmmmmmmmmm
+ICP Trends:
+ICP Range: ICP Mean (mmHg) Avg: 10 mmHg Min: 1 mmHg Max: 22 mmHg
+Last ICP: ICP Mean (mmHg): 10 mmHg
+CPP Range: CPP Avg: 65 mmHg Min: 50 mmHg Max: 80 mmHg
+Last CPP: CPP: 65 mmHg
+mmmmmmmmmmmmmmmmmmmmmmmm
+
+nnnnnnnnnnnnnnnnnnnnnnnn
+Date of Admission: 11/01/2026
+nnnnnnnnnnnnnnnnnnnnnnnn
+
+qqqqqqqqqqqqqqqqqqqqqqqq
+Results from last 7 days
+Lab	Units	11/09/26
+1100	11/08/26
+1100
+WBC AUTO	K/uL	15.2*	10.3
+HEMOGLOBIN	g/dL	9.5*	10.1*
+HEMATOCRIT	%	28.5*	30.3*
+MCV	fL	82	83
+PLATELETS AUTO	K/uL	120*	190
+NEUTROS ABS	K/uL	10.4*	6.4
+LYMPHS ABS AUTO	K/uL	1.2	1.6
+qqqqqqqqqqqqqqqqqqqqqqqq
+
+ssssssssssssssssssssssss
+Intake/Output Summary (Last 24 hours) at 11/9/2026 1500
+Last data filed at 11/9/2026 1400
+Gross per 24 hour
+Intake	1200 ml
+Output	900 ml
+Net	300 ml
+ssssssssssssssssssssssss
+
+yyyyyyyyyyyyyyyyyyyyyyyy
+CAPD: 3
+yyyyyyyyyyyyyyyyyyyyyyyy

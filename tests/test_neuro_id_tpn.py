@@ -1,3 +1,4 @@
+from style_assert_helpers import without_style_tags
 """6.45 regression coverage with synthetic inputs, no live repository or patient data."""
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
@@ -47,7 +48,7 @@ def timestamp(delta=0):
 ])
 def test_icp_exact_wrappers_and_wrapped_stats_import_to_output(variant):
     s=imported(block('m',variant));before=deepcopy(s)
-    for output in [handoff_text(s,NOW),handoff_html(s,NOW),PdfReader(BytesIO(handoff_pdf(s,NOW))).pages[0].extract_text()]:
+    for output in [handoff_text(s,NOW),without_style_tags(handoff_html(s,NOW)),PdfReader(BytesIO(handoff_pdf(s,NOW))).pages[0].extract_text()]:
         assert 'ICP: 1-22 [11 mm Hg]' in output
         assert 'CPP: 31-97 [52 mm Hg]' in output
         assert 'Avg: 9.6' not in output
@@ -285,4 +286,4 @@ def test_add_sbs_callback_and_room_guard(app):
 def test_new_groups_catalog_and_current_archive_validation():
     ids={r['id'] for r in default_categories()}
     assert {'group:antiplatelet','group:antibiotic','gi:tpn'}<=ids
-    v=new_vault();assert upgrade_vault(v) is v and SCHEMA_VERSION==32
+    v=new_vault();assert upgrade_vault(v) is v and SCHEMA_VERSION==33

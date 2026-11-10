@@ -30,8 +30,8 @@ def default_categories() -> list[dict]:
             order = 5
         elif key == "antiplatelet":
             order = 10
-        elif key == "antibiotic":
-            order = 10
+        elif key in ("antibiotic", "antifungal", "antiviral"):
+            order = 10 + 10 * ("antibiotic", "antifungal", "antiviral").index(key)
         result.append(dict(id="group:" + key, name=name, section=GROUP_SECTIONS[key], parent="", order=order))
     for n, (key, name) in enumerate(GI_NAMES.items()):
         result.append(dict(id="gi:" + key, name=name, section="FEN / GI", parent="", order=10 if key == "tpn" else 20 + 10*n))

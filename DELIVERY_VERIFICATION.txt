@@ -1,12 +1,7 @@
-PICU Handoff 6.53
-Base: supplied PICU652.zip, CRC and 320 manifest entries verified.
-Full clean-extraction regression suite: 4380 passed in 94.32s.
-New focused regression tests: 70.
-Runtime changes: app.py, workspace_ui.py (new), requirements.txt.
-Minimum Streamlit version: 1.55. Archive schema unchanged.
-Clinical parsers, export code and storage modules unchanged byte-for-byte.
-Synthetic text/HTML output is identical. PDF rendered pixels are identical.
-Local UI simulation median preview render: 0.185s to 0.054s.
-No live Streamlit/browser or production shared-storage test was performed.
-No credentials or production patient archive accessed or modified.
-SHA256SUMS.txt covers every other delivered file.
+PICU 6.54
+Base: supplied PICU653.zip
+4512 tests passed from clean source ZIP extraction.
+130 focused new checks passed.
+PDF preview rendered and inspected, one landscape page at 8 points.
+Runtime Python files match clean-tested source exactly.
+Full final archive CRC and manifest verified.
