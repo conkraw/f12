@@ -1,0 +1,27 @@
+Version 6.21 | Unified DVT Prophylaxis group
+
+Heparin and cangrelor infusions stay in the same DVT Prophylaxis group as
+enoxaparin and other orders assigned to this category. The infusion medication
+name remains bold, and its ordered dose stays bold and underlined. A different
+recorded pump rate appears separately. No extra Heme Infusions heading is
+printed for these DVT orders. Non-infusion entries keep their compact format.
+Other unrelated hematology infusions may still use a Heme Infusions heading.
+
+The automatic group rules and manual choices are unchanged. Hidden and excluded
+orders remain hidden. Each order appears once. Source medication fields, rates,
+notes, saved mappings, room save timestamps and the encryption schema are not
+changed. This is a display correction, not an assessment of drug indication.
+Respiratory, neurologic and cardiovascular infusion formatting is unchanged.
+
+Existing saved handoffs use the new grouping when reopened or exported. No
+re-paste or remapping is needed solely for the new layout.
+
+Install: save open work, extract PICU621.zip, open
+PICU_Handoff_v6_21_DVT_Grouping, and replace the application repository files
+with its contents. Keep app.py at the root and restart the deployment.
+Keep Streamlit Secrets, password, encryption key, token and private data
+repository unchanged. Do not run create_secrets.py again. No new dependencies
+or storage-format changes are required. No direct GitHub changes were made.
+
+See TEST_REPORT.md for checks and limitations. The preview is synthetic and
+not a medication regimen or dosing recommendation.

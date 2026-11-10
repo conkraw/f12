@@ -1,0 +1,62 @@
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+Diagnoses:
+1. Synthetic ventilator example
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+Medications:
+Current Facility-Administered Medications
+Medication	Dose	Route	Frequency	Provider	Last Rate	Last Admin
+•	albuterol continuous nebulizer solution	5 mg/hr	Nebulization	Continuous	Test Clinician	1 mL/hr at 11/05/26 1404	
+•	dexmedeTOMIDine infusion	1.2 mcg/kg/hr (Dosing Weight)	Intravenous	Continuous	Test Clinician	3.48 mL/hr at 11/05/26 1900	
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+
+cccccccccccccccccccccccccccccccc
+Invasive Ventilation:
+Vent Mode: Volume Targeted Pressure Control - Intermittent Mandatory Ventilation
+FiO2 (%): 35 %
+Resp Rate (Set): 16
+Vt (Set, mL): 160 mL
+Vt (observed, mL): 162 mL
+PEEP (cm H2O): 5 cm H2O
+Mean Airway Pressure: 11
+Insp Time (sec): 1 sec
+PIP Observed (cm H2O): 26 cm H2O
+Pressure Support (cm H2O): 10 cm H20
+Trigger Sensitivity Flow (L/min): 0.4 L/min
+cccccccccccccccccccccccccccccccc
+
+dddddddddddddddddddddddddddddddd
+Non-invasive Ventilation:
+O2 Delivery Method: Endotracheal tube
+FiO2 (%): 35 %
+dddddddddddddddddddddddddddddddd
+
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+VITALS:
+Heart Rate: [100-140] 115
+Resp: [16] 16
+BP: (90-110)/(45-60) 100/55
+Temp: [36.5 C-37.2 C] 37.0 C
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+
+iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii
+NUTRITION:
+Wt Readings from Last 1 Encounters:
+11/03/26	11.6 kg (44%, Z= -0.15)*
+
+* Growth percentiles are based on a reference chart.
+iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii
+
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+Target Arousal Level:
+Target Arousal Level (SBS): SBS -1
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+
+llllllllllllllllllllllllllllllll
+WAT Score:
+llllllllllllllllllllllllllllllll
+
+mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+ICP Trends:
+mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm

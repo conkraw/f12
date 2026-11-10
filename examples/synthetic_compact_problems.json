@@ -1,0 +1,605 @@
+{
+  "id": "00000000000040008000000000000031",
+  "room": "P4102",
+  "created_at": "2026-11-08T16:52:47+00:00",
+  "updated_at": null,
+  "fields": {
+    "Diagnoses": "Synthetic demonstration only",
+    "Demographics / Weight": "",
+    "Neurologic": "Note 01: synthetic observation.\nNote 02: synthetic observation.\nNote 03: synthetic observation.\nNote 04: synthetic observation.\nNote 05: synthetic observation.\nNote 06: synthetic observation.\nNote 07: synthetic observation.\nNote 08: synthetic observation.\nNote 09: synthetic observation.\nNote 10: synthetic observation.\nNote 11: synthetic observation.\nNote 12: synthetic observation.\nNote 13: synthetic observation.\nNote 14: synthetic observation.\nNote 15: synthetic observation.\nNote 16: synthetic observation.\nNote 17: synthetic observation.\nNote 18: synthetic observation.\nNote 19: synthetic observation.\nNote 20: synthetic observation.\nNote 21: synthetic observation.\nNote 22: synthetic observation.\nNote 23: synthetic observation.\nNote 24: synthetic observation.\nNote 25: synthetic observation.\nNote 26: synthetic observation.\nNote 27: synthetic observation.\nNote 28: synthetic observation.\nNote 29: synthetic observation.\nNote 30: synthetic observation.\nNote 31: synthetic observation.\nNote 32: synthetic observation.\nNote 33: synthetic observation.\nNote 34: synthetic observation.",
+    "Respiratory": "",
+    "Cardiovascular": "",
+    "FEN / GI": "",
+    "Hematology": "",
+    "Infectious Disease": "",
+    "Labs": "",
+    "Skin / Wounds": "",
+    "Tasks": "",
+    "Other": "",
+    "Other Medications": "",
+    "Lab Results / Trends": "",
+    "Goals / Follow-up": "Synthetic example. Verify source values before clinical use.",
+    "Airway": "",
+    "Last Intubation": "",
+    "Access": "",
+    "Drains / Tubes": ""
+  },
+  "medications": [
+    {
+      "id": "fe342747f53e4a9bb1b83f7fe654fc8a",
+      "name": "ceftriaxone injection",
+      "dose": "300 mg",
+      "route": "Intravenous",
+      "frequency": "q24h",
+      "last_rate": "",
+      "rate_time": "",
+      "section": "Infectious Disease",
+      "custom_text": "",
+      "include": true,
+      "warnings": [],
+      "hidden": false
+    },
+    {
+      "id": "f9f9d09d24aa40ce9d7f10a3dd5b65de",
+      "name": "polyethylene glycol powder",
+      "dose": "4 g",
+      "route": "Oral",
+      "frequency": "Daily",
+      "last_rate": "",
+      "rate_time": "",
+      "section": "Other Medications",
+      "custom_text": "",
+      "include": true,
+      "warnings": [],
+      "hidden": false
+    },
+    {
+      "id": "cb42fa83def14394886dcff6c0b77ab7",
+      "name": "furosemide injection",
+      "dose": "5 mg",
+      "route": "Intravenous",
+      "frequency": "q12h",
+      "last_rate": "",
+      "rate_time": "",
+      "section": "Other Medications",
+      "custom_text": "",
+      "include": true,
+      "warnings": [],
+      "hidden": false
+    },
+    {
+      "id": "4141919af349489d9a75802b6022ca2b",
+      "name": "levetiracetam solution",
+      "dose": "100 mg",
+      "route": "Per NG Tube",
+      "frequency": "q12h",
+      "last_rate": "",
+      "rate_time": "",
+      "section": "Other Medications",
+      "custom_text": "",
+      "include": true,
+      "warnings": [],
+      "hidden": false
+    }
+  ],
+  "ventilation": null,
+  "noninvasive": [
+    {
+      "device": "HFNC",
+      "values": {
+        "Flow": "8 L/min",
+        "FiO2": "35 %"
+      },
+      "flow_inferred": false,
+      "pressure_inferred": false
+    }
+  ],
+  "vitals": [
+    {
+      "label": "Temp",
+      "value": "[36.5-37.5] 37.2 C",
+      "section": "Infectious Disease",
+      "include": true
+    },
+    {
+      "label": "Heart Rate",
+      "value": "[90-130] 110",
+      "section": "Cardiovascular",
+      "include": true
+    },
+    {
+      "label": "Resp",
+      "value": "[18-30] 24",
+      "section": "Respiratory",
+      "include": true
+    },
+    {
+      "label": "BP",
+      "value": "(90-110)/(45-60) 100/55",
+      "section": "Cardiovascular",
+      "include": true
+    },
+    {
+      "label": "SpO2",
+      "value": "94% to 100%",
+      "section": "Respiratory",
+      "include": true
+    },
+    {
+      "label": "Last SpO2",
+      "value": "98 %",
+      "section": "Respiratory",
+      "include": true
+    },
+    {
+      "label": "ETCO2",
+      "value": "35 to 45 mmHg",
+      "section": "Respiratory",
+      "include": true
+    },
+    {
+      "label": "Last ETCO2",
+      "value": "39 mmHg",
+      "section": "Respiratory",
+      "include": true
+    }
+  ],
+  "labs": {
+    "rows": [
+      {
+        "id": "d32f683d29d6465488fca7cdaed70e37",
+        "component": "WBC",
+        "value": "8.7",
+        "date": "11/08/2026 12:00",
+        "panel": "CBC",
+        "include": true
+      },
+      {
+        "id": "e64c2a6c0599417db57b5f49907aea55",
+        "component": "WBC",
+        "value": "9.2",
+        "date": "11/07/2026 12:00",
+        "panel": "CBC",
+        "include": true
+      },
+      {
+        "id": "b05cbebc747c4ae48e0e436fcff1a3af",
+        "component": "HGB",
+        "value": "10.2 (L)",
+        "date": "11/08/2026 12:00",
+        "panel": "CBC",
+        "include": true
+      },
+      {
+        "id": "dd3bff59a5aa471ba34694969976935b",
+        "component": "HGB",
+        "value": "10.8 (L)",
+        "date": "11/07/2026 12:00",
+        "panel": "CBC",
+        "include": true
+      },
+      {
+        "id": "ae049c9fe53b4cd7a386c213d445aae2",
+        "component": "HCT",
+        "value": "31 (L)",
+        "date": "11/08/2026 12:00",
+        "panel": "CBC",
+        "include": true
+      },
+      {
+        "id": "187f0584ad8647f1be6b015ac6aef7b7",
+        "component": "HCT",
+        "value": "33 (L)",
+        "date": "11/07/2026 12:00",
+        "panel": "CBC",
+        "include": true
+      },
+      {
+        "id": "3a84edced10d479ba25689741f69eaf3",
+        "component": "PLT",
+        "value": "140 (L)",
+        "date": "11/08/2026 12:00",
+        "panel": "CBC",
+        "include": true
+      },
+      {
+        "id": "d0546c7e92f44b50b99f81f3d10ba8f5",
+        "component": "PLT",
+        "value": "160",
+        "date": "11/07/2026 12:00",
+        "panel": "CBC",
+        "include": true
+      },
+      {
+        "id": "e1190889e8df46fb9603218638d599b6",
+        "component": "NEUTROABS",
+        "value": "5.3",
+        "date": "11/08/2026 12:00",
+        "panel": "CBC",
+        "include": true
+      },
+      {
+        "id": "a5822b02f51940e6982f787f7b412b39",
+        "component": "LYMPHSABS",
+        "value": "2.1",
+        "date": "11/08/2026 12:00",
+        "panel": "CBC",
+        "include": true
+      },
+      {
+        "id": "275c33b4a1df4805b41c82c8eedbd3b1",
+        "component": "GLUCOSE",
+        "value": "102",
+        "date": "11/08/2026 12:00",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "106f64ecf89c4246b7e6f3bd473edfa1",
+        "component": "GLUCOSE",
+        "value": "98",
+        "date": "11/07/2026 12:00",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "0b5ac92088e348879d29c2625f7c74c8",
+        "component": "NA",
+        "value": "132 (L)",
+        "date": "11/08/2026 12:00",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "b7dc171f6c2a442385cd261bad64d371",
+        "component": "NA",
+        "value": "134 (L)",
+        "date": "11/07/2026 12:00",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "dbe3721d989c454989a5f2614c379ab9",
+        "component": "K",
+        "value": "3.2 (L)",
+        "date": "11/08/2026 12:00",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "ed63b9f643dc44c58a3d44df2231abbd",
+        "component": "K",
+        "value": "3.6",
+        "date": "11/07/2026 12:00",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "93137a4e163f4901aeba3e93711de8ca",
+        "component": "CL",
+        "value": "99",
+        "date": "11/08/2026 12:00",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "022b2ca4213b44fea94d58fca7496545",
+        "component": "CL",
+        "value": "100",
+        "date": "11/07/2026 12:00",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "6f151201ab97459fa4c75b753fb4df64",
+        "component": "CO2",
+        "value": "23",
+        "date": "11/08/2026 12:00",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "af6e5a6dbe484fca94628838e7928bbb",
+        "component": "CO2",
+        "value": "24",
+        "date": "11/07/2026 12:00",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "614aae4842584541800532e64d1d1168",
+        "component": "BUN",
+        "value": "12",
+        "date": "11/08/2026 12:00",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "cd4e14eca5c243e4ad0066d3aad0feb9",
+        "component": "BUN",
+        "value": "10",
+        "date": "11/07/2026 12:00",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "5299ddc62b8842519bcf5936b11d92d4",
+        "component": "CREATININE",
+        "value": "0.42",
+        "date": "11/08/2026 12:00",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "6df56ec7b82143ee989ace61eee35050",
+        "component": "CREATININE",
+        "value": "0.40",
+        "date": "11/07/2026 12:00",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "7699888b85b74e0faf1a6036c28df5c3",
+        "component": "MG",
+        "value": "1.9",
+        "date": "11/08/2026 12:00",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "697ea52d04e84815b2fde10f714d8003",
+        "component": "MG",
+        "value": "2.0",
+        "date": "11/07/2026 12:00",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "a2d4482118164296aa6ce8c32cb860b7",
+        "component": "PHOS",
+        "value": "4.5",
+        "date": "11/08/2026 12:00",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "006da6d4aaa041a09de78936fc4d496a",
+        "component": "PHOS",
+        "value": "4.6",
+        "date": "11/07/2026 12:00",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "b887df58fd344106a0e8aa6f9ef3bc56",
+        "component": "CA",
+        "value": "9.3",
+        "date": "11/08/2026 12:00",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "c83350ba3f1a472cbf11cf456b43ec60",
+        "component": "CA",
+        "value": "9.4",
+        "date": "11/07/2026 12:00",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "29838242de2a4763a11041a7db96fb17",
+        "component": "ALT",
+        "value": "22",
+        "date": "11/08/2026 12:00",
+        "panel": "Hepatic",
+        "include": true
+      },
+      {
+        "id": "8e48b623746c4508a687c5193de68cbb",
+        "component": "AST",
+        "value": "30",
+        "date": "11/08/2026 12:00",
+        "panel": "Hepatic",
+        "include": true
+      },
+      {
+        "id": "dcb485908da74268bba935f6422bdff1",
+        "component": "ALBUMIN",
+        "value": "3.8",
+        "date": "11/08/2026 12:00",
+        "panel": "Hepatic",
+        "include": true
+      },
+      {
+        "id": "4108e7af61ae4e3b86b78eed73b0f382",
+        "component": "INR",
+        "value": "1.0",
+        "date": "11/08/2026 12:00",
+        "panel": "Coagulation",
+        "include": true
+      },
+      {
+        "id": "6bfabbc356e54448b1e849a3615ace63",
+        "component": "PT",
+        "value": "13.1",
+        "date": "11/08/2026 12:00",
+        "panel": "Coagulation",
+        "include": true
+      },
+      {
+        "id": "63101a0ae5d2416fa50cb6af14894d5f",
+        "component": "PTT",
+        "value": "28",
+        "date": "11/08/2026 12:00",
+        "panel": "Coagulation",
+        "include": true
+      },
+      {
+        "id": "36dc1942e5534c768cfd7ba4b4d39ffb",
+        "component": "LACWB",
+        "value": "1.1 mmol/L",
+        "date": "11/08/2026 13:30",
+        "panel": "Lactate",
+        "include": true
+      },
+      {
+        "id": "78596611bc6b476c9704e9a54da6d683",
+        "component": "LACTATEVEN",
+        "value": "1.8 mmol/L",
+        "date": "11/07/2026 18:30",
+        "panel": "Lactate",
+        "include": true
+      },
+      {
+        "id": "98d147a6b0ca4a1e9894d5af71da7632",
+        "component": "LAC",
+        "value": "8.2",
+        "date": "08/01/2026",
+        "panel": "Lactate",
+        "include": true
+      },
+      {
+        "id": "c92f028d88a84ecc9d7eede48790e72b",
+        "component": "THEOPH",
+        "value": "10.5 mg/L",
+        "date": "11/08/2026 09:00",
+        "panel": "Respiratory drug levels",
+        "include": true
+      },
+      {
+        "id": "6ad6da5c15bc4cb483a5899c84aae710",
+        "component": "THEOPH",
+        "value": "8.1",
+        "date": "10/01/2026",
+        "panel": "Respiratory drug levels",
+        "include": true
+      },
+      {
+        "id": "ea8f2a7745ce4d10ada25c36ab399f27",
+        "component": "CRP",
+        "value": "1.2 (H)",
+        "date": "11/07/2026 12:00",
+        "panel": "Inflammatory",
+        "include": true
+      },
+      {
+        "id": "87c7abfc2cab4851bc013fb9133f19e1",
+        "component": "CRP",
+        "value": "7.1 (H)",
+        "date": "09/01/2026",
+        "panel": "Inflammatory",
+        "include": true
+      },
+      {
+        "id": "dc884782411b4618a2fafd4e50083b95",
+        "component": "PROCAL",
+        "value": "0.12",
+        "date": "11/08/2026 12:00",
+        "panel": "Inflammatory",
+        "include": true
+      },
+      {
+        "id": "3a00c44a74f4492786c56ebb6bc4be8b",
+        "component": "CK",
+        "value": "215 U/L",
+        "date": "11/08/2026 12:00",
+        "panel": "Other labs",
+        "include": true
+      },
+      {
+        "id": "0da619e49f8b469fbfb7b3f5ed843212",
+        "component": "CK",
+        "value": "9999",
+        "date": "08/01/2026",
+        "panel": "Other labs",
+        "include": true
+      },
+      {
+        "id": "8551f6a03d05460c94df5fd5a3db1dd8",
+        "component": "NTPROBNP",
+        "value": "420 (H)",
+        "date": "10/25/2026",
+        "panel": "Other labs",
+        "include": true
+      }
+    ],
+    "notes": []
+  },
+  "neuro_vitals": {
+    "k": [],
+    "l": [],
+    "m": []
+  },
+  "nutrition": {
+    "weight": "18 kg",
+    "z_score": "",
+    "include": true
+  },
+  "cultures": {
+    "rows": [
+      {
+        "id": "e8229c212b68427f8dc0d8b6c876e6a2",
+        "date": "11/07/26",
+        "specimen": "Blood, Venous",
+        "organisms": [
+          "No growth (Preliminary)"
+        ],
+        "include": true
+      }
+    ],
+    "notes": []
+  },
+  "dosing_weight": "18 kg",
+  "admission_date": "11/05/2026",
+  "viral_panel": {
+    "rows": []
+  },
+  "blood_gas": null,
+  "cbc": null,
+  "recurring_orders": null,
+  "intake_output": {
+    "intake": "900 ml",
+    "output": "720 ml",
+    "net": "180 ml",
+    "period": "Last 24 hours",
+    "as_of": "11/8/2026 1400",
+    "last_filed": "11/8/2026 1300",
+    "include": true
+  },
+  "feeds": null,
+  "devices": {
+    "rows": [
+      {
+        "id": "8b22772a601b4ffca46130b61705f785",
+        "kind": "PIV",
+        "label": "PIV Right Forearm",
+        "date": "11/07/26",
+        "size": "",
+        "secured": "",
+        "status": "",
+        "removed": false,
+        "include": true
+      }
+    ]
+  },
+  "neuro_devices": null,
+  "pacemaker": null,
+  "diet": {
+    "rows": [
+      {
+        "id": "d5dbb32f1c9e47b8abeda3ab7e5b9d9e",
+        "source": "Pediatric diet Regular: General starting at 11/08 0900",
+        "text": "Peds Regular",
+        "include": true
+      }
+    ]
+  },
+  "import_warnings": {},
+  "anthropometrics": {
+    "age": "18 months",
+    "sex": "Male",
+    "bmi": "17.5 kg/m\u00b2",
+    "height": "80 cm",
+    "bsa": "0.45 m\u00b2"
+  }
+}

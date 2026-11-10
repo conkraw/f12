@@ -1,0 +1,55 @@
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+Diagnoses:
+1. Synthetic practice handoff
+2. Example condition for layout testing
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+Medications:
+Current Facility-Administered Medications
+Medication	Dose	Route	Frequency	Provider	Last Rate	Last Admin
+•	acetaminophen injection 160 mg	10 mg/kg (Dosing Weight)	Intravenous	q4h	Test Clinician		
+•	dexAMETHasone (Decadron) syringe 1 mg	1 mg	Intravenous	q12h	Test Clinician		
+    Followed by
+•	[START ON 11/6/2026] dexAMETHasone (Decadron) syringe 0.5 mg	0.5 mg	Intravenous	q12h	Test Clinician		
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+
+cccccccccccccccccccccccccccccccc
+Invasive Ventilation:
+cccccccccccccccccccccccccccccccc
+
+dddddddddddddddddddddddddddddddd
+Non-invasive Ventilation:
+dddddddddddddddddddddddddddddddd
+
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+VITALS:
+Heart Rate: [90-140] 110
+Resp: [18-30] 22
+BP: (90-110)/(45-65) 100/55
+Temp: [36.5 C-37.2 C] 36.8 C
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+
+iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii
+NUTRITION:
+Wt Readings from Last 1 Encounters:
+10/31/26	15.3 kg (66%, Z= 0.41)*
+
+* Growth percentiles are based on a reference chart.
+iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii
+
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+Target Arousal Level:
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+
+llllllllllllllllllllllllllllllll
+WAT Score:
+WAT-1 Total Score
+WAT-1 total score (0-12): 0
+llllllllllllllllllllllllllllllll
+
+mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+ICP Trends:
+ICP Mean (mmHg): 5 mmHg
+CPP: 72 mmHg
+mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm

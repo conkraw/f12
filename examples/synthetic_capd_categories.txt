@@ -1,0 +1,104 @@
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+Diagnoses:
+1. Synthetic layout example
+Age: 15 y.o. Sex: Female
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+Medications:
+Current Facility-Administered Medications
+Medication	Dose	Route	Frequency	Provider	Last Rate	Last Admin
+•	midazolam infusion	0.08 mg/kg/hr	Intravenous	Continuous	Synthetic example	5.28 mL/hr at 11/08/26 2200	0.08 mg/kg/hr at 11/08/26 2200
+•	midazolam injection	2 mg	Intravenous	q1h PRN	Synthetic example		
+•	levetiracetam solution	500 mg	Per G Tube	q12h	Synthetic example		
+•	albuterol inhaler	2 puff	Inhalation	q4h	Synthetic example		
+•	diphenhydramine solution	12.5 mg	Per G Tube	q6h PRN	Synthetic example		
+•	erythromycin suspension	125 mg	Per G Tube	q8h	Synthetic example		
+•	prucalopride tablet	1 mg	Oral	Daily	Synthetic example		
+•	pantoprazole injection	40 mg	Intravenous	Daily	Synthetic example		
+•	melatonin tablet	3 mg	Per G Tube	Nightly	Synthetic example		
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+
+cccccccccccccccccccccccccccccccc
+Invasive Ventilation:
+Mode: Vent Mode: Volume Targeted Pressure Control - PS
+Respiratory Rate: Resp Rate (Set): 10
+Set PIP:
+Observed PIP: PIP Observed (cm H2O) Avg: 15.4 cm H2O Min: 15 cm H2O Max: 15.9 cm H2O
+Set TV: Vt (Set, mL): 450 mL (safety vt)
+Observed TV: No data recorded
+Set PEEP: PEEP (cm H2O): 5 cm H2O
+Inspiratory Time:
+FiO2:
+Pressure Support:
+Home Ventilator Settings:
+Pmin: Pmin: 10 cmH2O
+Pmax: Pmax: 20 cmH2O
+Timin: Ti Min: 0.9
+Timax: Ti Max: 1.2
+cccccccccccccccccccccccccccccccc
+
+dddddddddddddddddddddddddddddddd
+Non-invasive Ventilation:
+O2 Delivery Method: Trach tube
+FiO2 (%): 21 %
+dddddddddddddddddddddddddddddddd
+
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+VITALS:
+Heart Rate: [60-100] 95
+Resp: [10-24] 14
+BP: (99-118)/(44-76) 110/69
+SpO2 Avg: 96.7 % Min: 94 % Max: 100 %
+Last SPO2: SpO2: 98 %
+ETCO2 (mmHg) Avg: 37.1 mmHg Min: 35 mmHg Max: 42 mmHg
+Last ETCO2: ETCO2 (mmHg): 36 mmHg
+Temp: [36.7 C-37.4 C] 37.4 C
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+
+iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii
+NUTRITION:
+Weight: 70 kg
+Dosing Weight: 66 kg
+iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii
+
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+Target Arousal Level:
+Target Arousal Level (SBS): SBS 0
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+
+llllllllllllllllllllllllllllllll
+WAT Score:
+WAT-1 total score (0-12): 3
+llllllllllllllllllllllllllllllll
+
+yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+CAPD: Cornell Assessment of Pediatric Delirium Score: 24
+yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+
+ssssssssssssssssssssssssssssssss
+Intake/Output Summary (Last 24 hours) at 11/8/2026 2304
+Last data filed at 11/8/2026 2300
+Gross per 24 hour
+Intake	1876.54 ml
+Output	1003 ml
+Net	873.54 ml
+ssssssssssssssssssssssssssssssss
+
+tttttttttttttttttttttttttttttttt
+Gastrostomy/Enterostomy Percutaneous endoscopic gastrostomy (PEG) LUQ-Continuous Tube Feeding Ordered Rate mL/hr (not calculated): 63 mL
+Gastrostomy/Enterostomy Percutaneous endoscopic gastrostomy (PEG) LUQ-Tube Feeding: Other (Comment) (Fibersource)
+tttttttttttttttttttttttttttttttt
+
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+Diet:
+Diet Orders
+Diet, tube feeding no tray Continuous; Gastrostomy tube; 63; Fibersource HN (1.2 cal/mL): Tube Feeding starting at 11/07 0922
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu
+Lines:
+Peripheral IV 11/05/26 Left Antecubital-Site Assessment: Clean, Dry, Intact
+Tracheostomy Tube:
+Surgical Airway Shiley Cuffed 6-Status: Secured
+uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu

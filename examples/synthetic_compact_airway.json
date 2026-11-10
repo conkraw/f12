@@ -1,0 +1,588 @@
+{
+  "id": "1e4a90ff9c4d4da4abc22a6619dcefd4",
+  "room": "P4102",
+  "created_at": "2026-11-09T00:42:10+00:00",
+  "updated_at": null,
+  "fields": {
+    "Diagnoses": "Synthetic teaching example\nNot a patient record",
+    "Demographics / Weight": "",
+    "Neurologic": "Neurologic observations remain above medications.",
+    "Respiratory": "Keep source respiratory settings and observations.",
+    "Cardiovascular": "",
+    "FEN / GI": "",
+    "Hematology": "",
+    "Infectious Disease": "",
+    "Labs": "Retained in editor, not printed.",
+    "Skin / Wounds": "",
+    "Tasks": "",
+    "Other": "",
+    "Other Medications": "",
+    "Lab Results / Trends": "",
+    "Goals / Follow-up": "Synthetic layout demonstration. Compare clinical handoffs with Epic.",
+    "Airway": "",
+    "Last Intubation": "",
+    "Access": "",
+    "Drains / Tubes": ""
+  },
+  "medications": [
+    {
+      "id": "9120e354899f4d48951ccefc618cee82",
+      "name": "acetaminophen injection 100 mg",
+      "dose": "100 mg",
+      "route": "Intravenous",
+      "frequency": "q6h PRN",
+      "last_rate": "",
+      "rate_time": "",
+      "section": "Other Medications",
+      "custom_text": "",
+      "include": true,
+      "warnings": [],
+      "hidden": false
+    },
+    {
+      "id": "1cf71acc13454bf6b9acb5617ce025f8",
+      "name": "albuterol continuous (5 MG/ML) 0.5% nebulizer solution - ADS Override Pull",
+      "dose": "",
+      "route": "",
+      "frequency": "",
+      "last_rate": "",
+      "rate_time": "",
+      "section": "Respiratory",
+      "custom_text": "",
+      "include": true,
+      "warnings": [
+        "ADS Override Pull: retained as a separate source entry. Blank dose, route or frequency are not inferred. Hide this exact entry if it should not print.",
+        "Dose was blank in the source. No dose has been inferred."
+      ],
+      "hidden": false
+    },
+    {
+      "id": "b3dd79d3ae5748329da286afc796d1b0",
+      "name": "albuterol continuous nebulizer solution",
+      "dose": "5 mg/hr",
+      "route": "Nebulization",
+      "frequency": "Continuous",
+      "last_rate": "1 mL/hr",
+      "rate_time": "01/03/26 0800",
+      "section": "Respiratory",
+      "custom_text": "",
+      "include": true,
+      "warnings": [
+        "The pump-rate entry comes from Last Rate, not a live pump feed."
+      ],
+      "hidden": false,
+      "last_admin_rate": "",
+      "last_admin_time": "",
+      "last_admin_status": "unavailable"
+    },
+    {
+      "id": "75add2f4b9a548e2b45e3c08bdd41e5b",
+      "name": "sodium acetate 60 mEq in dextrose 5 % 500 mL infusion",
+      "dose": "",
+      "route": "Intravenous",
+      "frequency": "Continuous",
+      "last_rate": "25 mL/hr",
+      "rate_time": "01/03/26 0800",
+      "section": "FEN / GI",
+      "custom_text": "",
+      "include": true,
+      "warnings": [
+        "Dose was blank. The handoff uses Last Rate. Verify that the recorded rate is current.",
+        "The pump-rate entry comes from Last Rate, not a live pump feed."
+      ],
+      "hidden": false,
+      "last_admin_rate": "",
+      "last_admin_time": "",
+      "last_admin_status": "unavailable"
+    }
+  ],
+  "ventilation": {
+    "mode": "Volume Targeted Pressure Control - PS",
+    "values": {
+      "Resp Rate (Set)": "14",
+      "Vt (Set, mL)": "140 mL",
+      "PEEP (cm H2O)": "6 cm H2O",
+      "Mean Airway Pressure": "11",
+      "Insp Time (sec)": "0.8 sec",
+      "PIP Observed (cm H2O)": "22 cm H2O",
+      "Pressure Support (cm H2O)": "8 cm H20",
+      "Trigger Sensitivity Flow (L/min)": "0.4 L/min",
+      "FiO2 (%)": "30 %"
+    }
+  },
+  "noninvasive": [],
+  "vitals": [
+    {
+      "label": "Temp",
+      "value": "[36.8 \u00b0C-37.8 \u00b0C] 37.2 \u00b0C",
+      "section": "Infectious Disease",
+      "include": true
+    },
+    {
+      "label": "Heart Rate",
+      "value": "[100-135] 112",
+      "section": "Cardiovascular",
+      "include": true
+    },
+    {
+      "label": "Resp",
+      "value": "[14-25] 20",
+      "section": "Respiratory",
+      "include": true
+    },
+    {
+      "label": "BP",
+      "value": "(90-112)/(42-65) 100/52",
+      "section": "Cardiovascular",
+      "include": true
+    },
+    {
+      "label": "Central Venous Pressure",
+      "value": "[4-8] 6",
+      "section": "Cardiovascular",
+      "include": true
+    },
+    {
+      "label": "FiO2 (%)",
+      "value": "[30 %-40 %] 30 %",
+      "section": "Respiratory",
+      "include": true
+    }
+  ],
+  "labs": {
+    "rows": [
+      {
+        "id": "83c3be4491f34e04825eaf48e65d275f",
+        "component": "WBC",
+        "value": "12.80 (H)",
+        "date": "01/03/2026",
+        "panel": "CBC",
+        "include": true
+      },
+      {
+        "id": "9f98490ce95c4a00ae454027d67a8a1a",
+        "component": "WBC",
+        "value": "8.20",
+        "date": "01/02/2026",
+        "panel": "CBC",
+        "include": true
+      },
+      {
+        "id": "27b5ccb2aff64fb58ef61225b8587979",
+        "component": "HGB",
+        "value": "11.2",
+        "date": "01/03/2026",
+        "panel": "CBC",
+        "include": true
+      },
+      {
+        "id": "22c37fb739cd483cad0e412e817be37d",
+        "component": "HGB",
+        "value": "8.4 (L)",
+        "date": "01/03/2026",
+        "panel": "CBC",
+        "include": true
+      },
+      {
+        "id": "0d4ef90801fa4855aff595fe067aba05",
+        "component": "HCT",
+        "value": "33.1",
+        "date": "01/03/2026",
+        "panel": "CBC",
+        "include": true
+      },
+      {
+        "id": "246bdffefb0943f5a7367ddade11c95e",
+        "component": "HCT",
+        "value": "25.5 (L)",
+        "date": "01/03/2026",
+        "panel": "CBC",
+        "include": true
+      },
+      {
+        "id": "b923308504ca4903a9b72164e60711b1",
+        "component": "PLT",
+        "value": "260",
+        "date": "01/03/2026",
+        "panel": "CBC",
+        "include": true
+      },
+      {
+        "id": "8094125da7194ee18e6e6631da67686e",
+        "component": "PLT",
+        "value": "215",
+        "date": "01/02/2026",
+        "panel": "CBC",
+        "include": true
+      },
+      {
+        "id": "6f44a5687e2143309fd62d5dc3eb63b4",
+        "component": "MCV",
+        "value": "72.0 (L)",
+        "date": "01/03/2026",
+        "panel": "CBC",
+        "include": true
+      },
+      {
+        "id": "576158c81eaa4d5e9b784b357bb8c5e4",
+        "component": "MCV",
+        "value": "71.8 (L)",
+        "date": "01/02/2026",
+        "panel": "CBC",
+        "include": true
+      },
+      {
+        "id": "759901cfa07e4dda81e0d27f6cb0940d",
+        "component": "NEUTROABS",
+        "value": "7.10",
+        "date": "01/03/2026",
+        "panel": "CBC",
+        "include": true
+      },
+      {
+        "id": "9f5dc5fb825048529a9a6e578ec7d940",
+        "component": "NEUTROABS",
+        "value": "5.10",
+        "date": "01/02/2026",
+        "panel": "CBC",
+        "include": true
+      },
+      {
+        "id": "fb9d248fc33348bb957fdc2d89551e3b",
+        "component": "LYMPHSABS",
+        "value": "2.20",
+        "date": "01/03/2026",
+        "panel": "CBC",
+        "include": true
+      },
+      {
+        "id": "519b3c516b1347e4b704fb80a3cbbc3d",
+        "component": "LYMPHSABS",
+        "value": "2.10",
+        "date": "01/02/2026",
+        "panel": "CBC",
+        "include": true
+      },
+      {
+        "id": "aa688b5ff3ed4c70ab11a2f6b8280ea1",
+        "component": "NA",
+        "value": "138",
+        "date": "01/03/2026",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "b2a97ec7e3134a97b4e91fb821f75554",
+        "component": "NA",
+        "value": "136",
+        "date": "01/02/2026",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "daeafecf5d5d413f9a794871077d5b05",
+        "component": "K",
+        "value": "3.4 (L)",
+        "date": "01/03/2026",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "d5048ed8a66e4b20b9098f077a452dd5",
+        "component": "K",
+        "value": "3.0 (L)",
+        "date": "01/03/2026",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "330df5936c244f1c800c86f1c7ffbb45",
+        "component": "CL",
+        "value": "100",
+        "date": "01/03/2026",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "345a9d3087654edf9587a2a5948a0668",
+        "component": "CL",
+        "value": "102",
+        "date": "01/02/2026",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "3a0d557b22f74d608ea5aad1ce8abeca",
+        "component": "CO2",
+        "value": "24",
+        "date": "01/03/2026",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "1a0c39c4cdd4445b9282b4f00a3b99ad",
+        "component": "CO2",
+        "value": "22",
+        "date": "01/02/2026",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "e2725c1431134e94b78baae145564b82",
+        "component": "BUN",
+        "value": "8",
+        "date": "01/03/2026",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "f6fa0427b8f44d5a854d9f87bc6b1341",
+        "component": "BUN",
+        "value": "9",
+        "date": "01/02/2026",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "d4754cbb01144a06ba8943aa62493238",
+        "component": "CREATININE",
+        "value": "0.30",
+        "date": "01/03/2026",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "6baa629b32df4dfcb3795586edfb2eb1",
+        "component": "CREATININE",
+        "value": "0.32",
+        "date": "01/02/2026",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "1c74fbf30bc54683bcbb824ff58c3633",
+        "component": "AST",
+        "value": "30",
+        "date": "01/02/2026",
+        "panel": "Hepatic",
+        "include": true
+      },
+      {
+        "id": "ff6cf6f7990e46da8e93ef76c93e8475",
+        "component": "ALT",
+        "value": "14",
+        "date": "01/02/2026",
+        "panel": "Hepatic",
+        "include": true
+      },
+      {
+        "id": "5ea9988b737b40c7a414ce098cb47795",
+        "component": "ALKPHOS",
+        "value": "205",
+        "date": "01/02/2026",
+        "panel": "Hepatic",
+        "include": true
+      },
+      {
+        "id": "4af9c2d291954bf0846ad42620d12da7",
+        "component": "BILITOT",
+        "value": "<0.2",
+        "date": "01/02/2026",
+        "panel": "Hepatic",
+        "include": true
+      },
+      {
+        "id": "9d323cc2da8d4397bd2f74229a1ccc09",
+        "component": "ALBUMIN",
+        "value": "3.8",
+        "date": "01/02/2026",
+        "panel": "Hepatic",
+        "include": true
+      },
+      {
+        "id": "c1263124be9d4d9ba5f090d2422c1343",
+        "component": "PT",
+        "value": "14.0",
+        "date": "01/03/2026",
+        "panel": "Coagulation",
+        "include": true
+      },
+      {
+        "id": "058390202e8544938f8ce312153ffbb5",
+        "component": "INR",
+        "value": "1.1",
+        "date": "01/03/2026",
+        "panel": "Coagulation",
+        "include": true
+      },
+      {
+        "id": "5c17a10046614142be68a9e98046dc11",
+        "component": "PTT",
+        "value": "28",
+        "date": "01/03/2026",
+        "panel": "Coagulation",
+        "include": true
+      },
+      {
+        "id": "1cf76c4e05b54d329bc06f6fd0be71fd",
+        "component": "FIB",
+        "value": "220",
+        "date": "01/03/2026",
+        "panel": "Coagulation",
+        "include": true
+      },
+      {
+        "id": "5d010fd61c774549ba5e33de2a312b6b",
+        "component": "PHA",
+        "value": "7.40",
+        "date": "01/03/2026",
+        "panel": "Arterial gas",
+        "include": true
+      },
+      {
+        "id": "2181ce5aaf03499bb78ecb84669c8ece",
+        "component": "PCO2A",
+        "value": "40",
+        "date": "01/03/2026",
+        "panel": "Arterial gas",
+        "include": true
+      },
+      {
+        "id": "f4592d9b12f347ac8b1545e83466a6c4",
+        "component": "PO2ART",
+        "value": "80",
+        "date": "01/03/2026",
+        "panel": "Arterial gas",
+        "include": true
+      },
+      {
+        "id": "3b0c77eceef74a878501857f4196d84e",
+        "component": "BEART",
+        "value": "1",
+        "date": "01/03/2026",
+        "panel": "Arterial gas",
+        "include": true
+      },
+      {
+        "id": "9e6ca1565a3546948134c87721c6f571",
+        "component": "PHV",
+        "value": "7.32",
+        "date": "01/02/2026",
+        "panel": "Venous gas",
+        "include": true
+      },
+      {
+        "id": "ef635fefa71f4f0289b82aa6cc0a64d3",
+        "component": "PCO2V",
+        "value": "48",
+        "date": "01/02/2026",
+        "panel": "Venous gas",
+        "include": true
+      },
+      {
+        "id": "73472ca36c1249fa8945882a9642f6b9",
+        "component": "PO2VEN",
+        "value": "42",
+        "date": "01/02/2026",
+        "panel": "Venous gas",
+        "include": true
+      },
+      {
+        "id": "99da969c8bea470fa7afcb43ab6ecec5",
+        "component": "BEV",
+        "value": "-1",
+        "date": "01/02/2026",
+        "panel": "Venous gas",
+        "include": true
+      },
+      {
+        "id": "38258be23cbd4f9da0b7cab0ed1bc912",
+        "component": "CRP",
+        "value": "0.5",
+        "date": "01/03/2026",
+        "panel": "Inflammatory",
+        "include": true
+      },
+      {
+        "id": "796cfc8c0ae1427392aa59a6e2aea82f",
+        "component": "PROCAL",
+        "value": "0.10",
+        "date": "01/02/2026",
+        "panel": "Inflammatory",
+        "include": true
+      },
+      {
+        "id": "206dbc2d9c874a2c87da6f51c5fd1709",
+        "component": "LACTIC ACID",
+        "value": "1.4 mmol/L",
+        "date": "01/03/2026",
+        "panel": "Lactate",
+        "include": true
+      }
+    ],
+    "notes": [
+      "No results found for: \"THEOPH\"",
+      "No results found for: \"CK\", \"NTPROBNP\""
+    ]
+  },
+  "neuro_vitals": {
+    "k": [
+      {
+        "label": "Target Arousal Level (SBS)",
+        "value": "SBS -1",
+        "section": "Neurologic",
+        "include": true
+      }
+    ],
+    "l": [],
+    "m": []
+  },
+  "nutrition": null,
+  "cultures": {
+    "rows": [
+      {
+        "id": "631fdf12ee6d4dfc86aeae56c2817d62",
+        "date": "01/03/26",
+        "specimen": "Blood, Venous",
+        "organisms": [
+          "No growth (Preliminary)"
+        ],
+        "include": true
+      }
+    ],
+    "notes": []
+  },
+  "dosing_weight": "12 kg",
+  "admission_date": "01/01/2026",
+  "viral_panel": {
+    "rows": []
+  },
+  "blood_gas": null,
+  "cbc": null,
+  "recurring_orders": null,
+  "intake_output": null,
+  "feeds": null,
+  "devices": null,
+  "neuro_devices": null,
+  "pacemaker": null,
+  "diet": null,
+  "import_warnings": {},
+  "anthropometrics": {
+    "age": "5 y.o.",
+    "sex": "Female",
+    "bmi": "",
+    "height": "",
+    "bsa": ""
+  },
+  "difficult_airway": {
+    "enabled": true,
+    "mask_ventilation": "Yes, with difficulty",
+    "tube_passage": "Yes",
+    "view": "Grade IIb (video)",
+    "equipment": "Video laryngoscope, flexible scope",
+    "tube_details": "",
+    "issue": "Limited mouth opening",
+    "plan": "Follow the documented team airway plan.",
+    "source": "01/03/2026"
+  }
+}

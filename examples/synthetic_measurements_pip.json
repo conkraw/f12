@@ -1,0 +1,472 @@
+{
+  "id": "64106410641064106410641064106410",
+  "room": "P4102",
+  "created_at": "2026-11-08T20:00:00+00:00",
+  "updated_at": "2026-11-08T21:55:00+00:00",
+  "fields": {
+    "Diagnoses": "Synthetic display example",
+    "Demographics / Weight": "",
+    "Neurologic": "",
+    "Respiratory": "",
+    "Cardiovascular": "",
+    "FEN / GI": "",
+    "Hematology": "",
+    "Infectious Disease": "",
+    "Labs": "",
+    "Skin / Wounds": "",
+    "Tasks": "",
+    "Other": "",
+    "Other Medications": "",
+    "Lab Results / Trends": "",
+    "Goals / Follow-up": "Synthetic example only. Compare imported measurements and ventilator observations with the source before use.",
+    "Airway": "",
+    "Last Intubation": "",
+    "Access": "",
+    "Drains / Tubes": ""
+  },
+  "medications": [
+    {
+      "id": "00000000000000000000000000000001",
+      "name": "pregabalin",
+      "dose": "1 mg",
+      "route": "Oral",
+      "frequency": "q12h",
+      "last_rate": "",
+      "rate_time": "",
+      "custom_text": "",
+      "section": "Neurologic",
+      "include": true,
+      "hidden": false,
+      "warnings": []
+    },
+    {
+      "id": "00000000000000000000000000000002",
+      "name": "melatonin",
+      "dose": "1 mg",
+      "route": "Oral",
+      "frequency": "Nightly",
+      "last_rate": "",
+      "rate_time": "",
+      "custom_text": "",
+      "section": "Neurologic",
+      "include": true,
+      "hidden": false,
+      "warnings": []
+    },
+    {
+      "id": "00000000000000000000000000000003",
+      "name": "levetiracetam",
+      "dose": "10 mg",
+      "route": "Intravenous",
+      "frequency": "q12h",
+      "last_rate": "",
+      "rate_time": "",
+      "custom_text": "",
+      "section": "Neurologic",
+      "include": true,
+      "hidden": false,
+      "warnings": []
+    },
+    {
+      "id": "00000000000000000000000000000004",
+      "name": "dexamethasone",
+      "dose": "1 mg",
+      "route": "Intravenous",
+      "frequency": "q6h",
+      "last_rate": "",
+      "rate_time": "",
+      "custom_text": "",
+      "section": "Neurologic",
+      "include": true,
+      "hidden": false,
+      "warnings": []
+    },
+    {
+      "id": "00000000000000000000000000000005",
+      "name": "baclofen",
+      "dose": "1 mg",
+      "route": "Oral",
+      "frequency": "TID",
+      "last_rate": "",
+      "rate_time": "",
+      "custom_text": "",
+      "section": "Neurologic",
+      "include": true,
+      "hidden": false,
+      "warnings": []
+    },
+    {
+      "id": "00000000000000000000000000000006",
+      "name": "trazodone",
+      "dose": "1 mg",
+      "route": "Oral",
+      "frequency": "Nightly",
+      "last_rate": "",
+      "rate_time": "",
+      "custom_text": "",
+      "section": "Neurologic",
+      "include": true,
+      "hidden": false,
+      "warnings": []
+    },
+    {
+      "id": "00000000000000000000000000000007",
+      "name": "gabapentin",
+      "dose": "1 mg",
+      "route": "Oral",
+      "frequency": "q8h",
+      "last_rate": "",
+      "rate_time": "",
+      "custom_text": "",
+      "section": "Neurologic",
+      "include": true,
+      "hidden": false,
+      "warnings": []
+    },
+    {
+      "id": "00000000000000000000000000000008",
+      "name": "acetaminophen",
+      "dose": "10 mg",
+      "route": "Oral",
+      "frequency": "q6h",
+      "last_rate": "",
+      "rate_time": "",
+      "custom_text": "",
+      "section": "Neurologic",
+      "include": true,
+      "hidden": false,
+      "warnings": []
+    },
+    {
+      "id": "00000000000000000000000000000009",
+      "name": "vecuronium",
+      "dose": "1 mg",
+      "route": "Intravenous",
+      "frequency": "q1h PRN",
+      "last_rate": "",
+      "rate_time": "",
+      "custom_text": "",
+      "section": "Neurologic",
+      "include": true,
+      "hidden": false,
+      "warnings": []
+    },
+    {
+      "id": "0000000000000000000000000000000a",
+      "name": "cisatracurium",
+      "dose": "1 mcg/kg/min",
+      "route": "Intravenous",
+      "frequency": "Continuous",
+      "last_rate": "",
+      "rate_time": "",
+      "custom_text": "",
+      "section": "Neurologic",
+      "include": true,
+      "hidden": false,
+      "warnings": []
+    },
+    {
+      "id": "0000000000000000000000000000000b",
+      "name": "midazolam",
+      "dose": "1 mg",
+      "route": "Intravenous",
+      "frequency": "q1h PRN",
+      "last_rate": "",
+      "rate_time": "",
+      "custom_text": "",
+      "section": "Neurologic",
+      "include": true,
+      "hidden": false,
+      "warnings": []
+    },
+    {
+      "id": "0000000000000000000000000000000c",
+      "name": "fentanyl",
+      "dose": "1 mcg",
+      "route": "Intravenous",
+      "frequency": "q1h PRN",
+      "last_rate": "",
+      "rate_time": "",
+      "custom_text": "",
+      "section": "Neurologic",
+      "include": true,
+      "hidden": false,
+      "warnings": []
+    },
+    {
+      "id": "0000000000000000000000000000000d",
+      "name": "dexmedetomidine",
+      "dose": "0-1 mcg/kg/hr",
+      "route": "Intravenous",
+      "frequency": "Continuous",
+      "last_rate": "2.52 mL/hr",
+      "rate_time": "01/08/26 1016",
+      "section": "Neurologic",
+      "custom_text": "",
+      "include": true,
+      "warnings": [
+        "The pump-rate entry comes from Last Rate, not a live pump feed.",
+        "The displayed dose-rate is the documented Last Admin rate, not a live pump reading. The ordered Dose remains in the editor."
+      ],
+      "hidden": false,
+      "last_admin_rate": "0.4 mcg/kg/hr",
+      "last_admin_time": "11/08/26 1200",
+      "last_admin_status": "rate"
+    }
+  ],
+  "ventilation": {
+    "mode": "Volume Targeted Pressure Control - Intermittent Mandatory Ventilation",
+    "values": {
+      "Resp Rate (Set)": "16",
+      "Vt (Set, mL)": "160 mL",
+      "PEEP (cm H2O)": "6 cm H2O",
+      "Insp Time (sec)": "0.8 sec",
+      "PIP Observed (cm H2O)": "Avg: 22.4 cm H2O Min: 18.2 cm H2O Max: 28 cm H2O",
+      "Pressure Support (cm H2O)": "8 cm H20",
+      "PIP Set (cm H2O)": "24 cm H2O",
+      "Vt Insp ml": "Avg: 158 Min: 152 Max: 164"
+    }
+  },
+  "noninvasive": [],
+  "vitals": [
+    {
+      "label": "Heart Rate",
+      "value": "[90-110] 100",
+      "section": "Cardiovascular",
+      "include": true
+    },
+    {
+      "label": "BP",
+      "value": "(90-105)/(50-65) 98/60",
+      "section": "Cardiovascular",
+      "include": true
+    },
+    {
+      "label": "Resp",
+      "value": "[12-20] 14",
+      "section": "Respiratory",
+      "include": true
+    },
+    {
+      "label": "SpO2",
+      "value": "96% to 100%",
+      "section": "Respiratory",
+      "include": true
+    },
+    {
+      "label": "Last SpO2",
+      "value": "99%",
+      "section": "Respiratory",
+      "include": true
+    },
+    {
+      "label": "ETCO2",
+      "value": "36 to 42 mmHg",
+      "section": "Respiratory",
+      "include": true
+    },
+    {
+      "label": "Last ETCO2",
+      "value": "39 mmHg",
+      "section": "Respiratory",
+      "include": true
+    },
+    {
+      "label": "Temp",
+      "value": "[36.6-37.2] 36.9",
+      "section": "Infectious Disease",
+      "include": true
+    }
+  ],
+  "labs": {
+    "rows": [
+      {
+        "id": "20934aaa20cf4f9fb1d67a7f276b6870",
+        "component": "LACTATE",
+        "value": "1.1",
+        "date": "11/08/2026 1400",
+        "panel": "Lactate",
+        "include": true
+      },
+      {
+        "id": "27efb1ab6ea94d61b2001ab5c9f36939",
+        "component": "LACWB",
+        "value": "1.0",
+        "date": "11/07/2026 1800",
+        "panel": "Lactate",
+        "include": true
+      },
+      {
+        "id": "350916d9e247410095f29fdf60f5f611",
+        "component": "WBC",
+        "value": "8.4",
+        "date": "11/08/2026",
+        "panel": "CBC",
+        "include": true
+      },
+      {
+        "id": "2316434adccd4170b28d07855ea25b3d",
+        "component": "HGB",
+        "value": "12.1",
+        "date": "11/08/2026",
+        "panel": "CBC",
+        "include": true
+      },
+      {
+        "id": "64304b4633e7411988212c19277b0b0a",
+        "component": "HCT",
+        "value": "36.5",
+        "date": "11/08/2026",
+        "panel": "CBC",
+        "include": true
+      },
+      {
+        "id": "18c3865d81c6476a91aeaecb42cf0ae7",
+        "component": "PLT",
+        "value": "250",
+        "date": "11/08/2026",
+        "panel": "CBC",
+        "include": true
+      },
+      {
+        "id": "90a119f587be4de3940965533661fbca",
+        "component": "NA",
+        "value": "139",
+        "date": "11/08/2026",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "d349534544e8461dbf345e03b400ea17",
+        "component": "K",
+        "value": "4.1",
+        "date": "11/08/2026",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "5641d97c9a16408db415b97453a222c0",
+        "component": "CL",
+        "value": "103",
+        "date": "11/08/2026",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "047413212e554a36be93e33bc7aac0d6",
+        "component": "CO2",
+        "value": "25",
+        "date": "11/08/2026",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "3ee621bfd5c74248bd4ff6cc729c5df4",
+        "component": "BUN",
+        "value": "10",
+        "date": "11/08/2026",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "ecdabf3b9f124f94ac2cce7edbc22ef3",
+        "component": "CREATININE",
+        "value": "0.4",
+        "date": "11/08/2026",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "4f8a56fc81c240d7b2fe330529bc9a98",
+        "component": "GLUCOSE",
+        "value": "105",
+        "date": "11/08/2026",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "6e8fcf9523b94209981899f92ce258cd",
+        "component": "MG",
+        "value": "2.0",
+        "date": "11/08/2026",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "dd0da83dbae141f9b5abe1bc1b7a6c6d",
+        "component": "PHOS",
+        "value": "4.2",
+        "date": "11/08/2026",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "52f7026ff4f14f958bb70398d3375d72",
+        "component": "CA",
+        "value": "9.3",
+        "date": "11/08/2026",
+        "panel": "BMP",
+        "include": true
+      }
+    ],
+    "notes": []
+  },
+  "neuro_vitals": {
+    "k": [
+      {
+        "label": "Target Arousal Level (SBS)",
+        "value": "SBS -1",
+        "section": "Neurologic",
+        "include": true
+      }
+    ],
+    "l": [
+      {
+        "label": "WAT-1 total score (0-12)",
+        "value": "0",
+        "section": "Neurologic",
+        "include": true
+      }
+    ],
+    "m": []
+  },
+  "nutrition": {
+    "weight": "20 kg",
+    "z_score": "-0.70",
+    "include": true
+  },
+  "cultures": {
+    "rows": [],
+    "notes": []
+  },
+  "dosing_weight": "18 kg",
+  "admission_date": "11/08/2026",
+  "viral_panel": {
+    "rows": []
+  },
+  "blood_gas": null,
+  "cbc": null,
+  "recurring_orders": null,
+  "intake_output": {
+    "intake": "360 mL",
+    "output": "270 mL",
+    "net": "90 mL",
+    "period": "",
+    "as_of": "",
+    "last_filed": "",
+    "include": true
+  },
+  "feeds": null,
+  "devices": null,
+  "neuro_devices": null,
+  "pacemaker": null,
+  "diet": null,
+  "import_warnings": {},
+  "anthropometrics": {
+    "age": "5 y.o.",
+    "sex": "Male",
+    "bmi": "13.89 kg/m\u00b2",
+    "height": "120 cm",
+    "bsa": "0.80 m\u00b2"
+  }
+}

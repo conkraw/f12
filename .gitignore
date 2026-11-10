@@ -1,0 +1,24 @@
+.streamlit/secrets.toml
+.env
+.env.*
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ipynb_checkpoints/
+private-secrets*
+encrypted-data/
+handoff.html
+handoff.txt
+
+# Never commit downloaded clinical handoffs.
+handoff*.pdf
+handoff*.html
+handoff*.txt
+
+all_handoffs*.pdf
+all_handoffs*.html
+all_handoffs*.txt
+!examples/all_handoffs_example.pdf
+!examples/all_handoffs_example.html

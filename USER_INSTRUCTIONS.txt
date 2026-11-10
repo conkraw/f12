@@ -1,0 +1,3 @@
+First use: In Epic, find SmartPhrase author Streamlit and subscribe to PICUHANDOFFSMARTPHRASE.
+
+For each patient, select the correct room here. Open that patient's Epic note and enter .PICUHANDOFFSMARTPHRASE. Copy the populated text, including section dividers, into SmartPhrase text. Click Create / update handoff, then review the preview. Move to the next room to save automatically, or press Save handoff. Check the saved time before closing. Use Print all for the team's PDF.

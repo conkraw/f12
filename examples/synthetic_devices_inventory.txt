@@ -1,0 +1,22 @@
+uuuuuuuuuuuuuuuuuuuuuuuu
+Lines:
+CVC 01/03/27 Double-lumen Right Internal jugular-Site Assessment: Clean, Dry, Intact
+Arterial Line 01/04/27 Left Radial-Site Assessment: Intact
+Drain 01/04/27 Inferior;Right Pleural-Site Assessment: Clean
+Drain 01/04/27 Closed drain, to suction Inferior;Left;Midline Mediastinal-Site Assessment: Clean
+[REMOVED] Peripheral IV 01/02/27 Left Ankle-Site Assessment: Leaking
+Endotracheal Tube:
+ETT 4 mm-Secured at (cm): 14 cm
+ETT 4 mm-Secured Location: Oral
+[REMOVED] ETT 3.5 mm-Secured at (cm): 12 cm
+Gastric Tube 01/04/27 Nasogastric 8 Fr Left nostril-Secured at (cm): 30 cm
+Urinary Catheter:
+Urethral Catheter Non-latex 8 Fr.-Site Assessment: Skin intact
+Tracheostomy Tube:
+
+uuuuuuuuuuuuuuuuuuuuuuuu
+
+vvvvvvvvvvvvvvvvvvvvvvvv
+Intracranial Pressure Monitor:
+Intracranial Pressure/Ventriculostomy Ventricular drainage catheter with ICP microsensor-Drain Status: Clamped
+vvvvvvvvvvvvvvvvvvvvvvvv

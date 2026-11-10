@@ -1,0 +1,148 @@
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+Diagnoses:
+[Insert your existing Epic diagnosis SmartLink here]
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+Medications:
+[Insert your existing Epic medications SmartLink here]
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+
+cccccccccccccccccccccccccccccccc
+Invasive Ventilation:
+[Insert your existing Epic invasive ventilation SmartLink here]
+cccccccccccccccccccccccccccccccc
+
+dddddddddddddddddddddddddddddddd
+Non-invasive Ventilation:
+[Insert your existing Epic respiratory support SmartLink here]
+dddddddddddddddddddddddddddddddd
+
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+VITALS:
+[Insert your existing Epic vital-sign SmartLink here]
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+
+ffffffffffffffffffffffffffffffff
+CULTURES:
+[Insert your existing Epic culture SmartLink here]
+ffffffffffffffffffffffffffffffff
+
+gggggggggggggggggggggggggggggggg
+LABS:
+[Insert your existing Epic laboratory SmartLink here]
+gggggggggggggggggggggggggggggggg
+
+hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh
+INTAKE/OUTPUT:
+[Insert your existing Epic intake/output SmartLink here]
+hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh
+
+iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii
+NUTRITION:
+[Insert your existing Epic nutrition/weight SmartLink here]
+
+Dosing Weight:
+[Insert your existing Epic dosing-weight SmartLink here]
+iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii
+
+jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj
+Wound Review:
+[Insert your existing Epic wound SmartLink here]
+jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj
+
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+Target Arousal Level:
+SBS Last 24 Hours: [Insert your existing Epic SmartLink for the latest SBS in the past 24 hours.]
+Last SBS Ever: [Existing historical SBS SmartLink. Used only when no recent SBS is available and a recognized ventilator mode is present.]
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+
+llllllllllllllllllllllllllllllll
+WAT Score:
+[Insert your existing Epic SmartLink here. Blank values are omitted.]
+llllllllllllllllllllllllllllllll
+
+mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+ICP Trends:
+ICP Range: [Insert the recorded ICP range or Avg/Min/Max summary]
+Last ICP: [Insert the last recorded ICP]
+CPP Range: [Insert the recorded CPP range or Avg/Min/Max summary]
+Last CPP: [Insert the last recorded CPP]
+mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+
+nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn
+Date of Admission: [Insert the recorded admission date]
+nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn
+
+
+oooooooooooooooooooooooooooooooo
+Respiratory Viral Panel:
+[Insert your Epic respiratory viral panel result table here]
+oooooooooooooooooooooooooooooooo
+
+
+pppppppppppppppppppppppppppppppp
+[Insert the Epic Results from last 7 days blood-gas table here, including Lab,
+Units, collection dates and times. Use the real SmartLink, not this placeholder.]
+pppppppppppppppppppppppppppppppp
+
+
+qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+[Insert the Epic Results from last 7 days CBC table here, including Lab, Units,
+all collection dates/times and result columns. Include standard and ISTAT Hgb,
+NEUTROS ABS/ANC and automatic/manual absolute lymphocyte rows. Use your real
+SmartLink, not this placeholder.]
+qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+
+rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
+Orders Placed This Encounter
+Procedures
+[Insert your Epic orders SmartLink here]
+rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
+
+
+ssssssssssssssssssssssssssssssss
+[Insert your Epic Intake/Output Summary here, including the three total lines:
+Intake, Output and Net. Replace this placeholder with the real SmartLink output.]
+ssssssssssssssssssssssssssssssss
+
+
+tttttttttttttttttttttttttttttttt
+[Insert your Epic feeding SmartLinks here. Include device-labelled Tube Feeding
+formula lines and Continuous Tube Feeding Ordered Rate mL/hr lines. A backup
+rate must have hourly units. Intake (mL) alone is not a rate. Replace these
+placeholders with the actual SmartLink definitions used by your institution.]
+tttttttttttttttttttttttttttttttt
+
+
+uuuuuuuuuuuuuuuuuuuuuuuuuuuuuu
+Lines:
+[Insert your real Epic device SmartLinks, including vascular lines, ETT,
+feeding tubes, urinary catheters, drains and tracheostomy entries. Retain the
+REMOVED marker. Use the device names and their recorded dates, sizes and secured values.]
+uuuuuuuuuuuuuuuuuuuuuuuuuuuuuu
+
+vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+Intracranial Pressure Monitor:
+[Insert your Epic ICP/ventriculostomy device SmartLink with Drain Status.]
+vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+
+
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+Pacemaker:
+[Insert your Epic pacemaker SmartLink with Pacemaker Yes/No, Pacer Mode, and
+Atrial Rate (beats/min) and/or Ventricular Rate (beats/min). Do not replace
+this source definition with an example patient result.]
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+
+
+xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+Diet:
+[Insert your Epic diet-order SmartLink. X imports diet types and NPO exceptions.
+PN and label-only orders are omitted here. T remains the source of feed rates.]
+xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+
+yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+CAPD: [Insert your actual Epic CAPD total-score SmartLink here. Do not use a sample patient score as a reusable template. A blank result displays CAPD: None.]
+yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy

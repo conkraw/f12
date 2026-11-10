@@ -1,0 +1,15 @@
+cccccccccccccccccccccccccccccccc
+Invasive Ventilation:
+Vent Mode: Bilevel Non Invasive Ventilation
+Ventilator On: Yes
+FiO2 (%): 30 %
+cccccccccccccccccccccccccccccccc
+
+dddddddddddddddddddddddddddddddd
+Non-invasive Ventilation:
+O2 Delivery Method: High flow nasal cannula
+Total Inspiratory Pressure (cm H2O): 12 cmH20
+Expiratory Positive Airway Pressure (EPAP) (cmH20): 6 cmH20
+FiO2 (%): 30 %
+O2 Flow Rate (L/min): 20 L/min
+dddddddddddddddddddddddddddddddd

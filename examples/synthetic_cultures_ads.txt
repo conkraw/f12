@@ -1,0 +1,85 @@
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+Diagnoses:
+1. Synthetic training example
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+Medications:
+Current Facility-Administered Medications
+Medication	Dose	Route	Frequency	Provider	Last Rate	Last Admin
+•	albuterol nebulizer solution 1.25 mg	1.25 mg	Nebulization	q4h	Test clinician		Given
+•	cefTRIAXone syringe 180 mg	50 mg/kg	Intravenous	q24h	Test clinician		Given
+•	fentaNYL in NS 10 MCG/ML injection  - ADS Override Pull						
+•	fentaNYL in NS 10 MCG/ML injection  - ADS Override Pull						
+•	fentaNYL in NS 10 MCG/ML injection  - ADS Override Pull						
+•	methylPREDNISolone injection 3 mg	3 mg	Intravenous	q6h	Test clinician		Given
+•	midazolam PF (Versed) 2 MG/2ML injection  - ADS Override Pull						
+•	midazolam PF (Versed) 2 MG/2ML injection  - ADS Override Pull						
+•	midazolam PF (Versed) 2 MG/2ML injection  - ADS Override Pull						
+•	sodium acetate 20 mEq in dextrose 5 % 250 mL infusion	12 mL/hr	Intravenous	Continuous	Test clinician	12 mL/hr at 01/06/26 0600	12 mL/hr
+•	vecuronium (Norcuron) 10 MG injection  - ADS Override Pull						
+•	vecuronium (Norcuron) 10 MG injection  - ADS Override Pull						
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+VITALS:
+Temp: [36.5 °C-37.2 °C] 36.8 °C
+Heart Rate: [100-130] 112
+Resp: [18-24] 22
+BP: (90-110)/(45-60) 100/50
+SpO2  Avg: 98.5 %  Min: 93 %  Max: 100 %
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+
+ffffffffffffffffffffffffffffffff
+CULTURES:
+Susceptibility data from last 90 days.
+Collected	Specimen Info	Organism	Ceftriaxone	Clindamycin	Vancomycin
+01/06/26	Blood, Central Line	No growth (In process)			
+01/06/26	Blood, Central Line	No growth (Preliminary)			
+01/05/26	Blood, Venous	No growth			
+01/04/26	Blood, Venous	No growth			
+01/06/26	Aspirate from Trachea	Streptococcus pneumoniae	 S	 S	 S
+		Staphylococcus aureus			
+		Beta hemolytic Streptococcus, Group A			
+01/04/26	Sputum	No growth			
+01/03/26	Sputum	No growth			
+01/05/26	Urine	No growth			
+01/02/26	Swab from Pericardium	Candida parapsilosis			
+
+ffffffffffffffffffffffffffffffff
+
+gggggggggggggggggggggggggggggggg
+LABS:
+Lab Results
+Component	Value	Date
+WBC	9.4	01/06/2026
+WBC	10.2	01/05/2026
+HGB	11.8	01/06/2026
+HGB	11.6	01/05/2026
+HCT	35	01/06/2026
+HCT	34	01/05/2026
+PLT	250	01/06/2026
+PLT	260	01/05/2026
+NA	138	01/06/2026
+NA	137	01/05/2026
+K	4.0	01/06/2026
+K	4.1	01/05/2026
+CL	102	01/06/2026
+CO2	24	01/06/2026
+BUN	8	01/06/2026
+CREATININE	0.30	01/06/2026
+ALT	16	01/06/2026
+AST	24	01/06/2026
+gggggggggggggggggggggggggggggggg
+
+iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii
+NUTRITION:
+Wt Readings from Last 1 Encounters:
+01/06/26	12 kg (50%, Z= 0.00)*
+iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii
+
+llllllllllllllllllllllllllllllll
+WAT Score:
+WAT-1 Total Score
+WAT-1 total score (0-12): 0
+llllllllllllllllllllllllllllllll

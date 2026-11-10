@@ -1,0 +1,7 @@
+mmmmmmmmmmmmmmmmmmmm
+ICP Trends:
+ICP Range: ICP Mean (mmHg) Avg: 11 Min: 1 mmHg Max: 22 mmHg
+CPP Range: CPP Avg: 63 Min: 45 mmHg Max: 85 mmHg
+Last ICP: ICP Mean (mmHg): 10 mmHg
+Last CPP: CPP: 68 mmHg
+mmmmmmmmmmmmmmmmmmmm

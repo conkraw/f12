@@ -1,0 +1,125 @@
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+Diagnoses:
+1. Synthetic compact-layout example
+2. Not a patient record
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+Medications:
+Current Facility-Administered Medications
+Medication	Dose	Route	Frequency	Provider	Last Rate	Last Admin
+•	acetaminophen injection 120 mg	12 mg/kg (Dosing Weight)	Intravenous	q6h	TEST_PROVIDER_NOT_RETAINED		TEST_ADMIN_NOT_RETAINED
+•	[Held by provider] Example pressure medication suspension 0.8 mg	0.8 mg	Oral	q12h	TEST_PROVIDER_NOT_RETAINED		TEST_ADMIN_NOT_RETAINED
+•	Example antimicrobial injection 400 mg	50 mg/kg (Dosing Weight)	Intravenous	q8h	TEST_PROVIDER_NOT_RETAINED		TEST_ADMIN_NOT_RETAINED
+•	dexAMETHasone (Example) syringe 1 mg	1 mg	Intravenous	q12h	TEST_PROVIDER_NOT_RETAINED		TEST_ADMIN_NOT_RETAINED
+•	Pediatric 2-in-1 PN (Continuous)	600 mL	Intravenous	Continuous PN	TEST_PROVIDER_NOT_RETAINED	25 mL/hr at 01/03/26 0900	TEST_ADMIN_NOT_RETAINED
+	And
+•	fat emulsion fish oil/plant based (Example lipid) 20 % 12 g 60 mL bag	2 g/kg (Dosing Weight)	Intravenous	Continuous PN	TEST_PROVIDER_NOT_RETAINED	2.5 mL/hr at 01/03/26 0900	TEST_ADMIN_NOT_RETAINED
+•	Example supportive medicine injection 40 mcg	40 mcg	Intravenous	q24h	TEST_PROVIDER_NOT_RETAINED		TEST_ADMIN_NOT_RETAINED
+•	Example diuretic injection 3 mg	3 mg	Intravenous	q AM	TEST_PROVIDER_NOT_RETAINED		TEST_ADMIN_NOT_RETAINED
+•	heparin flush 10 units/mL 10 Units	10 Units	Intracatheter	q1h PRN	TEST_PROVIDER_NOT_RETAINED		TEST_ADMIN_NOT_RETAINED
+•	heparin flush 10 units/mL 10 Units	10 Units	Intracatheter	q24h	TEST_PROVIDER_NOT_RETAINED		TEST_ADMIN_NOT_RETAINED
+•	Example oral suspension 0.4 mg	0.04 mg/kg (Dosing Weight)	Oral	q6h PRN	TEST_PROVIDER_NOT_RETAINED		TEST_ADMIN_NOT_RETAINED
+•	Example topical solution 5 mL	5 mL	Topical	Once PRN	TEST_PROVIDER_NOT_RETAINED		TEST_ADMIN_NOT_RETAINED
+•	Example nasal spray 1 spray	1 spray	Each Nostril	On call	TEST_PROVIDER_NOT_RETAINED		TEST_ADMIN_NOT_RETAINED
+•	Example acid suppression injection 8 mg	8 mg	Intravenous	q12h	TEST_PROVIDER_NOT_RETAINED		TEST_ADMIN_NOT_RETAINED
+•	Example electrolyte injection 8 mEq	1 mEq/kg (Dosing Weight)	Intravenous	Once	TEST_PROVIDER_NOT_RETAINED		TEST_ADMIN_NOT_RETAINED
+•	[START ON 1/4/2026] Example prophylaxis suspension 25 mg	25 mg	Oral	bidSatSun	TEST_PROVIDER_NOT_RETAINED		TEST_ADMIN_NOT_RETAINED
+•	Example second antimicrobial syringe 120 mg	15 mg/kg (Dosing Weight)	Intravenous	q6h	TEST_PROVIDER_NOT_RETAINED		TEST_ADMIN_NOT_RETAINED
+•	Example barrier ointment		Topical	PRN	TEST_PROVIDER_NOT_RETAINED		TEST_ADMIN_NOT_RETAINED
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+
+cccccccccccccccccccccccccccccccc
+Invasive Ventilation:
+Settings
+FiO2 (%): 28 %
+cccccccccccccccccccccccccccccccc
+
+dddddddddddddddddddddddddddddddd
+Non-invasive Ventilation:
+O2 Delivery Method: High flow nasal cannula
+FiO2 (%): 28 %
+O2 Flow Rate (L/min): 7 L/min
+dddddddddddddddddddddddddddddddd
+
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+VITALS:
+Temp: [36.5-37.3] 36.9 °C
+Heart Rate: [95-125] 110
+Resp: [18-28] 22
+BP: (90-105)/(45-60) 98/54
+FiO2 (%): [25 %-30 %] 28 %
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+
+gggggggggggggggggggggggggggggggg
+LABS:
+Lab Results
+Component	Value	Date
+WBC	9.8	01/03/2026
+WBC	8.7	01/02/2026
+HGB	10.6 (L)	01/03/2026
+HGB	10.2 (L)	01/02/2026
+HCT	32	01/03/2026
+HCT	31	01/02/2026
+MCV	81	01/03/2026
+MCV	82	01/02/2026
+PLT	285	01/03/2026
+PLT	260	01/02/2026
+NEUTROABS	5.5	01/03/2026
+NEUTROABS	4.9	01/02/2026
+LYMPHSABS	2.7	01/03/2026
+LYMPHSABS	2.6	01/02/2026
+NA	138	01/03/2026
+NA	137	01/02/2026
+K	3.8	01/03/2026
+K	3.6	01/02/2026
+CL	102	01/03/2026
+CL	101	01/02/2026
+CO2	25	01/03/2026
+CO2	24	01/02/2026
+BUN	9	01/03/2026
+BUN	8	01/02/2026
+CREATININE	0.30	01/03/2026
+CREATININE	0.28	01/02/2026
+ALT	22	01/03/2026
+AST	31	01/03/2026
+ALKPHOS	210	01/03/2026
+BILITOT	0.4	01/03/2026
+ALBUMIN	3.9	01/03/2026
+PT	13.2	01/03/2026
+INR	1.1	01/03/2026
+PTT	29	01/03/2026
+FIB	240	01/03/2026
+PHA	7.39	01/03/2026
+PCO2A	42	01/03/2026
+PO2ART	84	01/03/2026
+BEART	1	01/03/2026
+PHV	7.35	01/03/2026
+PCO2V	48	01/03/2026
+PO2VEN	40	01/03/2026
+BEV	2	01/03/2026
+CRP	0.5	01/03/2026
+PROCAL	0.10	01/03/2026
+gggggggggggggggggggggggggggggggg
+
+iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii
+NUTRITION:
+Wt Readings from Last 1 Encounters:
+01/03/26	8.8 kg (42%, Z= -0.20)*
+iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii
+
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+Target Arousal Level:
+Target Arousal Level (SBS): SBS 0
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+
+llllllllllllllllllllllllllllllll
+WAT Score:
+WAT-1 Total Score
+WAT-1 total score (0-12): 0
+llllllllllllllllllllllllllllllll
+
+mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+ICP Trends:
+
+mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm

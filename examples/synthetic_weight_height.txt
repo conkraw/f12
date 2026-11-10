@@ -1,0 +1,30 @@
+aaaaaaaaaaaaaaaaaaaaaaaa
+Diagnoses:
+1. Synthetic layout example
+Age:
+6 y.o.
+Sex:
+female
+aaaaaaaaaaaaaaaaaaaaaaaa
+iiiiiiiiiiiiiiiiiiiiiiii
+NUTRITION:
+Wt Readings from Last 1 Encounters:
+01/02/26	20 kg (25%, Z= -0.70)*
+Dosing Weight:
+Dosing Weight
+Dosing
+18 kg
+Yesterday
+BMI:
+Body mass index is 13.89 kg/m².
+Height:
+Height: 120 cm (3' 11.24")
+BSA:
+Body surface area is 0.80 meters squared.
+iiiiiiiiiiiiiiiiiiiiiiii
+ssssssssssssssssssssssss
+Intake/Output Summary (Last 24 hours)
+Intake	180 mL
+Output	90 mL
+Net	90 mL
+ssssssssssssssssssssssss

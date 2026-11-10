@@ -1,0 +1,18 @@
+aaaaaaaaaaaa
+Diagnoses:
+1. Synthetic feeding demonstration
+ aaaaaaaaaaaa
+ssssssssssss
+Intake/Output Summary (Last 24 hours) at 1/7/2026 1200
+Last data filed at 1/7/2026 1100
+Gross per 24 hour
+Intake	1000 ml
+Output	850 ml
+Net	150 ml
+ssssssssssss
+tttttttttttt
+Gastric Tube Nasojejunal Right nostril-Continuous Tube Feeding Ordered Rate  mL/hr (not calculated): 24 mL
+Gastric Tube Nasojejunal Right nostril-Tube Feeding: Nutramigen
+[REMOVED] Gastric Tube Nasogastric Left nostril-Continuous Tube Feeding Ordered Rate  mL/hr (not calculated): 12 mL
+[REMOVED] Gastric Tube Nasogastric Left nostril-Tube Feeding: Removed synthetic formula
+tttttttttttt

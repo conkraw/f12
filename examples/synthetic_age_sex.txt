@@ -1,0 +1,117 @@
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+Diagnoses:
+1. Synthetic teaching example, not a patient record
+Age: 6 y.o. Sex: female
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+Medications:
+Current Facility-Administered Medications
+Medication	Dose	Route	Frequency	Provider	Last Rate	Last Admin
+•	dexmedetomidine infusion	0.4 mcg/kg/hr (Dosing Weight)	Intravenous	Continuous		1 mL/hr	
+•	levetiracetam injection	100 mg	Intravenous	q12h			
+•	phenytoin suspension	30 mg	Per NG Tube	BID			
+•	pentobarbital infusion	1 mg/kg/hr (Dosing Weight)	Intravenous	Continuous		1 mL/hr	
+•	acetaminophen suspension	120 mg	Oral	q6h PRN			
+•	albuterol nebulizer solution	2.5 mg	Nebulization	q4h			
+•	pantoprazole injection	8 mg	Intravenous	Daily			
+•	furosemide injection	5 mg	Intravenous	q12h
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+
+dddddddddddddddddddddddddddddd
+Non-invasive Ventilation:
+O2 Delivery Method: High flow nasal cannula
+FiO2 (%): 30 %
+O2 Flow Rate (L/min): 10 L/min
+dddddddddddddddddddddddddddddd
+
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+VITALS:
+Temp: [36.5 °C-37.7 °C] 37 °C
+Heart Rate: [100-140] 115
+Resp: [20-35] 24
+BP: (90-110)/(40-65) 100/55
+SpO2 Avg: 97 % Min: 93 % Max: 100 %
+Last SPO2: SpO2: 97 %
+ETCO2 (mmHg) Avg: 50 mmHg Min: 40 mmHg Max: 60 mmHg
+Last ETCO2: ETCO2 (mmHg): 55 mmHg
+CVP (mean) Avg: 12 mmHg Min: 8 mmHg Max: 25 mmHg
+Last CVP: CVP (mean): 12 mmHg
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+
+gggggggggggggggggggggggggggggg
+LABS:
+Lab Results
+Component	Value	Date
+WBC	9.2	01/06/2026
+WBC	8.1	01/05/2026
+HGB	11.4	01/06/2026
+HGB	10.9 (L)	01/05/2026
+HCT	34	01/06/2026
+HCT	32 (L)	01/05/2026
+PLT	260	01/06/2026
+PLT	248	01/05/2026
+MCV	83	01/06/2026
+NEUTROABS	6.4	01/06/2026
+LYMPHSABS	1.9	01/06/2026
+GLUCOSE	108 (H)	01/06/2026
+GLUCOSE	98	01/05/2026
+NA	138	01/06/2026
+NA	136	01/05/2026
+K	3.9	01/06/2026
+K	3.7	01/05/2026
+CL	102	01/06/2026
+CL	101	01/05/2026
+CO2	25	01/06/2026
+CO2	24	01/05/2026
+BUN	12	01/06/2026
+BUN	14	01/05/2026
+CREATININE	0.65	01/06/2026
+CREATININE	0.68	01/05/2026
+MG	1.9	01/06/2026
+MG	2.0	01/05/2026
+PHOS	3.7	01/06/2026
+PHOS	3.9	01/05/2026
+ALT	19	01/06/2026
+AST	23	01/06/2026
+ALKPHOS	86	01/06/2026
+BILITOT	0.6	01/06/2026
+ALBUMIN	3.0 (L)	01/06/2026
+ALBUMIN	3.2 (L)	01/05/2026
+PT	13.2	01/06/2026
+INR	1.0	01/06/2026
+PTT	30	01/06/2026
+HEPLMW	0.46	01/06/2026
+HEPLMW	0.38	01/05/2026
+CRP	1.2 (H)	01/04/2026
+PROCAL	0.14	01/05/2026
+PHA	7.40	01/06/2026
+PCO2A	40	01/06/2026
+PO2ART	95	01/06/2026
+BEART	0	01/06/2026
+gggggggggggggggggggggggggggggg
+
+iiiiiiiiiiiiiiiiiiiiiiiiiiiiii
+NUTRITION:
+Wt Readings from Last 1 Encounters:
+11/08/26	20 kg (50%, Z= 0)*
+Dosing Weight:
+Dosing Weight
+Dosing
+20 kg
+3 hours ago
+iiiiiiiiiiiiiiiiiiiiiiiiiiiiii
+
+ssssssssssssssssssssssssssssss
+Intake/Output Summary (Last 24 hours) at 11/8/2026 0654
+Last data filed at 11/8/2026 0600
+Gross per 24 hour
+Intake	340.25 ml
+Output	253 ml
+Net	87.25 ml
+ssssssssssssssssssssssssssssss
+
+nnnnnnnnnnnnnnnnnnnnnnnnnnnnnn
+Date of Admission: 11/07/2026
+nnnnnnnnnnnnnnnnnnnnnnnnnnnnnn
+

@@ -1,0 +1,31 @@
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+Diagnoses:
+1. Synthetic training example
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii
+NUTRITION:
+Wt Readings from Last 1 Encounters:
+01/01/26	12 kg (50%, Z= 0.1)*
+Dosing Weight: 11 kg
+iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii
+
+nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn
+Date of Admission: 01/01/2026
+nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn
+
+oooooooooooooooooooooooooooooooo
+Respiratory Viral Panel:
+Lab Results
+Component	Value	Date
+	ADENOVIRDNA	Not Detected	01/01/2026
+	HUMRHINENRNA	Detected (A)	01/01/2026
+	FLUAVIRUSRNA	Not Detected	01/01/2026
+	PARAFLU1RNA	Not Detected	01/01/2026
+	PARAFLU2RNA	Not Detected	01/01/2026
+	PARAFLU3RNA	Not Detected	01/01/2026
+	PARAFLU4RNA	Not Detected	01/01/2026
+	RESPSYNVRNA	Not Detected	01/01/2026
+	SARSRNA	Not Detected	01/01/2026
+
+oooooooooooooooooooooooooooooooo

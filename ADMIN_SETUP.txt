@@ -1,0 +1,117 @@
+PICU Handoff 6.22: add the separate Admin password
+
+This update adds a second password for Admin. Routine handoff creation, editing,
+saving, printing, and reading the instructions at the top of Handoff still use the existing
+app login. Keep your current app password, encryption key, GitHub token and all
+saved data. Do not run create_secrets.py or Generate_Secrets.ipynb for this update.
+
+ONE-TIME SETUP
+
+1. Extract the complete update and upload its application files to your current
+   code repository. Keep app.py at the repository root. The app starts with Admin
+   locked until the separate hash is configured. No new packages are required.
+
+2. On your computer, open Generate_Admin_Password.ipynb in JupyterLab and run its
+   single code cell. Alternatively run:
+
+       python set_admin_password.py
+
+   Choose a new Admin password of at least 12 characters and enter it twice.
+   Choose a different password from the app login password. The app refuses to
+   unlock Admin with the same underlying password, even if the hashes differ.
+   The helper prints only one admin_password_hash line. It does not write files,
+   create an encryption key, or replace any existing secrets. Keep its output
+   private. Clear notebook output before sharing or uploading the notebook.
+
+3. In your hosting provider's private Secrets settings, add that single line
+   inside the EXISTING [app] section. Do not create a second [app] heading.
+   Put the line before [github], not under [github]. For example:
+
+       [app]
+       password_hash = "KEEP YOUR EXISTING VALUE"
+       admin_password_hash = "PASTE THE NEW GENERATED HASH"
+       encryption_key = "KEEP YOUR EXISTING VALUE"
+       ... keep all other existing settings unchanged ...
+
+       [github]
+       ... keep your existing GitHub settings ...
+
+   This example is explanatory, not a complete replacement secrets file.
+   Do not paste these placeholder values over your current credentials.
+   Do not enter your plaintext password in Admin, the code repository, or the
+   published guide. Only enter it in the Admin password field when unlocking.
+
+4. Save the deployment Secrets and restart the app if needed. Sign in with your
+   usual app password, select Admin, and unlock with the new Admin password.
+
+5. In User instructions and Epic SmartPhrase, enter:
+   - The exact name or shortcut your team uses in Epic.
+   - The actual reusable Epic SmartPhrase definition with its SmartLinks and
+     paired section dividers, not a patient's expanded results.
+   - Optional local instructions for installing/accessing it in Epic.
+   - Your preferred learner instructions. The supplied guide is already filled in.
+
+   The actual Epic name and definition were not supplied in the previous samples,
+   so these fields deliberately start blank. SMARTPHRASE_TEMPLATE.txt is only a
+   separator scaffold with placeholders, not a working Epic SmartPhrase.
+
+6. Click Save instructions and SmartPhrase. Confirm the publish message and
+   Last published timestamp. Open Handoff to check what the
+   team will see. Publishing here does not change anything inside Epic.
+
+DAILY ACCESS
+
+All signed-in users can read the short instructions at the top of Handoff.
+The source/sample panel, publication timestamp and publication refresh button
+are not shown on Handoff. Source editing and its Last published time remain in
+Admin. Existing automatic guide loading continues when Handoff renders.
+The separate instructions workspace has been removed. Returning to Admin restores
+the saved editor content. Save before leaving Admin.
+
+Delete all handoff data is available on Handoff to any signed-in user without an Admin password.
+It clears every current patient handoff and custom room, but preserves categories,
+mappings, settings, passwords and the SmartPhrase. The same action is available
+inside unlocked Admin. It does not erase earlier archive versions or downloads.
+
+The Admin workspace and its settings-editing callbacks require the separate password.
+Clearing patient handoffs is also available to signed-in users outside Admin.
+Admin locks when you leave its workspace, select Lock Admin, log out, reach
+15 minutes without Admin activity, or reach one hour since unlocking. Changing
+the configured password hash revokes an old unlock on its next check.
+
+Missing/invalid Admin credentials keep Admin locked without blocking Handoff.
+The password-entry attempt delay is per session. This feature is a second shared
+password, not individual accounts, multifactor authentication, or a substitute
+for an institution-approved identity/access layer. Existing handoff-screen
+medication mapping, hiding, and custom-room workflows remain available to users
+with the app login, as before. They can update those shared rules from Handoff.
+
+STORAGE AND CONFLICTS
+
+Published source, instructions and setup notes are encrypted with the existing
+key in the existing private DATA repository, in a separate file:
+
+    encrypted-data/user-guide.enc
+
+The clinical handoff-v1.enc file, medication mappings, room save times and error
+journal are not rewritten when a guide is published. Neither password nor its
+hash is stored in the guide. The guide has its own version check. If another
+administrator changes it, a stale save is refused and your unsaved editor text
+is kept. Copy any draft you want to keep, then use Reload published guide into
+editor, compare and save. That reload replaces the guide draft only.
+
+If loading or saving the guide fails, the app warns you and does not claim a
+successful publish. Handoff work remains available. Session-only mode saves the
+guide only in that session and says so. Earlier encrypted guide versions remain
+in Git history. Do not store clinical records, tokens or passwords in teaching
+content.
+
+FORGOTTEN ADMIN PASSWORD
+
+Run the Admin-only helper again and replace only admin_password_hash in the
+existing [app] secrets section. Restart as needed. This changes the Admin login,
+not the app login, archive encryption key, room records or guide. The original
+Admin password cannot be recovered. Do not reset the encryption key.
+
+Official hosting guidance:
+https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app/secrets-management

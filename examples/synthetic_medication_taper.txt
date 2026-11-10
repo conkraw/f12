@@ -1,0 +1,64 @@
+aaaaaaaaaaaaaaaa
+diagnoses:
+1. Synthetic medication-taper practice only
+
+aaaaaaaaaaaaaaaa
+
+bbbbbbbbbbbbbbbb
+Medications:
+Current Facility-Administered Medications
+Medication	Dose	Route	Frequency	Provider	Last Rate	Last Admin
+•	acetaminophen injection 120 mg	10 mg/kg (Dosing Weight)	Intravenous	q4h	Example Provider	48 mL/hr at 01/03/26 1000	120 mg at 01/03/26 1000
+•	dexAMETHasone (Decadron) 1 mg/mL syringe (neo/ped) 2 mg	2 mg	Intravenous	q12h	Example Provider	24 mL/hr at 01/03/26 0800	2 mg at 01/03/26 0800
+	Followed by
+•	[START ON 1/4/2026] dexAMETHasone (Decadron) 1 mg/mL syringe (neo/ped) 1 mg	1 mg	Intravenous	q12h	Example Provider	 	 
+	Followed by
+•	[START ON 1/5/2026] dexAMETHasone (Decadron) 1 mg/mL syringe (neo/ped) 0.5 mg	0.5 mg	Intravenous	q24h SCH	Example Provider	 	 
+•	sodium acetate 60 mEq in dextrose 5 % and sodium chloride 0.45 % 1,000 mL infusion		Intravenous	Continuous	Example Provider	25 mL/hr at 01/03/26 0900	New Bag at 01/03/26 0900
+bbbbbbbbbbbbbbbb
+
+cccccccccccccccc
+Invasive Ventilation:
+ 
+cccccccccccccccc
+
+dddddddddddddddd
+Non-invasive Ventilation:
+ 
+dddddddddddddddd
+
+eeeeeeeeeeeeeeee
+VITALS:
+Temp: [36.5 °C-37.2 °C] 36.8 °C
+Heart Rate: [90-120] 108
+Resp: [18-25] 22
+BP: (90-110)/(45-65) 100/60
+eeeeeeeeeeeeeeee
+
+gggggggggggggggg
+LABS:
+Lab Results
+Component	Value	Date
+ WBC	11.00	01/03/2026
+ WBC	12.00	01/02/2026
+ HGB	10.0 (L)	01/03/2026
+ HGB	10.5	01/02/2026
+ HCT	30.0 (L)	01/03/2026
+ HCT	31.0	01/02/2026
+ PLT	300	01/03/2026
+ PLT	290	01/02/2026
+Lab Results
+Component	Value	Date
+ NA	138	01/03/2026
+ NA	139	01/02/2026
+ K	3.8	01/03/2026
+ K	4.0	01/02/2026
+ CL	102	01/03/2026
+ CL	103	01/02/2026
+ CO2	24	01/03/2026
+ CO2	23	01/02/2026
+ BUN	7	01/03/2026
+ BUN	8	01/02/2026
+ CREATININE	0.30	01/03/2026
+ CREATININE	0.31	01/02/2026
+gggggggggggggggg

@@ -1,0 +1,310 @@
+{
+  "id": "3de5d1a3d00b4035abb966095b1b5564",
+  "room": "P4102",
+  "created_at": "2026-11-09T02:22:49+00:00",
+  "updated_at": null,
+  "fields": {
+    "Diagnoses": "Synthetic medication-grouping example",
+    "Demographics / Weight": "",
+    "Neurologic": "",
+    "Respiratory": "",
+    "Cardiovascular": "",
+    "FEN / GI": "",
+    "Hematology": "",
+    "Infectious Disease": "",
+    "Labs": "",
+    "Skin / Wounds": "",
+    "Tasks": "",
+    "Other": "",
+    "Other Medications": "",
+    "Lab Results / Trends": "",
+    "Goals / Follow-up": "Synthetic demonstration. Medication categories organize the handoff and do not determine the indication.",
+    "Airway": "",
+    "Last Intubation": "",
+    "Access": "",
+    "Drains / Tubes": ""
+  },
+  "medications": [
+    {
+      "id": "c130dcee10714ff4a41ab1b7f0f10973",
+      "name": "esmolol infusion",
+      "dose": "25 mcg/kg/min",
+      "route": "Intravenous",
+      "frequency": "Continuous",
+      "last_rate": "2.52 mL/hr",
+      "rate_time": "11/08/26 1016",
+      "section": "Cardiovascular",
+      "custom_text": "",
+      "include": true,
+      "warnings": [
+        "The pump-rate entry comes from Last Rate, not a live pump feed.",
+        "The displayed dose-rate is the documented Last Admin rate, not a live pump reading. The ordered Dose remains in the editor."
+      ],
+      "hidden": false,
+      "last_admin_rate": "25 mcg/kg/min",
+      "last_admin_time": "11/08/26 1200",
+      "last_admin_status": "rate"
+    },
+    {
+      "id": "55dc3bf2c1994b7d9f886b629c4a138e",
+      "name": "sotalol solution",
+      "dose": "5 mg",
+      "route": "Oral",
+      "frequency": "q8h",
+      "last_rate": "",
+      "rate_time": "01/02/2026 1000",
+      "custom_text": "",
+      "section": "Other Medications",
+      "include": true,
+      "hidden": false,
+      "warnings": []
+    },
+    {
+      "id": "340aa51035a24d5a940d1053ed618f75",
+      "name": "amlodipine tablet",
+      "dose": "2.5 mg",
+      "route": "Oral",
+      "frequency": "Daily",
+      "last_rate": "",
+      "rate_time": "01/02/2026 1000",
+      "custom_text": "",
+      "section": "Other Medications",
+      "include": true,
+      "hidden": false,
+      "warnings": []
+    },
+    {
+      "id": "6b7be5c259134cfcb749edfe63713b57",
+      "name": "milrinone infusion",
+      "dose": "0.5 mcg/kg/min",
+      "route": "Intravenous",
+      "frequency": "Continuous",
+      "last_rate": "2.52 mL/hr",
+      "rate_time": "11/08/26 1016",
+      "section": "Cardiovascular",
+      "custom_text": "",
+      "include": true,
+      "warnings": [
+        "The pump-rate entry comes from Last Rate, not a live pump feed.",
+        "The displayed dose-rate is the documented Last Admin rate, not a live pump reading. The ordered Dose remains in the editor."
+      ],
+      "hidden": false,
+      "last_admin_rate": "0.5 mcg/kg/min",
+      "last_admin_time": "11/08/26 1200",
+      "last_admin_status": "rate"
+    },
+    {
+      "id": "7df486a7c4684410b19f69c95d29ecbf",
+      "name": "norepinephrine infusion",
+      "dose": "0.03 mcg/kg/min",
+      "route": "Intravenous",
+      "frequency": "Continuous",
+      "last_rate": "2.52 mL/hr",
+      "rate_time": "11/08/26 1016",
+      "section": "Cardiovascular",
+      "custom_text": "",
+      "include": true,
+      "warnings": [
+        "The pump-rate entry comes from Last Rate, not a live pump feed.",
+        "The displayed dose-rate is the documented Last Admin rate, not a live pump reading. The ordered Dose remains in the editor."
+      ],
+      "hidden": false,
+      "last_admin_rate": "0.03 mcg/kg/min",
+      "last_admin_time": "11/08/26 1200",
+      "last_admin_status": "rate"
+    },
+    {
+      "id": "4c784175fa5a44a48ee933d1c2737122",
+      "name": "hydrocortisone injection",
+      "dose": "5 mg",
+      "route": "Intravenous",
+      "frequency": "q8h",
+      "last_rate": "",
+      "rate_time": "01/02/2026 1000",
+      "custom_text": "",
+      "section": "Other Medications",
+      "include": true,
+      "hidden": false,
+      "warnings": []
+    },
+    {
+      "id": "b2003fe8a714431a958ab5cadcb67a69",
+      "name": "nicardipine infusion",
+      "dose": "0.5 mcg/kg/min",
+      "route": "Intravenous",
+      "frequency": "Continuous",
+      "last_rate": "2.52 mL/hr",
+      "rate_time": "11/08/26 1016",
+      "section": "Cardiovascular",
+      "custom_text": "",
+      "include": true,
+      "warnings": [
+        "The pump-rate entry comes from Last Rate, not a live pump feed.",
+        "The displayed dose-rate is the documented Last Admin rate, not a live pump reading. The ordered Dose remains in the editor."
+      ],
+      "hidden": false,
+      "last_admin_rate": "0.5 mcg/kg/min",
+      "last_admin_time": "11/08/26 1200",
+      "last_admin_status": "rate"
+    },
+    {
+      "id": "6f2e5ba4939b4c95907c7711b882c454",
+      "name": "glycopyrrolate solution",
+      "dose": "0.5 mg",
+      "route": "Per G Tube",
+      "frequency": "TID",
+      "last_rate": "",
+      "rate_time": "01/02/2026 1000",
+      "custom_text": "",
+      "section": "Other Medications",
+      "include": true,
+      "hidden": false,
+      "warnings": []
+    },
+    {
+      "id": "5a832ca1710c4a3eb9bff64a294f02c9",
+      "name": "scopolamine patch",
+      "dose": "1 patch",
+      "route": "Transdermal",
+      "frequency": "q72h",
+      "last_rate": "",
+      "rate_time": "01/02/2026 1000",
+      "custom_text": "",
+      "section": "Other Medications",
+      "include": true,
+      "hidden": false,
+      "warnings": []
+    },
+    {
+      "id": "5b377c843400485188bd1cc0b70aff85",
+      "name": "levothyroxine tablet",
+      "dose": "25 mcg",
+      "route": "Oral",
+      "frequency": "Daily",
+      "last_rate": "",
+      "rate_time": "01/02/2026 1000",
+      "custom_text": "",
+      "section": "Other Medications",
+      "include": true,
+      "hidden": false,
+      "warnings": []
+    },
+    {
+      "id": "4536bb86aaa04d6483a28e651122b44f",
+      "name": "insulin regular infusion",
+      "dose": "0.04 Units/kg/hr",
+      "route": "Intravenous",
+      "frequency": "Continuous",
+      "last_rate": "2.52 mL/hr",
+      "rate_time": "11/08/26 1016",
+      "section": "Other Medications",
+      "custom_text": "",
+      "include": true,
+      "warnings": [
+        "The pump-rate entry comes from Last Rate, not a live pump feed.",
+        "The displayed dose-rate is the documented Last Admin rate, not a live pump reading. The ordered Dose remains in the editor."
+      ],
+      "hidden": false,
+      "last_admin_rate": "0.04 Units/kg/hr",
+      "last_admin_time": "11/08/26 1200",
+      "last_admin_status": "rate"
+    },
+    {
+      "id": "06cdd7936eb2436e85ed24c7e5887518",
+      "name": "Lantus injection",
+      "dose": "4 Units",
+      "route": "Subcutaneous",
+      "frequency": "Nightly",
+      "last_rate": "",
+      "rate_time": "01/02/2026 1000",
+      "custom_text": "",
+      "section": "Other Medications",
+      "include": true,
+      "hidden": false,
+      "warnings": []
+    },
+    {
+      "id": "01ac4ca9f1c840b1b1257cde1b8710c7",
+      "name": "metformin tablet",
+      "dose": "500 mg",
+      "route": "Oral",
+      "frequency": "BID",
+      "last_rate": "",
+      "rate_time": "01/02/2026 1000",
+      "custom_text": "",
+      "section": "Other Medications",
+      "include": true,
+      "hidden": false,
+      "warnings": []
+    }
+  ],
+  "ventilation": null,
+  "noninvasive": [],
+  "vitals": [
+    {
+      "label": "Heart Rate",
+      "value": "[90-115] 100",
+      "section": "Cardiovascular",
+      "include": true
+    },
+    {
+      "label": "BP",
+      "value": "(90-110)/(50-70) 100/60",
+      "section": "Cardiovascular",
+      "include": true
+    },
+    {
+      "label": "Resp",
+      "value": "[14-22] 18",
+      "section": "Respiratory",
+      "include": true
+    },
+    {
+      "label": "SpO2",
+      "value": "95% to 100%",
+      "section": "Respiratory",
+      "include": true
+    },
+    {
+      "label": "Last SpO2",
+      "value": "98 %",
+      "section": "Respiratory",
+      "include": true
+    },
+    {
+      "label": "Temp",
+      "value": "36.8 C",
+      "section": "Infectious Disease",
+      "include": true
+    }
+  ],
+  "labs": {
+    "rows": [],
+    "notes": []
+  },
+  "neuro_vitals": {
+    "k": [],
+    "l": [],
+    "m": []
+  },
+  "nutrition": null,
+  "cultures": {
+    "rows": [],
+    "notes": []
+  },
+  "dosing_weight": "",
+  "admission_date": "",
+  "viral_panel": {
+    "rows": []
+  },
+  "blood_gas": null,
+  "cbc": null,
+  "recurring_orders": null,
+  "intake_output": null,
+  "feeds": null,
+  "devices": null,
+  "neuro_devices": null,
+  "pacemaker": null,
+  "diet": null,
+  "import_warnings": {}
+}

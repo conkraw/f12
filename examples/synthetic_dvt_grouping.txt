@@ -1,0 +1,58 @@
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+Diagnoses:
+1. Synthetic DVT grouping example, not clinical orders
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+Medications:
+Current Facility-Administered Medications
+Medication	Dose	Route	Frequency	Provider	Last Rate	Last Admin
+•	dexmedetomidine synthetic infusion	0.5 mcg/kg/hr (Dosing Weight)	Intravenous	Continuous	Example clinician	1 mL/hr at 01/04/27 0900	
+•	milrinone synthetic infusion	0.25 mcg/kg/min (Dosing Weight)	Intravenous	Continuous	Example clinician	0.5 mL/hr at 01/04/27 0900	
+•	aminophylline synthetic infusion	0.5 mg/kg/hr (Dosing Weight)	Intravenous	Continuous	Example clinician	2 mL/hr at 01/04/27 0900	
+•	albuterol continuous nebulizer solution	5 mg/hr	Nebulization	Continuous	Example clinician	1 mL/hr at 01/04/27 0900	
+•	albuterol nebulizer solution	2.5 mg	Nebulization	q4h PRN	Example clinician		
+•	heparin synthetic infusion	10 Units/kg/hr (Dosing Weight)	Intravenous	Continuous	Example clinician	1.2 mL/hr at 01/04/27 0900	
+•	cangrelor synthetic infusion	0.1 mcg/kg/min (Dosing Weight)	Intravenous	Continuous	Example clinician	0.2 mL/hr at 01/04/27 0900	
+•	enoxaparin synthetic injection	10 mg	Subcutaneous	q12h	Example clinician		
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+
+cccccccccccccccccccccccccccccccc
+Invasive Ventilation:
+Vent Mode: Pressure Control
+Resp Rate (Set): 14
+Vt (Set, mL): 120 mL
+PEEP (cm H2O): 5 cm H2O
+FiO2 (%): 30 %
+cccccccccccccccccccccccccccccccc
+
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+VITALS:
+Temp: [36.5-37.5] 37.0 C
+Heart Rate: [80-120] 100
+Resp: [12-24] 18
+BP: 100/60
+SpO2 Avg: 98 % Min: 94 % Max: 100 %
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+
+gggggggggggggggggggggggggggggggg
+LABS:
+Component	Value	Date
+THEOPH	12.4	01/04/2027 09:00
+WBC	8.0	01/04/2027
+HGB	11.1	01/04/2027
+HCT	33.3	01/04/2027
+PLT	250	01/04/2027
+NA	139	01/04/2027
+K	4.0	01/04/2027
+CL	103	01/04/2027
+CO2	24	01/04/2027
+BUN	9	01/04/2027
+CREATININE	0.30	01/04/2027
+GLUCOSE	95	01/04/2027
+gggggggggggggggggggggggggggggggg
+
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+Target Arousal Level:
+Target Arousal Level (SBS): SBS -1
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk

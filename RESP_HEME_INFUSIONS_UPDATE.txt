@@ -1,0 +1,40 @@
+Historical version 6.20 note. The DVT split described below is superseded by
+DVT_GROUPING_UPDATE.txt in version 6.21.
+
+Version 6.20: Respiratory and Heme Infusions
+
+Full package, not a patch. Start from the existing Version 6.19 configuration.
+No additional dependency, schema change or key generation is needed.
+
+New headings:
+Respiratory Infusions
+Heme Infusions
+
+Medication names are bold, explicit doses are bold and underlined, and a
+different recorded rate remains on its own line. This matches Neuro and CV.
+Respiratory vitals, support settings and the Theophylline level remain first.
+
+Automatic grouping uses the recorded continuous frequency and supported route.
+Respiratory includes continuous nebulized/inhaled medicines as a display choice.
+The original route remains visible. Scheduled/PRN medicines stay separate.
+An infusion product name alone is insufficient.
+
+Heme Infusions keeps DVT Prophylaxis as a subgroup for the existing qualifying
+antithrombotic infusions. Scheduled injections remain in the separate DVT group.
+No new indication is inferred and no order is duplicated.
+
+The existing Automatic / Infusion / Other medication control is now available
+in Respiratory and Hematology, including DVT orders. Choices use the existing
+per-formulation/route/frequency rule format, and can be changed in Admin.
+Manual choices are display overrides, not changes to the source order.
+
+Stored rows, clinical parsers, lab results, warnings, mappings, save timestamps,
+secrets and encryption remain intact. Hidden medicines stay hidden. A failed
+rule save leaves the original display and rule unchanged.
+
+Install: save open work, extract PICU620.zip, open its application folder, and
+copy all contents into your existing app-code repository. Replace matching files
+and keep app.py at the root. Keep Secrets unchanged. Restart and refresh.
+Existing saved handoffs do not need a re-paste to receive the formatting.
+
+See TEST_REPORT.md for executed checks and testing limitations.

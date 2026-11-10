@@ -1,0 +1,138 @@
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+Diagnoses:
+1. Synthetic teaching example. Not a patient record.
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+Medications:
+Current Facility-Administered Medications
+Medication	Dose	Route	Frequency	Provider	Last Rate	Last Admin
+• acetaminophen injection 100 mg	100 mg	Intravenous	q6h PRN	Example Clinician		
+• albuterol continuous (5 MG/ML) 0.5% nebulizer solution - ADS Override Pull						
+• albuterol continuous nebulizer solution	5 mg/hr	Nebulization	Continuous	Example Clinician	1 mL/hr at 01/03/26 0800	
+• sodium acetate 60 mEq in dextrose 5 % 500 mL infusion		Intravenous	Continuous	Example Clinician	25 mL/hr at 01/03/26 0800	
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+
+cccccccccccccccccccccccccccccccc
+Invasive Ventilation:
+Vent Information
+Vent Mode: Volume Targeted Pressure Control - PS
+Settings
+Resp Rate (Set): 14
+Vt (Set, mL): 140 mL
+PEEP (cm H2O): 6 cm H2O
+Mean Airway Pressure: 11
+Insp Time (sec): 0.8 sec
+PIP Observed (cm H2O): 22 cm H2O
+Pressure Support (cm H2O): 8 cm H20
+Trigger Sensitivity Flow (L/min): 0.4 L/min
+FiO2 (%): 30 %
+cccccccccccccccccccccccccccccccc
+
+dddddddddddddddddddddddddddddddd
+Non-invasive Ventilation:
+O2 Delivery Method: Endotracheal tube
+FiO2 (%): 30 %
+dddddddddddddddddddddddddddddddd
+
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+VITALS:
+Temp: [36.8 °C-37.8 °C] 37.2 °C
+Heart Rate: [100-135] 112
+Resp: [14-25] 20
+BP: (90-112)/(42-65) 100/52
+Central Venous Pressure: [4-8] 6
+FiO2 (%): [30 %-40 %] 30 %
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+
+gggggggggggggggggggggggggggggggg
+LABS:
+Complete Blood Count:
+Lab Results
+Component	Value	Date
+	WBC	12.80 (H)	01/03/2026
+	WBC	8.20	01/02/2026
+	HGB	11.2	01/03/2026
+	HGB	8.4 (L)	01/03/2026
+	HCT	33.1	01/03/2026
+	HCT	25.5 (L)	01/03/2026
+	PLT	260	01/03/2026
+	PLT	215	01/02/2026
+	MCV	72.0 (L)	01/03/2026
+	MCV	71.8 (L)	01/02/2026
+	NEUTROABS	7.10	01/03/2026
+	NEUTROABS	5.10	01/02/2026
+	LYMPHSABS	2.20	01/03/2026
+	LYMPHSABS	2.10	01/02/2026
+
+Basic Metabolic Panel:
+Lab Results
+Component	Value	Date
+	NA	138	01/03/2026
+	NA	136	01/02/2026
+	K	3.4 (L)	01/03/2026
+	K	3.0 (L)	01/03/2026
+	CL	100	01/03/2026
+	CL	102	01/02/2026
+	CO2	24	01/03/2026
+	CO2	22	01/02/2026
+	BUN	8	01/03/2026
+	BUN	9	01/02/2026
+	CREATININE	0.30	01/03/2026
+	CREATININE	0.32	01/02/2026
+
+Hepatic Function Panel:
+Lab Results
+Component	Value	Date
+	AST	30	01/02/2026
+	ALT	14	01/02/2026
+	ALKPHOS	205	01/02/2026
+	BILITOT	<0.2	01/02/2026
+	ALBUMIN	3.8	01/02/2026
+
+Coagulation Profile:
+Lab Results
+Component	Value	Date
+	PT	14.0	01/03/2026
+	INR	1.1	01/03/2026
+	PTT	28	01/03/2026
+	FIB	220	01/03/2026
+
+Blood Gas:
+Lab Results
+Component	Value	Date
+	PHA	7.40	01/03/2026
+	PCO2A	40	01/03/2026
+	PO2ART	80	01/03/2026
+	BEART	1	01/03/2026
+	PHV	7.32	01/02/2026
+	PCO2V	48	01/02/2026
+	PO2VEN	42	01/02/2026
+	BEV	-1	01/02/2026
+
+Inflammatory Markers:
+Lab Results
+Component	Value	Date
+	CRP	0.5	01/03/2026
+	PROCAL	0.10	01/02/2026
+
+Lactic Acid:
+Lab Results
+Component	Value	Date
+	LACTIC ACID	1.4 mmol/L	01/03/2026
+gggggggggggggggggggggggggggggggg
+
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+Target Arousal Level:
+Target Arousal Level (SBS): SBS -1
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+
+llllllllllllllllllllllllllllllll
+WAT Score:
+
+llllllllllllllllllllllllllllllll
+
+mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+ICP Trends:
+
+mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm

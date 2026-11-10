@@ -1,0 +1,22 @@
+aaaaaaaa
+Diagnoses:
+1. Synthetic respiratory-support example
+
+aaaaaaaa
+
+cccccccc
+Invasive Ventilation:
+Vent Information
+Manual resuscitator at bedside: Yes
+Settings
+FiO2 (%): 21 %
+cccccccc
+
+dddddddd
+Non-invasive Ventilation:
+O2 Delivery Method: Nasal cannula, Other (Comment) (humidified)
+Total Inspiratory Pressure (cm H2O): 10 cmH20
+Expiratory Positive Airway Pressure (EPAP) (cmH20): 5 cmH20
+FiO2 (%): 21 %
+O2 Flow Rate (L/min): 3 L/min
+dddddddd

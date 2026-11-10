@@ -1,0 +1,98 @@
+aaaaaaaa
+Diagnoses:
+1. Synthetic layout demonstration
+Not a treatment plan.
+aaaaaaaa
+bbbbbbbb
+Medications:
+Medication	Dose	Route	Frequency	Provider	Last Rate	Last Admin
+• dexmedetomidine infusion	0.4 mcg/kg/hr (Dosing Weight)	Intravenous	Continuous	Synthetic	1 mL/hr	
+• fentanyl injection 5 mcg	5 mcg	Intravenous	q1h PRN	Synthetic		
+• midazolam injection 0.5 mg	0.5 mg	Intravenous	q2h PRN	Synthetic		
+• vecuronium injection 1 mg	1 mg	Intravenous	q1h PRN	Synthetic		
+• acetaminophen suspension 100 mg	100 mg	Oral	q6h PRN	Synthetic		
+• milrinone infusion	0.25 mcg/kg/min (Dosing Weight)	Intravenous	Continuous	Synthetic	0.5 mL/hr	
+• heparin infusion 50 units/mL	10 Units/kg/hr (Dosing Weight)	Intravenous	Continuous	Synthetic	2 mL/hr	
+• pantoprazole injection 10 mg	10 mg	Intravenous	Daily	Synthetic		
+• polyethylene glycol powder 4 g	4 g	Per G Tube	Daily	Synthetic		
+• furosemide injection 2 mg	2 mg	Intravenous	q12h	Synthetic		
+• chlorothiazide injection 10 mg	10 mg	Intravenous	q12h	Synthetic		
+• heparin flush 10 units/mL	10 Units	Intracatheter	q24h	Synthetic		
+bbbbbbbb
+eeeeeeee
+VITALS:
+Temp: [36.6-37.2] 37.0 C
+Heart Rate: [90-110] 100
+Resp: [18-25] 22
+BP: (85-100)/(45-60) 95/55
+SpO2 Avg: 98 % Min: 96 % Max: 100 %
+eeeeeeee
+gggggggg
+LABS:
+Component	Value	Date
+WBC	8.1	01/04/2027
+WBC	9.2	01/03/2027
+HGB	11.0	01/04/2027
+HGB	10.8	01/03/2027
+HCT	33	01/04/2027
+HCT	32	01/03/2027
+PLT	250	01/04/2027
+PLT	230	01/03/2027
+NEUTROABS	4.2	01/04/2027
+LYMPHSABS	2.1	01/04/2027
+NA	138	01/04/2027
+NA	137	01/03/2027
+K	4.1	01/04/2027
+K	4.0	01/03/2027
+CL	102	01/04/2027
+CL	101	01/03/2027
+CO2	25	01/04/2027
+CO2	24	01/03/2027
+BUN	10	01/04/2027
+BUN	11	01/03/2027
+CREATININE	0.4	01/04/2027
+CREATININE	0.4	01/03/2027
+GLUCOSE	99	01/04/2027
+GLUCOSE	100	01/03/2027
+CA	8.2 (L)	01/04/2027
+CA	8.7	01/03/2027
+MG	1.9	01/04/2027
+MG	2.0	01/03/2027
+PHOS	3.2	01/04/2027
+PHOS	3.6	01/03/2027
+LACTATE	1.0	01/04/2027
+gggggggg
+iiiiiiii
+NUTRITION:
+Wt Readings from Last 1 Encounters:
+01/04/27	10 kg (Z= 0.1)
+Dosing Weight: 10 kg
+iiiiiiii
+kkkkkkkk
+Target Arousal Level:
+Target Arousal Level (SBS): SBS -1
+kkkkkkkk
+ssssssss
+Intake/Output Summary (Last 24 hours) at 01/04/2027 0900
+Intake	1000 ml
+Output	950 ml
+Net	50 ml
+ssssssss
+
+wwwwwwwwwwww
+Pacemaker:
+	01/04/27 0800
+Pacemaker
+Pacemaker	Yes
+Pacemaker Type	Transthoracic
+Pacer Mode	AAI
+Temporary Wires	Epicardial
+Atrial Rate (beats/min)	140 BPM
+Atrial Output (milliamps)	10 milliamps
+wwwwwwwwwwww
+
+uuuuuuuuuuuu
+Lines:
+CVC 01/02/27 Double-lumen Right Internal jugular-Site Assessment: Clean, Dry, Intact
+Peripheral IV 01/03/27 Left Forearm-Site Assessment: Clean, Dry, Intact
+uuuuuuuuuuuu

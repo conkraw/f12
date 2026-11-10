@@ -1,0 +1,37 @@
+aaaaaaaa
+Diagnoses:
+1. Synthetic theophylline display example, not a treatment plan.
+aaaaaaaa
+bbbbbbbb
+Medications:
+Medication	Dose	Route	Frequency	Provider	Last Rate	Last Admin
+• albuterol nebulizer solution 2.5 mg	2.5 mg	Nebulization	q4h	Synthetic		
+bbbbbbbb
+cccccccc
+Invasive Ventilation:
+Vent Mode: Volume Targeted Pressure Control - Intermittent Mandatory Ventilation
+Resp Rate (Set): 14
+Vt (Set, mL): 150 mL
+Vt (observed, mL): 152 mL
+PEEP (cm H2O): 5 cm H2O
+FiO2 (%): 30 %
+cccccccc
+eeeeeeee
+VITALS:
+Resp: [14-22] 18
+SpO2 Avg: 98 % Min: 96 % Max: 100 %
+eeeeeeee
+gggggggg
+LABS:
+Lab Results
+Component	Value	Date
+THEOPH	12.4	01/04/2027 09:30
+THEOPH	9.1	01/03/2027 08:00
+NA	138	01/04/2027
+K	4.0	01/04/2027
+CL	101	01/04/2027
+CO2	25	01/04/2027
+BUN	8	01/04/2027
+CREATININE	0.4	01/04/2027
+GLUCOSE	98	01/04/2027
+gggggggg

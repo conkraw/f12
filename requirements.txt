@@ -1,0 +1,7 @@
+streamlit>=1.52,<2
+cryptography>=43,<52
+requests>=2.32,<3
+
+reportlab>=4.2,<5
+
+tzdata>=2025.2

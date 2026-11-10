@@ -1,0 +1,10 @@
+VALIDATION: VERSION 5 RESPIRATORY FIX
+
+Command: PYTHONPATH=. python -m pytest -q --disable-warnings
+313 passed in 2.32s
+
+Tests use synthetic records, widget stubs and mocked GitHub data operations.
+The missing-mode pressure-pair and nasal-cannula cases are covered through
+parsing, import, editing/removal, encrypted save/load and batch PDF/HTML output.
+No live Streamlit browser or private handoff data repository was exercised.
+See tests/test_nasal_cannula.py and NONINVASIVE_UPDATE.md.

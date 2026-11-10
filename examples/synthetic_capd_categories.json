@@ -1,0 +1,431 @@
+{
+  "id": "5b26e3cb4db64ee881bcb918aafc862a",
+  "room": "P4102",
+  "created_at": "2026-11-09T04:21:39+00:00",
+  "updated_at": "2026-11-09T04:05:00+00:00",
+  "fields": {
+    "Diagnoses": "Synthetic layout example",
+    "Demographics / Weight": "",
+    "Neurologic": "",
+    "Respiratory": "",
+    "Cardiovascular": "",
+    "FEN / GI": "",
+    "Hematology": "",
+    "Infectious Disease": "",
+    "Labs": "",
+    "Skin / Wounds": "",
+    "Tasks": "",
+    "Other": "",
+    "Other Medications": "",
+    "Lab Results / Trends": "",
+    "Goals / Follow-up": "SYNTHETIC DEMONSTRATION ONLY. Example orders are not treatment recommendations.",
+    "Airway": "",
+    "Last Intubation": "",
+    "Access": "",
+    "Drains / Tubes": ""
+  },
+  "medications": [
+    {
+      "id": "9f9e9a2d0efb430f9953038f5fee02b3",
+      "name": "midazolam infusion",
+      "dose": "0.08 mg/kg/hr",
+      "route": "Intravenous",
+      "frequency": "Continuous",
+      "last_rate": "5.28 mL/hr",
+      "rate_time": "11/08/26 2200",
+      "section": "Neurologic",
+      "custom_text": "",
+      "include": true,
+      "warnings": [
+        "The pump-rate entry comes from Last Rate, not a live pump feed.",
+        "The displayed dose-rate is the documented Last Admin rate, not a live pump reading. The ordered Dose remains in the editor."
+      ],
+      "hidden": false,
+      "last_admin_rate": "0.08 mg/kg/hr",
+      "last_admin_time": "11/08/26 2200",
+      "last_admin_status": "rate"
+    },
+    {
+      "id": "b4259b34ac4949e491cbf7abb748891d",
+      "name": "midazolam injection",
+      "dose": "2 mg",
+      "route": "Intravenous",
+      "frequency": "q1h PRN",
+      "last_rate": "",
+      "rate_time": "",
+      "section": "Other Medications",
+      "custom_text": "",
+      "include": true,
+      "warnings": [],
+      "hidden": false
+    },
+    {
+      "id": "d0cd89a4ea294e2d85166612a1ee6931",
+      "name": "levetiracetam solution",
+      "dose": "500 mg",
+      "route": "Per G Tube",
+      "frequency": "q12h",
+      "last_rate": "",
+      "rate_time": "",
+      "section": "Other Medications",
+      "custom_text": "",
+      "include": true,
+      "warnings": [],
+      "hidden": false
+    },
+    {
+      "id": "c39279b426a34e5abe6c603ae2098682",
+      "name": "albuterol inhaler",
+      "dose": "2 puff",
+      "route": "Inhalation",
+      "frequency": "q4h",
+      "last_rate": "",
+      "rate_time": "",
+      "section": "Other Medications",
+      "custom_text": "",
+      "include": true,
+      "warnings": [],
+      "hidden": false
+    },
+    {
+      "id": "e8a69f9efaed4d76b15c08ff0f9f075b",
+      "name": "diphenhydramine solution",
+      "dose": "12.5 mg",
+      "route": "Per G Tube",
+      "frequency": "q6h PRN",
+      "last_rate": "",
+      "rate_time": "",
+      "section": "Other Medications",
+      "custom_text": "",
+      "include": true,
+      "warnings": [],
+      "hidden": false
+    },
+    {
+      "id": "cd09f93b444745da9aa5b6ef42987bc5",
+      "name": "erythromycin suspension",
+      "dose": "125 mg",
+      "route": "Per G Tube",
+      "frequency": "q8h",
+      "last_rate": "",
+      "rate_time": "",
+      "section": "Other Medications",
+      "custom_text": "",
+      "include": true,
+      "warnings": [],
+      "hidden": false
+    },
+    {
+      "id": "a23c0dade83a4cd4a6ddd36e2bccdb20",
+      "name": "prucalopride tablet",
+      "dose": "1 mg",
+      "route": "Oral",
+      "frequency": "Daily",
+      "last_rate": "",
+      "rate_time": "",
+      "section": "Other Medications",
+      "custom_text": "",
+      "include": true,
+      "warnings": [],
+      "hidden": false
+    },
+    {
+      "id": "c8cd32cba25c440b93bbbc4cf031cb83",
+      "name": "pantoprazole injection",
+      "dose": "40 mg",
+      "route": "Intravenous",
+      "frequency": "Daily",
+      "last_rate": "",
+      "rate_time": "",
+      "section": "Other Medications",
+      "custom_text": "",
+      "include": true,
+      "warnings": [],
+      "hidden": false
+    },
+    {
+      "id": "7ce3241cd8c64f51b262108335e5a476",
+      "name": "melatonin tablet",
+      "dose": "3 mg",
+      "route": "Per G Tube",
+      "frequency": "Nightly",
+      "last_rate": "",
+      "rate_time": "",
+      "section": "Other Medications",
+      "custom_text": "",
+      "include": true,
+      "warnings": [],
+      "hidden": false
+    }
+  ],
+  "ventilation": {
+    "mode": "Volume Targeted Pressure Control - PS",
+    "values": {
+      "Resp Rate (Set)": "10",
+      "Vt (Set, mL)": "450 mL (safety vt)",
+      "PEEP (cm H2O)": "5 cm H2O",
+      "PIP Observed (cm H2O)": "Avg: 15.4 cm H2O Min: 15 cm H2O Max: 15.9 cm H2O",
+      "Pmin": "10 cmH2O",
+      "Pmax": "20 cmH2O",
+      "Ti Min": "0.9",
+      "Ti Max": "1.2"
+    }
+  },
+  "noninvasive": [],
+  "vitals": [
+    {
+      "label": "Heart Rate",
+      "value": "[60-100] 95",
+      "section": "Cardiovascular",
+      "include": true
+    },
+    {
+      "label": "Resp",
+      "value": "[10-24] 14",
+      "section": "Respiratory",
+      "include": true
+    },
+    {
+      "label": "BP",
+      "value": "(99-118)/(44-76) 110/69",
+      "section": "Cardiovascular",
+      "include": true
+    },
+    {
+      "label": "SpO2",
+      "value": "94% to 100%",
+      "section": "Respiratory",
+      "include": true
+    },
+    {
+      "label": "Last SpO2",
+      "value": "98 %",
+      "section": "Respiratory",
+      "include": true
+    },
+    {
+      "label": "ETCO2",
+      "value": "35 to 42 mmHg",
+      "section": "Respiratory",
+      "include": true
+    },
+    {
+      "label": "Last ETCO2",
+      "value": "36 mmHg",
+      "section": "Respiratory",
+      "include": true
+    },
+    {
+      "label": "Temp",
+      "value": "[36.7 C-37.4 C] 37.4 C",
+      "section": "Infectious Disease",
+      "include": true
+    }
+  ],
+  "labs": {
+    "rows": [
+      {
+        "id": "3d60d5f07a3847b7845604e4de8dc48b",
+        "component": "WBC",
+        "value": "8.0",
+        "date": "11/08/2026",
+        "panel": "CBC",
+        "include": true
+      },
+      {
+        "id": "bb6788a880b1404f891bf29cde2e17f8",
+        "component": "HGB",
+        "value": "12.0",
+        "date": "11/08/2026",
+        "panel": "CBC",
+        "include": true
+      },
+      {
+        "id": "5009670850b0461bb4f25f44af0ac293",
+        "component": "HCT",
+        "value": "36.0",
+        "date": "11/08/2026",
+        "panel": "CBC",
+        "include": true
+      },
+      {
+        "id": "eabe2e563159437bbf19ab01a3caf1f7",
+        "component": "PLT",
+        "value": "250",
+        "date": "11/08/2026",
+        "panel": "CBC",
+        "include": true
+      },
+      {
+        "id": "0bff130792fe42b38497bcb6d1d37dda",
+        "component": "NA",
+        "value": "140",
+        "date": "11/08/2026",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "7c9875c279184ed8a6f1ca6b06deb013",
+        "component": "K",
+        "value": "4.0",
+        "date": "11/08/2026",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "c394dd6b0986446d96fd795a4942a9da",
+        "component": "CL",
+        "value": "104",
+        "date": "11/08/2026",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "a9f255537189435aa5f9cbad420f98d4",
+        "component": "CO2",
+        "value": "24",
+        "date": "11/08/2026",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "fa54152a4d2b4faab69c57cba44a8efa",
+        "component": "BUN",
+        "value": "12",
+        "date": "11/08/2026",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "ed23da1d50924f3ba6d6432cabee7240",
+        "component": "CREATININE",
+        "value": "0.40",
+        "date": "11/08/2026",
+        "panel": "BMP",
+        "include": true
+      },
+      {
+        "id": "15f49b55e8d04665974b334ab56b1579",
+        "component": "GLUCOSE",
+        "value": "100",
+        "date": "11/08/2026",
+        "panel": "BMP",
+        "include": true
+      }
+    ],
+    "notes": []
+  },
+  "neuro_vitals": {
+    "k": [
+      {
+        "label": "Target Arousal Level (SBS)",
+        "value": "SBS 0",
+        "section": "Neurologic",
+        "include": true
+      }
+    ],
+    "l": [
+      {
+        "label": "WAT-1 total score (0-12)",
+        "value": "3",
+        "section": "Neurologic",
+        "include": true
+      }
+    ],
+    "m": [],
+    "y": [
+      {
+        "label": "CAPD",
+        "value": "24",
+        "section": "Neurologic",
+        "include": true
+      }
+    ]
+  },
+  "nutrition": {
+    "weight": "70 kg",
+    "z_score": "",
+    "include": true
+  },
+  "cultures": {
+    "rows": [],
+    "notes": []
+  },
+  "dosing_weight": "66 kg",
+  "admission_date": "",
+  "viral_panel": {
+    "rows": []
+  },
+  "blood_gas": null,
+  "cbc": null,
+  "recurring_orders": null,
+  "intake_output": {
+    "intake": "1876.54 ml",
+    "output": "1003 ml",
+    "net": "873.54 ml",
+    "period": "Last 24 hours",
+    "as_of": "11/8/2026 2304",
+    "last_filed": "11/8/2026 2300",
+    "include": true
+  },
+  "feeds": {
+    "rows": [
+      {
+        "id": "a21b0ec580b94a0d9d67a262781a1db5",
+        "device": "Gastrostomy/Enterostomy Percutaneous endoscopic gastrostomy (PEG) LUQ",
+        "method": "PEG",
+        "formula": "Fibersource",
+        "rate": "63 mL/hr",
+        "rate_source": "primary",
+        "backup_intake": "",
+        "include": true
+      }
+    ]
+  },
+  "devices": {
+    "rows": [
+      {
+        "id": "cf5a5089bb1a48fa917d7e29340a8d20",
+        "kind": "PIV",
+        "label": "PIV Left Antecubital",
+        "date": "11/05/26",
+        "size": "",
+        "secured": "",
+        "status": "",
+        "removed": false,
+        "include": true
+      },
+      {
+        "id": "69072c2318f5443d89b0d2c2a4892f00",
+        "kind": "Trach",
+        "label": "Trach Shiley Cuffed 6",
+        "date": "",
+        "size": "",
+        "secured": "",
+        "status": "Secured",
+        "removed": false,
+        "include": true
+      }
+    ]
+  },
+  "neuro_devices": null,
+  "pacemaker": null,
+  "diet": {
+    "rows": [
+      {
+        "id": "629306dbc30b4999981c90020969e9e6",
+        "source": "Diet, tube feeding no tray Continuous; Gastrostomy tube; 63; Fibersource HN (1.2 cal/mL): Tube Feeding starting at 11/07 0922",
+        "text": "Tube Feeding (no tray)",
+        "include": true
+      }
+    ]
+  },
+  "import_warnings": {},
+  "anthropometrics": {
+    "age": "15 y.o.",
+    "sex": "Female",
+    "bmi": "",
+    "height": "",
+    "bsa": ""
+  }
+}

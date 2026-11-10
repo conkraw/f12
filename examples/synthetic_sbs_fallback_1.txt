@@ -1,0 +1,100 @@
+aaaaaaaaaaaaaaaaaaaaaaaa
+Diagnoses:
+1. Synthetic ventilator SBS fallback example
+Age: 7 y.o.
+Sex: female
+aaaaaaaaaaaaaaaaaaaaaaaa
+bbbbbbbbbbbbbbbbbbbbbbbb
+Medications:
+Current Facility-Administered Medications
+Medication	Dose	Route	Frequency	Provider	Last Rate	Last Admin
+•	acetaminophen solution 240 mg	240 mg	Oral	q6h PRN	Synthetic provider		
+•	cefepime injection 800 mg	800 mg	Intravenous	q8h	Synthetic provider		
+•	vancomycin IV syringe 300 mg	300 mg	Intravenous	q8h	Synthetic provider		
+•	pantoprazole injection 15 mg	15 mg	Intravenous	Daily	Synthetic provider		
+•	levetiracetam solution 200 mg	200 mg	Per G Tube	BID	Synthetic provider		
+•	midazolam infusion	0.05 mg/kg/hr	Intravenous	Continuous	Synthetic provider	1 mL/hr at 11/09/26 1000	0.05 mg/kg/hr at 11/09/26 1000
+bbbbbbbbbbbbbbbbbbbbbbbb
+eeeeeeeeeeeeeeeeeeeeeeee
+VITALS:
+Temp: [36.5-37.4] 37.0
+Heart Rate: [95-130] 108
+Resp: [16-24] 20
+BP: (85-110)/(50-65) 100/60
+SpO2 Avg: 98 % Min: 96 % Max: 100 %
+Last SPO2: SpO2: 99 %
+eeeeeeeeeeeeeeeeeeeeeeee
+gggggggggggggggggggggggg
+LABS:
+Lab Results
+Component	Value	Date
+NA	138	11/09/2026
+K	4.0	11/09/2026
+CL	102	11/09/2026
+CO2	24	11/09/2026
+BUN	12	11/09/2026
+CREATININE	0.35	11/09/2026
+GLUCOSE	104	11/09/2026
+CRP	0.6	11/09/2026
+VANCOTROUGH	8.9	11/09/2026
+gggggggggggggggggggggggg
+kkkkkkkkkkkkkkkkkkkkkkkk
+Target Arousal Level:
+SBS Last 24 Hours:
+Last SBS Ever: Target Arousal Level (SBS): SBS -1
+kkkkkkkkkkkkkkkkkkkkkkkk
+llllllllllllllllllllllll
+WAT Score:
+WAT-1 total score (0-12): 2
+llllllllllllllllllllllll
+mmmmmmmmmmmmmmmmmmmmmmmm
+ICP Trends:
+ICP Range: ICP Mean (mmHg)  Avg: 9.6 mmHg  Min: 1 mmHg  Max: 22 mmHg
+Last ICP: ICP Mean (mmHg): 11 mmHg
+CPP Range: CPP  Avg: 69.5 mmHg  Min: 31 mmHg  Max: 97 mmHg
+Last CPP: CPP: 52 mmHg
+mmmmmmmmmmmmmmmmmmmmmmmm
+nnnnnnnnnnnnnnnnnnnnnnnn
+Date of Admission: 11/7/2026
+nnnnnnnnnnnnnnnnnnnnnnnn
+ffffffffffffffffffffffff
+CULTURES:
+Collected	Specimen Info	Organism
+11/09/26	Blood, Venous	No growth (Preliminary)
+11/08/26	Aspirate from Trachea	Staphylococcus aureus
+ffffffffffffffffffffffff
+yyyyyyyyyyyyyyyyyyyyyyyy
+CAPD: Cornell Assessment of Pediatric Delirium Score: 9
+yyyyyyyyyyyyyyyyyyyyyyyy
+vvvvvvvvvvvvvvvvvvvvvvvv
+Intracranial Pressure Monitor:
+Intracranial Pressure/Ventriculostomy Ventricular drainage catheter with ICP microsensor-Drain Status: Clamped
+vvvvvvvvvvvvvvvvvvvvvvvv
+iiiiiiiiiiiiiiiiiiiiiiii
+NUTRITION:
+Wt Readings from Last 1 Encounters:
+11/09/26	20 kg (50%, Z= 0.0)
+Dosing Weight: 20 kg
+Height: 120 cm
+iiiiiiiiiiiiiiiiiiiiiiii
+ssssssssssssssssssssssss
+Intake/Output Summary (Last 24 hours) at 11/9/2026 1100
+Gross per 24 hour
+Intake	1200 ml
+Output	1000 ml
+Net	200 ml
+ssssssssssssssssssssssss
+cccccccccccccccccccccccc
+Invasive Ventilation:
+Mode: Vent Mode: Pressure Control - Intermittent Mandatory Ventilation
+Respiratory Rate: Resp Rate (Set): 14
+Set PIP: PIP Set (cm H2O): 24 cm H2O
+Set PEEP: PEEP (cm H2O): 6 cm H2O
+Inspiratory Time: Insp Time (sec): 0.9 sec
+FiO2: FiO2 (%): 35 %
+cccccccccccccccccccccccc
+dddddddddddddddddddddddd
+Non-invasive Ventilation:
+O2 Delivery Method: Endotracheal tube
+FiO2 (%): 35 %
+dddddddddddddddddddddddd

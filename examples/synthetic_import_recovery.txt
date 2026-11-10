@@ -1,0 +1,28 @@
+aaaaaaaaaaaa
+Diagnoses:
+1. Synthetic parser recovery example
+aaaaaaaaaaaa
+qqqqqqqqqqqq
+Results from last 7 days
+Lab	Units	01/07/26
+0610	01/06/26
+2305
+WBC AUTO	K/uL	 -- 	14.89
+HEMOGLOBIN	g/dL	 -- 	10.1*
+HEMOGLOBIN ISTAT	g/dL	10.2*	10.9*
+HEMATOCRIT	%	30*	29.4* | 32*
+MCV	fL	 -- 	77.2
+NEUTROS ABS	K/uL	 -- 	13.07*
+LYMPHS ABS AUTO	K/uL	 -- 	1.45*
+qqqqqqqqqqqq
+rrrrrrrrrrrr
+Orders Placed This Encounter
+Procedures
+• Blood culture
+	Peripheral
+	Timing:	Recurring (Once)
+	Number of Occurrences:	1
+• XR chest 1 view
+	Timing:	Recurring (Daily imaging)
+	Number of Occurrences:	7
+rrrrrrrrrrrr

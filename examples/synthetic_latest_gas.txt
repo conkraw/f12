@@ -1,0 +1,100 @@
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+Diagnoses:
+1. Synthetic layout example. Not a patient record.
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+Medications:
+Current Facility-Administered Medications
+Medication	Dose	Route	Frequency	Provider	Last Rate	Last Admin
+•	dexmedeTOMIDine (Precedex) 200 mcg in 50 mL infusion	0.8 mcg/kg/hr (Dosing Weight)	Intravenous	Continuous	Example Clinician	2.4 mL/hr at 01/02/26 1200	
+•	morphine 1 mg/mL infusion	0.03 mg/kg/hr	Intravenous	Continuous	Example Clinician	0.4 mL/hr at 01/02/26 1200	
+•	fentaNYL NCS 300 mcg/30 mL infusion syringe	10 mcg	Intravenous	q30 min PRN	Example Clinician		
+•	gabapentin solution 10 mg	10 mg	Per NJ Tube	q8h	Example Clinician		
+•	albuterol nebulizer solution 2.5 mg	2.5 mg	Nebulization	q4h	Example Clinician		
+•	cefTRIAXone syringe 500 mg	500 mg	Intravenous	q24h	Example Clinician		
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+VITALS:
+Temp: [36.5-37.1] 36.8 C
+Heart Rate: [90-120] 104
+Resp: [18-26] 22
+BP: (90-110)/(50-70) 100/60
+SpO2 Avg: 98 % Min: 95 % Max: 100 %
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+
+gggggggggggggggggggggggggggggggg
+LABS:
+Lab Results
+Component	Value	Date
+WBC	8.2	01/02/2026
+HGB	11.0	01/02/2026
+HCT	33	01/02/2026
+PLT	250	01/02/2026
+NA	138	01/02/2026
+K	4.0	01/02/2026
+CL	102	01/02/2026
+CO2	24	01/02/2026
+BUN	10	01/02/2026
+CREATININE	0.4	01/02/2026
+GLUCOSE	95	01/02/2026
+MG	2.0	01/02/2026
+PHOS	4.0	01/02/2026
+ALT	15	01/02/2026
+AST	24	01/02/2026
+ALBUMIN	4.0	01/02/2026
+INR	1.0	01/02/2026
+PT	12	01/02/2026
+PTT	30	01/02/2026
+gggggggggggggggggggggggggggggggg
+
+iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii
+NUTRITION:
+Wt Readings from Last 1 Encounters:
+01/02/26	12 kg (50%, Z= 0.0)*
+Dosing Weight:
+12 kg
+iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii
+
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+Target Arousal Level:
+Target Arousal Level (SBS): SBS -1
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+
+llllllllllllllllllllllllllllllll
+WAT Score:
+WAT-1 total score (0-12): 0
+llllllllllllllllllllllllllllllll
+
+mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+ICP Trends:
+ICP Mean (mmHg): 5 mmHg
+CPP: 65 mmHg
+mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+
+nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn
+Date of Admission: 01/01/2026
+nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn
+
+
+pppppppppppppppppppppppppppppppp
+Results from last 7 days
+Lab	Units	01/03/26
+0804	01/01/26
+2127	01/01/26
+2002
+PH VEN		 -- 	 -- 	7.20*
+PCO2 VEN	mmHg	 -- 	 -- 	60*
+PO2 VEN	mmHg	 -- 	 -- 	50
+BASE EXC VEN	mmol/L	 -- 	 -- 	-3*
+PH ART		7.42	 < >	 --
+PCO2 ART	mmHg	40	 < >	 --
+PO2 ART, 'POCT PO2, ARTERIAL'	mmHg	90	 < >	 --
+BASE EXC ART, 'POCT BASE EXCESS, ARTERIAL'	mmol/L	1	 < >	 --
+PO2 (TEMP CORRECTED)	mmHg	90	 < >	50
+BD, ISTAT, VEN	%	 -- 	 -- 	50
+BASE DEFICIT ISTAT ART	%	30	 < >	 --
+ < > = values in this interval not displayed.
+
+pppppppppppppppppppppppppppppppp

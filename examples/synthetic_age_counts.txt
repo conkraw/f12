@@ -1,0 +1,103 @@
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+Diagnoses:
+1. Synthetic demonstration, not a patient record
+
+Age:
+5 wk.o.
+
+Sex:
+male
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+Medications:
+Medication	Dose	Route	Frequency	Provider	Last Rate	Last Admin
+•	Example antimicrobial		Intravenous	q12h			
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+
+cccccccccccccccccccccccccccccc
+Invasive Ventilation:
+Vent Mode: Volume Targeted Pressure Control - Intermittent Mandatory Ventilation
+Resp Rate (Set): 20
+Vt (Set, mL): 30 mL
+PEEP (cm H2O): 5 cm H2O
+FiO2 (%): 30 %
+cccccccccccccccccccccccccccccc
+
+dddddddddddddddddddddddddddddd
+Non-invasive Ventilation:
+O2 Delivery Method: Endotracheal tube
+FiO2 (%): 30 %
+dddddddddddddddddddddddddddddd
+
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+VITALS:
+Temp: [36.8-37.4] 37.1 C
+Heart Rate: [120-150] 130
+Resp: [20-40] 28
+BP: (70-85)/(35-45) 80/40
+SpO2 Avg: 97 % Min: 94 % Max: 100 %
+Last SPO2: SpO2: 98 %
+ETCO2 (mmHg) Avg: 38 mmHg Min: 34 mmHg Max: 42 mmHg
+Last ETCO2: ETCO2 (mmHg): 37 mmHg
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+
+gggggggggggggggggggggggggggggg
+LABS:
+Component	Value	Date
+NA	132 (L)	11/08/2026
+K	3.3 (L)	11/08/2026
+CL	99	11/08/2026
+CO2	25	11/08/2026
+BUN	9	11/08/2026
+CREATININE	0.3	11/08/2026
+GLUCOSE	102	11/08/2026
+MG	2.0	11/08/2026
+PHOS	4.5	11/08/2026
+CA	9.1	11/08/2026
+gggggggggggggggggggggggggggggg
+
+iiiiiiiiiiiiiiiiiiiiiiiiiiiiii
+NUTRITION:
+Wt Readings from Last 1 Encounters:
+11/08/26	3.9 kg (20%, Z= -0.84)
+Dosing Weight:
+3.8 kg
+BMI:
+Body mass index is 14.0 kg/m².
+Height: 53 cm
+BSA: 0.25 m²
+iiiiiiiiiiiiiiiiiiiiiiiiiiiiii
+
+nnnnnnnnnnnnnnnnnnnnnnnnnnnnnn
+Date of Admission: 11/07/2026
+nnnnnnnnnnnnnnnnnnnnnnnnnnnnnn
+
+qqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+Results from last 7 days
+Lab	Units	11/08/26
+1200	11/07/26
+1200
+WBC AUTO	K/uL	8.2	9.1
+HEMOGLOBIN	g/dL	10.4*	11.0*
+HEMATOCRIT	%	31.2*	33.0*
+PLATELETS AUTO	K/uL	145*	170*
+NEUTROS ABS	K/uL	4.2	5.2
+LYMPHS ABS AUTO	K/uL	2.7	2.8
+qqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+
+ssssssssssssssssssssssssssssss
+Intake/Output Summary (Last 24 hours) at 11/8/2026 1800
+Last data filed at 11/8/2026 1700
+Gross per 24 hour
+Intake	380 ml
+Output	342 ml
+Net	38 ml
+ssssssssssssssssssssssssssssss
+
+uuuuuuuuuuuuuuuuuuuuuuuuuuuuuu
+Lines:
+Peripheral IV 11/07/26 Right Forearm-Site Assessment: Clean, Dry, Intact
+Endotracheal Tube:
+ETT 3.5 mm-Secured at (cm): 10 cm
+uuuuuuuuuuuuuuuuuuuuuuuuuuuuuu

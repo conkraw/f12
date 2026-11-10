@@ -1,0 +1,155 @@
+aaaaaaaaaaaaaaaaaaaaaaaa
+Diagnoses:
+1. Synthetic FEN/GI display example
+2. Not a patient record
+aaaaaaaaaaaaaaaaaaaaaaaa
+
+bbbbbbbbbbbbbbbbbbbbbbbb
+Medications:
+Medication	Dose	Route	Frequency	Provider	Last Rate	Last Admin
+•	Example infusion	1 mcg/kg/hr (Dosing Weight)	Intravenous	Continuous		2 mL/hr at 01/07/26 0500	
+•	pantoprazole (Protonix) injection 10 mg	10 mg	Intravenous	Daily			
+•	polyethylene glycol (PEG) 3350 powder 8.5 g	8.5 g	Per NJ Tube	Daily			
+•	sennosides (Senokot) syrup 2.5 mL	2.5 mL	Per NJ Tube	q24h			
+•	sennosides (Senokot) syrup 5 mL	5 mL	Per NJ Tube	Nightly			
+•	Synthetic maintenance fluid infusion	25 mL/hr	Intravenous	Continuous		25 mL/hr at 01/07/26 0500	
+bbbbbbbbbbbbbbbbbbbbbbbb
+
+eeeeeeeeeeeeeeeeeeeeeeee
+VITALS:
+Temp: [36.7-37.2] 37.0 C
+Heart Rate: [90-110] 100
+Resp: [18-24] 20
+BP: (90-100)/(45-55) 95/50
+SpO2 Avg: 98 % Min: 95 % Max: 100 %
+eeeeeeeeeeeeeeeeeeeeeeee
+
+gggggggggggggggggggggggg
+LABS:
+Lab Results
+Component	Value	Date
+GLUCOSE	100	01/06/26
+GLUCOSE	98	01/05/26
+NA	139	01/06/26
+NA	138	01/05/26
+K	3.8	01/06/26
+K	3.7	01/05/26
+CL	101	01/06/26
+CL	100	01/05/26
+CO2	25	01/06/26
+CO2	24	01/05/26
+BUN	12	01/06/26
+BUN	11	01/05/26
+CREATININE	0.3	01/06/26
+CREATININE	0.31	01/05/26
+MG	1.8	01/06/26
+PHOS	4.2	01/06/26
+ALT	15	01/06/26
+AST	25	01/06/26
+ALBUMIN	4.1	01/06/26
+PT	13	01/06/26
+INR	1.0	01/06/26
+PTT	27	01/06/26
+gggggggggggggggggggggggg
+
+iiiiiiiiiiiiiiiiiiiiiiii
+NUTRITION:
+Wt Readings from Last 1 Encounters:
+01/06/26	12 kg (40%, Z= -0.2)*
+Dosing Weight:
+11 kg
+iiiiiiiiiiiiiiiiiiiiiiii
+
+pppppppppppppppppppppppp
+Results from last 7 days
+Lab	Units	01/06/26
+0900
+PH VEN		7.40
+PCO2 VEN	mmHg	40
+PO2 VEN	mmHg	45
+BASE EXC VEN	mmol/L	1
+pppppppppppppppppppppppp
+
+qqqqqqqqqqqqqqqqqqqqqqqq
+Results from last 7 days
+Lab	Units	01/06/26
+0436	01/06/26
+0435	01/05/26
+0605	01/05/26
+0408	01/01/26
+0427
+WBC AUTO	K/uL	 -- 	12.04*	 -- 	8.94	11.83*
+HEMOGLOBIN	g/dL	 -- 	7.3*	 -- 	7.4*	9.7*
+HEMOGLOBIN ISTAT	g/dL	8.6*	 -- 	9.1*	 -- 	 --
+HEMATOCRIT	%	25*	22.5*	28*	23.1*	29.1*
+MCV	fL	 -- 	91.1	 -- 	91.5	86.5
+PLATELETS AUTO	K/uL	 -- 	430*	 -- 	320	440*
+NEUTROS ABS	K/uL	 -- 	 -- 	 -- 	 -- 	9.15*
+LYMPHS ABS AUTO	K/uL	 -- 	 -- 	 -- 	 -- 	1.17
+MANUAL ABSOLUTE LYMPHOCYTE CV	K/uL	 -- 	1.63	 -- 	1.20	1.13
+ANC		 -- 	10.26*	 -- 	4.98	10.03*
+ < > = values in this interval not displayed.
+
+qqqqqqqqqqqqqqqqqqqqqqqq
+
+rrrrrrrrrrrrrrrrrrrrrrrr
+Orders Placed This Encounter
+Procedures
+•	XR chest 1 view
+	Timing:	Recurring (Daily imaging)
+	Number of Occurrences:	4
+•	XR chest 1 view
+	Timing:	Recurring (Daily imaging)
+	Number of Occurrences:	8
+•	XR chest 1 view
+	Timing:	Recurring (Once)
+	Number of Occurrences:	1
+•	CBC and differential
+	Timing:	Recurring (Morning draw)
+	Number of Occurrences:	5
+•	CBC auto differential
+	Timing:	Recurring (Morning draw)
+	Number of Occurrences:	2
+•	BASIC METABOLIC PANEL
+	Timing:	Recurring (Morning draw)
+	Number of Occurrences:	5
+•	APTT
+	Timing:	Recurring (Daily)
+	Number of Occurrences:	10
+•	Protime-INR
+	Timing:	Recurring (Daily)
+	Number of Occurrences:	10
+•	Magnesium
+	Timing:	Recurring (Every 12 hours)
+	Number of Occurrences:	12
+•	Phosphorus
+	Timing:	Recurring (Morning draw)
+	Number of Occurrences:	5
+•	BLOOD GAS, VENOUS
+	Timing:	Recurring (Every 6 hours)
+	Number of Occurrences:	16
+•	Lactic acid
+	Timing:	Recurring (Every 1 hour)
+	Number of Occurrences:	6
+•	Comprehensive Metabolic Panel
+	Timing:	Recurring (Daily)
+	Number of Occurrences:	8
+•	ECG 12 lead
+	Timing:	Recurring (Daily)
+	Number of Occurrences:	8
+•	Respiratory culture
+	Timing:	Recurring (Once)
+	Number of Occurrences:	1
+•	Vital Signs
+	Timing:	Recurring (Every 1 hour)
+	Number of Occurrences:	99
+rrrrrrrrrrrrrrrrrrrrrrrr
+
+ssssssssssssssssssssssss
+Intake/Output Summary (Last 24 hours) at 1/7/2026 0614
+Last data filed at 1/7/2026 0500
+Gross per 24 hour
+Intake	1200.5 ml
+Output	950 ml
+Net	250.5 ml
+ssssssssssssssssssssssss

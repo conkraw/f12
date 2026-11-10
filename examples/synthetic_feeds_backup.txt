@@ -1,0 +1,8 @@
+aaaaaaaaaaaa
+Diagnoses:
+1. Synthetic backup-rate demonstration
+aaaaaaaaaaaa
+tttttttttttt
+Gastrostomy/Enterostomy Percutaneous endoscopic gastrostomy (PEG) LUQ-Tube Feeding: Other (Comment) (Synthetic formula)
+Back Up Feed Rate: Gastrostomy/Enterostomy Percutaneous endoscopic gastrostomy (PEG) LUQ-Feed Rate (mL/hr): 26 mL
+tttttttttttt

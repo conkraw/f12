@@ -1,0 +1,63 @@
+aaaaaaaaaaaaaaaaaaaaaaaa
+Diagnoses:
+1. Synthetic parenteral nutrition and antiplatelet example
+Age: 8 m.o.
+Sex: male
+aaaaaaaaaaaaaaaaaaaaaaaa
+bbbbbbbbbbbbbbbbbbbbbbbb
+Medications:
+Current Facility-Administered Medications
+Medication	Dose	Route	Frequency	Provider	Last Rate	Last Admin
+•	Pediatric 2-in-1 PN (Continuous)	639 mL	Intravenous	Continuous PN	Synthetic provider	26.6 mL/hr at 11/09/26 1100	Rate Verify at 11/09/26 1100
+•	fat emulsion fish oil/plant based (SMOFlipid) 20 % 16 g 80 mL bag	2 g/kg	Intravenous	Continuous PN	Synthetic provider	4.2 mL/hr at 11/09/26 1100	Rate Verify at 11/09/26 1100
+•	aspirin chewable tablet 40.5 mg	40.5 mg	Per NJ Tube	q24h	Synthetic provider		
+•	cangrelor infusion	0.1 mcg/kg/min	Intravenous	Continuous	Synthetic provider	0.2 mL/hr at 11/09/26 1100	0.1 mcg/kg/min at 11/09/26 1100
+•	ceftriaxone syringe 400 mg	400 mg	Intravenous	q24h	Synthetic provider		
+•	furosemide injection 8 mg	8 mg	Intravenous	q12h	Synthetic provider		
+bbbbbbbbbbbbbbbbbbbbbbbb
+eeeeeeeeeeeeeeeeeeeeeeee
+VITALS:
+Temp: [36.5-37.4] 37.0
+Heart Rate: [95-130] 108
+Resp: [16-24] 20
+BP: (85-110)/(50-65) 100/60
+SpO2 Avg: 98 % Min: 96 % Max: 100 %
+Last SPO2: SpO2: 99 %
+eeeeeeeeeeeeeeeeeeeeeeee
+kkkkkkkkkkkkkkkkkkkkkkkk
+Target Arousal Level:
+Target Arousal Level (SBS): SBS -1
+kkkkkkkkkkkkkkkkkkkkkkkk
+mmmmmmmmmmmmmmmmmmmmmmmm
+ICP Trends:
+ICP Range: No data recorded
+Last ICP:
+CPP Range: No data recorded
+Last CPP:
+mmmmmmmmmmmmmmmmmmmmmmmm
+ffffffffffffffffffffffff
+CULTURES:
+No results found for the last 90 days.
+ffffffffffffffffffffffff
+nnnnnnnnnnnnnnnnnnnnnnnn
+Date of Admission: 10/11/2026
+nnnnnnnnnnnnnnnnnnnnnnnn
+gggggggggggggggggggggggg
+LABS:
+Lab Results
+Component	Value	Date
+VANCOTROUGH	10.8	10/14/2026
+gggggggggggggggggggggggg
+iiiiiiiiiiiiiiiiiiiiiiii
+NUTRITION:
+Wt Readings from Last 1 Encounters:
+11/09/26	8 kg (50%, Z= 0.0)
+Dosing Weight: 8 kg
+iiiiiiiiiiiiiiiiiiiiiiii
+ssssssssssssssssssssssss
+Intake/Output Summary (Last 24 hours) at 11/9/2026 1100
+Gross per 24 hour
+Intake	800 ml
+Output	750 ml
+Net	50 ml
+ssssssssssssssssssssssss

@@ -1,0 +1,131 @@
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+Diagnoses:
+1. Synthetic demonstration only
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+Medications:
+Medication	Dose	Route	Frequency	Provider	Last Rate	Last Admin
+•	ceftriaxone injection	300 mg	Intravenous	q24h	SYNTHETIC_PROVIDER	 	 
+•	polyethylene glycol powder	4 g	Oral	Daily	SYNTHETIC_PROVIDER	 	 
+•	furosemide injection	5 mg	Intravenous	q12h	SYNTHETIC_PROVIDER	 	 
+•	levetiracetam solution	100 mg	Per NG Tube	q12h	SYNTHETIC_PROVIDER
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+
+cccccccccccccccccccccccccccccccc
+Invasive Ventilation:
+Settings
+FiO2 (%): 35 %
+cccccccccccccccccccccccccccccccc
+
+dddddddddddddddddddddddddddddddd
+Non-invasive Ventilation:
+O2 Delivery Method: High flow nasal cannula
+FiO2 (%): 35 %
+O2 Flow Rate (L/min): 8 L/min
+dddddddddddddddddddddddddddddddd
+
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+VITALS:
+Temp: [36.5-37.5] 37.2 C
+Heart Rate: [90-130] 110
+Resp: [18-30] 24
+BP: (90-110)/(45-60) 100/55
+SpO2 Avg: 97 % Min: 94 % Max: 100 %
+Last SPO2: SpO2: 98 %
+ETCO2 (mmHg) Avg: 40 mmHg Min: 35 mmHg Max: 45 mmHg
+Last ETCO2: ETCO2 (mmHg): 39 mmHg
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+
+ffffffffffffffffffffffffffffffff
+CULTURES:
+Collected	Specimen Info	Organism
+11/07/26	Blood, Venous	No growth (Preliminary)
+ffffffffffffffffffffffffffffffff
+
+gggggggggggggggggggggggggggggggg
+LABS:
+Component	Value	Date
+WBC	8.7	11/08/2026 12:00
+WBC	9.2	11/07/2026 12:00
+HGB	10.2 (L)	11/08/2026 12:00
+HGB	10.8 (L)	11/07/2026 12:00
+HCT	31 (L)	11/08/2026 12:00
+HCT	33 (L)	11/07/2026 12:00
+PLT	140 (L)	11/08/2026 12:00
+PLT	160	11/07/2026 12:00
+NEUTROABS	5.3	11/08/2026 12:00
+LYMPHSABS	2.1	11/08/2026 12:00
+GLUCOSE	102	11/08/2026 12:00
+GLUCOSE	98	11/07/2026 12:00
+NA	132 (L)	11/08/2026 12:00
+NA	134 (L)	11/07/2026 12:00
+K	3.2 (L)	11/08/2026 12:00
+K	3.6	11/07/2026 12:00
+CL	99	11/08/2026 12:00
+CL	100	11/07/2026 12:00
+CO2	23	11/08/2026 12:00
+CO2	24	11/07/2026 12:00
+BUN	12	11/08/2026 12:00
+BUN	10	11/07/2026 12:00
+CREATININE	0.42	11/08/2026 12:00
+CREATININE	0.40	11/07/2026 12:00
+MG	1.9	11/08/2026 12:00
+MG	2.0	11/07/2026 12:00
+PHOS	4.5	11/08/2026 12:00
+PHOS	4.6	11/07/2026 12:00
+CA	9.3	11/08/2026 12:00
+CA	9.4	11/07/2026 12:00
+ALT	22	11/08/2026 12:00
+AST	30	11/08/2026 12:00
+ALBUMIN	3.8	11/08/2026 12:00
+INR	1.0	11/08/2026 12:00
+PT	13.1	11/08/2026 12:00
+PTT	28	11/08/2026 12:00
+LACWB	1.1 mmol/L	11/08/2026 13:30
+LACTATEVEN	1.8 mmol/L	11/07/2026 18:30
+LAC	8.2	08/01/2026
+THEOPH	10.5 mg/L	11/08/2026 09:00
+THEOPH	8.1	10/01/2026
+CRP	1.2 (H)	11/07/2026 12:00
+CRP	7.1 (H)	09/01/2026
+PROCAL	0.12	11/08/2026 12:00
+CK	215 U/L	11/08/2026 12:00
+CK	9999	08/01/2026
+NTPROBNP	420 (H)	10/25/2026
+gggggggggggggggggggggggggggggggg
+
+iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii
+NUTRITION:
+Age: 5 years 2 months
+Wt Readings from Last 1 Encounters:
+11/08/26	18 kg
+Dosing Weight: 18 kg
+Height: 110 cm
+BSA: 0.75 m²
+iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii
+
+nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn
+Date of Admission: 11/05/2026
+nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn
+
+ssssssssssssssssssssssssssssssss
+Intake/Output Summary (Last 24 hours) at 11/8/2026 1400
+Last data filed at 11/8/2026 1300
+Gross per 24 hour
+Intake	900 ml
+Output	720 ml
+Net	180 ml
+ssssssssssssssssssssssssssssssss
+
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+Diet:
+Diet Orders
+Pediatric diet Regular: General starting at 11/08 0900
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu
+Lines:
+Peripheral IV 11/07/26 Right Forearm-Site Assessment: Clean, Dry, Intact
+uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu
+

@@ -1,0 +1,33 @@
+PICU Handoff 6.19: saved handoff dates and times
+
+ROOM SCREEN
+Below the room heading, Last saved to GitHub shows the confirmed saved timestamp
+in Eastern time. The next line shows Saved or Unsaved changes. Brand-new drafts
+show Not saved yet. Custom rooms are treated identically to preset rooms.
+Save status for all rooms is a collapsed list below the room selector.
+
+PRINT ALL
+The most recent loaded handoff save appears beneath Save all open handoffs.
+Each selected room's time and status are listed before the download controls.
+An unsaved-change warning reminds you that downloading does not save the draft.
+The print timestamp remains a separate feature and the printed layout is unchanged.
+
+ACCURACY
+Display uses only confirmed archive records, not draft updated_at/created_at,
+clinical result dates or the current print time. The existing timestamp is UTC
+in storage and converted to America/New_York for display. Missing or invalid
+stored timestamps remain unavailable. No timestamp is invented.
+Failed writes do not advance the display. Successful manual saves, save-all
+writes and room-switch autosaves do. Admin-only saves do not change room times.
+A new handoff ID never inherits the former handoff's timestamp in the room UI.
+
+COLLABORATION
+Times are the archive version loaded in this session. Reload saved archive to
+see other users' changes. Conflict protection is unchanged. This is not a
+per-user audit trail and does not introduce individual staff authentication.
+
+PRESERVATION
+No schema, dependency, encryption-key or storage-path change. Runtime edits:
+app.py and the error_store.py version constant. New helper: save_status.py.
+Clinical parsers, models.py, print_time.py and exports.py are unchanged.
+No direct GitHub operation or private data access was performed for this update.

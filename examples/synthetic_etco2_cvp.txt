@@ -1,0 +1,42 @@
+aaaaaaaa
+Diagnoses:
+1. Synthetic demonstration, not a patient record
+aaaaaaaa
+
+cccccccc
+Invasive Ventilation:
+Settings
+FiO2 (%): 30 %
+cccccccc
+
+dddddddd
+Non-invasive Ventilation:
+O2 Delivery Method: High flow nasal cannula
+FiO2 (%): 30 %
+O2 Flow Rate (L/min): 8 L/min
+dddddddd
+
+eeeeeeee
+VITALS:
+Temp: [36.2-37.4] 37.0 C
+Heart Rate: [88-124] 102
+Resp: [14-28] 20
+BP: (88-116)/(44-72) 100/60
+FiO2 (%): [25%-35%] 30%
+SpO2 Avg: 97.5 % Min: 93 % Max: 100 %
+ETCO2 (mmHg) Avg: 42.2 mmHg Min: 28 mmHg Max: 61 mmHg
+CVP (mean) Avg: 7.4 mmHg Min: 3 mmHg Max: 12 mmHg
+No data recorded
+eeeeeeee
+
+ssssssss
+Intake/Output Summary (Last 24 hours)
+Intake 900 ml
+Output 850 ml
+Net 50 ml
+ssssssss
+
+tttttttt
+Gastric Tube Nasojejunal Right nostril-Continuous Tube Feeding Ordered Rate mL/hr (not calculated): 24 mL
+Gastric Tube Nasojejunal Right nostril-Tube Feeding: Synthetic formula
+tttttttt
