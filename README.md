@@ -1,77 +1,73 @@
-# Version 6.55: demographic labels, CAPD flags and airway category
+# Version 6.56: keep or delete difficult-airway details
 
-Built directly from the supplied PICU654.zip.
+Built from the supplied PICU655.zip. No clinical parser, lab logic, printed
+layout, dependency or archive-schema change is included in this release.
 
-## Labels and values
+## Updating a handoff
 
-Room, Age, Sex, Admission, Diagnoses, Weight, Z-score, Dosing weight,
-Height, BSA and EVD labels are bold through the colon. Their values remain
-regular weight. The same formatting is used in the HTML preview and PDF,
-including Print all.
+When Create / update handoff is pressed and difficult-airway details exist,
+the app stages the parsed update and asks what to do with the existing airway
+record. Choose Keep airway and update, Delete airway and update, or Cancel
+update. Nothing is deleted merely by pasting or pressing Create / update.
 
-The compact lactate summary now starts with a bold Lactate: label.
-The existing 24-hour selection, earliest-to-latest order, source units,
-flags and latest-result date are unchanged. Example:
+The prompt also catches saved text when the difficult-airway print checkbox
+is off, non-default structured answers, and a checked difficult-airway flag.
+An entirely empty record does not add a prompt. A rejected import does not
+ask to delete the airway record.
 
-    Lactate: 1.0 -> 1.1 [11/9/2026]
+Keep retains the complete difficult-airway record and its current print flag.
+Delete clears the complete record, not just the displayed sentence. Cancel
+leaves the existing handoff unchanged and keeps the paste available.
 
-## CAPD
+After choosing Keep or Delete, Save handoff or change rooms to save the result.
+While the choice is pending, saving or changing rooms asks the user to finish
+or cancel that choice first. Tab changes and ordinary saves do not repeatedly
+ask the question. A stale choice cannot apply to another room or a newer draft.
 
-A displayed CAPD total of 9 or greater gains a red (H) flag, for example:
+## Clearing all patients
 
-    CAPD: 11 (H)
+Room actions > Delete all handoff data now offers two buttons:
 
-CAPD remains bold through the colon. The number and flag remain regular
-weight. Scores 0 through 8 do not receive the new flag. Missing, excluded,
-or import-failed totals retain the existing CAPD: None display.
+- Delete all handoff data: removes all current handoff records, including
+  difficult-airway details. Custom rooms are removed. Preset rooms are blank.
+- Clear handoffs, keep difficult airway: removes all other patient data but
+  keeps each complete difficult-airway record in its original room. This
+  includes current unsaved airway edits in this session. Custom rooms remain
+  only when they contain retained airway details. Other custom rooms are removed.
 
-This is a requested presentation rule. The numeric total stored in the
-archive and editor is unchanged, and no delirium diagnosis is added.
-SBS, CAPD and WAT ordering and their selection logic are unchanged.
+Both options remain available to any signed-in user without an Admin password.
+Either reset button acts immediately. Medication mappings, custom categories,
+settings, passwords and the separately stored SmartPhrase are preserved.
 
-## Respiratory category
+The keep-airway option creates otherwise-blank room handoffs with new internal
+sheet IDs. Patient demographics, diagnoses, medications, labs, general notes,
+ordinary Airway/Access fields and device information are not retained. The
+original airway description, structured answers, source/date text and enabled
+state are preserved without being reinterpreted. Confirm that retained details
+belong to the current patient before keeping them on a subsequent import.
+A room is a location, not a verified patient identity.
 
-Airway Vasoconstrictor is a new editable medication category in Respiratory.
-Racemic epinephrine / racepinephrine inhalation or nebulization orders use
-this automatic placement. The Asthmanefrin name is also recognized.
-Systemic epinephrine and norepinephrine, injections, and generic non-racemic
-epinephrine are not moved to this category.
-
-Saved category overrides remain authoritative. Hidden orders stay hidden.
-Separate scheduled and PRN orders are preserved, with each order printed once.
-Names, doses, routes and frequencies are not changed. Admin can rename or
-nest the category, and the medication selector can assign a different one.
-
-Medication naming reference checked: National Library of Medicine DailyMed,
-S2 racepinephrine hydrochloride solution, respiratory (inhalation).
-https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=dd1b35c7-b23b-4b95-8162-df3d263fe32e
+Failed writes and save conflicts retain the existing local data. A changed
+reset generation prevents older sessions from restoring cleared drafts when
+they reload. Other users should reload the saved archive after either reset.
+A reset is not a physical purge of older archive versions, downloaded PDFs,
+printouts or other users' already-open browser contents.
 
 ## Install
 
-Replace the application files with this folder's contents, keeping app.py
-at the root. Restart the app and refresh the browser. Keep your existing
-Secrets, both passwords, encryption key, mappings, category settings,
-BMI reference data and shared patient archive unchanged. Do not rerun
-setup generators. No new dependencies or re-pasting are required for
-information already stored. Regenerate existing PDFs to see the changes.
+Extract the ZIP and upload this folder's contents into the application code
+folder, replacing matching files. Keep app.py at the root. Restart the app
+and refresh the browser. No re-pasting is required for this update.
 
-Updated application files:
+Changed application files:
 
     app.py
-    capd.py
-    clinical_style.py
-    exports.py
-    lab_windows.py
-    medication_groups.py
-    models.py
+    difficult_airway.py
+    handoff_reset.py
 
-Archive schema 33 upgrades to 34, adding only the missing built-in category.
-Existing names, locations, custom categories, mappings, rooms, notes and
-save timestamps are preserved. Do not downgrade after saving new category
-choices, because prior versions cannot validate the new category ID.
+Keep existing Secrets, both passwords, encryption key, mappings, category
+settings, BMI reference data and shared archive unchanged. Do not rerun setup
+generators. The archive schema remains 34, and requirements.txt is unchanged.
 
-The compact workspace, quiet Alerts tab, one-click clear-all access,
-password protection, autosave, clinical import parsers and PDF fitting
-behavior are unchanged. No live deployment or shared archive was modified.
-
-Verification details: TEST_REPORT.md. Historical feature notes remain in the package.
+No live deployment or patient archive was modified. See TEST_REPORT.md for
+verification and limitations. Historical update notes remain in the package.

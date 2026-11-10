@@ -1,8 +1,12 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PICU Handoff 6.55</title>
-<style>body{font:17px/1.55 system-ui,sans-serif;max-width:780px;margin:40px auto;padding:0 20px;color:#172c3d}code{background:#f1f5f7;padding:2px 5px}h1{font-size:28px}h2{font-size:21px}</style></head>
-<body><h1>PICU Handoff 6.55</h1><p>Bold demographic labels, a red flag for CAPD scores of 9 or greater, and the Airway Vasoconstrictor medication category.</p>
-<h2>Update your existing app</h2><p>Upload this folder's contents with <code>app.py</code> at the root. Restart the deployment, then refresh your browser. No new dependencies are required.</p>
-<p>Keep your existing Secrets, passwords, encryption key, medication mappings, categories, BMI reference data and shared archive. Do not rerun setup generators. No re-pasting is needed for saved information. Regenerate PDFs for the new formatting.</p>
-<h2>Daily workflow</h2><p>Select the room, paste the populated Epic SmartPhrase, choose Create / update handoff and review Preview / print. Change rooms to save automatically, or select Save handoff.</p>
-<p>Alerts remains next to Difficult airway. Secondary controls, including Delete all handoff data, remain in Room actions. The clinical import parsers, save logic and automatic page fitting are unchanged.</p>
-<p>Details: <code>DEMOGRAPHIC_CAPD_AIRWAY_UPDATE.md</code>. Verification: <code>TEST_REPORT.md</code>.</p></body></html>
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PICU Handoff 6.56</title><style>body{max-width:850px;margin:40px auto;padding:0 20px;font:17px/1.6 system-ui;color:#172c3d}code{background:#f1f5f7;padding:2px 6px}h1,h2{line-height:1.2}</style></head>
+<body><h1>PICU Handoff 6.56</h1><h2>Difficult-airway choices</h2>
+<p>Updating a handoff with existing difficult-airway details now asks whether to keep or delete them. Cancel leaves the handoff unchanged. Save handoff or change rooms after making your choice.</p>
+<p>Under Room actions, Delete all handoff data offers full deletion and a second option that clears other patient data while keeping difficult-airway details in their original rooms. Custom rooms remain only when they contain retained airway details.</p>
+<p>Both reset options work without an Admin password. Confirm that retained details belong to the current patient before keeping them on a new import.</p>
+<h2>Install</h2><p>Replace the application files with this folder's contents. Keep <code>app.py</code> at the root, restart the app, and refresh your browser.</p>
+<p>Only <code>app.py</code>, <code>difficult_airway.py</code>, and <code>handoff_reset.py</code> changed among application code files.</p>
+<p>Keep existing Secrets, passwords, encryption key, mappings, categories and reference data unchanged. Do not rerun setup generators. No new dependencies or re-pasting are required.</p>
+<p>Settings remain intact after either reset. Other team members should reload the saved archive. Earlier archive versions and downloaded copies are not erased.</p>
+</body></html>

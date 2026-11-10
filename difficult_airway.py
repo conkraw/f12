@@ -62,3 +62,18 @@ def airway_summary(sheet: dict, rich: bool = False, esc=escape) -> str:
                        ("plan", "Team plan"), ("source", "Assessed / source")):
         add(label, data[key])
     return " | ".join(parts) or "Details not entered."
+
+
+def has_airway_details(data: dict | None) -> bool:
+    """Detect stored details even when the print checkbox is off.
+
+    An enabled flag, a non-default structured answer, or nonblank text is
+    meaningful. Never treat the default Unknown answers as patient findings.
+    """
+    validate_airway(data)
+    if not data:
+        return False
+    return (data["enabled"]
+            or data["mask_ventilation"] != MASK_OPTIONS[0]
+            or data["tube_passage"] != PASSAGE_OPTIONS[0]
+            or any(data[key].strip() for key in TEXT_LIMITS))

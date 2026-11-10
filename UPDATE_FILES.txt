@@ -1,15 +1,12 @@
-Version 6.55, based on PICU654.zip
+Version 6.56, based on PICU655.zip
 
 Changed application files:
 app.py
-capd.py
-clinical_style.py
-exports.py
-lab_windows.py
-medication_groups.py
-models.py
+difficult_airway.py
+handoff_reset.py
 
-Upload the full folder contents, restart and refresh.
-No new dependencies. Keep current Secrets, encryption key and reference data.
-No re-pasting is needed for already stored data. Schema 33 upgrades to 34.
-Regenerate existing PDFs. Avoid downgrading after saving new categories.
+Upload the full folder contents or replace all three files above.
+Restart the app and refresh the browser.
+Keep existing Secrets, passwords, encryption key, BMI reference data,
+mappings, custom categories and shared archive unchanged.
+No new dependencies, archive-schema changes or re-pasting required.
