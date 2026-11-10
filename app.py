@@ -1501,7 +1501,7 @@ def main() -> None:
     if st.session_state.get("authenticated") and (now - st.session_state.get("last_activity", now) > app["idle_minutes"] * 60 or now - st.session_state.get("login_at", now) > 8 * 3600):
         clear_session()
     if not st.session_state.get("authenticated"):
-        st.title("PICU Handoff")
+        st.title("PICU Handoff for Division")
         with st.form("login"):
             st.text_input("App password", type="password", key="login_password", max_chars=1024)
             st.form_submit_button("Open app", on_click=authenticate, args=(app["password_hash"],))
