@@ -150,7 +150,7 @@ def test_edit_and_exclude_in_existing_editor(app):
 
 def test_pdf_html_text_batch_and_encrypted_save():
     sheet = sample_sheet()
-    for output in (without_style_tags(handoff_html(sheet)), handoff_text(sheet)):
+    for output in (without_style_tags(without_style_tags(handoff_html(sheet))), handoff_text(sheet)):
         assert 'SpO2: 93% to 100%' in output
         assert '99.2' not in output and 'Avg:' not in output
     with fitz.open(stream=handoff_pdf(sheet), filetype='pdf') as pdf:
@@ -161,7 +161,7 @@ def test_pdf_html_text_batch_and_encrypted_save():
         assert len(pdf) == 2
         assert all('SpO2: 93% to 100%' in page.get_text() for page in pdf)
     vault = save_sheet_in(new_vault(), sheet)
-    assert vault['schema'] == SCHEMA_VERSION ==33
+    assert vault['schema'] == SCHEMA_VERSION ==34
     key = generate_key()
     assert open_vault(seal_vault(vault, key), key) == vault
 

@@ -120,7 +120,7 @@ def test_encrypted_roundtrip_and_25_upgrade_preserve_every_prior_value():
     s=new_sheet('P4104');s['fields']['Other']='Legacy note';s['updated_at']='2026-11-08T10:00:00+00:00'
     old['rooms']['P4104']=s;before=deepcopy(old)
     upgraded=upgrade_vault(old)
-    assert old==before and upgraded['schema']==33
+    assert old==before and upgraded['schema']==34
     assert upgraded['rooms']==old['rooms'] and upgraded['settings']==old['settings']
 
 

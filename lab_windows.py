@@ -133,7 +133,7 @@ def lactate_summary(sheet: dict, as_of: datetime | None = None) -> str:
     day, _ = date_parts(latest['date'])
     date_label = f"{day.month}/{day.day}/{day.year}"
     trend = latest['value'] if len(values) == 1 else earliest['value'] + ' -> ' + latest['value']
-    return 'Lactate ' + trend + ' [' + date_label + ']'
+    return 'Lactate: ' + trend + ' [' + date_label + ']'
 
 
 def theophylline_summary(sheet: dict, as_of: datetime | None = None) -> str:

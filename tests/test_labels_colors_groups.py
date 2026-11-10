@@ -233,7 +233,7 @@ def test_schema32_catalog_migration_preserves_patient_data_custom_mapping_and_cl
     vault['rooms']['P4102']=sheet
     before=deepcopy(vault)
     new=upgrade_vault(vault)
-    assert vault==before and new['schema']==SCHEMA_VERSION==33
+    assert vault==before and new['schema']==SCHEMA_VERSION==34
     assert new['rooms']==before['rooms']
     by_id={c['id']:c for c in new['settings']['medication_categories']}
     for c in old_categories: assert by_id[c['id']]==c

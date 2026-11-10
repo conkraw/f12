@@ -125,7 +125,10 @@ def field_markup(sheet: dict, fields: dict, section: str, esc=escape) -> str:
     if section == "Diagnoses":
         plain = viral_text(sheet["viral_panel"])
         if plain and text.endswith(plain):
-            return esc(text[:-len(plain)]) + viral_markup(sheet["viral_panel"], esc)
+            return observation_markup(text[:-len(plain)], esc) + viral_markup(sheet["viral_panel"], esc)
+        return observation_markup(text, esc)
+    if section == "Demographics / Weight":
+        return observation_markup(text, esc)
     if section == "Infectious Disease":
         markup = observation_markup(text, esc)
         markup = re.sub(r"(?m)^Drug Levels$", "<b>Drug Levels</b>", markup)
@@ -141,12 +144,12 @@ def field_markup(sheet: dict, fields: dict, section: str, esc=escape) -> str:
 
 
 def patient_markup(sheet: dict, fields: dict, esc=escape) -> str:
-    lines = [esc(patient_header(sheet))]
+    lines = [observation_markup(patient_header(sheet), esc)]
     if fields["Demographics / Weight"].strip():
         lines.append(field_markup(sheet, fields, "Demographics / Weight", esc).strip())
     if fields["Diagnoses"].strip():
         heading = "Diagnoses:\n" if sheet["fields"]["Diagnoses"].strip() else ""
-        lines.append(heading + field_markup(sheet, fields, "Diagnoses", esc).strip())
+        lines.append(observation_markup(heading, esc) + field_markup(sheet, fields, "Diagnoses", esc).strip())
     return "\n\n".join(lines)
 
 

@@ -1,3 +1,4 @@
+from style_assert_helpers import without_style_tags
 """Synthetic U/V device parsing, removal, persistence, export and callback checks."""
 from copy import deepcopy
 from io import BytesIO
@@ -133,7 +134,7 @@ def test_evd_status_prints_in_neuro_and_not_in_footer(status):
     assert automatic_vitals(s)['Neurologic']=='CAPD: None\nEVD: '+status
     assert 'EVD: '+status in fields_with_medications(s)['Neurologic']
     assert not devices_text(s)
-    assert 'EVD: '+status in handoff_html(s)
+    assert 'EVD: '+status in without_style_tags(handoff_html(s))
 
 
 def test_evd_below_neuro_observations_before_infusion_notes():
@@ -142,7 +143,7 @@ def test_evd_below_neuro_observations_before_infusion_notes():
     text=fields_with_medications(s)['Neurologic']
     assert 'Target Arousal' not in text
     assert text.index('CAPD:') < text.index('ICP Mean') < text.index('EVD: Clamped') < text.index('NEURO NOTE')
-    html=handoff_html(s);assert html.index('EVD: Clamped')<html.index('NEURO NOTE')
+    html=without_style_tags(handoff_html(s));assert html.index('EVD: Clamped')<html.index('NEURO NOTE')
 
 
 def test_icp_bolt_not_called_evd_from_shared_heading():
@@ -248,7 +249,7 @@ def test_schema19_migration_keeps_every_previous_field_generation_and_times():
     before=deepcopy(v);key=generate_key()
     old=Fernet(key.encode()).encrypt(json.dumps(v).encode())
     migrated=open_vault(old,key)
-    assert v==before and migrated['schema']==SCHEMA_VERSION==33
+    assert v==before and migrated['schema']==SCHEMA_VERSION==34
     assert migrated['settings']==before['settings'] and migrated['reset_generation']==before['reset_generation']
     for room,s in before['rooms'].items():assert migrated['rooms'][room]==dict(s, devices=None,neuro_devices=None,pacemaker=None,diet=None)
     assert open_vault(seal_vault(migrated,key),key)==migrated
@@ -343,7 +344,7 @@ def test_schema19_session_upgrade_preserves_unsaved_draft(app):
     ss['drafts']['P4102']['fields']['Neurologic']='UNSAVED MANUAL NOTE'
     app.upgrade_existing_session()
     assert ss['drafts']['P4102']['fields']['Neurologic']=='UNSAVED MANUAL NOTE'
-    assert ss['drafts']['P4102']['devices'] is None and ss['vault']['schema']==33
+    assert ss['drafts']['P4102']['devices'] is None and ss['vault']['schema']==34
 
 @pytest.mark.parametrize('text', ['Endotracheal Tube: None','Urinary Catheter: --','Intracranial Pressure Monitor: No data recorded','No EVD','No ETT present','Tracheostomy Tube: N/A'])
 def test_empty_headers_and_absence_statements_do_not_invent_devices(text):

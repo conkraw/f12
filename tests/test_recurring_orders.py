@@ -227,7 +227,7 @@ def test_new_schema_preserves_every_old_field_and_mapping():
     original['rooms']['P4102']=s
     before=deepcopy(original)
     upgraded=upgrade_vault(original)
-    assert original==before and upgraded['schema']==SCHEMA_VERSION==33
+    assert original==before and upgraded['schema']==SCHEMA_VERSION==34
     assert upgraded['rooms']['P4102']==dict(s,recurring_orders=None,intake_output=None,import_warnings={},feeds=None,devices=None,neuro_devices=None,pacemaker=None,diet=None)
     assert upgraded['settings']==dict(before['settings'], medication_gi_groups=[], medication_groups=[])
 

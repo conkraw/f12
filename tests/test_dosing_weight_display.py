@@ -1,3 +1,4 @@
+from style_assert_helpers import without_style_tags
 """Display-only order and missing-value regression tests for version 6.8."""
 from copy import deepcopy
 from io import BytesIO
@@ -49,7 +50,7 @@ def test_all_single_room_exports_match_and_do_not_modify_record(dose):
     data = sheet(dose=dose)
     before = deepcopy(data)
     pdf = PdfReader(BytesIO(handoff_pdf(data)))
-    for output in (handoff_text(data), handoff_html(data), "\n".join(p.extract_text() for p in pdf.pages)):
+    for output in (handoff_text(data), without_style_tags(handoff_html(data)), "\n".join(p.extract_text() for p in pdf.pages)):
         assert output.index("Weight: 12 kg") < output.index("Z-score: 0.1") < output.index("Dosing weight: " + (dose or "none"))
         assert output.count("Dosing weight:") == 1
     assert data == before
@@ -67,7 +68,7 @@ def test_print_all_consistent_and_no_cross_room_reuse():
     assert "Dosing weight: none" not in pdf.pages[0].extract_text()
     assert "Dosing weight: none" in pdf.pages[1].extract_text()
     assert "Dosing weight: 11 kg" not in pdf.pages[1].extract_text()
-    html = handoffs_html([first, second])
+    html = without_style_tags(handoffs_html([first, second]))
     assert html.count("Dosing weight: none") == html.count("Dosing weight: 11 kg") == 1
 
 
@@ -107,7 +108,7 @@ def test_none_is_display_only_and_encrypted_archive_is_unchanged():
     before = deepcopy(saved)
     key = generate_key()
     loaded = open_vault(seal_vault(saved, key), key)
-    assert loaded == before and loaded["schema"] == SCHEMA_VERSION ==33
+    assert loaded == before and loaded["schema"] == SCHEMA_VERSION ==34
     assert loaded["rooms"]["P4102"]["dosing_weight"] == ""
     assert "Dosing weight: none" in handoff_text(loaded["rooms"]["P4102"])
     assert loaded == before

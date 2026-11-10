@@ -1,109 +1,77 @@
-# Version 6.54: labels, colors and medication groups
+# Version 6.55: demographic labels, CAPD flags and airway category
 
-Built from the supplied PICU653.zip, retaining its compact workspace and
-on-demand tabs. No new dependencies. Requires the existing Streamlit >=1.55.
+Built directly from the supplied PICU654.zip.
 
-## Display
+## Labels and values
 
-Generated SBS, CAPD, WAT, respiratory and cardiovascular vital labels, ICP/CPP,
-and temperature are bold through the colon. Values retain regular weight.
-Intake/Output has its own bold heading. Laboratory labels including MCV,
-ANC, ALC, Ca, Mg, and Phos are bold. Inflammatory markers is bold.
+Room, Age, Sex, Admission, Diagnoses, Weight, Z-score, Dosing weight,
+Height, BSA and EVD labels are bold through the colon. Their values remain
+regular weight. The same formatting is used in the HTML preview and PDF,
+including Print all.
 
-Explicit H/HH/high flags color the associated numeric result red. L/LL/low
-flags color it blue. A numeric result flagged only with an asterisk is red.
-An explicit low flag plus an asterisk keeps the result blue and the asterisk
-red. All original characters, flags, dates and units remain available. Color
-does not create a high or low interpretation or change a stored result.
-Growth-chart footnote asterisks are not treated as abnormal lab flags.
+The compact lactate summary now starts with a bold Lactate: label.
+The existing 24-hour selection, earliest-to-latest order, source units,
+flags and latest-result date are unchanged. Example:
 
-This styling applies to HTML previews, the PDF export, Print all, normal lab
-trees and wrapped laboratory summaries. Text export remains plain text.
-The existing infusion name and rate emphasis is unchanged.
+    Lactate: 1.0 -> 1.1 [11/9/2026]
 
-## Editable categories
+## CAPD
 
-Infectious Disease now includes Antifungals (micafungin, fluconazole,
-voriconazole, amphotericin) and Antivirals (acyclovir, valacyclovir, including
-aciclovir/valaciclovir spellings). Amphotericin irrigation retains its route.
+A displayed CAPD total of 9 or greater gains a red (H) flag, for example:
 
-FEN/GI includes Hypoglycemia: for a documented continuous intravenous
-50% dextrose infusion. It does not capture 5% or 10% dextrose, a 50 mL bag,
-a one-time or PRN bolus, or another drug diluted in dextrose. This is a
-medication display category, not a new hypoglycemia problem-list diagnosis.
+    CAPD: 11 (H)
 
-Categories can be moved or renamed in Admin. Hidden orders stay hidden,
-explicit category assignments remain authoritative, and orders print once.
-A manual assignment can be reset to Automatic to use the new defaults.
+CAPD remains bold through the colon. The number and flag remain regular
+weight. Scores 0 through 8 do not receive the new flag. Missing, excluded,
+or import-failed totals retain the existing CAPD: None display.
 
-## Problem-list rules
+This is a requested presentation rule. The numeric total stored in the
+archive and editor is unchanged, and no delirium diagnosis is added.
+SBS, CAPD and WAT ordering and their selection logic are unchanged.
 
-The latest eligible calcium result explicitly flagged high generates
-Hypercalcemia. The latest eligible phosphorus result explicitly flagged high
-generates Hyperphosphatemia. The latest PT, INR or aPTT/PTT result explicitly
-flagged high generates one Coagulopathy prompt. High fibrinogen, heparin
-anti-Xa or LMWH anti-Xa alone does not trigger Coagulopathy. Existing
-admission-date, future-result, inclusion and failed-import filters apply.
-A newer normal result is not replaced by an older high result. Asterisk-only
-results do not activate these new high-result rules. No thresholds are inferred.
+## Respiratory category
 
-The rules are editable/dismissible prompts with supporting evidence in Problems,
-not verified diagnoses. Imported Diagnoses are not changed. They require
-clinical review, including medication and reference-range context.
+Airway Vasoconstrictor is a new editable medication category in Respiratory.
+Racemic epinephrine / racepinephrine inhalation or nebulization orders use
+this automatic placement. The Asthmanefrin name is also recognized.
+Systemic epinephrine and norepinephrine, injections, and generic non-racemic
+epinephrine are not moved to this category.
 
-## Installation
+Saved category overrides remain authoritative. Hidden orders stay hidden.
+Separate scheduled and PRN orders are preserved, with each order printed once.
+Names, doses, routes and frequencies are not changed. Admin can rename or
+nest the category, and the medication selector can assign a different one.
 
-Replace the full application folder contents, including clinical_style.py and
-models.py. Keep app.py at the root. Restart and refresh the deployment.
-Keep current Secrets, both passwords, encryption key, medication mappings,
-custom category settings, BMI reference data and shared archive unchanged.
-Do not rerun setup generators. Existing stored results and medications do not
-need re-pasting. Existing PDFs must be regenerated to show the new style.
+Medication naming reference checked: National Library of Medicine DailyMed,
+S2 racepinephrine hydrochloride solution, respiratory (inhalation).
+https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=dd1b35c7-b23b-4b95-8162-df3d263fe32e
 
-Archive schema 32 upgrades to 33 by adding missing built-in category IDs.
-Existing patient fields, notes, category names/placements, user rules and saved
-timestamps are preserved. Avoid downgrading after saving with this release.
+## Install
 
-## Scope
+Replace the application files with this folder's contents, keeping app.py
+at the root. Restart the app and refresh the browser. Keep your existing
+Secrets, both passwords, encryption key, mappings, category settings,
+BMI reference data and shared patient archive unchanged. Do not rerun
+setup generators. No new dependencies or re-pasting are required for
+information already stored. Regenerate existing PDFs to see the changes.
 
-No live deployment or shared patient archive was accessed. All added tests and
-the supplied preview are synthetic. Hosting/browser performance was not tested.
-The clinical import parsers, window selection and shared-storage implementation
-are unchanged. The requested problem rules and display routing are changed.
+Updated application files:
 
+    app.py
+    capd.py
+    clinical_style.py
+    exports.py
+    lab_windows.py
+    medication_groups.py
+    models.py
 
----
+Archive schema 33 upgrades to 34, adding only the missing built-in category.
+Existing names, locations, custom categories, mappings, rooms, notes and
+save timestamps are preserved. Do not downgrade after saving new category
+choices, because prior versions cannot validate the new category ID.
 
-# Previous setup documentation
+The compact workspace, quiet Alerts tab, one-click clear-all access,
+password protection, autosave, clinical import parsers and PDF fitting
+behavior are unchanged. No live deployment or shared archive was modified.
 
-# PICU Handoff 6.53
-
-Built from the supplied Version 6.52 package.
-
-The Handoff workspace is compact: room and save controls, a 68-pixel SmartPhrase
-paste field, then Preview / print and the editing tabs. Alerts sits immediately
-after Difficult airway. Routine import notices use small text there, without a
-stack of blue banners. Failed actions and save conflicts keep a short visible
-status line. Clinical parsing, calculations, saved data and printed layout are
-unchanged.
-
-Only the selected tab is rendered. PDF page fitting is deferred until download
-or an explicit Check page count request. No shared cache of patient data is
-introduced. Notes and other edited fields are captured before a tab switch.
-
-## Update from 6.52
-
-Replace the application files with the contents of this folder, including
-`workspace_ui.py` and `requirements.txt`. Streamlit 1.55 or later is required
-for the native on-demand tab API. Restart/rebuild the deployment and refresh
-the browser. Keep the existing Secrets, passwords, encryption key, mappings,
-category settings, BMI reference file and shared archive. Do not rerun the
-setup generators. No re-pasting or archive migration is required.
-
-Routine room actions, custom-room removal, save-status list and Delete all
-handoff data are now inside Room actions. Clearing all remains available to
-any signed-in user. Its data-loss warning and existing conflict checks remain.
-
-See COMPACT_WORKSPACE_UPDATE.md for details and TEST_REPORT.md for verification.
-Historical update notes describe earlier releases and are not current setup
-instructions. The live deployment and shared patient archive were not accessed.
+Verification details: TEST_REPORT.md. Historical feature notes remain in the package.

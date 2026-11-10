@@ -245,7 +245,7 @@ def test_additional_names_and_exact_override():
 def test_schema22_upgrade_and_new_fields_encrypted_roundtrip():
     v=new_vault();v['schema']=22;s=new_sheet('P4102');v['rooms'][s['room']]=s
     before=deepcopy(v);up=upgrade_vault(v)
-    assert v==before and up['schema']==33
+    assert v==before and up['schema']==34
     assert up['rooms']==before['rooms'] and up['settings']==before['settings']
     up['rooms']['P4102']['anthropometrics']=dict(age='62 months',sex='Female',bmi='17 kg/m²',height='100 cm',bsa='0.65 m²')
     key=generate_key();assert open_vault(seal_vault(up,key),key)==up

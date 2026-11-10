@@ -252,7 +252,7 @@ def test_schema12_upgrade_preserves_old_gases_rows_mappings_and_fields():
     key=Fernet.generate_key().decode()
     cipher=Fernet(key.encode()).encrypt(json.dumps(old).encode())
     new=open_vault(cipher,key)
-    assert old==before and new['schema']==SCHEMA_VERSION==33
+    assert old==before and new['schema']==SCHEMA_VERSION==34
     assert new['rooms']['P4102']==dict(sheet,cbc=None,recurring_orders=None,intake_output=None,import_warnings={},feeds=None,devices=None,neuro_devices=None,pacemaker=None,diet=None)
     assert new['settings']==dict(old['settings'], medication_gi_groups=[], medication_groups=[])
     assert open_vault(seal_vault(new,key),key)==new
@@ -309,7 +309,7 @@ def test_dosing_weight_removed_from_outputs_only(section):
     sheet=new_sheet('P4102');sheet['medications']=[row];before=deepcopy(sheet)
     assert '(Dosing Weight)' in format_medication(row)
     assert '(Dosing Weight)' in infusion_entry(row)
-    for output in (handoff_text(sheet),handoff_html(sheet),PdfReader(BytesIO(handoff_pdf(sheet))).pages[0].extract_text()):
+    for output in (handoff_text(sheet),without_style_tags(handoff_html(sheet)),PdfReader(BytesIO(handoff_pdf(sheet))).pages[0].extract_text()):
         assert '(Dosing Weight)' not in output
         assert '1 mcg/kg/hr' in re.sub(r'\s+', ' ', output)
         assert 'Dosing weight: none' in output

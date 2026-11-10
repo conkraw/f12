@@ -244,7 +244,7 @@ def test_v9_migration_keeps_every_previous_field():
     v['rooms']['P4102'].pop('sbs_vent_mode', None)  # Not present in schema 9.
     del v['rooms']['P4102']['viral_panel']
     before=deepcopy(v);m=upgrade_vault(v)
-    assert v==before and m['schema']==SCHEMA_VERSION==33 and m['settings']==dict(v['settings'], medication_infusions=[], medication_gi_groups=[], medication_groups=[])
+    assert v==before and m['schema']==SCHEMA_VERSION==34 and m['settings']==dict(v['settings'], medication_infusions=[], medication_gi_groups=[], medication_groups=[])
     for key,value in v['rooms']['P4102'].items():assert m['rooms']['P4102'][key]==value
     assert m['rooms']['P4102']['viral_panel']==empty_viral_panel()
     key=generate_key()

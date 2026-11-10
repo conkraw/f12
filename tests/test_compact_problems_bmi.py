@@ -1,3 +1,4 @@
+from style_assert_helpers import without_style_tags
 """Synthetic v6.31 layout, age restriction, sex parsing and storage tests."""
 from copy import deepcopy
 from datetime import datetime, timezone
@@ -42,6 +43,7 @@ def test_bmi_and_percentile_not_on_handoff_under_two(age):
         data = fn(s, printed_at=NOW)
         if isinstance(data, bytes):
             data = '\n'.join(p.extract_text() for p in PdfReader(BytesIO(data)).pages)
+        data = without_style_tags(data)
         assert 'BMI:' not in data and 'BMI percentile:' not in data
         assert '17.25' not in data
         assert 'Height: 65 cm' in data and 'BSA: 0.35' in data

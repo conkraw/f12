@@ -218,7 +218,7 @@ def test_migration_adds_group_without_overwriting_custom_settings_or_rooms():
     key = generate_key()
     token = Fernet(key.encode()).encrypt(json.dumps(v).encode())
     restored = open_vault(token, key)
-    assert restored['schema'] == SCHEMA_VERSION ==33 and v == before
+    assert restored['schema'] == SCHEMA_VERSION ==34 and v == before
     assert restored['rooms'] == before['rooms']
     old_settings = deepcopy(restored['settings'])
     old_settings['medication_categories'] = [c for c in old_settings['medication_categories'] if c['id'] != 'group:gcsf']

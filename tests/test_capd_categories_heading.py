@@ -185,7 +185,7 @@ def test_27_archive_adds_only_missing_defaults_and_preserves_customization():
     settings['medication_categories']=[r for r in settings['medication_categories'] if r['id'] not in ('group:allergy_immunology','gi:prokinetic')]
     v['settings']=settings;v['rooms']['P4102']=new_sheet('P4102')
     before=deepcopy(v);u=upgrade_vault(v)
-    assert v==before and u['schema']==33 and u['rooms']==before['rooms']
+    assert v==before and u['schema']==34 and u['rooms']==before['rooms']
     original={x['id']:x for x in before['settings']['medication_categories']}
     updated={x['id']:x for x in u['settings']['medication_categories']}
     assert all(updated[k]==row for k,row in original.items())

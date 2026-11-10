@@ -256,7 +256,7 @@ def test_schema11_migration_preserves_old_fields_mapping_infusion_and_notes():
     old['settings']['medication_mappings']=[{'name':'test','match':'prefix','destination':'Neurologic'}]
     before=deepcopy(old)
     updated=upgrade_vault(old)
-    assert old==before and updated['schema']==33
+    assert old==before and updated['schema']==34
     assert updated['settings']==dict(old['settings'], medication_gi_groups=[], medication_groups=[])
     assert updated['rooms']['P4102']==dict(s,blood_gas=None,cbc=None,recurring_orders=None,intake_output=None,import_warnings={},feeds=None,devices=None,neuro_devices=None,pacemaker=None,diet=None)
     key=Fernet.generate_key().decode()
@@ -340,7 +340,7 @@ def test_session11_upgrade_keeps_unsaved_gas_independent_notes(app):
     for sheet in (ss['vault']['rooms']['P4102'],ss['drafts']['P4102'],ss['base_sheets']['P4102']):
         sheet.pop("feeds", None);sheet.pop("devices", None);sheet.pop("neuro_devices", None);sheet.pop("pacemaker", None);sheet.pop("diet", None);sheet.pop("import_warnings", None);sheet.pop("intake_output", None);sheet.pop("recurring_orders", None);sheet.pop("cbc", None);sheet.pop('blood_gas')
     app.upgrade_existing_session()
-    assert ss['vault']['schema']==33
+    assert ss['vault']['schema']==34
     assert ss['drafts']['P4102']['blood_gas'] is None
     assert ss['drafts']['P4102']['fields']['Neurologic']=='UNSAVED sentinel'
 

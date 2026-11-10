@@ -44,6 +44,10 @@ def validate_capd_rows(rows: list[dict]) -> None:
 def capd_display_row(rows: list[dict]) -> dict:
     validate_capd_rows(rows)
     value = score_text(rows[0]["value"]) if rows and rows[0]["include"] else "None"
+    # Clinician-requested display flag only. The saved score remains numeric,
+    # and this helper does not add a diagnosis or alter the imported result.
+    if value != "None" and int(value) >= 9:
+        value += " (H)"
     return {"label": "CAPD", "value": value, "section": "Neurologic", "include": True}
 
 def parse_capd(block: str) -> CapdResult:

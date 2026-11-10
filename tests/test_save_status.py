@@ -395,5 +395,5 @@ def test_same_schema_roundtrip_preserves_all_times_and_custom_rooms():
     before = deepcopy(vault)
     key = generate_key()
     restored = open_vault(seal_vault(vault, key), key)
-    assert restored == before and SCHEMA_VERSION ==33
+    assert restored == before and SCHEMA_VERSION ==34
     assert room_save_status('P4301', restored['rooms']['P4301']).last_saved == LATER_DISPLAY

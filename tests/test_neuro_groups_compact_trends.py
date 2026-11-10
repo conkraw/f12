@@ -1,3 +1,4 @@
+from style_assert_helpers import without_style_tags
 """v6.40 presentation regressions. All fixtures are synthetic, not patient records."""
 from copy import deepcopy
 from datetime import datetime, timezone
@@ -138,11 +139,11 @@ def test_all_outputs_and_pdf_preserve_order_rates_and_observations():
     s=example_sheet();before=deepcopy(s)
     html=handoff_html(s,NOW);text=handoff_text(s,NOW);pdf=handoff_pdf(s,NOW)
     pdftext='\n'.join(p.extract_text() for p in PdfReader(BytesIO(pdf)).pages)
-    for output in [html,text,pdftext]:
+    for output in [without_style_tags(html),text,pdftext]:
         for heading in ['Airway/Cerebral Steroids','Antiepileptic','Antispasmodic','Fever Control','Insomnia','Neuromodulation']:
             assert heading in output
         assert 'Observed TV:' in output and 'Observed TVi' not in output and 'Observed TVe' not in output
-        assert 'Lactate 1.0' in output and '[11/8/2026]' in output
+        assert 'Lactate: 1.0' in output and '[11/8/2026]' in output
         assert 'Lactate earliest' not in output and 'Lactate latest' not in output
         assert output.index('Paralytic PRN')<output.index('Airway/Cerebral Steroids')
     assert '<b><u>Last Admin rate: 0.4 mcg/kg/hr</u></b>' in html
@@ -165,15 +166,15 @@ def with_lactates(rows):
     return s
 
 @pytest.mark.parametrize('rows,expected', [
- ('LACWB\t1.1\t11/08/2026\nLAC\t1.0\t11/08/2026','Lactate 1.0 -> 1.1 [11/8/2026]'),
- ('LAC\t1.0\t11/07/2026\nLACTATEART\t1.1\t11/08/2026','Lactate 1.0 -> 1.1 [11/8/2026]'),
- ('LAC\t1.2\t11/08/2026 0800\nLACWB\t1.0\t11/08/2026 0500\nLACTATEVEN\t1.1\t11/08/2026 1500','Lactate 1.0 -> 1.1 [11/8/2026]'),
- ('LAC\t1.1\t11/08/2026','Lactate 1.1 [11/8/2026]'),
- ('LAC\t0\t11/08/2026','Lactate 0 [11/8/2026]'),
- ('LAC\t1.0\t11/08/2026\nLAC\t1.0\t11/07/2026','Lactate 1.0 -> 1.0 [11/8/2026]'),
- ('LAC\t1.0\t11/06/2026\nLAC\t1.1\t11/08/2026','Lactate 1.1 [11/8/2026]'),
- ('LACTATE\t1.1 mmol/L\t11/08/2026\nLAC\t2.2 mmol/L (H)\t11/07/2026','Lactate 2.2 mmol/L (H) -> 1.1 mmol/L [11/8/2026]'),
- ('LAC\t<0.5\t11/08/2026','Lactate <0.5 [11/8/2026]'),
+ ('LACWB\t1.1\t11/08/2026\nLAC\t1.0\t11/08/2026','Lactate: 1.0 -> 1.1 [11/8/2026]'),
+ ('LAC\t1.0\t11/07/2026\nLACTATEART\t1.1\t11/08/2026','Lactate: 1.0 -> 1.1 [11/8/2026]'),
+ ('LAC\t1.2\t11/08/2026 0800\nLACWB\t1.0\t11/08/2026 0500\nLACTATEVEN\t1.1\t11/08/2026 1500','Lactate: 1.0 -> 1.1 [11/8/2026]'),
+ ('LAC\t1.1\t11/08/2026','Lactate: 1.1 [11/8/2026]'),
+ ('LAC\t0\t11/08/2026','Lactate: 0 [11/8/2026]'),
+ ('LAC\t1.0\t11/08/2026\nLAC\t1.0\t11/07/2026','Lactate: 1.0 -> 1.0 [11/8/2026]'),
+ ('LAC\t1.0\t11/06/2026\nLAC\t1.1\t11/08/2026','Lactate: 1.1 [11/8/2026]'),
+ ('LACTATE\t1.1 mmol/L\t11/08/2026\nLAC\t2.2 mmol/L (H)\t11/07/2026','Lactate: 2.2 mmol/L (H) -> 1.1 mmol/L [11/8/2026]'),
+ ('LAC\t<0.5\t11/08/2026','Lactate: <0.5 [11/8/2026]'),
  ('LAC\tPending\t11/08/2026',''),
  ('LAC\t1.2\t11/09/2026',''),
  ('LAC\t1.2\t11/06/2026',''),
@@ -187,7 +188,7 @@ def test_compact_lactate_trends(rows,expected):
 def test_lactate_excluded_latest_and_boundary():
     s=with_lactates('LACTATE\t5\t11/08/2026 1600\nLACWB\t1.1\t11/08/2026 1500\nLAC\t1.0\t11/07/2026 1700\nLAC\t9\t11/07/2026 1659')
     s['labs']['rows'][0]['include']=False
-    assert lactate_summary(s,NOW)=='Lactate 1.0 -> 1.1 [11/8/2026]'
+    assert lactate_summary(s,NOW)=='Lactate: 1.0 -> 1.1 [11/8/2026]'
 
 @pytest.mark.parametrize('field',['Vt Insp ml','Vt Exp ml','Vt (observed, mL)'])
 def test_tv_label_change_does_not_rename_source_fields(field):
@@ -229,7 +230,7 @@ def test_batch_print_each_room_preserves_groups():
     assert len(pages)==2
     for page in pages:
         text=page.extract_text()
-        assert 'Neuromodulation' in text and 'Lactate 1.0 -> 1.1 [11/8/2026]' in text
+        assert 'Neuromodulation' in text and 'Lactate: 1.0 -> 1.1 [11/8/2026]' in text
 
 
 def test_neuro_taper_embedded_product_doses_do_not_reorder_steps():

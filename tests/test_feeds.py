@@ -298,7 +298,7 @@ def test_old18_migration_preserves_every_original_field_settings_and_generation(
     before=deepcopy(v);key=generate_key()
     old_token=Fernet(key.encode()).encrypt(json.dumps(v).encode())
     new=open_vault(old_token,key)
-    assert v==before and new['schema']==SCHEMA_VERSION==33
+    assert v==before and new['schema']==SCHEMA_VERSION==34
     assert new['settings']==before['settings'] and new['reset_generation']==before['reset_generation']
     assert new['rooms']['P4102']==dict(before['rooms']['P4102'],feeds=None,devices=None,neuro_devices=None,pacemaker=None,diet=None)
     assert open_vault(seal_vault(new,key),key)==new
@@ -315,7 +315,7 @@ def test_session18_migration_preserves_unsaved_feeds_unrelated_fields(app):
     for sheet in (ss['vault']['rooms']['P4102'],ss['drafts']['P4102'],ss['base_sheets']['P4102']):sheet.pop('feeds');sheet.pop("devices", None);sheet.pop("neuro_devices", None);sheet.pop("pacemaker", None);sheet.pop("diet", None)
     ss['drafts']['P4102']['fields']['FEN / GI']='Unsaved note'
     app.upgrade_existing_session()
-    assert ss['vault']['schema']==33 and ss['vault']['reset_generation']=='f'*32
+    assert ss['vault']['schema']==34 and ss['vault']['reset_generation']=='f'*32
     assert ss['drafts']['P4102']['feeds'] is None and ss['drafts']['P4102']['fields']['FEN / GI']=='Unsaved note'
 
 

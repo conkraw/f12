@@ -13,7 +13,7 @@ HEME_GROUPS = ("dvt", "antiplatelet", "gcsf")
 CV_GROUPS = ("antiarrhythmic", "antihypertensive", "inotrope", "vasopressor", "adrenocortical", "vasodilator")
 RESP_GROUPS = ("airway_cerebral_steroid", "airway_tone", "antisialorrhea", "beta_agonist",
                "anticholinergic", "methylxanthine", "corticosteroid", "inhaled_corticosteroid",
-               "pulmonary_hypertension", "allergy_immunology")
+               "pulmonary_hypertension", "allergy_immunology", "airway_vasoconstrictor")
 # These groups follow the bedside sedation/PRN/paralytic blocks alphabetically.
 NEURO_OTHER_GROUPS = ("antiepileptic", "antispasmodic",
                       "fever", "insomnia", "neuromodulation")
@@ -34,6 +34,7 @@ MODE_LABELS = {
     "inhaled_corticosteroid": "Inhaled Corticosteroids", "airway_tone": "Airway Tone Modulator",
     "pulmonary_hypertension": "Pulmonary Hypertension",
     "allergy_immunology": "Allergy/Immunology",
+    "airway_vasoconstrictor": "Airway Vasoconstrictor",
     "antisialorrhea": "Antisialorrhea Agents", "antiarrhythmic": "Antiarrhythmics",
     "antihypertensive": "Antihypertensives", "inotrope": "Inotrope Infusions",
     "vasopressor": "Vasopressors", "adrenocortical": "Adrenocortical Support",
@@ -125,6 +126,17 @@ def automatic_system_group(row: dict) -> str:
         return "" if _local_form(row, name) else "airway_cerebral_steroid"
     if _starts(name, ("diphenhydramine", "benadryl")):
         return "allergy_immunology"
+    # Match racemic products only, not epinephrine/norepinephrine infusions
+    # or emergency injections. Existing category overrides take priority.
+    racemic = (_starts(name, ("racepinephrine", "racemic epinephrine",
+                "epinephrine racemic", "epinephrine, racemic",
+                "epinephrine (racemic)", "asthmanefrin")))
+    if racemic:
+        route = _route(row)
+        inhaled_routes = {"nebulization", "nebulisation", "nebulized", "nebulised",
+                          "inhalation", "inhaled", "respiratory (inhalation)"}
+        nonairway_form = bool(re.search(r"\b(?:injection|injectable|infusion|autoinjector|auto-injector)\b", name))
+        return "airway_vasoconstrictor" if (not route or route in inhaled_routes) and not nonairway_form else ""
     if _starts(name, ("albuterol",)):
         return "beta_agonist"
     if _starts(name, ("ipratropium", "ipratroppium")):

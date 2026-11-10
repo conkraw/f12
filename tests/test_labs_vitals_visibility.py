@@ -111,7 +111,7 @@ def test_other_labs_and_only_latest_gas_specimen():
 def test_lactate_routes_cardiac_only(component):
     s=new_sheet('P4102');s['labs']=parsed(component+'\t1.4\t01/03/2026')
     fields=fields_with_medications(s)
-    assert 'Lactate 1.4' in fields['Cardiovascular'] and '; '+component+']' not in fields['Cardiovascular']
+    assert 'Lactate: 1.4' in fields['Cardiovascular'] and '; '+component+']' not in fields['Cardiovascular']
     assert component+': 1.4' not in fields['Lab Results / Trends']
 
 
@@ -191,7 +191,7 @@ def test_vitals_always_before_support_lactate_notes_and_meds():
     s['medications']=remap(s['medications'],upsert_rule([],'albuterol','Respiratory'))
     f=fields_with_medications(s)
     assert f['Respiratory'].index('Resp:')<f['Respiratory'].index('Mode:')<f['Respiratory'].index('Beta-Agonist')<f['Respiratory'].index('albuterol')<f['Respiratory'].index('RESP MANUAL')
-    assert f['Cardiovascular'].index('Heart Rate:')<f['Cardiovascular'].index('Lactate ')<f['Cardiovascular'].index('CARDIAC MANUAL')
+    assert f['Cardiovascular'].index('Heart Rate:')<f['Cardiovascular'].index('Lactate: ')<f['Cardiovascular'].index('CARDIAC MANUAL')
     assert f['Infectious Disease'].startswith('Temp:')
 
 
@@ -316,7 +316,7 @@ def test_v6_encrypted_roundtrip_and_v5_migration():
     baseline=deepcopy(old)
     oldtoken=Fernet(key.encode()).encrypt(json.dumps(old).encode())
     upgraded=open_vault(oldtoken,key)
-    assert upgraded['schema']==33 and old==baseline
+    assert upgraded['schema']==34 and old==baseline
     after=upgraded['rooms']['P4102'];before=old['rooms']['P4102']
     for k in ('fields','noninvasive','ventilation','id','updated_at'):
         assert after[k]==before[k]

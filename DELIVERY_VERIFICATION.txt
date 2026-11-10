@@ -1,7 +1,11 @@
-PICU 6.54
-Base: supplied PICU653.zip
-4512 tests passed from clean source ZIP extraction.
-130 focused new checks passed.
-PDF preview rendered and inspected, one landscape page at 8 points.
-Runtime Python files match clean-tested source exactly.
-Full final archive CRC and manifest verified.
+Version 6.55 based on the supplied PICU654.zip.
+Original baseline: 4512 passed.
+Working-tree suite: 4591 passed.
+Clean staged-ZIP extraction: 4591 passed in 96.69 seconds.
+Focused new regression suite: 78 passed.
+Encrypted 6.54 migration and same-key round-trip passed on synthetic data.
+PDF preview: one landscape page, 8-point body text, rendered and visually checked.
+Only documentation was updated after the clean-extraction full-suite run.
+Source code is unchanged from that tested archive.
+All delivered files are listed with SHA256 hashes in SHA256SUMS.txt.
+No live deployment or shared patient archive was accessed or modified.

@@ -1,3 +1,4 @@
+from style_assert_helpers import without_style_tags
 from recovery_helpers import assert_retained
 """Recorded values, incremental imports, dates, migrations, routing and exports."""
 from copy import deepcopy
@@ -256,7 +257,7 @@ def test_exports_show_new_values_once_and_stay_landscape():
     reader=PdfReader(BytesIO(handoff_pdf(s)))
     assert len(reader.pages)==1
     pdf='\n'.join(p.extract_text() for p in reader.pages)
-    for output in (handoff_html(s),handoff_text(s),pdf):
+    for output in (without_style_tags(handoff_html(s)),handoff_text(s),pdf):
         for term in ['Admission: 01/01/2026','Weight: 70.2 kg','Dosing weight: 65.4 kg','ALBUMIN','HEPLMW','CRP','PROCAL']:
             assert term in output
         assert '2 days ago' not in output and 'SYNTHETIC_PROVIDER' not in output
@@ -284,7 +285,7 @@ def legacy_v8():
 
 def test_schema8_migration_preserves_all_fields_rules_and_cultures():
     old=legacy_v8();before=deepcopy(old);new=upgrade_vault(old)
-    assert new['schema']==33 and old==before and new['settings']==dict(before['settings'], medication_infusions=[], medication_gi_groups=[], medication_groups=[])
+    assert new['schema']==34 and old==before and new['settings']==dict(before['settings'], medication_infusions=[], medication_gi_groups=[], medication_groups=[])
     for k,val in before['rooms']['P4102'].items():assert new['rooms']['P4102'][k]==val
     assert new['rooms']['P4102']['admission_date']=='' and new['rooms']['P4102']['dosing_weight']==''
     key=generate_key();encrypted=Fernet(key.encode()).encrypt(json.dumps(old).encode())

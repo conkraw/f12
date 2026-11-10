@@ -178,7 +178,7 @@ def test_schema21_migration_preserves_every_prior_field_and_generation():
     v=save_sheet_in(new_vault(),new_sheet('P4102'));v['schema']=21;v['rooms']['P4102'].pop('diet')
     v['reset_generation']='a'*32;v['rooms']['P4102']['fields']['FEN / GI']='Original note'
     before=deepcopy(v);new=upgrade_vault(v)
-    assert v==before and new['schema']==SCHEMA_VERSION==33
+    assert v==before and new['schema']==SCHEMA_VERSION==34
     assert new['rooms']['P4102']==dict(before['rooms']['P4102'],diet=None)
     assert new['settings']==before['settings'] and new['reset_generation']==before['reset_generation']
 
@@ -228,7 +228,7 @@ def test_every_lactate_alias_routes_to_cv_only(code):
     s=new_sheet('P4102');s['labs']=labs(code+'\t2.3 (H)\t01/02/2026')
     original=deepcopy(s)
     f=fields_with_medications(s)
-    assert 'Lactate 2.3 (H)' in f['Cardiovascular']
+    assert 'Lactate: 2.3 (H)' in f['Cardiovascular']
     assert '; '+code+']' not in f['Cardiovascular'] and code+':' not in f['Lab Results / Trends']
     assert not any(code.upper() in c['rows'] for c in result_cards(s['labs']))
     assert s==original
@@ -287,10 +287,10 @@ def test_lactate_date_and_units_never_inferred():
 def test_lactate_exports_do_not_duplicate_lower_lab_panel():
     s=imported();s['labs']=labs('LACWB\t1.2\t01/03/2026\nLACTATEVEN\t5.6 (H)\t01/02/2026')
     before=deepcopy(s)
-    for text in [handoff_text(s),without_style_tags(handoff_html(s)),PdfReader(BytesIO(handoff_pdf(s))).pages[0].extract_text()]:
+    for text in [handoff_text(s),without_style_tags(without_style_tags(handoff_html(s))),PdfReader(BytesIO(handoff_pdf(s))).pages[0].extract_text()]:
         normalized = ' '.join(text.split())
-        assert 'Lactate 5.6 (H)' in normalized and '1.2 [1/3/2026]' in normalized
-        assert text.count('Lactate ')==1
+        assert 'Lactate: 5.6 (H)' in normalized and '1.2 [1/3/2026]' in normalized
+        assert text.count('Lactate: ')==1
     assert s==before
 
 

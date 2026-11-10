@@ -234,7 +234,7 @@ def test_same_schema_roundtrip_preserves_mapping_hiding_and_all_order_fields():
     v['settings']['medication_mappings']=upsert_rule([],'fat emulsion','FEN / GI')
     v['settings']['medication_visibility']=set_visibility_rule([],name,True)
     key=generate_key();restored=open_vault(seal_vault(v,key),key)
-    assert restored==v and restored['schema']==33 and upgrade_vault(v)==v
+    assert restored==v and restored['schema']==34 and upgrade_vault(v)==v
 
 
 def test_bounded_small_font_fits_crowded_column_without_deleting_lines():

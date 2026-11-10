@@ -244,7 +244,7 @@ def test_encrypted_roundtrip_and_migration_preserve_existing_data():
     key=generate_key()
     token=Fernet(key.encode()).encrypt(json.dumps(old).encode())
     loaded=open_vault(token,key)
-    assert old==before and loaded['schema']==SCHEMA_VERSION==33
+    assert old==before and loaded['schema']==SCHEMA_VERSION==34
     assert loaded['rooms']==old['rooms'] and loaded['settings']==old['settings']
     loaded['rooms']['P4102']=imported(old=loaded['rooms']['P4102'])
     assert open_vault(seal_vault(loaded,key),key)==loaded

@@ -74,7 +74,7 @@ def test_previous_day_overlap_keeps_date_without_extra_printed_annotation():
 def test_exact_earliest_latest_across_codes_without_mutating_units():
     s = sheet('LACTATEART\t1.1 mmol/L\t11/08/2026 14:00\nLAC\t2.2 mmol/L\t11/07/2026 15:01\nLACWB\t3.3\t11/01/2026')
     output = lactate_summary(s,NOW)
-    assert output == 'Lactate 2.2 mmol/L -> 1.1 mmol/L [11/8/2026]'
+    assert output == 'Lactate: 2.2 mmol/L -> 1.1 mmol/L [11/8/2026]'
     assert all(x not in output for x in ['LACTATEART','LACWB','3.3'])
 
 
@@ -126,7 +126,7 @@ def test_failed_g_and_n_do_not_reinterpret_stale_levels():
 
 def test_zero_retained_and_outdated_levels_expire_without_deleting():
     s=sheet('LACTATE\t0\t11/08/2026 14:00')
-    assert 'Lactate 0 [' in lactate_summary(s,NOW)
+    assert 'Lactate: 0 [' in lactate_summary(s,NOW)
     assert not lactate_summary(s,datetime(2026,11,10,20,tzinfo=timezone.utc))
     assert len(s['labs']['rows'])==1
 
@@ -289,7 +289,7 @@ def test_review_settings_round_trip_and_schema23_migration_keep_all_old_data():
     old=deepcopy(v);old['schema']=23;old['rooms']['P4102'].pop('problem_review')
     before=deepcopy(old);updated=upgrade_vault(old)
     assert old==before and updated['rooms']==old['rooms'] and updated['settings']==old['settings']
-    assert updated['schema']==33
+    assert updated['schema']==34
 
 
 def test_all_formats_keep_review_separate_and_do_not_mutate():

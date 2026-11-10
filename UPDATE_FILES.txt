@@ -1,17 +1,15 @@
-Version 6.54, based on PICU653.zip
+Version 6.55, based on PICU654.zip
 
 Changed application files:
 app.py
-categories.py
-clinical_style.py (new)
+capd.py
+clinical_style.py
 exports.py
-fen_gi.py
-infusions.py
-lab_layout.py
+lab_windows.py
 medication_groups.py
 models.py
-problem_review.py
 
 Upload the full folder contents, restart and refresh.
 No new dependencies. Keep current Secrets, encryption key and reference data.
-No re-pasting is needed for already stored data. Schema 32 upgrades to 33.
+No re-pasting is needed for already stored data. Schema 33 upgrades to 34.
+Regenerate existing PDFs. Avoid downgrading after saving new categories.

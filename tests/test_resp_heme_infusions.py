@@ -1,3 +1,4 @@
+from style_assert_helpers import without_style_tags
 """6.20: synthetic display regressions. UI/storage use existing local stubs."""
 from copy import deepcopy
 from datetime import datetime, timezone
@@ -283,9 +284,9 @@ def test_rendering_saved_data_preserves_archive_every_field_and_timestamp():
     v['settings']['medication_infusions']=set_infusion_rule([],s['medications'][1],'other')
     key=generate_key();encrypted=seal_vault(v,key);before=deepcopy(v)
     restored=open_vault(encrypted,key)
-    assert restored==before and restored['schema']==33==SCHEMA_VERSION
+    assert restored==before and restored['schema']==34==SCHEMA_VERSION
     for sheet in restored['rooms'].values():
-        fields_with_medications(sheet);handoff_html(sheet);handoff_pdf(sheet,STAMP)
+        fields_with_medications(sheet);without_style_tags(handoff_html(sheet));handoff_pdf(sheet,STAMP)
     assert restored==before and upgrade_vault(restored)==before
 
 

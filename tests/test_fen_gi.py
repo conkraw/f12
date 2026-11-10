@@ -201,7 +201,7 @@ def test_latest_archive_migration_preserves_original_fields_and_settings():
     s=new_sheet('P4102');s.pop("feeds", None);s.pop("devices", None);s.pop("neuro_devices", None);s.pop("pacemaker", None);s.pop("diet", None);s.pop("import_warnings", None);s.pop('intake_output');s['fields']['FEN / GI']='Preserve this note'
     old['rooms'][s['room']]=s;original=deepcopy(old)
     new=upgrade_vault(old)
-    assert old==original and new['schema']==SCHEMA_VERSION==33
+    assert old==original and new['schema']==SCHEMA_VERSION==34
     assert new['rooms'][s['room']]==dict(s,intake_output=None,import_warnings={},feeds=None,devices=None,neuro_devices=None,pacemaker=None,diet=None)
     assert new['settings']==dict(old['settings'],medication_gi_groups=[], medication_groups=[])
     key=Fernet.generate_key().decode()

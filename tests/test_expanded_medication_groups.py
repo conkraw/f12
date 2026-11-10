@@ -236,7 +236,7 @@ def test_schema16_upgrade_preserves_every_field_and_import_warning():
     v['rooms'][s['room']]=res.sheet;before=deepcopy(v)
     key=Fernet.generate_key().decode();encrypted=Fernet(key.encode()).encrypt(json.dumps(v).encode())
     upgraded=open_vault(encrypted,key)
-    assert upgraded['schema']==SCHEMA_VERSION==33
+    assert upgraded['schema']==SCHEMA_VERSION==34
     assert upgraded['rooms']=={room: dict(sheet, feeds=None,devices=None,neuro_devices=None,pacemaker=None,diet=None) for room, sheet in before['rooms'].items()}
     assert upgraded['settings']==dict(before['settings'],medication_groups=[])
     assert v==before

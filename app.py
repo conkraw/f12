@@ -1,4 +1,4 @@
-"""PICU SmartPhrase v6.54: bold clinical labels, flagged-result colors and medication groups."""
+"""PICU SmartPhrase v6.55: demographic labels, CAPD flags and airway category."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,
@@ -1531,7 +1531,7 @@ def main() -> None:
     upgrade_existing_session()
     with st.sidebar:
         st.header("PICU Handoff")
-        st.caption("Version 6.54 | Labels, result colors and medication groups")
+        st.caption("Version 6.55 | Demographic labels, CAPD flags and airway category")
         # Retire the old instructions workspace without discarding room drafts.
         if st.session_state.get("page") == "Instructions / SmartPhrase":
             st.session_state["page"] = "Handoff"

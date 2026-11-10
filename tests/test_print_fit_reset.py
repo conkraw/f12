@@ -185,7 +185,7 @@ def test_v17_encrypted_migration_preserves_every_prior_setting_and_sheet():
     before=deepcopy(v);key=generate_key();data=Fernet(key.encode()).encrypt(json.dumps(v).encode())
     out=open_vault(data,key)
     assert out['rooms']=={room: dict(sheet, feeds=None,devices=None,neuro_devices=None,pacemaker=None,diet=None) for room, sheet in v['rooms'].items()} and out['settings']==v['settings'] and v==before
-    assert out['schema']==33 and out['reset_generation']==''
+    assert out['schema']==34 and out['reset_generation']==''
     assert open_vault(seal_vault(out,key),key)==out
 
 

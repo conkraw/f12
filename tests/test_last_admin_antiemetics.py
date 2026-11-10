@@ -268,7 +268,7 @@ def test_old_archive_migration_preserves_rows_notes_and_save_times():
         for key in ('last_admin_rate','last_admin_time','last_admin_status'):row.pop(key,None)
     v['schema']=24
     before=deepcopy(v); out=upgrade_vault(v)
-    assert out['schema']==33 and v==before
+    assert out['schema']==34 and v==before
     out['schema']=24
     assert out==before
 

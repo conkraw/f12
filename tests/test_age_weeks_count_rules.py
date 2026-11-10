@@ -1,3 +1,4 @@
+from style_assert_helpers import without_style_tags
 """v6.34 regressions. Synthetic metadata and laboratory data only."""
 from copy import deepcopy
 from datetime import datetime, timezone
@@ -99,7 +100,7 @@ def test_demographics_print_once_and_infant_bmi_stays_hidden():
     s['admission_date'] = '11/01/2026'
     s['anthropometrics'].update(bmi='17 kg/m²', height='55 cm', bsa='0.25 m²')
     with display_clock(NOW):
-        for text in (handoff_text(s), handoff_html(s),
+        for text in (handoff_text(s), without_style_tags(handoff_html(s)),
                      PdfReader(BytesIO(handoff_pdf(s))).pages[0].extract_text()):
             assert text.index('Room: P4201') < text.index('Age: 5 wk.o.') < text.index('Sex: Male')
             assert text.index('Sex: Male') < text.index('Admission:')

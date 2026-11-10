@@ -1,3 +1,4 @@
+from style_assert_helpers import without_style_tags
 """Synthetic regression tests for the inline Epic Age/Sex metadata format."""
 from copy import deepcopy
 from io import BytesIO
@@ -140,7 +141,7 @@ def test_text_html_and_pdf_header_order():
     sheet=import_a('1. Example diagnosis (CMS/HCC)\nAge: 6 y.o. Sex: female')
     sheet['admission_date']='11/08/2026'
     fields=fields_with_medications(sheet)
-    for text in [handoff_text(sheet),handoff_html(sheet),patient_markup(sheet,fields),patient_column(sheet,fields)]:
+    for text in [handoff_text(sheet),without_style_tags(handoff_html(sheet)),without_style_tags(patient_markup(sheet,fields)),patient_column(sheet,fields)]:
         assert text.index('Room: P4201') < text.index('Age: 6 y.o.') < text.index('Sex: Female') < text.index('Admission: 11/08/2026')
         assert text.count('Age: 6 y.o.')==1 and text.count('Sex: Female')==1
     for pdf in [handoff_pdf(sheet),handoffs_pdf([sheet])]:

@@ -228,7 +228,7 @@ def test_sequence_and_dates_remain_through_encryption_and_same_schema():
     v=save_sheet_in(new_vault(),s)
     token=seal_vault(v,key)
     restored=open_vault(token,key)
-    assert restored==v and restored['schema']==33
+    assert restored==v and restored['schema']==34
     assert upgrade_vault(restored)==restored
     assert '[START ON 1/4/2026]' in restored['rooms']['P4102']['medications'][2]['name']
     assert 'Followed by:' in restored['rooms']['P4102']['medications'][2]['name']

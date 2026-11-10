@@ -1,3 +1,4 @@
+from style_assert_helpers import without_style_tags
 """v6.35 nutrition-import regression tests. Synthetic fixtures only."""
 from copy import deepcopy
 from io import BytesIO
@@ -136,7 +137,7 @@ def test_same_line_height_equivalent_in_admission_section():
 def test_text_html_and_pdf_include_normalized_measures_without_warning():
     sheet = import_i().sheet
     sheet['anthropometrics'].update(age='6 years', sex='Female')
-    for output in (handoff_text(sheet), handoff_html(sheet)):
+    for output in (handoff_text(sheet), without_style_tags(handoff_html(sheet))):
         for text in ('Weight: 20 kg', 'Dosing weight: 18 kg', 'Height: 120 cm', 'BSA: 0.80'):
             assert text in output
         assert 'IMPORT REVIEW' not in output

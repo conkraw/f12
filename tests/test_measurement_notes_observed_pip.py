@@ -1,3 +1,4 @@
+from style_assert_helpers import without_style_tags
 """v6.41 import/render regressions using synthetic data and generic charting notes."""
 from copy import deepcopy
 from datetime import datetime, timezone
@@ -238,7 +239,7 @@ def test_exports_include_correct_measures_and_observed_pip_without_source_commen
     pdf = handoff_pdf(s, NOW)
     doc = PdfReader(BytesIO(pdf))
     assert len(doc.pages) == 1
-    for out in [handoff_html(s, NOW), handoff_text(s, NOW), '\n'.join(p.extract_text() for p in doc.pages)]:
+    for out in [without_style_tags(handoff_html(s, NOW)), handoff_text(s, NOW), '\n'.join(p.extract_text() for p in doc.pages)]:
         out = ' '.join(out.split())
         assert 'Observed PIP: Avg: 22.4 Min: 18.2 Max: 28 cm H2O' in out
         for phrase in ['Height: 120 cm', 'Dosing weight: 18 kg', 'Weight: 20 kg']:
