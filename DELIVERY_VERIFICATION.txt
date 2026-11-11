@@ -1,19 +1,23 @@
-PICU Handoff 6.61, based on PICU660.zip.
+PICU Handoff 6.62, based on PICU661.zip.
 
-Supplied SmartPhrase: 36 of 36 medication orders imported.
-Source medication names, doses, routes and frequencies: preserved.
-Or connector and incomplete-sequence checks: passed.
-Alternative ordering and detached labels in grouped output: passed.
-Infusion Last Admin rate rules: passed.
-HTML, text, single PDF and Print All checks: passed.
-MRSA, bupivacaine, hypernatremia, line days and label regressions: passed.
-Encrypted roundtrip and unchanged source after rendering: passed.
-Archive schema 34, dependencies and encryption: unchanged.
-ZIP CRC and SHA256 manifest: passed.
+Post-login Start new list / Continue choice: passed.
+Continue and review rendering do not write or delete: passed.
+Eastern date and 5:00-8:30 AM boundary selection: passed.
+Unknown/future save times retained: passed.
+Same-day repeat protection across logins: passed.
+Reviewed snapshot, SHA conflict and failed-save handling: passed.
+Lost acknowledgement and safe reload without repeat deletion: passed.
+Retained draft values and original conflict bases: passed.
+Removed and changed handoff identities cannot be restored: passed.
+PDF generation rejects a list reset before or during download: passed.
+Airway carry-forward options removed, ordinary editor retained: passed.
+Existing archive, encryption and clinical parsers: preserved.
+ZIP CRC and complete SHA256 manifest: passed.
 
-Changed application modules: app.py, medications.py, infusion_rates.py,
-infusions.py, categories.py and exports.py.
-See TEST_REPORT.md for the verification scope.
+Changed application files: app.py, models.py, handoff_reset.py.
+New required files: daily_start.py, census_guard.py.
 
-The live Streamlit deployment was not updated from this workspace.
-Upload the package, restart the app, refresh and paste the SmartPhrase again.
+Upload the complete package, restart Streamlit and refresh the browser.
+Keep existing Streamlit Secrets, encryption key, saved archive and mappings.
+The live application was not deployed or changed from this workspace.
+See TEST_REPORT.md and README.md for behavior and verification scope.

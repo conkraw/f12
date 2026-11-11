@@ -1,14 +1,58 @@
-# PICU Handoff 6.61
+# PICU Handoff 6.62
 
-Built from PICU660.zip. Medication tables now accept Epic's Or connector,
-including tab-indented lines and a connector in the final table cell. Both
-orders remain separate, with their source dose, route and frequency intact.
+Built from PICU661.zip. After signing in, choose whether to start a new patient
+list or continue the saved handoffs. Nothing is deleted just by signing in.
 
-From 6.60, replace app.py, medications.py, infusion_rates.py, infusions.py,
-categories.py and exports.py together, or upload this full application folder. Restart
-Streamlit, refresh the browser, then paste the SmartPhrase again.
+From 6.61, replace app.py, models.py and handoff_reset.py, and add daily_start.py
+and census_guard.py. Uploading this complete application folder includes all
+five files. Restart Streamlit and refresh your browser.
 
-## Alternative medication orders
+## After sign-in
+
+Start new patient list opens a review showing the rooms to remove and the rooms
+that will stay. Confirm that review to start today's list, then enter your
+patients. Continue saved handoffs opens the existing workspace so you can print
+processed handoffs, update patients or add patients. Continue makes no write or
+deletion to the saved archive.
+
+The new-list review uses each handoff's last saved timestamp in America/New_York.
+The archive does not have a separate timestamp for when clinical text was entered.
+The removal rule is:
+
+- Remove handoffs last saved on a date before today.
+- Remove handoffs last saved today from 5:00:00 AM through 8:30:00 AM, inclusive.
+- Keep today's handoffs saved before 5:00 AM or after 8:30 AM.
+- Keep handoffs with missing, invalid or future save times for manual review.
+
+The screen shows the last saved time and reason for each room. The reviewed
+selection is fixed until confirmation. If the shared archive or Eastern date
+changes, reload and review again before starting the list.
+
+A successful start is recorded in the encrypted archive. A second user or later
+login on the same Eastern date cannot repeat the daily cleanup and remove the
+patients entered since the first start. Continue remains available at every login.
+The separate full-delete control remains available for an intentional complete
+reset. Configured rooms, medication categories, mappings and other settings stay
+in place during the daily cleanup.
+
+Selected handoffs are removed in full, including difficult-airway details. The
+keep-airway reset option and Keep/Delete/Cancel airway update pop-up are removed.
+The ordinary airway editor and printed alert remain available. Updating a retained
+patient preserves manually entered fields through the normal update workflow.
+
+Other sessions keep pending edits only for the same handoffs that survive a reset.
+Removed patients, replacement identities and unsaved old drafts are not restored
+when the shared list reloads. PDF downloads verify the shared list before and
+after generation, so an open tab cannot create a new PDF from a cleared list.
+Previously downloaded files and an already displayed browser preview remain
+snapshots and are not erased by a reset.
+
+No new dependency, password or encryption key is required. Existing archives
+load without conversion. The first daily start adds a validated nonclinical
+patient_list_started_at setting. Use the full 6.62 package after that setting is
+saved, since older application versions do not recognize it.
+
+## Alternative medication orders from 6.61
 
 An unrecognized Or line previously became part of the preceding medication
 row. The extra column caused the complete medication section to be rejected.
@@ -108,7 +152,7 @@ display time without modifying their saved category.
 
 Extract this package and upload the contents of the application folder to your
 existing code repository. Keep app.py at the repository root. Use the complete
-folder so the new mrsa.py module and all related changes are included. Restart
+folder so daily_start.py, census_guard.py and all earlier modules are included. Restart
 the Streamlit app and refresh your browser.
 
 Keep your existing Streamlit Secrets, passwords, encryption key, saved archive,
@@ -116,7 +160,7 @@ BMI reference data, mappings and custom categories. Do not rerun setup or secret
 generators. This update adds no dependency and keeps archive schema 34.
 
 The save-before-Print-All behavior, per-room Last saved timestamps, BMI label
-formatting, difficult-airway choices and existing conflict checks remain in
+formatting, ordinary difficult-airway editor and existing conflict checks remain in
 place. These changes apply to saved source data that is already present. Paste
 updated SmartPhrase output when adding a laboratory result or order that was
 not previously included.

@@ -1,4 +1,4 @@
-"""PICU SmartPhrase v6.61: alternative medication order import."""
+"""PICU SmartPhrase v6.62: daily patient-list choices after sign-in."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,
@@ -10,8 +10,6 @@ from html import escape
 from pathlib import Path
 import time
 import json
-import hashlib
-import uuid
 from threading import Event
 from datetime import datetime, timezone
 
@@ -32,6 +30,8 @@ from noninvasive import DEVICE_FIELDS, format_noninvasive, validate_noninvasive
 from importing import import_sections, SUPPORTED_SECTIONS
 from batching import available_handoffs
 from handoff_reset import cleared_vault, census_was_reset
+from daily_start import daily_reset_plan, start_daily_list, START_MARKER
+from census_guard import guard_download
 from save_status import (room_save_status, saved_time_text, latest_saved_time,
                          most_recent_save_caption, save_status_table)
 from parser import MAX_PASTE, SECTION_NAMES
@@ -40,7 +40,7 @@ from admin_access import admin_valid, unlock_admin, lock_admin, config_error as 
 from user_guide import (default_guide, publication, validate_guide, instructions_html, handoff_instructions,
                         MAX_TEMPLATE, MAX_INSTRUCTIONS, MAX_NOTES)
 from guide_store import GuideStore
-from difficult_airway import (empty_airway, validate_airway, collect_airway, airway_summary, has_airway_details,
+from difficult_airway import (empty_airway, validate_airway, collect_airway, airway_summary,
                               FIELDS as AIRWAY_FIELDS, TEXT_LIMITS as AIRWAY_LIMITS,
                               MASK_OPTIONS, PASSAGE_OPTIONS)
 from labs import validate_labs
@@ -360,9 +360,7 @@ def editor_snapshot(room: str) -> dict:
 def autosave_before_room_change(store: GitHubVault | None, *, for_print: bool = False) -> bool:
     ss = st.session_state
     room = ss.get("current_room")
-    if ss.get("airway_update_pending"):
-        note("Keep, delete or cancel the airway update before " + ("opening Print all." if for_print else "changing rooms."), "error")
-        return False
+    ss.pop("airway_update_pending", None)  # Obsolete pre-6.62 prompt state.
     if not room or room not in ss.get("drafts", {}):
         return True
     try:
@@ -1183,7 +1181,7 @@ def clear_paste() -> None:
 
 
 def _finish_handoff_import(room: str, result, store: GitHubVault | None) -> None:
-    """Apply a parsed update only after any required airway choice."""
+    """Apply the normal section update and its import diagnostics."""
     ss = st.session_state
     ss.pop("airway_update_pending", None)
     ss.pop("last_error_reference", None)
@@ -1208,99 +1206,15 @@ def create_handoff(store: GitHubVault | None = None) -> None:
     if not room:
         note("Select a room first.", "error")
         return
-    # Capture a just-blurred airway edit as well as existing draft fields.
-    # No plaintext source is copied into the staged request or saved archive.
+    # Capture just-blurred editor values before applying supplied sections.
+    # Manual fields absent from the SmartPhrase keep their normal sheet values.
     try:
         before = editor_snapshot(room)
         result = import_sections(before, ss.get("paste", ""), ss["vault"]["settings"])
     except (ValueError, ValidationError) as exc:
         note("The handoff was not updated. " + str(exc), "error")
         return
-    ss.pop("airway_update_pending", None)
-    if result.sheet is not None and result.imported and has_airway_details(before.get("difficult_airway")):
-        ss["drafts"][room] = deepcopy(before)
-        ss["airway_update_pending"] = {
-            "request_id": uuid.uuid4().hex, "room": room, "sheet_id": before["id"],
-            "before": before, "result": result,
-            "settings": deepcopy(ss["vault"]["settings"]),
-            "saved_room": deepcopy(ss["vault"]["rooms"].get(room)),
-            "reset_generation": ss["vault"].get("reset_generation", ""),
-            "paste_digest": hashlib.sha256(ss.get("paste", "").encode("utf-8")).hexdigest(),
-        }
-        return
     _finish_handoff_import(room, result, store)
-
-
-def resolve_airway_update(action: str, room: str, sheet_id: str, request_id: str,
-                         store: GitHubVault | None = None) -> None:
-    """A stale click must never erase a different room, patient or newer note."""
-    if not require_session():
-        return
-    ss = st.session_state
-    pending = ss.get("airway_update_pending")
-    if not pending or (pending["room"], pending["sheet_id"], pending["request_id"]) != (room, sheet_id, request_id):
-        return
-    if room != ss.get("current_room") or ss.get("drafts", {}).get(room, {}).get("id") != sheet_id:
-        ss.pop("airway_update_pending", None)
-        note("The selected handoff changed. No airway details were deleted.", "error")
-        return
-    if action == "cancel":
-        ss.pop("airway_update_pending", None)
-        note("Update canceled. The handoff and airway details were kept.")
-        return
-    if action not in ("keep", "delete"):
-        note("Choose Keep airway or Delete airway before updating.", "error")
-        return
-    try:
-        current = editor_snapshot(room)
-        same_paste = hashlib.sha256(ss.get("paste", "").encode("utf-8")).hexdigest() == pending["paste_digest"]
-        unchanged = (current == pending["before"]
-                     and ss["vault"]["settings"] == pending["settings"]
-                     and ss["vault"]["rooms"].get(room) == pending["saved_room"]
-                     and ss["vault"].get("reset_generation", "") == pending["reset_generation"]
-                     and same_paste)
-        if not unchanged:
-            ss.pop("airway_update_pending", None)
-            note("The handoff or paste changed. Click Create / update handoff again. No airway details were deleted.", "error")
-            return
-        result = deepcopy(pending["result"])
-        if result.sheet is None:
-            raise ValidationError("There is no valid pending update.")
-        result.sheet["difficult_airway"] = (empty_airway() if action == "delete"
-                                             else deepcopy(current["difficult_airway"]))
-        validate_sheet(result.sheet)
-    except (ValueError, ValidationError) as exc:
-        note("The handoff was not updated. Airway details were kept. " + str(exc), "error")
-        return
-    _finish_handoff_import(room, result, store)
-    note("Handoff updated. Difficult-airway details " + ("deleted" if action == "delete" else "kept") +
-         ". Save handoff or change rooms to save.")
-
-
-def airway_update_control(store: GitHubVault | None) -> bool:
-    """One compact decision, shown only after an import with stored airway data."""
-    ss = st.session_state
-    pending = ss.get("airway_update_pending")
-    if not pending or pending["room"] != ss.get("current_room"):
-        return False
-    st.markdown("<strong>Keep or delete difficult-airway details for " + escape(pending["room"]) + "?</strong>",
-                unsafe_allow_html=True)
-    st.caption("Keep only if these details still belong to this patient. The update has not been applied yet.")
-    preview = deepcopy(pending["before"])
-    preview["difficult_airway"]["enabled"] = True
-    st.caption(airway_summary(preview))
-    keep, delete, cancel = st.columns([1.5, 1.5, 1])
-    args = (pending["room"], pending["sheet_id"], pending["request_id"], store)
-    with keep:
-        st.button("Keep airway and update", key="airway_keep_update", type="primary",
-                  on_click=resolve_airway_update, args=("keep",) + args)
-    with delete:
-        st.button("Delete airway and update", key="airway_delete_update",
-                  on_click=resolve_airway_update, args=("delete",) + args)
-    with cancel:
-        st.button("Cancel update", key="airway_cancel_update",
-                  on_click=resolve_airway_update, args=("cancel",) + args)
-    return True
 
 
 def start_new_patient() -> None:
@@ -1339,9 +1253,7 @@ def save_rooms(store: GitHubVault | None, rooms: list[str]) -> bool:
     if not rooms:
         note("There are no open drafts to save.")
         return False
-    if ss.get("airway_update_pending", {}).get("room") in rooms:
-        note("Keep, delete or cancel the airway update before saving this handoff.", "error")
-        return False
+    ss.pop("airway_update_pending", None)  # Obsolete pre-6.62 prompt state.
     for room in rooms:
         if ss.get("base_sheets", {}).get(room) != ss["vault"]["rooms"].get(room):
             note("A saved room changed after its draft was opened. Reload that saved handoff and reapply your edits. No rooms were saved.", "error")
@@ -1601,20 +1513,195 @@ def idle_guard(minutes: int) -> None:
 
 
 
-def reload_archive(store: GitHubVault | None) -> None:
+def _retained_reset_state(previous: dict, fresh: dict) -> dict:
+    """Keep edits only when the saved handoff survives the shared reset.
+
+    Original base snapshots stay intact so a concurrent edit still conflicts.
+    Unsaved handoffs without a saved base cannot restore a cleared census.
+    """
+    ss = st.session_state
+    drafts, bases = {}, {}
+    for room, draft in ss.get("drafts", {}).items():
+        before = previous["rooms"].get(room)
+        after = fresh["rooms"].get(room)
+        base = ss.get("base_sheets", {}).get(room)
+        if (before is not None and after is not None and base is not None
+                and before["id"] == after["id"] == base["id"] == draft["id"]):
+            drafts[room] = deepcopy(draft)
+            bases[room] = deepcopy(base)
+    current = ss.get("current_room")
+    if current in drafts:
+        drafts[current] = editor_snapshot(current)
+    else:
+        current = None
+    return {"drafts": drafts, "base_sheets": bases, "current_room": current,
+            "paste": ss.get("paste", "") if current else ""}
+
+
+def _apply_reset_state(retained: dict) -> None:
+    """Discard obsolete widgets/downloads after a confirmed save or reload."""
+    discard_all_handoff_state()
+    ss = st.session_state
+    ss.update(drafts=retained["drafts"], base_sheets=retained["base_sheets"])
+    if retained["current_room"]:
+        ss.update(current_room=retained["current_room"],
+                  room_choice=retained["current_room"], paste=retained["paste"])
+
+
+def reload_archive(store: GitHubVault | None) -> bool:
     if not require_session() or store is None:
-        return
+        return False
     try:
         fresh, sha = store.load()
+        validate_vault(fresh)
         was_reset = census_was_reset(st.session_state["vault"], fresh)
-        st.session_state.update(vault=fresh, vault_sha=sha)
         if was_reset:
-            discard_all_handoff_state()
-            note("The shared handoffs were cleared. The archive is reloaded and older open drafts were discarded so they cannot be saved back.", "warning")
+            # Revoke stale prepared files even if an invalid editor value
+            # prevents this reload from replacing the current local state.
+            download_revocation().set()
+            retained = _retained_reset_state(st.session_state["vault"], fresh)
+        st.session_state.update(vault=fresh, vault_sha=sha)
+        st.session_state.pop("daily_start_preview", None)
+        if was_reset:
+            _apply_reset_state(retained)
+            note("The patient list changed. The archive is reloaded and older open drafts were discarded for removed patients. Edits to retained handoffs were kept.", "warning")
         else:
             note("Saved archive reloaded. Open drafts were kept.")
-    except (StorageError, ValidationError) as exc:
+        return True
+    except (StorageError, ValidationError, ValueError, TypeError, KeyError) as exc:
         note(str(exc), "error")
+        return False
+
+
+def patient_list_now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def continue_patient_list() -> None:
+    """Enter the workspace without writing or deleting any handoff."""
+    if not require_session():
+        return
+    ss = st.session_state
+    ss["patient_list_ready"] = True
+    ss.pop("daily_start_preview", None)
+    ss.setdefault("page", "Handoff")
+
+
+def prepare_daily_start(store: GitHubVault | None = None) -> None:
+    """Read the current archive and freeze exactly what the user will review."""
+    if not require_session():
+        return
+    ss = st.session_state
+    if ss.get("patient_list_ready"):
+        return
+    ss.pop("daily_start_preview", None)
+    if store is not None:
+        try:
+            if not reload_archive(store):
+                return
+        except Exception:
+            note("The saved patient list could not be loaded. No handoffs were changed. Try loading it again.", "error")
+            return
+    try:
+        plan = daily_reset_plan(ss["vault"], patient_list_now())
+        ss["daily_start_preview"] = {"source": deepcopy(ss["vault"]),
+                                     "sha": ss.get("vault_sha"), "plan": plan}
+    except (ValueError, TypeError, KeyError):
+        note("The patient list could not be reviewed. No handoffs were changed. Reload the saved archive.", "error")
+
+
+def confirm_daily_start(store: GitHubVault | None = None) -> None:
+    """Commit only the reviewed snapshot, with no automatic deletion retry."""
+    if not require_session():
+        return
+    ss = st.session_state
+    preview = ss.get("daily_start_preview")
+    if ss.get("patient_list_ready") or not preview or preview.get("failed"):
+        return
+    try:
+        if ss["vault"] != preview["source"] or ss.get("vault_sha") != preview["sha"]:
+            raise ValueError("The saved list changed after this review.")
+        now = patient_list_now()
+        if daily_reset_plan(preview["source"], now)["date"] != preview["plan"]["date"]:
+            raise ValueError("The date changed after this review.")
+        if preview["plan"]["already_started"]:
+            continue_patient_list()
+            note("Today's patient list is already started. All saved handoffs were kept.")
+            return
+        candidate = start_daily_list(preview["source"], datetime.fromisoformat(preview["plan"]["as_of"]))
+        # The selection stays frozen at review time. The shared start time
+        # records confirmation, so later logins recognize the completed start.
+        candidate["settings"][START_MARKER] = now.isoformat()
+        validate_vault(candidate)
+        retained = _retained_reset_state(ss["vault"], candidate)
+        commit(candidate, store)
+    except Exception:
+        preview["failed"] = True
+        note("Starting the new list was not confirmed. Your open handoffs were kept. Reload the saved list before trying again.", "error")
+        return
+    removed, kept = len(preview["plan"]["remove"]), len(preview["plan"]["keep"])
+    _apply_reset_state(retained)
+    continue_patient_list()
+    note(("Today's patient list started. " if store else "Session-only patient list started. ") +
+         str(removed) + " handoff(s) removed. " + str(kept) + " handoff(s) kept.",
+         "success" if store else "info")
+
+
+def _daily_room_table(rows: list[dict]) -> str:
+    cells = "".join("<tr>" + "".join("<td style='padding:6px 10px;border-bottom:1px solid #ddd'>" +
+        escape(row[key]) + "</td>" for key in ("room", "last_saved", "reason")) + "</tr>" for row in rows)
+    return ("<div style='max-height:330px;overflow:auto'><table style='width:100%;text-align:left;border-collapse:collapse'>"
+            "<thead><tr><th>Room</th><th>Last saved (Eastern)</th><th>Reason</th></tr></thead><tbody>" +
+            cells + "</tbody></table></div>")
+
+
+def patient_list_startup(store: GitHubVault | None) -> bool:
+    """Two choices after every sign-in. Rendering never changes stored data."""
+    ss = st.session_state
+    if ss.get("patient_list_ready"):
+        return True
+    st.title("PICU Handoff")
+    if "notice" in ss:
+        kind, message = ss.pop("notice")
+        getattr(st, kind)(message)
+    preview = ss.get("daily_start_preview")
+    if preview:
+        plan = preview["plan"]
+        st.subheader("Start a new patient list")
+        if preview.get("failed"):
+            st.warning("Reload the saved list to check its current status before trying again.")
+            st.button("Reload saved list", key="daily_start_reload", on_click=prepare_daily_start, args=(store,))
+        elif plan["already_started"]:
+            st.info("Today's list was already started at " + saved_time_text(plan["started_at"]) + ". All saved handoffs will be kept.")
+            st.button("Open today's patient list", key="daily_start_existing", on_click=continue_patient_list, type="primary")
+        else:
+            st.caption("Remove handoffs saved before today and today's saves from 5:00 AM through 8:30 AM Eastern. Other handoffs stay.")
+            st.text("To remove: " + str(len(plan["remove"])) + ". To keep: " + str(len(plan["keep"])) + ".")
+            if plan["remove"]:
+                st.markdown(_daily_room_table(plan["remove"]), unsafe_allow_html=True)
+                st.caption("Each selected handoff is removed in full, including its difficult-airway details.")
+            if plan["keep"]:
+                with st.expander("Handoffs that will stay", expanded=False):
+                    st.markdown(_daily_room_table(plan["keep"]), unsafe_allow_html=True)
+            st.caption("This starts the list once for today. Later sign-ins will keep the handoffs entered for that list.")
+            label = ("Start new list and remove " + str(len(plan["remove"])) + " handoff(s)"
+                     if plan["remove"] else "Start today's list")
+            st.button(label, key="daily_start_confirm", on_click=confirm_daily_start, args=(store,), type="primary")
+        st.button("Continue without deleting", key="daily_start_cancel", on_click=continue_patient_list)
+    else:
+        st.subheader("How would you like to start?")
+        st.caption(str(len(ss["vault"]["rooms"])) + " saved handoff(s)")
+        fresh, existing = st.columns(2)
+        with fresh:
+            st.subheader("Start a new patient list")
+            st.caption("Review older handoffs and today's 5:00–8:30 AM saves for removal, then enter your patients.")
+            st.button("Start new patient list", key="daily_start_review", on_click=prepare_daily_start, args=(store,), type="primary")
+        with existing:
+            st.subheader("Continue saved handoffs")
+            st.caption("Print processed handoffs, update existing patients, or add patients. Nothing is deleted.")
+            st.button("Continue saved handoffs", key="daily_start_continue", on_click=continue_patient_list)
+    st.button("Log out", key="daily_start_logout", on_click=clear_session)
+    return False
 
 
 def main() -> None:
@@ -1643,9 +1730,11 @@ def main() -> None:
             return
         st.session_state.update(vault=vault, vault_sha=sha, drafts={}, base_sheets={})
     upgrade_existing_session()
+    if not patient_list_startup(store):
+        return
     with st.sidebar:
         st.header("PICU Handoff")
-        st.caption("Version 6.61 | Alternative medication order import")
+        st.caption("Version 6.62 | Daily patient-list choices")
         # Retire the old instructions workspace without discarding room drafts.
         if st.session_state.get("page") == "Instructions / SmartPhrase":
             st.session_state["page"] = "Handoff"
@@ -1876,7 +1965,7 @@ def handoff_alerts(sheet: dict) -> None:
         import_review_editor(sheet, compact=True)
 
 
-def room_preview(sheet: dict) -> None:
+def room_preview(sheet: dict, store: GitHubVault | None = None) -> None:
     """Build the inexpensive screen preview, not a PDF, when this tab is open."""
     import streamlit.components.v1 as components
     statuses = {sheet["room"]: display_room_save_status(
@@ -1892,8 +1981,7 @@ def room_preview(sheet: dict) -> None:
     with left:
         try:
             st.download_button("Download this handoff (PDF)",
-                               download_payload([sheet], "pdf", download_deadline(),
-                                                target_pages=target, cancelled=download_revocation(), save_statuses=statuses),
+                               handoff_download([sheet], store, target_pages=target, save_statuses=statuses),
                                "handoff.pdf", "application/pdf", key="download_single_pdf", on_click="ignore")
         except (ValueError, ImportError):
             st.error("PDF export is unavailable. Refresh and retry.")
@@ -2023,8 +2111,6 @@ def handoff_page(store: GitHubVault | None) -> None:
                          label_visibility="collapsed", placeholder="Paste Epic SmartPhrase here")
         with submit:
             st.form_submit_button("Create / update handoff", on_click=create_handoff, args=(store,), type="primary")
-    if airway_update_control(store):
-        return
     if ss.get("handoff_tab") not in WORKSPACE_TABS:
         ss["handoff_tab"] = "Preview / print"
     tabs = st.tabs(list(WORKSPACE_TABS), key="handoff_tab", on_change=handoff_tab_changed)
@@ -2033,7 +2119,7 @@ def handoff_page(store: GitHubVault | None) -> None:
             continue
         with panel:
             if label == "Preview / print":
-                room_preview(sheet)
+                room_preview(sheet, store)
             elif label == "Medications":
                 st.caption("Choose one destination per order. Mapping changes are remembered.")
                 active = [row for row in sheet["medications"] if not row["hidden"]]
@@ -2064,6 +2150,16 @@ def download_deadline() -> float:
     ss = st.session_state
     return min(ss.get("last_activity", time.monotonic()) + ss.get("idle_seconds", 900),
                ss.get("login_at", time.monotonic()) + 8 * 3600)
+
+
+def handoff_download(sheets: list[dict], store: GitHubVault | None, *,
+                     target_pages: int = 1, save_statuses: dict | None = None):
+    """Check the shared list at download time without accessing UI in its worker."""
+    deadline, cancelled = download_deadline(), download_revocation()
+    generate = download_payload(sheets, "pdf", deadline, target_pages=target_pages,
+                                cancelled=cancelled, save_statuses=save_statuses)
+    return guard_download(generate, store, st.session_state["vault"]["reset_generation"],
+                          cancelled=cancelled, expires_at=deadline)
 
 
 def print_target_control(key: str) -> int:
@@ -2130,7 +2226,7 @@ def print_all_page(store: GitHubVault | None) -> None:
         with st.expander("Page-fit details", expanded=False):
             if st.button("Check page count", key="check_all_page_fit"):
                 render_print_fit(selected_sheets, target)
-        st.download_button("Download all selected handoffs (PDF)", download_payload(selected_sheets, "pdf", download_deadline(), target_pages=target, cancelled=download_revocation(), save_statuses=statuses), "all_handoffs.pdf", "application/pdf", type="primary", key="download_all_pdf", on_click="ignore")
+        st.download_button("Download all selected handoffs (PDF)", handoff_download(selected_sheets, store, target_pages=target, save_statuses=statuses), "all_handoffs.pdf", "application/pdf", type="primary", key="download_all_pdf", on_click="ignore")
     except (ValueError, ImportError):
         st.error("The combined PDF could not be created. Check the export requirements and retry.")
     st.caption("Compact PDF is preferred for printing. Each room starts on its own page. Exceptionally long handoffs continue rather than losing content. Downloads are not encrypted.")
@@ -2232,31 +2328,13 @@ def discard_all_handoff_state() -> None:
     ss["admin_rooms"] = "\n".join(ss["vault"]["settings"]["rooms"])
 
 
-def airway_records_for_reset() -> dict:
-    """Saved airway records plus nonstale local edits, never other clinical data."""
-    ss = st.session_state
-    records = {room: deepcopy(sheet.get("difficult_airway"))
-               for room, sheet in ss["vault"]["rooms"].items()}
-    for room, draft in ss.get("drafts", {}).items():
-        saved = ss["vault"]["rooms"].get(room)
-        if ss.get("base_sheets", {}).get(room) != saved:
-            raise ValidationError("A saved room changed after its draft opened. Reload the archive before keeping airway details.")
-        data = (collect_airway(draft, ss) if room == ss.get("current_room")
-                else deepcopy(draft.get("difficult_airway")))
-        validate_airway(data)
-        records[room] = data
-    return records
-
-
-def clear_all_handoffs(store: GitHubVault | None, keep_difficult_airway: bool = False) -> None:
+def clear_all_handoffs(store: GitHubVault | None) -> None:
     """Allow a signed-in user to reset. Discard drafts only after a confirmed write."""
     if not require_session():
         return
     ss = st.session_state
     try:
-        records = airway_records_for_reset() if keep_difficult_airway else None
-        candidate = (cleared_vault(ss["vault"], keep_difficult_airway=True, airway_by_room=records)
-                     if keep_difficult_airway else cleared_vault(ss["vault"]))
+        candidate = cleared_vault(ss["vault"])
         commit(candidate, store)
     except (StorageError, ValidationError, ValueError) as exc:
         note("Clear all was not confirmed. Your open handoffs were kept. " + str(exc), "error")
@@ -2265,14 +2343,6 @@ def clear_all_handoffs(store: GitHubVault | None, keep_difficult_airway: bool = 
         note("Clear all was not confirmed. Your open handoffs were kept. Reload the saved archive before retrying.", "error")
         return
     discard_all_handoff_state()
-    if keep_difficult_airway:
-        count = len(candidate["rooms"])
-        note(("Handoffs cleared. " if store else "Session-only reset. ") +
-             "Difficult-airway details kept in " + str(count) + " room(s). Other patient data was cleared. " +
-             "Custom rooms were kept only where airway details remain. Confirm the patient before reusing these details. " +
-             "Other team members should reload the saved archive. Earlier archive versions and downloaded files are not erased.",
-             "success" if store else "info")
-        return
     note(("All saved handoffs and this session's drafts were cleared. Custom rooms were deleted. " if store else
           "Session-only reset: all handoffs in this session were cleared and custom rooms deleted. ") +
          "Preset rooms, medication rules, hidden rules, instructions and passwords were kept. Other team members should reload the saved archive. Earlier archive versions and downloaded files are not erased.",
@@ -2286,32 +2356,22 @@ def delete_all_from_handoff(store: GitHubVault | None) -> None:
     clear_all_handoffs(store)
 
 
-def clear_keep_airway_from_handoff(store: GitHubVault | None) -> None:
-    """Second reset choice with the same signed-in access and write protections."""
-    st.session_state.pop("delete_all_password", None)
-    clear_all_handoffs(store, keep_difficult_airway=True)
-
-
 def delete_handoffs_control(store: GitHubVault | None) -> None:
-    """Two explicit actions, available before selecting a room, without Admin."""
+    """Delete complete handoffs, available before selecting a room, without Admin."""
     with st.expander("Delete all handoff data", expanded=False):
-        st.warning("Deletes every patient's saved handoff and this session's drafts. Choose full delete or keep difficult-airway details only.")
-        st.caption("Keep airway retains those details in the same rooms, including custom rooms with airway details. All other custom rooms are removed. Confirm the patient before reusing retained details.")
+        st.warning("Deletes every patient's saved handoff and this session's drafts, including difficult-airway details. Custom rooms are removed.")
         st.caption("Categories, medication mappings, SmartPhrase settings and passwords stay unchanged. Earlier archive versions and downloaded copies are not erased. Other team members must reload the saved archive.")
-        st.caption("No Admin password is required. Either button applies immediately.")
+        st.caption("No Admin password is required. The button applies immediately.")
         with st.form("delete_all_handoffs_form"):
             st.form_submit_button("Delete all handoff data", on_click=delete_all_from_handoff, args=(store,))
-            st.form_submit_button("Clear handoffs, keep difficult airway", on_click=clear_keep_airway_from_handoff, args=(store,))
 
 
 def reset_handoffs_admin(store: GitHubVault | None) -> None:
     with st.expander("Delete all handoff data", expanded=False):
-        st.warning("Choose full delete or keep only difficult-airway details in their original rooms. Either action clears other patient data immediately.")
-        st.caption("Custom rooms without retained airway details are removed. Settings, mappings, passwords and technical logs stay unchanged. This does not erase earlier archive versions or downloaded copies.")
+        st.warning("Deletes every patient's saved handoff, including difficult-airway details, and this session's drafts immediately.")
+        st.caption("Custom rooms are removed. Settings, mappings, passwords and technical logs stay unchanged. This does not erase earlier archive versions or downloaded copies.")
         st.button("Delete all handoff data", key="clear_all_handoffs_button",
                   on_click=clear_all_handoffs, args=(store,))
-        st.button("Clear handoffs, keep difficult airway", key="clear_keep_airway_admin_button",
-                  on_click=clear_keep_airway_from_handoff, args=(store,))
 
 
 def custom_room_names() -> list[str]:

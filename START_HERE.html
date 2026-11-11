@@ -1,18 +1,22 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8">
-<title>PICU Handoff 6.61</title><style>body{max-width:850px;margin:40px auto;padding:0 20px;font:17px/1.6 system-ui;color:#172c3d}code{background:#f1f5f7;padding:2px 6px}h1,h2{line-height:1.2}</style></head>
-<body><h1>PICU Handoff 6.61</h1>
-<h2>What changed</h2><p>Medication tables now accept Epic's Or connector alongside And and Followed by. The supplied SmartPhrase now imports all 36 orders with the source names, doses, routes and frequencies preserved.</p>
-<p>Linked alternatives stay together within their category. A separate alternative in another category, or one whose preceding order is hidden, is labeled Alternative order: so it cannot appear attached to the wrong medication.</p>
-<p>From 6.60, replace <code>app.py</code>, <code>medications.py</code>, <code>infusion_rates.py</code>, <code>infusions.py</code>, <code>categories.py</code> and <code>exports.py</code> together, or upload the complete folder. Restart Streamlit, refresh the browser, then paste the SmartPhrase again.</p><h2>Included features</h2><ul>
+<title>PICU Handoff 6.62</title><style>body{max-width:850px;margin:40px auto;padding:0 20px;font:17px/1.6 system-ui;color:#172c3d}code{background:#f1f5f7;padding:2px 6px}h1,h2{line-height:1.2}</style></head>
+<body><h1>PICU Handoff 6.62</h1>
+<h2>Choose how to start after sign-in</h2>
+<p><strong>Start new patient list</strong> shows a review of the rooms to remove and keep. Confirm to remove older handoffs and today's handoffs last saved from 5:00 AM through 8:30 AM Eastern, then enter your patients.</p>
+<p><strong>Continue saved handoffs</strong> keeps the existing list so you can print processed handoffs, update patients or add patients. Signing in and choosing Continue do not delete anything.</p>
+<p>Today's handoffs saved outside the morning window stay. Missing, invalid or future save times are kept for review. After the first successful start, later sign-ins keep that day's list and cannot repeat the daily cleanup.</p>
+<p>Cleared handoffs include their difficult-airway details. The keep-airway reset option and airway Keep/Delete pop-up are removed. The normal airway editor remains.</p>
+<p>From 6.61, replace <code>app.py</code>, <code>models.py</code> and <code>handoff_reset.py</code>, and add <code>daily_start.py</code> and <code>census_guard.py</code>, or upload the complete folder. Restart Streamlit and refresh the browser.</p><h2>Included features</h2><ul>
+<li>Medication imports recognize Or, And and Followed by. Linked alternatives retain their source order within a category.</li>
 <li>TMax remains regular text in the preview and PDF.</li>
 <li>MRSA Screen: appears in demographics, with a bold label and the newest supplied result across MRSADNA and MRSANPADM, selected by the laboratory collection date and time.</li>
 <li>Bupivacaine orders appear once under Neuro &gt; Epidural, preserving their documented dose, route and rate.</li>
 <li>Hypernatremia appears in Problems when the latest usable blood sodium is above 145.</li>
 <li>Vascular lines keep their insertion date and gain the current Day number. Insertion is Day 1, using Eastern calendar dates.</li>
 </ul>
-<h2>Install</h2><p>Upload this folder's contents to your existing code repository, keeping <code>app.py</code> at the root. Include the new <code>mrsa.py</code> file. Restart the app and refresh your browser.</p>
+<h2>Install</h2><p>Upload this folder's contents to your existing code repository, keeping <code>app.py</code> at the root. Include <code>daily_start.py</code>, <code>census_guard.py</code> and all earlier modules. Restart the app and refresh your browser.</p>
 <p>Keep your existing Streamlit Secrets, passwords, encryption key, mappings, custom categories, BMI reference data and shared archive. Do not rerun setup generators. No new dependencies or archive-schema changes are needed.</p>
-<p>The existing save-before-Print-All behavior, per-room saved timestamps and difficult-airway workflow remain in place.</p>
+<p>Save-before-Print-All, per-room saved timestamps and conflict checks remain in place. PDF downloads check for a shared patient-list reset before releasing a new file.</p>
 <h2>Source data and printing</h2><p>MRSADNA and MRSANPADM are read from the G laboratory block. Each result needs its laboratory collection date. The newest result across both codes is shown. Existing saved results, orders and line dates gain the new displays immediately. Paste a fresh SmartPhrase to add data that was not previously included.</p>
 <p>The preview and new downloads calculate current line days. Previously downloaded PDFs remain fixed snapshots.</p>
 <p>See <a href="README.md">README.md</a> for details and <a href="examples/mrsa_epidural_sodium_line_days_preview.pdf">the synthetic example</a> for the printed layout.</p>

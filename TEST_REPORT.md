@@ -1,50 +1,76 @@
-# PICU Handoff 6.61 verification
+# PICU Handoff 6.62 verification
 
-Base: PICU660.zip. This update supports alternative medication orders in Epic
-SmartPhrase tables and preserves their meaning in grouped handoff output.
+Base: PICU661.zip. This update adds the patient-list choice after sign-in and
+removes the special difficult-airway carry-forward workflow.
 
-## Supplied-format reproduction
+## Daily list and login behavior
 
-The medication block contained 36 orders and a standalone tab-indented Or
-connector. Version 6.60 appended that connector to the preceding row as an
-eighth column. The row failed validation, so the complete medication section
-was rejected rather than applying 35 readable orders as an incomplete list.
+The first authenticated screen offers Start new patient list and Continue saved
+handoffs. Opening that screen, rendering a review, and choosing Continue do not
+write or delete saved records. The first option requires an explicit review
+confirmation before any shared change.
 
-Version 6.61 parses and applies all 36 orders without a medication error or
-review warning. Every medication name, dose, route and frequency was compared
-against its source column. Names preserve the Or annotation on the alternative.
-Each of the 36 orders is emitted exactly once across the handoff categories.
-Building the display leaves the complete source sheet unchanged.
-The supplied clinical text was inspected locally and is absent from this
-package, test fixtures and report.
+The review uses last saved times in America/New_York. Earlier dates and today's
+inclusive 05:00:00 through 08:30:00 saves are selected. Other times today,
+missing/invalid timestamps and future timestamps are kept. Tests cover exact
+boundaries, UTC/Eastern date differences and daylight-saving transitions.
 
-## Automated verification
+A confirmed reset atomically writes the selected removals, an actual confirmation
+timestamp and a new generation. A shared daily marker makes a later start on
+that Eastern date a no-op. The marker is added only on the first confirmed start.
 
-- 47 alternative-order tests passed. They cover standalone and trailing-cell
-  connectors, blank columns, separate orders, mapping and visibility, incomplete
-  sequences, atomic import recovery, encrypted save/reload, and text/HTML/PDF
-  output. Named infusion checks cover missing and documented Last Admin rates.
-- 119 placement and category tests passed, with 14 subtests. They cover source
-  adjacency, alphabetical Neuro output, hidden predecessors, different systems,
-  different root/subcategories, bupivacaine placement, legacy Labs output and
-  detached-infusion rate selection.
-- 266 preservation tests passed, with 14 subtests. They cover both MRSA lab codes
-  and latest-result selection, bupivacaine, hypernatremia, line days and labels.
-- 621 medication, callback, import-recovery, infusion, FEN/GI, ADS, airway and
-  batch-export regression tests passed.
+## Transaction and concurrency checks
 
-These runs have overlapping bupivacaine coverage. The only test warning was an
-existing anyio/pytest plugin deprecation warning. No test failed.
+The review is bound to its source archive and SHA. Local changes, a different
+Eastern date, a concurrent write or a failed save prevent confirmation. The
+removal selection stays fixed if time advances while the review remains open.
+A failure requires a fresh review, with no automatic destructive retry.
 
-All six changed application modules pass Python syntax validation. Tests use
-synthetic records. Callback tests use a simulated Streamlit environment. The
-live deployment and shared patient archive were not accessed.
+A lost save acknowledgement is tested: reload finds the marker from the successful
+remote write and does not delete again. Continue and already-started paths perform
+no storage write. Expired authentication cannot start a reset.
 
-## Persistence and package
+Selective reload preserves pending editor values and original conflict bases only
+for the same saved handoff identity. Removed records, changed identities and
+unbased unsaved drafts cannot restore a previous list. Full-reset behavior remains
+covered. PDF workers check shared generation before and after rendering without
+accessing Streamlit session state. Reset, expiry, cancellation and failed verification
+prevent release of a new PDF. Ordinary saves with the same generation remain allowed.
 
-Stored data models, archive schema 34, encryption and dependencies are unchanged.
-Render-only alternative labels appear on copied rows and do not mutate saved
-source data. The existing custom text and hide/include choices remain effective.
+## Airway behavior
 
-ZIP CRC and SHA256 manifest verification passed. Generated caches and compiled
-bytecode are excluded. No credentials or supplied clinical attachment are bundled.
+SmartPhrase updates now apply without a Keep/Delete/Cancel airway prompt. Current
+manual editor values still participate in normal updates. Full reset and selected
+daily deletion remove airway details with the complete handoff. No retained-airway
+placeholder is created. The ordinary editor, alert, escaping and encryption remain.
+
+## Verification runs
+
+| Scope | Result |
+| --- | --- |
+| Daily date logic, archive validation and save status | 146 passed |
+| Login gate, review UI and reset transactions | 23 passed |
+| Lazy download generation checks | 21 passed |
+| Airway update, reset, ordinary airway and print behavior | 221 passed |
+| Existing callbacks, workflow, printing, UI and save status | 307 passed |
+
+The runs overlap in existing reset, print and save-status coverage. No combined
+unique-test count is claimed. The only warning was an existing anyio/pytest plugin
+deprecation warning. No test failed. Callback and page tests use a simulated
+Streamlit environment, not a live browser deployment.
+
+All application modules pass Python syntax validation. Existing clinical parsing,
+medication placement, MRSA selection, sodium rules, line-day calculation and TMax
+formatting modules are unchanged from 6.61.
+
+## Archive and package
+
+Existing schema 34 archives load unchanged. A validated optional nonclinical
+patient_list_started_at setting is written on the first daily start. Encryption,
+patient-sheet fields and dependencies remain unchanged. All unselected handoffs
+and other shared settings are preserved by daily cleanup.
+
+The ZIP passes CRC validation and its complete SHA256 manifest matches every
+bundled file. Generated caches, compiled bytecode, credentials and clinical
+attachments are excluded. Test fixtures are synthetic. The live Streamlit
+deployment and shared patient archive were not accessed or changed.

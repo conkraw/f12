@@ -149,8 +149,14 @@ def validate_vault(vault: dict) -> None:
     if not isinstance(vault["reset_generation"], str) or not re.fullmatch(r"(?:[0-9a-f]{32})?", vault["reset_generation"]):
         raise ValidationError("The archive reset generation is invalid.")
     settings = vault["settings"]
-    if not isinstance(settings, dict) or set(settings) - {"medication_categories", "medication_category_rules"} != {"diagnoses_destination", "rooms", "medication_mappings", "medication_visibility", "medication_infusions", "medication_gi_groups", "medication_groups"}:
+    if not isinstance(settings, dict) or set(settings) - {"medication_categories", "medication_category_rules", "patient_list_started_at"} != {"diagnoses_destination", "rooms", "medication_mappings", "medication_visibility", "medication_infusions", "medication_gi_groups", "medication_groups"}:
         raise ValidationError("The saved Admin settings are invalid.")
+    if "patient_list_started_at" in settings:
+        from save_status import saved_instant
+        marker = settings["patient_list_started_at"]
+        if (not isinstance(marker, str) or len(marker) > 80
+                or any(c in marker for c in "\r\n\t") or saved_instant(marker) is None):
+            raise ValidationError("The patient-list start time must be a valid timestamp with a timezone.")
     try:
         from categories import validate_settings
         validate_settings(settings)

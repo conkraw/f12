@@ -135,16 +135,16 @@ def test_invalid_pending_field_blocks_print_navigation(app):
     assert ss['vault']['rooms']['P4102']['updated_at'] == SAVED
 
 
-def test_pending_airway_choice_blocks_print_navigation(app):
+def test_obsolete_pending_airway_choice_does_not_block_print_navigation(app):
     ss = seed(app)
     pending = {'room': 'P4102', 'example': 'unresolved'}
     ss['airway_update_pending'] = deepcopy(pending)
     ss['page'] = 'Print all'
     store = Store()
     app.workspace_changed(store)
-    assert ss['page'] == 'Handoff' and not store.calls
-    assert ss['airway_update_pending'] == pending
-    assert 'airway' in ss['notice'][1]
+    assert ss['page'] == ss['active_workspace'] == 'Print all' and not store.calls
+    assert 'airway_update_pending' not in ss
+    assert ss['vault']['rooms']['P4102']['updated_at'] == SAVED
 
 
 def test_clean_navigation_does_not_restamp_or_write(app):

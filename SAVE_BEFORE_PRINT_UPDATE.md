@@ -1,7 +1,8 @@
 # Version 6.57: save before Print all
 
 Built from the supplied PICU656.zip. Clinical parsing, calculations, medication
-categories, airway-preservation choices, passwords and archive schema are unchanged.
+categories, passwords and archive schema were unchanged in 6.57. Version 6.62
+removes the separate airway-preservation prompt and reset option.
 
 ## Autosave before Print all
 
@@ -9,15 +10,15 @@ Opening Print all captures the current editor values and saves changed open
 handoffs before offering the PDF. It uses the same guarded save path as room
 changes. Unchanged handoffs are not written again or given a newer timestamp.
 
-A failed save, invalid editor value, unresolved difficult-airway update, or
-save conflict blocks Print all and keeps the user's edits available. A direct
+A failed save, invalid editor value, or save conflict blocks Print all and keeps
+the user's edits available. A direct
 Print all page entry also checks saves before creating a download. Other changed
 open drafts are saved before the packet is offered. If that later batch fails,
 the current room may already be saved, but printing remains blocked.
 
 Continue to click Create / update handoff after pasting a SmartPhrase. Merely
-pasted, unapplied source text is not silently imported or saved. The difficult-
-airway keep/delete question must be resolved or cancelled before printing.
+pasted, unapplied source text is not silently imported or saved. In version
+6.62, updates use normal section handling without an airway-specific prompt.
 
 ## Last saved on every handoff
 

@@ -1,13 +1,17 @@
-Version 6.61 keeps archive schema 34.
+Version 6.62 accepts existing schema 34 archives without rewriting them.
 
-No stored fields, archive format, encryption, dependencies or settings are changed.
-Or is retained as a source-order annotation in the existing medication name.
-Routing and visibility rules ignore that annotation when matching the drug.
-The Alternative order label is generated only on copied display rows and is
-never saved into the archive. Rendering does not modify the source sheet.
+The optional settings.patient_list_started_at field stores the aware timestamp
+of the first confirmed daily start. Its Eastern date prevents another daily
+reset on the same date. The marker, selected removals and reset_generation are
+committed together. Opening the app or choosing Continue does not add the marker.
 
-Existing saved medication orders and custom handoff text remain supported.
-Paste the SmartPhrase again to import a medication section previously rejected
-because of the Or connector. Previously failed source text is not reconstructed.
+The existing encryption, dependencies and stored patient-sheet structure are
+unchanged. All settings and unselected saved handoffs remain intact during a
+daily cleanup. Selected handoffs are deleted completely, including airway data.
+There is no airway-only carry-forward record.
 
-Keep existing Streamlit Secrets and encryption key.
+Use the full 6.62 application after the marker has been saved. Earlier versions
+do not recognize this additional setting and will reject that newer archive.
+No setup generator or encryption-key change is needed.
+
+Keep existing Streamlit Secrets, encryption key and shared archive.

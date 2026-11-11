@@ -76,7 +76,7 @@ def test_password_free_reset_failure_retains_open_work(app, failure):
     assert not ss.get('admin_unlocked')
 
 
-def test_control_renders_two_reset_choices_without_admin_secrets(app, monkeypatch):
+def test_control_renders_full_reset_without_admin_secrets_or_airway_retention(app, monkeypatch):
     equip(app, monkeypatch)
     lock_admin(app.st.session_state)
     fields, submits, warnings, captions = [], [], [], []
@@ -86,14 +86,14 @@ def test_control_renders_two_reset_choices_without_admin_secrets(app, monkeypatc
     app.st.caption = lambda text, **kw: captions.append(text)
     monkeypatch.setattr(app, 'admin_config', forbid_admin_check)
     app.delete_handoffs_control(None)
-    assert not fields and len(submits) == 2
+    assert not fields and len(submits) == 1
     label, opts = submits[0]
-    assert submits[1][0] == "Clear handoffs, keep difficult airway"
-    assert submits[1][1]["on_click"] == app.clear_keep_airway_from_handoff
     assert label == 'Delete all handoff data'
     assert opts['on_click'] == app.delete_all_from_handoff
     assert opts['args'] == (None,)
     assert any("every patient's saved handoff" in text for text in warnings)
+    assert any('including difficult-airway details' in text for text in warnings)
+    assert not any('keep difficult airway' in text.lower() for text in captions + warnings)
     assert any('No Admin password is required' in text for text in captions)
     assert 'delete_all_password' not in app.st.session_state
 

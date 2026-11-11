@@ -1,18 +1,22 @@
-Version 6.61, based on PICU660.zip
+Version 6.62, based on PICU661.zip
 
 Changed application files:
 app.py
-medications.py
-infusion_rates.py
-infusions.py
-categories.py
-exports.py
+models.py
+handoff_reset.py
 
-Epic Or connectors now import as separate alternative medication orders.
-Same-category alternatives stay together in source order. Detached alternatives
-use an explicit Alternative order label. Source values and rate rules are retained.
+New required application files:
+daily_start.py
+census_guard.py
 
-Replace all six files together, or upload the full application folder.
+Sign-in now offers Start new patient list or Continue saved handoffs.
+The first option reviews older handoffs and today's 5:00-8:30 AM Eastern saves
+for removal. Continue preserves the list for printing, updating and adding.
+The first completed daily start is recorded so later logins do not clear it again.
+The keep-airway reset option and airway update confirmation pop-up are removed.
+
+Include all five application files together, or upload the full application folder.
 Keep app.py at the repository root. Restart Streamlit and refresh the browser.
-Paste the SmartPhrase again to import the previously rejected medication section.
-No changes to Secrets, encryption key, dependencies or archive schema are needed.
+Keep existing Secrets, encryption key, archive, mappings and dependencies.
+Schema 34 accepts an optional nonclinical patient_list_started_at setting.
+Older app versions do not recognize that setting after the first daily start.
