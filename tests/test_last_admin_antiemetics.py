@@ -212,7 +212,9 @@ def test_ondansetron_grouped_in_fengi_automatically(name,frequency):
     assert automatic_group(row)==group_for(row)=='antiemetic'
     assert effective_section(row)=='FEN / GI'
     out=fen_gi_body('',[row],None)
-    assert out.startswith('Antiemetics\n') and name in out and frequency in out
+    expected_name = name.removeprefix('[START ON 1/9/2026] ')
+    assert out.startswith('Antiemetics\n') and expected_name in out and frequency in out
+    assert '[START ON' not in out and row['name'] == name
 
 
 def test_unrelated_name_not_grouped_and_explicit_override_respected():

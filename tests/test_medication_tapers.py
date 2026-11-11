@@ -112,7 +112,8 @@ def test_wrapped_start_label_with_newline_keeps_mapping():
     result=parse_medications('Medications:\n'+row,rules)
     assert not result.error
     assert result.rows[0]['section']=='Neurologic'
-    assert '[START ON 1/4/2026]' in format_medication(result.rows[0])
+    assert '[START ON 1/4/2026]' in result.rows[0]['name']
+    assert '[START ON' not in format_medication(result.rows[0])
 
 
 def test_followed_by_literal_inside_name_is_not_deleted():
@@ -154,13 +155,16 @@ def test_tabless_taper_is_not_guessed():
     'Followed by: [START ON 1/4/2026] [Held by provider] ',
     '[Discontinued] [START ON 1/4/2026] ',
 ])
-def test_known_annotations_do_not_block_mapping_and_remain_in_output(prefix):
+def test_known_annotations_keep_mapping_and_source_while_start_label_is_hidden(prefix):
     name=prefix+'dexAMETHasone (Example) injection 1 mg'
     rules=upsert_rule([], 'dexamethasone', 'Neurologic')
     result=parse_medications('Medications:\n'+order(name,'1 mg'),rules)
     assert not result.error and result.rows[0]['section']=='Neurologic'
     assert result.rows[0]['name']==name
-    assert prefix.strip() in format_medication(result.rows[0])
+    display = format_medication(result.rows[0])
+    assert '[START ON' not in display
+    for retained in ('Followed by:', '[Held by provider]', '[Discontinued]'):
+        assert (retained in display) == (retained in prefix)
     assert suggested_key(name)=='dexamethasone'
     assert rule_for_inline_mapping(name,rules)==('dexamethasone','prefix')
 
@@ -248,14 +252,14 @@ def test_unrelated_orders_after_taper_do_not_get_sequence_prefix():
     assert '@ 25 mL/hr' in format_medication(s['medications'][-1])
 
 
-def test_dates_and_frequency_in_text_html_and_pdf():
+def test_start_dates_hidden_with_sequence_and_frequency_kept_in_text_html_and_pdf():
     s=imported();s['medications']=remap(s['medications'],upsert_rule([],'dexamethasone','Neurologic'))
     outputs=[handoff_text(s), handoff_html(s)]
     doc=fitz.open(stream=handoff_pdf(s),filetype='pdf')
     outputs.append(' '.join(page.get_text() for page in doc))
     for output in outputs:
         text=re.sub(r'\s+',' ',output)
-        assert '[START ON 1/4/2026]' in text and '[START ON 1/5/2026]' in text
+        assert '[START ON' not in text
         assert text.count('Followed by:')==2
         assert 'q24h SCH' in text
         assert 'Example Provider' not in text

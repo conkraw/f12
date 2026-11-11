@@ -7,9 +7,10 @@ from __future__ import annotations
 from copy import deepcopy
 import re
 from medications import is_bupivacaine, match_name, normalized
+from chemotherapy import is_chemotherapy
 
 ID_GROUPS = ("antibiotic", "antifungal", "antiviral")
-HEME_GROUPS = ("dvt", "antiplatelet", "gcsf")
+HEME_GROUPS = ("dvt", "antiplatelet", "gcsf", "chemotherapy")
 CV_GROUPS = ("antiarrhythmic", "antihypertensive", "inotrope", "vasopressor", "adrenocortical", "vasodilator")
 RESP_GROUPS = ("airway_cerebral_steroid", "airway_tone", "antisialorrhea", "beta_agonist",
                "anticholinergic", "methylxanthine", "corticosteroid", "inhaled_corticosteroid",
@@ -20,9 +21,10 @@ NEURO_OTHER_GROUPS = ("antiepileptic", "antispasmodic",
 NEURO_PRIORITY_GROUPS = ("sedative_prn", "paralytic_infusion", "paralytic_prn")
 MODES = (("auto", "dvt", "fever", "sedative_prn", "paralytic_prn", "antiepileptic",
           "insomnia", "antispasmodic", "neuromodulation", "epidural",
-          "paralytic_infusion") + RESP_GROUPS + CV_GROUPS + ID_GROUPS + ("antiplatelet", "gcsf", "other",))
+          "paralytic_infusion") + RESP_GROUPS + CV_GROUPS + ID_GROUPS + ("antiplatelet", "gcsf", "chemotherapy", "other",))
 MODE_LABELS = {
     "auto": "Automatic", "dvt": "DVT Prophylaxis",
+    "chemotherapy": "Chemotherapy",
     "antiplatelet": "Antiplatelet Therapy", "gcsf": "G-CSF Stimulator", "antibiotic": "Antibiotics", "antifungal": "Antifungals", "antiviral": "Antivirals", "fever": "Fever Control",
     "sedative_prn": "PRN", "paralytic_prn": "Paralytic PRN", "antiepileptic": "Antiepileptic",
     "paralytic_infusion": "Paralytic Infusions",
@@ -43,7 +45,8 @@ MODE_LABELS = {
 }
 GROUP_NAMES = {key: value for key, value in MODE_LABELS.items() if key not in ("auto", "other")}
 GROUP_SECTIONS = {
-    "dvt": "Hematology", "antiplatelet": "Hematology", "gcsf": "Hematology", "antibiotic": "Infectious Disease", "antifungal": "Infectious Disease", "antiviral": "Infectious Disease", "fever": "Neurologic", "sedative_prn": "Neurologic",
+    **{key: "Hematology" for key in HEME_GROUPS},
+    "antibiotic": "Infectious Disease", "antifungal": "Infectious Disease", "antiviral": "Infectious Disease", "fever": "Neurologic", "sedative_prn": "Neurologic",
     **{key: "Neurologic" for key in NEURO_PRIORITY_GROUPS + NEURO_OTHER_GROUPS},
     **{key: "Respiratory" for key in RESP_GROUPS},
     **{key: "Cardiovascular" for key in CV_GROUPS},
@@ -98,6 +101,8 @@ def automatic_system_group(row: dict) -> str:
     name = match_name(row.get("name", ""))
     if is_bupivacaine(name):
         return "epidural"
+    if is_chemotherapy(name):
+        return "chemotherapy"
     # Filgrastim is G-CSF, not GM-CSF. Match the generic and its biosimilar
     # suffixes without accidentally matching pegfilgrastim or a mixture.
     if re.match(r"^(?:filgrastim(?:-[a-z]{4})?|tbo-filgrastim|nivestym|neupogen|zarxio|releuko|nypozi|filkri)(?=$|[\s(,])", name):

@@ -1,23 +1,27 @@
-PICU Handoff 6.62, based on PICU661.zip.
+PICU Handoff 6.63, based on PICU662.zip.
 
-Post-login Start new list / Continue choice: passed.
-Continue and review rendering do not write or delete: passed.
-Eastern date and 5:00-8:30 AM boundary selection: passed.
-Unknown/future save times retained: passed.
-Same-day repeat protection across logins: passed.
-Reviewed snapshot, SHA conflict and failed-save handling: passed.
-Lost acknowledgement and safe reload without repeat deletion: passed.
-Retained draft values and original conflict bases: passed.
-Removed and changed handoff identities cannot be restored: passed.
-PDF generation rejects a list reset before or during download: passed.
-Airway carry-forward options removed, ordinary editor retained: passed.
-Existing archive, encryption and clinical parsers: preserved.
+Chemotherapy name and alias matching: passed.
+Hematology > Chemotherapy placement and dexamethasone exclusion: passed.
+Explicit category choices and older saved catalogs: passed.
+Category name collisions and original category capacity: passed.
+Clean And/Or, Alternative order and START ON display labels: passed.
+Held/discontinued labels and Followed by wording retained: passed.
+Separate medication identities, dose, route, frequency and rates: passed.
+Stored source names and schedule/visibility rules unchanged: passed.
+Latest supplied SmartPhrase: all 35 orders imported, zero import errors.
+Supplied example text, HTML, PDF and Print All render without source mutation.
+Synthetic end-to-end checks and one-page PDF visual review: passed.
+MRSA, hypernatremia, vascular line days and daily patient-list regression: passed.
+Python syntax validation: all 61 application modules passed.
+Existing schema 34, encryption and dependency requirements: unchanged.
 ZIP CRC and complete SHA256 manifest: passed.
 
-Changed application files: app.py, models.py, handoff_reset.py.
-New required files: daily_start.py, census_guard.py.
+Changed application files: app.py, medication_groups.py, categories.py,
+medications.py, infusions.py and output_text.py.
+New required application file: chemotherapy.py.
 
-Upload the complete package, restart Streamlit and refresh the browser.
+Upload the complete application folder, restart Streamlit and refresh the browser.
 Keep existing Streamlit Secrets, encryption key, saved archive and mappings.
 The live application was not deployed or changed from this workspace.
+The supplied clinical text and screenshots are not included in the package.
 See TEST_REPORT.md and README.md for behavior and verification scope.

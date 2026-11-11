@@ -1,22 +1,31 @@
-Version 6.62, based on PICU661.zip
+Version 6.63, based on PICU662.zip
 
 Changed application files:
 app.py
-models.py
-handoff_reset.py
+medication_groups.py
+categories.py
+medications.py
+infusions.py
+output_text.py
 
-New required application files:
-daily_start.py
-census_guard.py
+New required application file:
+chemotherapy.py
 
-Sign-in now offers Start new patient list or Continue saved handoffs.
-The first option reviews older handoffs and today's 5:00-8:30 AM Eastern saves
-for removal. Continue preserves the list for printing, updating and adding.
-The first completed daily start is recorded so later logins do not clear it again.
-The keep-airway reset option and airway update confirmation pop-up are removed.
+Common named chemotherapy medicines now default to Hematology > Chemotherapy.
+Dexamethasone retains its existing placement. The curated roster contains
+40 generic entries plus 72 additional aliases. Explicit category choices remain
+authoritative, and older saved category catalogs can use the new built-in.
 
-Include all five application files together, or upload the full application folder.
-Keep app.py at the repository root. Restart Streamlit and refresh the browser.
-Keep existing Secrets, encryption key, archive, mappings and dependencies.
-Schema 34 accepts an optional nonclinical patient_list_started_at setting.
-Older app versions do not recognize that setting after the first daily start.
+Displayed medication names omit leading And:, Or:, generated Alternative order:
+labels and recognized [START ON ...] annotations. Original source names,
+schedules, doses, routes, frequencies and recorded-rate logic are retained.
+Held/discontinued status and Followed by wording remain visible.
+
+Include all seven application files together, or upload the full application
+folder. Keep app.py at the repository root. Restart Streamlit and refresh
+the browser. Verify the sidebar shows Version 6.63.
+
+Keep existing Secrets, encryption key, saved archive, mappings and dependencies.
+All daily patient-list behavior from 6.62 is included. Do not omit daily_start.py
+or census_guard.py when replacing the full application folder.
+See README.md, CHEMOTHERAPY_REFERENCE.md and TEST_REPORT.md for details.

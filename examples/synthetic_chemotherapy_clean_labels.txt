@@ -1,0 +1,62 @@
+aaaaaaaaaaaaaaaaaaaaaaaa
+Diagnoses:
+1. Synthetic software display example, not a real patient.
+Age: 6 years
+Sex: Female
+aaaaaaaaaaaaaaaaaaaaaaaa
+
+bbbbbbbbbbbbbbbbbbbbbbbb
+Medications:
+Medication	Dose	Route	Frequency	Provider	Last Rate	Last Admin
+asparaginase (Elspar) injection	100 Units	Intramuscular	Once			
+And
+pegaspargase (Oncaspar) infusion	100 Units	Intravenous	Once			
+calaspargase pegol-mknl (Asparlas) infusion	100 Units	Intravenous	Once			
+asparaginase erwinia chrysanthemi (Erwinaze) injection	100 Units	Intramuscular	Once			
+asparaginase erwinia chrysanthemi (recombinant)-rywn (Rylaze) injection	100 Units	Intramuscular	Once			
+And: [Held by provider] [START ON 11/12/2026] DOXOrubicin (Adriamycin) infusion	1 mg	Intravenous	Once			
+dexAMETHasone (Decadron) injection	1 mg	Intravenous	q6h			
+diphenhydrAMINE (Benadryl) injection	5 mg	Intravenous	q6h PRN			
+Or
+diphenhydrAMINE (Benadryl) liquid	5 mg	Oral	q6h PRN			
+And
+diphenhydrAMINE (Benadryl) injection	10 mg	Intravenous	Once			
+[START ON 11/12/2026] ceFEPIme (Maxipime) injection	50 mg	Intravenous	q8h			
+Followed by
+[START ON 11/13/2026] ceFEPIme (Maxipime) injection	25 mg	Intravenous	q12h			
+ondansetron (Zofran) injection	1 mg	Intravenous	q8h PRN			
+filgrastim (Neupogen) injection	10 mcg	Subcutaneous	Daily			
+allopurinol (Zyloprim) tablet	10 mg	Oral	Daily			
+bbbbbbbbbbbbbbbbbbbbbbbb
+
+eeeeeeeeeeeeeeeeeeeeeeee
+VITALS:
+TMax: 37.5 C
+Heart Rate: 92
+BP: 98/54
+SpO2: 99 %
+eeeeeeeeeeeeeeeeeeeeeeee
+
+gggggggggggggggggggggggg
+LABS:
+Component	Value	Date
+MRSADNA	Positive	11/09/2026
+MRSANPADM	Not detected	11/11/2026
+NA	140	11/11/2026
+gggggggggggggggggggggggg
+
+iiiiiiiiiiiiiiiiiiiiiiii
+NUTRITION:
+Weight: 18 kg
+Dosing Weight: 18 kg
+BMI: 16.4
+iiiiiiiiiiiiiiiiiiiiiiii
+
+nnnnnnnnnnnnnnnnnnnnnnnn
+Date of Admission: 11/10/2026
+nnnnnnnnnnnnnnnnnnnnnnnn
+
+uuuuuuuuuuuuuuuuuuuuuuuu
+Lines:
+PICC 11/10/2026 Left Arm
+uuuuuuuuuuuuuuuuuuuuuuuu

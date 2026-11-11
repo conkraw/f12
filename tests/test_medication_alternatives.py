@@ -62,7 +62,8 @@ def test_standalone_alternative_connector_preserves_independent_orders(connector
     assert [row["route"] for row in result.rows] == ["Oral", "Intravenous"]
     assert [row["frequency"] for row in result.rows] == ["q6h", "q4h PRN"]
     assert all(row["last_rate"] == row["rate_time"] == "" for row in result.rows)
-    assert "Or: " + BETA in format_medication(second)
+    assert format_medication(second).startswith(BETA)
+    assert "Or: " not in format_medication(second)
     assert "PRIVATE_" not in json.dumps(result.rows)
 
 
@@ -210,7 +211,7 @@ def test_alternatives_survive_encrypted_save_and_all_export_formats_once():
     for text in outputs:
         text = re.sub(r"\s+", " ", text)
         assert text.count(ALPHA) == text.count(BETA) == 1
-        assert "Or: " + BETA in text
+        assert "Or: " + BETA not in text
         assert "DOSE_ALPHA" in text and "DOSE_BETA" in text
         assert "PRIVATE_" not in text
     assert sheet == before
@@ -270,5 +271,6 @@ def test_same_neuro_group_keeps_alternative_after_its_preceding_order():
     outputs.append("\n".join(page.extract_text() for page in PdfReader(BytesIO(handoff_pdf(sheet))).pages))
     for text in outputs:
         text = re.sub(r"\s+", " ", text)
-        assert text.index(first_name) < text.index("Or: " + alternative_name)
+        assert text.index(first_name) < text.index(alternative_name)
+        assert "Or: " + alternative_name not in text
     assert sheet == before

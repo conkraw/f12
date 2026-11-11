@@ -13,6 +13,8 @@ from medications import DESTINATIONS, OR_PREFIX, is_bupivacaine, match_name, nor
 
 SETTINGS_KEYS = {"medication_categories", "medication_category_rules"}
 CATEGORY_SYSTEMS = tuple(x for x in DESTINATIONS if x != "Labs")
+# These built-ins were introduced without changing the saved archive schema.
+BACKFILLED_BUILTIN_IDS = ("group:epidural", "group:chemotherapy")
 
 
 def default_categories() -> list[dict]:
@@ -30,6 +32,8 @@ def default_categories() -> list[dict]:
             order = 5
         elif key == "antiplatelet":
             order = 10
+        elif key == "chemotherapy":
+            order = 20
         elif key in ("antibiotic", "antifungal", "antiviral"):
             order = 10 + 10 * ("antibiotic", "antifungal", "antiviral").index(key)
         result.append(dict(id="group:" + key, name=name, section=GROUP_SECTIONS[key], parent="", order=order))
@@ -69,18 +73,25 @@ def add_missing_builtin_categories(settings: dict) -> dict:
 
 def catalog(settings: dict) -> list[dict]:
     items = deepcopy(settings.get("medication_categories", default_categories()))
-    # Version 6.57 archives can have a complete saved catalog without Epidural.
-    # Expose this new category without rewriting the archive or its other
-    # categories. The next intentional category edit can persist the addition.
-    if isinstance(items, list) and not any(isinstance(c, dict) and c.get("id") == "group:epidural" for c in items):
-        item = next(c for c in default_categories() if c["id"] == "group:epidural")
-        occupied = {(c.get("section"), c.get("parent"), normalized(c.get("name", "")))
-                    for c in items if isinstance(c, dict) and isinstance(c.get("name"), str)}
+    # Expose new built-ins to older schema-34 catalogs without rewriting their
+    # saved definitions. An intentional category edit can persist the addition.
+    if not isinstance(items, list):
+        return items
+    ids = {c["id"] for c in items if isinstance(c, dict) and isinstance(c.get("id"), str)}
+    occupied = {(c.get("section"), c.get("parent"), normalized(c.get("name", "")))
+                for c in items if isinstance(c, dict)
+                and all(isinstance(c.get(key), str) for key in ("section", "parent", "name"))}
+    for item in default_categories():
+        if item["id"] not in BACKFILLED_BUILTIN_IDS or item["id"] in ids:
+            continue
+        original_name = item["name"]
         n = 0
         while (item["section"], item["parent"], normalized(item["name"])) in occupied:
             n += 1
-            item["name"] = "Epidural (default" + (" " + str(n) if n > 1 else "") + ")"
+            item["name"] = original_name + " (default" + (" " + str(n) if n > 1 else "") + ")"
         items.append(item)
+        ids.add(item["id"])
+        occupied.add((item["section"], item["parent"], normalized(item["name"])))
     return items
 
 
@@ -89,12 +100,14 @@ def _text(value: object, maximum: int = 80, empty: bool = False) -> bool:
 
 
 def validate_catalog(items: list[dict]) -> None:
-    # Preserve all 250 pre-6.58 slots when the new required Epidural category
-    # is added. Duplicate IDs and every other catalog rule are still checked.
-    extra_builtin = (isinstance(items, list) and
-                     any(isinstance(item, dict) and item.get("id") == "group:epidural" for item in items))
-    if not isinstance(items, list) or len(items) > 250 + int(extra_builtin):
-        raise ValueError("Use at most 250 medication categories and subcategories, plus the Epidural built-in.")
+    # Preserve all 250 original slots as required built-ins are added. Count
+    # each reserved ID once. Duplicate IDs still fail the normal validation.
+    extra_builtin = sum(
+        any(isinstance(item, dict) and item.get("id") == ident for item in items)
+        for ident in BACKFILLED_BUILTIN_IDS
+    ) if isinstance(items, list) else 0
+    if not isinstance(items, list) or len(items) > 250 + extra_builtin:
+        raise ValueError("Use at most 250 medication categories and subcategories, plus the Epidural and Chemotherapy built-ins.")
     ids, labels = {}, set()
     for item in items:
         if not isinstance(item, dict) or set(item) != {"id", "name", "section", "parent", "order"}:

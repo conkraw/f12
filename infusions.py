@@ -11,7 +11,7 @@ from copy import deepcopy
 from html import escape
 import re
 from medications import normalized, match_name, visible, format_medication
-from output_text import medication_output
+from output_text import medication_output, medication_name_output
 from infusion_rates import administration_display, show_recorded_pump_rate
 from fen_gi import effective_section, group_for as gi_group
 from medication_groups import (group_for as special_group, GROUP_NAMES, CV_GROUPS,
@@ -131,7 +131,8 @@ def infusion_entry(row: dict, rich: bool = False, esc=escape, handoff_only: bool
     if custom:
         # A user override remains authoritative. Do not add a contradictory dose.
         return bold(custom)
-    lines = [bold((row.get('_display_name') or row['name']).strip())]
+    name = medication_name_output(row.get('_display_name') or row['name'])
+    lines = [bold(name)]
     dose = row['dose'].strip()
     rate = row['last_rate'].strip()
     admin = administration_display(row)

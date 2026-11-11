@@ -237,7 +237,8 @@ def test_other_systems_not_grouped_and_hidden_infusions_not_printed():
 
 def test_preserve_held_future_custom_and_empty_dose():
     r=med(name='[Held by provider] [START ON 1/2/2026] Example')
-    assert '[Held by provider]' in infusion_entry(r,True) and '[START ON 1/2/2026]' in infusion_entry(r)
+    assert '[Held by provider]' in infusion_entry(r,True) and '[START ON' not in infusion_entry(r)
+    assert '[START ON 1/2/2026]' in r['name']
     r['dose']='';out=infusion_entry(r,True)
     assert 'Dose:' not in out and '<b><u>Recorded rate: 3.48 mL/hr</u></b>' in out
     r['custom_text']='CUSTOM <script>unsafe</script>'

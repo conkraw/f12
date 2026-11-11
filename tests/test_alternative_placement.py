@@ -138,7 +138,7 @@ def test_independent_same_name_orders_keep_existing_stable_source_order():
     assert [row["id"] for row in emitted("Neurologic", rows)] == [row["id"] for row in rows]
 
 
-def test_legacy_labs_alternative_gets_detached_label_in_handoff():
+def test_legacy_labs_alternative_keeps_source_context_with_clean_handoff_label():
     rows = [order("Synthetic source"), order("Or: Synthetic lab order", "Labs")]
     before = deepcopy(rows)
     alternative, = emitted("Labs", rows)
@@ -146,7 +146,8 @@ def test_legacy_labs_alternative_gets_detached_label_in_handoff():
     sheet = new_sheet("P4102")
     sheet["medications"] = rows
     output = handoff_text(sheet)
-    assert "Alternative order: Synthetic lab order" in output
+    assert "Synthetic lab order" in output
+    assert "Alternative order: Synthetic lab order" not in output
     assert "Or: Synthetic lab order" not in output
     assert rows == before
 
@@ -157,7 +158,8 @@ def test_detached_infusion_label_does_not_change_rate_selection():
     before = deepcopy(row)
     rendered, = emitted("Cardiovascular", [row])
     for output in (format_medication(rendered), infusion_entry(rendered)):
-        assert "Alternative order: norepinephrine" in output
+        assert output.startswith("norepinephrine")
+        assert "Alternative order: " not in output
         assert "Last Admin rate: UNK" in output
         assert "Dose: 0.03" not in output
     assert row == before and row["name"] == "Or: norepinephrine"

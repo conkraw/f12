@@ -87,7 +87,11 @@ def test_linked_order_mapping_ignores_connector_not_clinical_text(prefix):
     assert destination_for(name,rules)=='FEN / GI'
     assert suggested_key(name)=='fat emulsion'
     result=parse_medications('Medications:\n'+order(name),rules)
-    assert not result.error and format_medication(result.rows[0]).startswith(name)
+    assert not result.error and result.rows[0]['name'] == name
+    expected = ('[Held by provider] ' if '[Held by provider]' in prefix else '') + 'fat emulsion (Example) bag'
+    assert format_medication(result.rows[0]).startswith(expected)
+    assert 'And:' not in format_medication(result.rows[0])
+    assert '[START ON' not in format_medication(result.rows[0])
 
 
 def test_exact_hide_restore_linked_formulation():
@@ -140,8 +144,9 @@ def test_new_export_formats_keep_linked_pn_details():
     outputs=[handoff_html(s),handoff_text(s)]
     outputs+=['\n'.join(page.extract_text() for page in PdfReader(BytesIO(handoff_pdf(s))).pages)]
     for text in outputs:
-        for token in ['Pediatric 2-in-1 PN','And: fat emulsion','25 mL/hr','2.5 mL/hr','[Held by provider]','[START ON 1/4/2026]']:
+        for token in ['Pediatric 2-in-1 PN','fat emulsion','25 mL/hr','2.5 mL/hr','[Held by provider]']:
             assert token in text
+        assert 'And: fat emulsion' not in text and '[START ON' not in text
         assert 'TEST_PROVIDER_NOT_RETAINED' not in text and 'TEST_ADMIN_NOT_RETAINED' not in text
 
 
@@ -206,7 +211,7 @@ def test_more_content_continues_without_dropping_or_duplicate_entries():
     text='\n'.join(p.get_text() for p in doc)
     for prefix,count in [('NEURO',180),('MED',140),('ACCESS',55)]:
         for i in range(count):assert text.count(f'{prefix}_SENTINEL_{i:04d}')==1
-    assert 'And: fat emulsion' in text
+    assert 'fat emulsion' in text and 'And: fat emulsion' not in text
     for page in doc:
         for block in page.get_text('blocks'):
             assert block[0]>=0 and block[2]<=793 and block[1]>=0 and block[3]<=613

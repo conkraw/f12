@@ -1,17 +1,29 @@
-Version 6.62 accepts existing schema 34 archives without rewriting them.
+Version 6.63 accepts existing archives supported by 6.62 without conversion.
+The stored schema remains 34. Encryption, patient-sheet fields and dependencies
+are unchanged. No saved clinical record is rewritten merely by displaying it.
 
-The optional settings.patient_list_started_at field stores the aware timestamp
-of the first confirmed daily start. Its Eastern date prevents another daily
-reset on the same date. The marker, selected removals and reset_generation are
-committed together. Opening the app or choosing Continue does not add the marker.
+Chemotherapy is a new built-in display group. Older saved category catalogs
+expose it without replacing custom definitions, changing explicit assignments,
+or discarding existing slots. Name collisions receive a unique default label.
+The original 250 category slots plus the later Epidural and Chemotherapy
+built-ins are supported. Existing saved automatic orders can use the new
+placement without repasting.
 
-The existing encryption, dependencies and stored patient-sheet structure are
-unchanged. All settings and unselected saved handoffs remain intact during a
-daily cleanup. Selected handoffs are deleted completely, including airway data.
-There is no airway-only carry-forward record.
+Leading And/Or and START ON text is hidden only in the display name. The complete
+source medication name remains in the archive and editor. Schedule checks,
+date-specific visibility, grouping and recorded-rate selection use the original
+values. No medication order is merged or removed by this display cleanup.
 
-Use the full 6.62 application after the marker has been saved. Earlier versions
-do not recognize this additional setting and will reject that newer archive.
-No setup generator or encryption-key change is needed.
+The optional settings.patient_list_started_at field from 6.62 is unchanged.
+It records the first confirmed daily start, using its Eastern date to prevent
+another daily reset on that date. The marker, selected removals and
+reset_generation are committed together. Opening the app or choosing Continue
+does not add the marker. Selected handoffs are removed in full, including airway
+data. No airway-only carry-forward record is created.
 
-Keep existing Streamlit Secrets, encryption key and shared archive.
+Use the complete 6.63 application for archives saved with the new Chemotherapy
+group choices or expanded catalog. Older applications may not recognize these
+choices. Versions before 6.62 do not recognize the daily-start marker.
+
+Keep existing Streamlit Secrets, encryption key, shared archive and mappings.
+No setup generator or new key is needed.

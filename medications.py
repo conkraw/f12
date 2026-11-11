@@ -4,7 +4,7 @@ TAB boundaries are authoritative. Providers and raw Last Admin are never retaine
 Sanitized numeric Last Admin rates/status/times are kept for continuous infusions.
 Mapping rules match medication-name prefixes/exact names, not patient doses.
 Epic Followed by / And / Or connectors stay on the next separate order, outside table columns.
-Start/hold annotations stay in the displayed name but do not prevent drug mapping.
+Source annotations remain editable. The handoff hides And/Or and START ON labels.
 """
 from __future__ import annotations
 from copy import deepcopy
@@ -14,6 +14,7 @@ import uuid
 from infusion_rates import (ADMIN_FIELDS, continuous_order, parse_last_admin, validate_admin_fields,
                             administration_display, admin_display_text, show_recorded_pump_rate, requested_titration)
 from medication_columns import split_medication_columns
+from output_text import medication_name_output
 
 DESTINATIONS = ("Neurologic", "Respiratory", "Cardiovascular", "FEN / GI", "Hematology",
                 "Infectious Disease", "Labs", "Skin / Wounds", "Other Medications")
@@ -162,9 +163,10 @@ def format_medication(row: dict) -> str:
     """Use explicit dose column. Keep different formulation/ordered doses visible."""
     if row.get("custom_text", "").strip():
         return row["custom_text"].strip()
-    # A grouped handoff may label a detached Or row as an alternative order.
-    # This display-only name never replaces the source used for drug matching.
-    name, dose = (row.get("_display_name") or row["name"]).strip(), row["dose"].strip()
+    # Clean only the local display name. Matching, schedules and rate selection
+    # below continue to receive the complete original row.
+    name = medication_name_output(row.get("_display_name") or row["name"])
+    dose = row["dose"].strip()
     text = name
     normalized_title, normalized_dose = normalized(name), normalized(dose)
     start = len(normalized_title) - len(normalized_dose)
@@ -247,7 +249,7 @@ def parse_medications(block: str, rules: list[dict] | None = None, visibility: l
     def begin_order(value: str) -> None:
         nonlocal current, pending_sequence
         finish_current()
-        # Preserve the source relationship in the editable/displayed name. No
+        # Preserve the source relationship in the editable source name. No
         # extra schema fields and no doses/frequencies are supplied or inferred.
         current = (pending_sequence + ": " if pending_sequence else "") + value
         pending_sequence = ""

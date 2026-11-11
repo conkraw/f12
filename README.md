@@ -1,11 +1,50 @@
-# PICU Handoff 6.62
+# PICU Handoff 6.63
 
-Built from PICU661.zip. After signing in, choose whether to start a new patient
-list or continue the saved handoffs. Nothing is deleted just by signing in.
+Built from PICU662.zip. Common chemotherapy medications now have an automatic
+Hematology > Chemotherapy placement. Medication display names omit the leading
+And:, Or: and START ON annotations while retaining complete source orders.
 
-From 6.61, replace app.py, models.py and handoff_reset.py, and add daily_start.py
-and census_guard.py. Uploading this complete application folder includes all
-five files. Restart Streamlit and refresh your browser.
+From 6.62, replace app.py, medication_groups.py, categories.py, medications.py,
+infusions.py and output_text.py, and add chemotherapy.py. Uploading this complete
+application folder includes every required file. Restart Streamlit and refresh
+your browser.
+
+## Chemotherapy
+
+Known conventional chemotherapy names and common verified brand names route to
+Hematology > Chemotherapy. This includes asparaginase products, doxorubicin,
+vincristine, cytarabine, methotrexate, mercaptopurine, cyclophosphamide, etoposide
+and other named agents listed in CHEMOTHERAPY_REFERENCE.md.
+
+Dexamethasone is excluded from this new rule and keeps its prior placement.
+Other corticosteroids, supportive medicines, antiemetics, hydration and growth
+factors are not swept into Chemotherapy. Name matching is explicit and does not
+guess a cancer diagnosis, indication or dose. Existing explicit group and category
+choices remain available for drugs used in another context.
+
+The new built-in category is available in older saved category catalogs without
+renaming custom categories or discarding existing slots. Saved orders can gain
+the new automatic placement without repasting, unless an explicit saved choice
+already controls their placement.
+
+## Cleaner medication names
+
+The medication name shown in summaries, handoff previews, text and PDF output
+omits leading And:, Or:, the generated Alternative order: label and recognized
+[START ON ...] annotations. This also applies to infusion names.
+
+Original names and dates remain in the editable source record. The app continues
+to use those original values for routing, hidden-order rules, schedule checks
+and recorded-rate selection. Held and discontinued labels remain visible.
+Followed by wording and custom handoff text remain intact.
+
+Every order stays separate with its recorded dose, route, frequency and rate.
+Linked alternatives retain their source order within a category. No orders are
+combined or omitted by the label cleanup.
+
+The latest supplied SmartPhrase contains 35 medication orders. All 35 import
+without a medication parsing error. The source text and screenshots are not
+included in this package. The new preview files in examples use synthetic data.
 
 ## After sign-in
 
@@ -49,7 +88,7 @@ snapshots and are not erased by a reset.
 
 No new dependency, password or encryption key is required. Existing archives
 load without conversion. The first daily start adds a validated nonclinical
-patient_list_started_at setting. Use the full 6.62 package after that setting is
+patient_list_started_at setting. Use the full 6.62 or later package after that setting is
 saved, since older application versions do not recognize it.
 
 ## Alternative medication orders from 6.61
@@ -60,20 +99,18 @@ The parser now recognizes Or alongside And and Followed by. It still rejects
 malformed or incomplete medication tables without applying a partial list.
 
 Linked alternatives in the same category remain together in source order,
-including in the alphabetically arranged Neuro section. If the preceding
-order is hidden or belongs to another category, the separate entry displays
-Alternative order: instead of an Or label that could refer to an unrelated
-medication. These display labels do not change stored source names, grouping
-rules, doses or visibility settings. Custom handoff wording remains authoritative.
+including in the alphabetically arranged Neuro section. Source connector
+annotations still support parsing and grouping, while the 6.63 name cleanup
+hides And:, Or: and Alternative order: in displayed medication names.
+Custom handoff wording remains authoritative.
 
 Alternative infusions follow the same documented Last Admin rate selection
 as other infusions. The update does not infer an administered rate from an
 ordered dose when the existing rule requires an actual administration rate.
 
-The supplied SmartPhrase was checked locally: all 36 medication orders now
-import, with every source name, dose, route and frequency preserved. Its
-clinical content is not included in this package. Regression fixtures are
-synthetic.
+The earlier 36-order SmartPhrase format remains supported. Regression fixtures
+are synthetic and preserve independent source name, dose, route and frequency
+boundaries.
 
 TMax remains regular text in the handoff preview and PDF output. MRSA Screen
 and BMI labels remain bold. All features below are included.
@@ -152,7 +189,7 @@ display time without modifying their saved category.
 
 Extract this package and upload the contents of the application folder to your
 existing code repository. Keep app.py at the repository root. Use the complete
-folder so daily_start.py, census_guard.py and all earlier modules are included. Restart
+folder so chemotherapy.py, daily_start.py, census_guard.py and all earlier modules are included. Restart
 the Streamlit app and refresh your browser.
 
 Keep your existing Streamlit Secrets, passwords, encryption key, saved archive,
