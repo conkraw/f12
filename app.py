@@ -1,4 +1,4 @@
-"""PICU SmartPhrase v6.59: latest MRSA screen across MRSADNA and MRSANPADM."""
+"""PICU SmartPhrase v6.60: regular-weight TMax label."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,
@@ -1645,7 +1645,7 @@ def main() -> None:
     upgrade_existing_session()
     with st.sidebar:
         st.header("PICU Handoff")
-        st.caption("Version 6.59 | Latest MRSA result from MRSADNA or MRSANPADM")
+        st.caption("Version 6.60 | Regular-weight TMax label")
         # Retire the old instructions workspace without discarding room drafts.
         if st.session_state.get("page") == "Instructions / SmartPhrase":
             st.session_state["page"] = "Handoff"

@@ -1,8 +1,11 @@
-# PICU Handoff 6.59
+# PICU Handoff 6.60
 
-Built from PICU658.zip. This update adds MRSANPADM to the MRSA screen and
-compares both supported MRSA components by their laboratory collection date
-and time. The 6.58 medication, sodium, line-day and saving features are included.
+Built from PICU659.zip. TMax now displays in regular text in the handoff
+preview and PDF output. The recorded temperature and its source formatting
+are retained. MRSA Screen and BMI labels remain bold.
+
+From 6.59, replace app.py and clinical_style.py together, or upload this full
+application folder, then restart Streamlit.
 
 ## MRSA screening
 

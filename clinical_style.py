@@ -28,7 +28,7 @@ LABEL = re.compile(
     r"Blood pressure|Systolic|Diastolic|SBP|DBP|MAP(?: \(mmHg\))?|"
     r"Mean arterial pressure|ABP|Arterial(?: line)?(?: BP| pressure| blood pressure)?(?: \(mmHg\))?|"
     r"Central venous pressure(?: \(mean\))?|PAP|Pulmonary artery pressure|"
-    r"Respirations|SaO2|Oxygen saturation|O2 saturation|Tmax|T min|T max|"
+    r"Respirations|SaO2|Oxygen saturation|O2 saturation|T min|"
     r"CVP(?:[ \t]*\(mean\))?|Temp(?:erature)?|"
     r"In|Out|Net|Intake|Output|Intake/Output|"
     r"MCV|ALC|ANC|Ca|Calcium|Phos|Phosphorus|Mg|Magnesium|"

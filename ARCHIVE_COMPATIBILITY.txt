@@ -1,10 +1,8 @@
-Version 6.59 keeps archive schema 34.
+Version 6.60 keeps archive schema 34.
 
-Both MRSADNA and MRSANPADM use the existing saved laboratory rows. Their original
-component names, values and dates remain unchanged. The screen compares both
-codes at display time, so existing saved rows work without a migration or paste.
-Encrypted save/reload and source-preservation tests passed.
+This update changes only TMax presentation and the displayed app version.
+No parsing, data calculation or persistence code changed. Rendering leaves
+stored source data unchanged. Existing saved handoffs show the regular TMax
+label when reopened or exported. Regenerate existing PDFs to see the change.
 
-The original-code compatibility checks performed for 6.58 remain applicable to
-the unchanged archive structure. Keep existing Streamlit Secrets and encryption
-key. No setup generators or new keys are needed.
+Keep existing Streamlit Secrets and encryption key.

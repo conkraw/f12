@@ -51,7 +51,7 @@ def plain(html):
     'SpO2', 'Pulse Ox', 'ETCO2', 'ETCO2 (mmHg)', 'VP', 'Heart Rate', 'BP', 'CVP',
     'CVP (mean)', 'Temp', 'ICP', 'CPP', 'MCV', 'ALC', 'ANC', 'Ca', 'Phos', 'Mg',
     'MAP', 'MAP (mmHg)', 'Mean arterial pressure', 'Arterial Line BP', 'Central venous pressure',
-    'Pulse rate', 'Systolic', 'Diastolic', 'SBP', 'DBP', 'PAP', 'Oxygen saturation', 'Tmax',
+    'Pulse rate', 'Systolic', 'Diastolic', 'SBP', 'DBP', 'PAP', 'Oxygen saturation',
 ])
 def test_labels_bold_to_colon_values_regular(label):
     assert clinical_markup(label + ': 0') == '<b>' + label + ':</b> 0'

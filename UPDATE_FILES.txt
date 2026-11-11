@@ -1,11 +1,10 @@
-Version 6.59, based on PICU658.zip
+Version 6.60, based on PICU659.zip
 
 Changed application files:
 app.py
-labs.py
-mrsa.py
+clinical_style.py
 
-Replace all three files together, or upload the full application folder.
+TMax now uses regular text in the preview and PDF output.
+Replace both files together, or upload the full application folder.
 Keep app.py at the repository root. Restart Streamlit and refresh the browser.
-Keep existing Secrets and encryption key. No new dependencies or archive-schema
-change are required. Existing stored MRSANPADM and MRSADNA rows work immediately.
+No changes to Secrets, encryption key, dependencies or archive schema are needed.

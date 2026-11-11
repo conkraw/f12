@@ -1,11 +1,10 @@
-PICU Handoff 6.59, based on PICU658.zip.
+PICU Handoff 6.60, based on PICU659.zip.
 
-219 focused tests passed. All data was synthetic.
-Both MRSA codes are compared together by laboratory collection date and time.
-HTML, text, single PDF, Print All and bold-label font checks passed.
-Encrypted source rows are unchanged after save/reload and rendering.
-Only app.py, labs.py and mrsa.py changed among application modules.
-ZIP CRC and SHA256 manifest verified.
+TMax regular-text rendering: passed.
+HTML, single PDF and Print All PDF font checks: passed.
+MRSA Screen and BMI bold labels: passed.
+Source sheet unchanged after rendering: passed.
+ZIP CRC and SHA256 manifest: passed.
 
-See TEST_REPORT.md for details. No running deployment or patient archive was
-accessed. No new dependency or archive-schema change is required.
+Only app.py and clinical_style.py changed among application modules.
+See TEST_REPORT.md for validation scope.
