@@ -123,13 +123,15 @@ def infusion_entry(row: dict, rich: bool = False, esc=escape, handoff_only: bool
         row = deepcopy(row)
         for field in ("name", "dose", "route", "frequency", "last_rate", "custom_text", "last_admin_rate"):
             row[field] = medication_output(row.get(field, ""))
+        if "_display_name" in row:
+            row["_display_name"] = medication_output(row["_display_name"])
     encode = esc if rich else lambda v: v
     bold = lambda v: '<b>' + encode(v) + '</b>' if rich else v
     custom = row.get('custom_text', '').strip()
     if custom:
         # A user override remains authoritative. Do not add a contradictory dose.
         return bold(custom)
-    lines = [bold(row['name'].strip())]
+    lines = [bold((row.get('_display_name') or row['name']).strip())]
     dose = row['dose'].strip()
     rate = row['last_rate'].strip()
     admin = administration_display(row)

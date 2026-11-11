@@ -1,10 +1,19 @@
-PICU Handoff 6.60, based on PICU659.zip.
+PICU Handoff 6.61, based on PICU660.zip.
 
-TMax regular-text rendering: passed.
-HTML, single PDF and Print All PDF font checks: passed.
-MRSA Screen and BMI bold labels: passed.
-Source sheet unchanged after rendering: passed.
+Supplied SmartPhrase: 36 of 36 medication orders imported.
+Source medication names, doses, routes and frequencies: preserved.
+Or connector and incomplete-sequence checks: passed.
+Alternative ordering and detached labels in grouped output: passed.
+Infusion Last Admin rate rules: passed.
+HTML, text, single PDF and Print All checks: passed.
+MRSA, bupivacaine, hypernatremia, line days and label regressions: passed.
+Encrypted roundtrip and unchanged source after rendering: passed.
+Archive schema 34, dependencies and encryption: unchanged.
 ZIP CRC and SHA256 manifest: passed.
 
-Only app.py and clinical_style.py changed among application modules.
-See TEST_REPORT.md for validation scope.
+Changed application modules: app.py, medications.py, infusion_rates.py,
+infusions.py, categories.py and exports.py.
+See TEST_REPORT.md for the verification scope.
+
+The live Streamlit deployment was not updated from this workspace.
+Upload the package, restart the app, refresh and paste the SmartPhrase again.

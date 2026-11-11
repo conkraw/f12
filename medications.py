@@ -3,7 +3,7 @@
 TAB boundaries are authoritative. Providers and raw Last Admin are never retained.
 Sanitized numeric Last Admin rates/status/times are kept for continuous infusions.
 Mapping rules match medication-name prefixes/exact names, not patient doses.
-Epic Followed by / And connectors stay on the next separate order, outside table columns.
+Epic Followed by / And / Or connectors stay on the next separate order, outside table columns.
 Start/hold annotations stay in the displayed name but do not prevent drug mapping.
 """
 from __future__ import annotations
@@ -19,9 +19,11 @@ DESTINATIONS = ("Neurologic", "Respiratory", "Cardiovascular", "FEN / GI", "Hema
                 "Infectious Disease", "Labs", "Skin / Wounds", "Other Medications")
 BULLET = re.compile(r"^\s*[•●▪◦\-]\s*")
 SPACE = re.compile(r"\s+")
-CONNECTOR = re.compile(r"^(followed\s+by|and)\s*:?$", re.I)
+CONNECTOR = re.compile(r"^(followed\s+by|and|or)\s*:?$", re.I)
+CONNECTOR_LABELS = {"followed by": "Followed by", "and": "And", "or": "Or"}
 FOLLOW_PREFIX = re.compile(r"^followed\s+by\s*:?\s+", re.I)
 AND_PREFIX = re.compile(r"^and\s*:\s+", re.I)
+OR_PREFIX = re.compile(r"^or\s*:\s+", re.I)
 STATUS_PREFIX = re.compile(r"^\[(?:held by provider|discontinued)\]\s*", re.I)
 SCHEDULE_PREFIX = re.compile(r"^\[START\s+ON\s+[^\]\r\n]+\]\s*", re.I)
 RATE = re.compile(r"^\s*(\d+(?:\.\d+)?\s*(?:m[lL]|[uµμ]g|mcg|mg|g|units?|Units?|mEq)(?:\s*/\s*(?:kg|hr|min|h|day|24h)){1,3})\b", re.I)
@@ -45,7 +47,7 @@ def _without_context(value: str, *, strip_schedule: bool) -> str:
     existing drug rule still applies. Unknown bracketed text is not discarded.
     """
     value = clean(value)
-    patterns = (FOLLOW_PREFIX, AND_PREFIX, STATUS_PREFIX, SCHEDULE_PREFIX) if strip_schedule else (FOLLOW_PREFIX, AND_PREFIX, STATUS_PREFIX)
+    patterns = (FOLLOW_PREFIX, AND_PREFIX, OR_PREFIX, STATUS_PREFIX, SCHEDULE_PREFIX) if strip_schedule else (FOLLOW_PREFIX, AND_PREFIX, OR_PREFIX, STATUS_PREFIX)
     while value:
         previous = value
         for pattern in patterns:
@@ -160,7 +162,9 @@ def format_medication(row: dict) -> str:
     """Use explicit dose column. Keep different formulation/ordered doses visible."""
     if row.get("custom_text", "").strip():
         return row["custom_text"].strip()
-    name, dose = row["name"].strip(), row["dose"].strip()
+    # A grouped handoff may label a detached Or row as an alternative order.
+    # This display-only name never replaces the source used for drug matching.
+    name, dose = (row.get("_display_name") or row["name"]).strip(), row["dose"].strip()
     text = name
     normalized_title, normalized_dose = normalized(name), normalized(dose)
     start = len(normalized_title) - len(normalized_dose)
@@ -211,8 +215,8 @@ def parse_medications(block: str, rules: list[dict] | None = None, visibility: l
     row stops the import, rather than guessing medication boundaries. Explicit
     EN-space clipboard columns are supported only with unambiguous route and
     frequency anchors. Ordinary space-separated prose is not treated as a table.
-    Standalone Followed by and And connectors belong to the next separate order. START
-    ON labels are preserved as source text, never compared with the server clock.
+    Standalone Followed by, And, and Or connectors belong to the next separate order.
+    START ON labels are preserved as source text, never compared with the server clock.
     """
     result = MedicationResult()
     rules = rules or []
@@ -264,7 +268,7 @@ def parse_medications(block: str, rules: list[dict] | None = None, visibility: l
         # Accept ordinary whitespace, table indentation, and bullet-only forms.
         connector = CONNECTOR.fullmatch(clean(BULLET.sub("", raw, count=1)))
         if connector:
-            mark_sequence("And" if connector.group(1).casefold() == "and" else "Followed by")
+            mark_sequence(CONNECTOR_LABELS[normalized(connector.group(1))])
             continue
 
         # Some clipboard versions place the connector in a final TAB cell.
@@ -272,9 +276,10 @@ def parse_medications(block: str, rules: list[dict] | None = None, visibility: l
         after_row_sequence = ""
         cells = raw.split("\t")
         last_nonempty = next((i for i in range(len(cells)-1, -1, -1) if cells[i].strip()), None)
-        if (last_nonempty is not None and last_nonempty >= 4
-                and CONNECTOR.fullmatch(clean(cells[last_nonempty]))):
-            after_row_sequence = "And" if clean(cells[last_nonempty]).rstrip(":").strip().casefold() == "and" else "Followed by"
+        trailing_connector = (CONNECTOR.fullmatch(clean(cells[last_nonempty]))
+                              if last_nonempty is not None and last_nonempty >= 4 else None)
+        if trailing_connector:
+            after_row_sequence = CONNECTOR_LABELS[normalized(trailing_connector.group(1))]
             raw = "\t".join(cells[:last_nonempty])
 
         if BULLET.match(raw):

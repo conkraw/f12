@@ -9,7 +9,7 @@ from __future__ import annotations
 from copy import deepcopy
 import re
 import uuid
-from medications import DESTINATIONS, is_bupivacaine, match_name, normalized, visible
+from medications import DESTINATIONS, OR_PREFIX, is_bupivacaine, match_name, normalized, visible
 
 SETTINGS_KEYS = {"medication_categories", "medication_category_rules"}
 CATEGORY_SYSTEMS = tuple(x for x in DESTINATIONS if x != "Labs")
@@ -311,11 +311,31 @@ def medication_blocks(section: str, notes: str, rows: list[dict], sheet: dict | 
     from infusions import is_infusion, supports_infusion_display
     from medication_groups import group_for
     meds = [r for r in rows if visible(r) and effective_section(r) == section]
+    paths = {r["id"]: placement(r) for r in meds}
+    # An Or refers to its preceding source order, not whichever drug happens
+    # to sort before it. Keep visible alternatives together only within the
+    # exact emitted bucket, without changing a user's category or hide choice.
+    buckets = {ident: (("category", _display_root_key(path), path["id"] if path["parent_id"] else "")
+                       if path["name"] else ("plain",))
+               for ident, path in paths.items()}
+    order_anchor = {r["id"]: index for index, r in enumerate(rows)}
+    display_names = {}
+    previous = None
+    for row in rows:
+        ident = row["id"]
+        name = row.get("name", "").strip()
+        if ident in paths and OR_PREFIX.match(name):
+            if previous in paths and buckets[previous] == buckets[ident]:
+                order_anchor[ident] = order_anchor[previous]
+            else:
+                display_names[ident] = OR_PREFIX.sub("Alternative order: ", name, count=1)
+        previous = ident
     if section == "Neurologic":
-        meds.sort(key=lambda r: match_name(r.get("name", "")).split(" ", 1)[0])
+        meds.sort(key=lambda r: (match_name(rows[order_anchor[r["id"]]].get("name", "")).split(" ", 1)[0],
+                                 order_anchor[r["id"]]))
     roots, plain = {}, []
     for row in meds:
-        path = placement(row)
+        path = paths[row["id"]]
         if not path["name"]:
             plain.append(row)
             continue
@@ -369,7 +389,11 @@ def medication_blocks(section: str, notes: str, rows: list[dict], sheet: dict | 
         blocks = []
         for row in items:
             emphasize = is_infusion(row) and (supports_infusion_display(row) or group_for(row) == "antiepileptic")
-            blocks.append(("infusion" if emphasize else "medication", row))
+            # Presentation metadata lives only on the emitted copy. Calculation
+            # helpers still receive the original name, and nothing is stored.
+            rendered = (dict(row, _display_name=display_names[row["id"]])
+                        if row["id"] in display_names else row)
+            blocks.append(("infusion" if emphasize else "medication", rendered))
             if row["id"] == anchor:
                 from lab_windows import theophylline_summary
                 level = theophylline_summary(sheet)

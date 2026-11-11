@@ -30,7 +30,7 @@ _STATUS = re.compile(r"^(stopped|paused|held|not\s+given|not\s+administered|disc
 # These explicit requested medications need an actual Last Admin rate even when
 # their Dose is a single number or an old archive has not stored Last Admin yet.
 _REQUESTED = re.compile(r"^(?:(?:sodium\s+)?nitroprusside|nipride(?:\s+rtu)?|nitropress|nicardipine|cardene(?:\s+iv)?|norepinephrine|noradrenaline|levophed)\b", re.I)
-_PREFIX = re.compile(r"^(?:\[(?:held by provider|discontinued|start\s+on[^\]]*)\]\s*|(?:and|followed\s+by)\s*:\s*)", re.I)
+_PREFIX = re.compile(r"^(?:\[(?:held by provider|discontinued|start\s+on[^\]]*)\]\s*|(?:and|or|followed\s+by)\s*:\s*)", re.I)
 
 
 def _clean(value: str) -> str:

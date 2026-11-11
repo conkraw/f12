@@ -1,11 +1,38 @@
-# PICU Handoff 6.60
+# PICU Handoff 6.61
 
-Built from PICU659.zip. TMax now displays in regular text in the handoff
-preview and PDF output. The recorded temperature and its source formatting
-are retained. MRSA Screen and BMI labels remain bold.
+Built from PICU660.zip. Medication tables now accept Epic's Or connector,
+including tab-indented lines and a connector in the final table cell. Both
+orders remain separate, with their source dose, route and frequency intact.
 
-From 6.59, replace app.py and clinical_style.py together, or upload this full
-application folder, then restart Streamlit.
+From 6.60, replace app.py, medications.py, infusion_rates.py, infusions.py,
+categories.py and exports.py together, or upload this full application folder. Restart
+Streamlit, refresh the browser, then paste the SmartPhrase again.
+
+## Alternative medication orders
+
+An unrecognized Or line previously became part of the preceding medication
+row. The extra column caused the complete medication section to be rejected.
+The parser now recognizes Or alongside And and Followed by. It still rejects
+malformed or incomplete medication tables without applying a partial list.
+
+Linked alternatives in the same category remain together in source order,
+including in the alphabetically arranged Neuro section. If the preceding
+order is hidden or belongs to another category, the separate entry displays
+Alternative order: instead of an Or label that could refer to an unrelated
+medication. These display labels do not change stored source names, grouping
+rules, doses or visibility settings. Custom handoff wording remains authoritative.
+
+Alternative infusions follow the same documented Last Admin rate selection
+as other infusions. The update does not infer an administered rate from an
+ordered dose when the existing rule requires an actual administration rate.
+
+The supplied SmartPhrase was checked locally: all 36 medication orders now
+import, with every source name, dose, route and frequency preserved. Its
+clinical content is not included in this package. Regression fixtures are
+synthetic.
+
+TMax remains regular text in the handoff preview and PDF output. MRSA Screen
+and BMI labels remain bold. All features below are included.
 
 ## MRSA screening
 

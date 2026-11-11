@@ -17,9 +17,7 @@ from infusions import (neuro_body, cardiovascular_body, hematology_body, is_infu
 from lab_windows import cardiac_labs_summary, theophylline_summary, laboratory_data, stable_window_clock, clock as window_clock
 from problem_review import review_text as problem_text, TITLE as PROBLEM_TITLE
 from categories import theophylline_anchor, medication_blocks
-from medications import visible, format_medication
-from output_text import medication_output
-from fen_gi import effective_section, fen_gi_body
+from fen_gi import fen_gi_body
 from feeds import feeds_for_output
 from diet import diet_for_output, diet_failed
 from devices import devices_text, devices_markup
@@ -45,10 +43,9 @@ ACCESS_FIELDS = ("Airway", "Last Intubation", "Access", "Drains / Tubes")
 def display_fields(sheet: dict, include_lab_text: bool = True) -> dict:
     fields = fields_with_medications(sheet, include_lab_text=include_lab_text)
     # Do not lose a medication just because its old mapping used the removed column.
-    extra_meds = [medication_output(format_medication(row)) for row in sheet["medications"]
-                  if visible(row) and effective_section(row) == "Labs"]
+    extra_meds = render_body_blocks(medication_blocks("Labs", "", sheet["medications"]))
     if extra_meds:
-        fields["Other Medications"] = "\n".join([v for v in [fields["Other Medications"]] + extra_meds if v])
+        fields["Other Medications"] = "\n".join(v for v in (fields["Other Medications"], extra_meds) if v)
     fields["FEN / GI"] = fen_gi_body(sheet["fields"]["FEN / GI"], sheet["medications"], sheet["intake_output"],
         feeds=feeds_for_output(sheet), feeds_failed=False, diet=diet_for_output(sheet), diet_failed=False,
         dosing_weight=sheet["dosing_weight"] if "i" not in sheet["import_warnings"] else "", sheet=sheet)

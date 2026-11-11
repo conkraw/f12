@@ -1,10 +1,18 @@
-Version 6.60, based on PICU659.zip
+Version 6.61, based on PICU660.zip
 
 Changed application files:
 app.py
-clinical_style.py
+medications.py
+infusion_rates.py
+infusions.py
+categories.py
+exports.py
 
-TMax now uses regular text in the preview and PDF output.
-Replace both files together, or upload the full application folder.
+Epic Or connectors now import as separate alternative medication orders.
+Same-category alternatives stay together in source order. Detached alternatives
+use an explicit Alternative order label. Source values and rate rules are retained.
+
+Replace all six files together, or upload the full application folder.
 Keep app.py at the repository root. Restart Streamlit and refresh the browser.
+Paste the SmartPhrase again to import the previously rejected medication section.
 No changes to Secrets, encryption key, dependencies or archive schema are needed.
