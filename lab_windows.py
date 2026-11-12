@@ -3,6 +3,8 @@
 24-hour windows use the current Eastern clock, not the newest laboratory date.
 A previous-day date without a time may overlap the cutoff and is included.
 Its recorded date is retained without inventing a collection time.
+METHB and O2SATV use a stricter window: date-only results qualify only when
+the beginning of their source date is within the past 24 hours.
 """
 from __future__ import annotations
 from copy import deepcopy
@@ -19,7 +21,8 @@ _WINDOW_TIME = ContextVar("lab_window_time", default=None)
 from labs import canonical, date_parts, ordered_components, lactate_endpoints, is_lactate
 
 EASTERN = ZoneInfo('America/New_York')
-RECENT = {'THEOPH', 'CK', 'VANCOTROUGH'}
+CARDIAC_RECENT = {'METHB', 'O2SATV'}
+RECENT = {'THEOPH', 'CK', 'VANCOTROUGH'} | CARDIAC_RECENT
 ADMISSION = {'CRP', 'PROCAL'}
 
 
@@ -90,6 +93,32 @@ def uncertain_24h(row: dict, as_of: datetime) -> bool:
     return value.date() <= cutoff.date()
 
 
+def cardiac_recent_time(row: dict, as_of: datetime) -> bool:
+    """Only include results whose possible age fits the 24-hour window.
+
+    Date-only rows use their earliest possible collection instant for the
+    cutoff check, without storing or displaying an invented time. A repeated
+    Eastern fall-back time must qualify in both folds. Nonexistent spring
+    clock times and future results are excluded.
+    """
+    now = clock(as_of)
+    try:
+        local, timed = date_parts(row['date'])
+    except (ValueError, KeyError, TypeError, AttributeError):
+        return False
+    now_utc = now.astimezone(timezone.utc)
+    cutoff = now_utc - timedelta(hours=24)
+    if not timed:
+        start = local.replace(tzinfo=EASTERN).astimezone(timezone.utc)
+        return local.date() <= now.date() and cutoff <= start <= now_utc
+    possible = set()
+    for fold in (0, 1):
+        instant = local.replace(tzinfo=EASTERN, fold=fold).astimezone(timezone.utc)
+        if instant.astimezone(EASTERN).replace(tzinfo=None) == local:
+            possible.add(instant)
+    return bool(possible) and all(cutoff <= instant <= now_utc for instant in possible)
+
+
 def rows_for(sheet: dict, component: str, as_of: datetime | None = None) -> list[dict]:
     now = clock(as_of)
     rows = []
@@ -103,10 +132,12 @@ def rows_for(sheet: dict, component: str, as_of: datetime | None = None) -> list
         if (not row['include'] or analyte(row['component']) != component
                 or not measured(row['value'])):
             continue
-        if component == 'HEPLMW' and re.search(r'\b(?:pending|cancelled|canceled|hemolyzed|haemolysed|rejected|invalid)\b', row['value'], re.I):
+        if component in CARDIAC_RECENT | {'HEPLMW'} and re.search(r'\b(?:pending|cancelled|canceled|hemolyzed|haemolysed|rejected|invalid)\b', row['value'], re.I):
             continue
         hours = 24 if component in RECENT | {'LACTATE'} else None
-        if eligible_time(row, now, hours, admission if component in ADMISSION else ''):
+        eligible = (cardiac_recent_time(row, now) if component in CARDIAC_RECENT else
+                    eligible_time(row, now, hours, admission if component in ADMISSION else ''))
+        if eligible:
             rows.append(row)
     return rows
 
@@ -148,6 +179,10 @@ def cardiac_labs_summary(sheet: dict, as_of: datetime | None = None) -> str:
     values = ordered(rows_for(sheet, 'NTPROBNP', now))
     if values:
         parts.append('NT-proBNP: ' + values[0]['value'] + ' ' + stamp(values[0], now))
+    for component, label in (('METHB', 'Methemoglobin'), ('O2SATV', 'SvO2')):
+        values = ordered(rows_for(sheet, component, now))
+        if values:
+            parts.append(label + ': ' + values[0]['value'] + ' ' + stamp(values[0], now, True))
     return '\n'.join(p for p in parts if p)
 
 
@@ -197,7 +232,7 @@ def anti_xa_today_summary(sheet: dict, as_of: datetime | None = None) -> str:
 
 
 def laboratory_data(sheet: dict, as_of: datetime | None = None) -> dict:
-    """Filter only new special displays. CBC, BMP and gas inputs stay untouched."""
+    """Filter system-specific G rows without changing stored laboratory data."""
     now = clock(as_of)
     data = deepcopy(sheet['labs'])
     ck = {r['id'] for r in rows_for(sheet, 'CK', now)}
@@ -208,7 +243,7 @@ def laboratory_data(sheet: dict, as_of: datetime | None = None) -> dict:
     out = []
     for row in data['rows']:
         key = analyte(row['component'])
-        if key in {'NTPROBNP', 'VANCOTROUGH'}:
+        if key in {'NTPROBNP', 'VANCOTROUGH'} | CARDIAC_RECENT:
             continue  # shown only in the appropriate system column
         if key == 'HEPLMW' and (anti_xa_in_heme or row['id'] not in anti_xa_ids):
             continue
@@ -226,6 +261,9 @@ def window_help(sheet: dict, as_of: datetime | None = None) -> str:
     now = clock(as_of)
     return ('Display windows as of ' + now.strftime('%m/%d/%Y %H:%M %Z') +
             '. Lactate, theophylline, CK and vancomycin trough: rolling 24 hours. '
+            'Methemoglobin (METHB) and SvO2 (O2SATV): latest within 24 hours. '
+            'A date-only result for these two tests qualifies only when the start of its '
+            'Eastern date is within 24 hours. Include collection times for prior-day results. '
             'CRP/procalcitonin: admission onward. NT-proBNP: latest from all supplied dates. '
             'HEPLMW: today in HEME, older results in the lower coagulation area. '
             'Original rows remain available below.')

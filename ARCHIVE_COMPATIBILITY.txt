@@ -1,29 +1,16 @@
-Version 6.63 accepts existing archives supported by 6.62 without conversion.
-The stored schema remains 34. Encryption, patient-sheet fields and dependencies
-are unchanged. No saved clinical record is rewritten merely by displaying it.
+Version 6.64 accepts the same schema-34 archives as 6.63.
 
-Chemotherapy is a new built-in display group. Older saved category catalogs
-expose it without replacing custom definitions, changing explicit assignments,
-or discarding existing slots. Name collisions receive a unique default label.
-The original 250 category slots plus the later Epidural and Chemotherapy
-built-ins are supported. Existing saved automatic orders can use the new
-placement without repasting.
+No clinical data field, archive schema, dependency or encryption format changes.
+Source laboratory rows already store the exact component, value, date and
+inclusion setting needed for METHB and O2SATV. Both displays are derived when
+rendering. Existing saved rows work without a migration or another paste.
 
-Leading And/Or and START ON text is hidden only in the display name. The complete
-source medication name remains in the archive and editor. Schedule checks,
-date-specific visibility, grouping and recorded-rate selection use the original
-values. No medication order is merged or removed by this display cleanup.
+Neither raw laboratory rows nor clinician-entered notes are rewritten by the
+new display. Old results stay available in the laboratory editor but disappear
+from the automatic Cardiovascular display after the cutoff. New exports
+recalculate the window. Previously downloaded PDFs and HTML are snapshots.
 
-The optional settings.patient_list_started_at field from 6.62 is unchanged.
-It records the first confirmed daily start, using its Eastern date to prevent
-another daily reset on that date. The marker, selected removals and
-reset_generation are committed together. Opening the app or choosing Continue
-does not add the marker. Selected handoffs are removed in full, including airway
-data. No airway-only carry-forward record is created.
-
-Use the complete 6.63 application for archives saved with the new Chemotherapy
-group choices or expanded catalog. Older applications may not recognize these
-choices. Versions before 6.62 do not recognize the daily-start marker.
-
+The prior chemotherapy categories, clean medication labels, daily-start marker,
+shared archive conflict checks and reset guards are included unchanged.
 Keep existing Streamlit Secrets, encryption key, shared archive and mappings.
 No setup generator or new key is needed.

@@ -1,6 +1,11 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8">
-<title>PICU Handoff 6.63</title><style>body{max-width:850px;margin:40px auto;padding:0 20px;font:17px/1.6 system-ui;color:#172c3d}code{background:#f1f5f7;padding:2px 6px}h1,h2{line-height:1.2}</style></head>
-<body><h1>PICU Handoff 6.63</h1>
+<title>PICU Handoff 6.64</title><style>body{max-width:850px;margin:40px auto;padding:0 20px;font:17px/1.6 system-ui;color:#172c3d}code{background:#f1f5f7;padding:2px 6px}h1,h2{line-height:1.2}</style></head>
+<body><h1>PICU Handoff 6.64</h1>
+<h2>Methemoglobin and SvO2</h2>
+<p>The latest eligible METHB result appears as Methemoglobin, and O2SATV appears as SvO2, in Cardiovascular. Both use a rolling 24-hour cutoff and show the source date and time. Older values are omitted from the automatic handoff display.</p>
+<p>Include both codes in the G laboratory block. Collection times are needed to use results from yesterday. A date-only row qualifies only when the beginning of that Eastern date is within 24 hours, which normally means today's date. Source values, units and flags are retained.</p>
+<p>Replace <code>app.py</code>, <code>lab_windows.py</code> and <code>clinical_style.py</code> together, or upload the complete application folder. Restart Streamlit and refresh the browser. The sidebar should show Version 6.64.</p>
+<p>Existing saved rows work immediately. Paste a fresh SmartPhrase to add missing results. The cutoff is checked again when the handoff is opened, refreshed or exported. See <a href="examples/cardiovascular_labs_preview.pdf">the synthetic printed example</a>.</p>
 <h2>Chemotherapy and clean medication labels</h2>
 <p>Recognized chemotherapy drugs now appear under Hematology &gt; Chemotherapy. Dexamethasone is excluded from this new rule. Existing explicit group and category choices remain available.</p>
 <p>Leading And:, Or: and [START ON ...] annotations are hidden in the displayed medication name. Stored orders, doses, routes, frequencies and scheduling data stay intact. Held and discontinued labels remain visible.</p>
@@ -10,7 +15,7 @@
 <p><strong>Continue saved handoffs</strong> keeps the existing list so you can print processed handoffs, update patients or add patients. Signing in and choosing Continue do not delete anything.</p>
 <p>Today's handoffs saved outside the morning window stay. Missing, invalid or future save times are kept for review. After the first successful start, later sign-ins keep that day's list and cannot repeat the daily cleanup.</p>
 <p>Cleared handoffs include their difficult-airway details. The keep-airway reset option and airway Keep/Delete pop-up are removed. The normal airway editor remains.</p>
-<p>Upload the complete folder so the new <code>chemotherapy.py</code> module and all related formatting changes are included. Restart Streamlit and refresh the browser.</p><h2>Included features</h2><ul>
+<p>The complete folder includes <code>chemotherapy.py</code> and the related formatting changes from the previous release.</p><h2>Included features</h2><ul>
 <li>Medication imports recognize Or, And and Followed by. Linked alternatives retain their source order within a category.</li>
 <li>TMax remains regular text in the preview and PDF.</li>
 <li>MRSA Screen: appears in demographics, with a bold label and the newest supplied result across MRSADNA and MRSANPADM, selected by the laboratory collection date and time.</li>

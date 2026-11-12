@@ -1,4 +1,4 @@
-"""PICU SmartPhrase v6.63: chemotherapy grouping and clean medication labels."""
+"""PICU SmartPhrase v6.64: recent methemoglobin and SvO2 in Cardiovascular."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,
@@ -1077,7 +1077,7 @@ def gas_edit(room: str, sample_id: str, label: str, field: str, key: str) -> Non
 def gas_editor(sheet: dict) -> None:
     st.subheader("Latest blood gas")
     data = sheet["blood_gas"]
-    selection_data = legacy_gases(sheet["labs"]) if data is None else data
+    selection_data = legacy_gases(laboratory_data(sheet)) if data is None else data
     sample, issues = latest_sample(selection_data)
     if sample:
         st.text(gas_summary(selection_data))
@@ -1127,6 +1127,7 @@ def labs_vitals_editor(sheet: dict) -> None:
     if cardiac_labs_summary(sheet):
         st.text("Cardiovascular: " + cardiac_labs_summary(sheet))
         st.caption("Lactate shows the earliest and latest usable results in the rolling 24-hour display window. The printed result omits the source code. All original codes, dates, flags and units remain in the editor. NT-proBNP shows the latest from all supplied dates. The original dates remain visible.")
+    st.caption("Cardiovascular shows the latest METHB as Methemoglobin and O2SATV as SvO2 within 24 hours. Include collection times to use results from yesterday. A date-only result is included only when the start of that Eastern date is within 24 hours.")
     if id_summary(sheet):
         st.text("Infectious Disease:\n" + id_summary(sheet))
     st.caption("Glucose is in the BMP tree. Mg and phosphorus are below it. Albumin stays in Hepatic. Coagulation, including Anti-Xa (HEPLMW), is immediately below Hepatic in the lab results. CRP and procalcitonin (PROCAL) remain in ID below temperature. The latest eligible THEOPH result prints directly below a visible aminophylline order, once. Without a visible aminophylline order it remains in Respiratory.")
@@ -1734,7 +1735,7 @@ def main() -> None:
         return
     with st.sidebar:
         st.header("PICU Handoff")
-        st.caption("Version 6.63 | Chemotherapy and clean medication labels")
+        st.caption("Version 6.64 | Methemoglobin and SvO2")
         # Retire the old instructions workspace without discarding room drafts.
         if st.session_state.get("page") == "Instructions / SmartPhrase":
             st.session_state["page"] = "Handoff"

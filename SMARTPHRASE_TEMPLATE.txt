@@ -30,7 +30,9 @@ ffffffffffffffffffffffffffffffff
 
 gggggggggggggggggggggggggggggggg
 LABS:
-[Insert your existing Epic laboratory SmartLink here]
+[Insert your existing Epic laboratory SmartLink here. Include METHB and O2SATV
+with each result's collection date and, when available, collection time. These
+two results appear in Cardiovascular only when they qualify for the past 24 hours.]
 gggggggggggggggggggggggggggggggg
 
 hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh

@@ -1,13 +1,57 @@
-# PICU Handoff 6.63
+# PICU Handoff 6.64
 
-Built from PICU662.zip. Common chemotherapy medications now have an automatic
+Built from the latest PICU663.zip package.
+
+## Cardiovascular laboratory results
+
+| Epic component | Handoff label | Selection |
+| --- | --- | --- |
+| METHB | Methemoglobin | Latest included numeric result within 24 hours |
+| O2SATV | SvO2 | Latest included numeric result within 24 hours |
+
+Both results appear in Cardiovascular with their original value, units, flags
+and collection date/time. Units are not added or converted. A missing, excluded,
+pending, invalid or expired result does not produce an automatic entry.
+
+The cutoff uses the current Eastern time, including elapsed-time handling
+across daylight saving changes. Exactly 24 hours is included. Future results
+are excluded. Saved handoffs recalculate these displays when opened, refreshed
+or exported. A downloaded PDF or HTML file remains a snapshot of its laboratory
+results and must be generated again to refresh them.
+
+Collection times give the exact rolling cutoff. For a date-only row, the start
+of its recorded Eastern date must fall within the past 24 hours. This normally
+includes today's date and excludes yesterday's uncertain result. No collection
+time is invented. When same-day times are incomplete, Epic's source order is
+retained, as in the other laboratory displays.
+
+Include METHB and O2SATV in the G laboratory block of the pasted SmartPhrase.
+Add their collection times when available, especially for results from yesterday.
+Existing saved rows for these codes work immediately. Paste a new SmartPhrase
+if those rows were not previously imported. All original rows stay in the lab
+editor. Neither code is repeated in the lower laboratory or legacy G gas display.
+Independent P blood-gas tables retain their existing specimen/column display.
+
+## Install this update
+
+Replace app.py, lab_windows.py and clinical_style.py together. Uploading the
+complete application folder includes all required modules. Keep app.py at the
+repository root, restart Streamlit and refresh the browser. The sidebar should
+show Version 6.64.
+
+Existing Secrets, encryption keys, saved handoffs, mappings and custom notes
+continue to work. This update adds no dependency or archive-schema change.
+See TEST_REPORT.md for verification and examples/cardiovascular_labs_preview.pdf
+for a synthetic printed example.
+
+## Included from version 6.63
+
+Common chemotherapy medications have an automatic
 Hematology > Chemotherapy placement. Medication display names omit the leading
 And:, Or: and START ON annotations while retaining complete source orders.
 
-From 6.62, replace app.py, medication_groups.py, categories.py, medications.py,
-infusions.py and output_text.py, and add chemotherapy.py. Uploading this complete
-application folder includes every required file. Restart Streamlit and refresh
-your browser.
+The complete package also includes the chemotherapy, medication-label and
+daily patient-list updates from previous releases.
 
 ## Chemotherapy
 

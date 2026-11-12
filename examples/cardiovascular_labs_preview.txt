@@ -1,0 +1,51 @@
+Print prepared: 11/12/2026 03:00:00 PM EST
+PICU HANDOFF
+Room: P4102
+Age: --
+Sex: --
+Handoff reference: 10198fdb
+Last saved: Not saved yet
+Confirm patient identity in Epic. A room is not a patient identifier.
+
+DIAGNOSES
+Synthetic software example
+No patient data
+----
+Dosing weight: none
+
+NEUROLOGIC
+CAPD: None
+-----
+Fever Control: None
+-----
+Synthetic neurologic note
+
+RESPIRATORY
+Synthetic respiratory note
+
+CARDIOVASCULAR
+Lactate: 0.9 mmol/L -> 1.1 mmol/L [11/12/2026]
+NT-proBNP: 202 [11/10/2026 09:00]
+Methemoglobin: 1.2 % [11/12/2026 14:00]
+SvO2: 71.3 % [11/12/2026 14:00]
+-----
+Synthetic clinician note retained below the imported results.
+
+FEN / GI
+GI Prophylaxis: None
+-----
+Bowel Regimen: None
+-----
+Diuretics: None
+
+HEMATOLOGY
+DVT Prophylaxis: None
+
+INFECTIOUS DISEASE
+------
+Cultures: None
+
+LAB RESULTS / TRENDS
+NA: 140 [11/12/2026 14:00]
+Gas VEN
+pH: 7.37 [11/12/2026 14:00]

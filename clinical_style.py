@@ -33,7 +33,7 @@ LABEL = re.compile(
     r"In|Out|Net|Intake|Output|Intake/Output|"
     r"MCV|ALC|ANC|Ca|Calcium|Phos|Phosphorus|Mg|Magnesium|"
     r"CRP|Procalcitonin|PROCAL|Theophylline|Vancomycin trough|"
-    r"Anti-Xa(?: \(HEPLMW\))?|NT-proBNP|Lactate|"
+    r"Anti-Xa(?: \(HEPLMW\))?|NT-proBNP|Lactate|Methemoglobin|SvO2|"
     r"Inflammatory markers(?:[ \t]+\[[^]\n]+\])?)$", re.I)
 
 

@@ -1,105 +1,71 @@
-# PICU Handoff 6.63 verification
+# PICU Handoff 6.64 verification
 
-Base: PICU662.zip. This release adds the Hematology > Chemotherapy display
-category and removes requested order annotations from displayed medication names.
+Base: the latest PICU663.zip package. This update adds METHB as Methemoglobin
+and O2SATV as SvO2 in Cardiovascular, using the latest eligible numeric result
+within the past 24 hours. All new test data and preview files are synthetic.
 
-## Chemotherapy placement
+## Verification result
 
-The explicit roster contains 40 generic entries and 72 additional aliases,
-including asparaginase formulations and doxorubicin. Tests exercise every
-recognized name, known source wrappers, word boundaries, mixed-case names,
-incidental mentions, and separate orders. Dexamethasone and other steroids
-retain their existing defaults. Supportive medicines are not classified through
-a broad chemotherapy context rule.
+750 tests passed across the new cardiovascular cases and the selected existing
+laboratory, blood-gas, source ordering, workflow, formatting and export tests.
+This includes 85 new cardiovascular tests. One existing AnyIO pytest-plugin
+deprecation warning was emitted. It did not affect test results.
 
-Automatic orders appear once under Hematology > Chemotherapy in text, HTML,
-individual PDFs and Print All. Explicit group and category choices still win.
-The old schema-34 catalog receives a virtual built-in without modifying the
-saved definitions. Collision-safe names, category rules, encrypted reload, and
-the original 250 slots plus the two later reserved built-ins are covered.
+The selected files were test_cv_24h_labs.py, test_windows_problem_review.py,
+test_recent_trough_workflow.py, test_latest_gas.py, test_lab_routing_placement.py,
+test_diet_lactate.py, test_labs_vitals_visibility.py,
+test_labels_colors_groups.py and test_batch_exports.py.
 
-CHEMOTHERAPY_REFERENCE.md records the implemented roster and primary sources.
-Grouping is presentation only and does not establish a treatment indication.
+## New behavior checked
 
-## Medication name cleanup
+- Exact inclusion at 24 hours, exclusion just before the cutoff and exclusion
+  of future results.
+- Independent latest-result selection for each code, including shuffled rows,
+  incomplete times and source-order ties.
+- Conservative date-only selection based on the beginning of the Eastern date.
+- UTC elapsed-time comparison, 25-hour days, ambiguous fall-back times and
+  nonexistent spring clock times.
+- Exact code matching without substituting arterial or generic saturations.
+- Preservation of source units, decimal values, numeric zero and abnormal flags.
+- Omission of pending, canceled, hemolyzed, invalid, hidden and failed-import
+  results from the new automatic displays.
+- Removal of both G codes from lower laboratory and legacy G gas output,
+  including when the values have expired.
+- Existing P blood-gas specimen/column behavior remains independent.
+- Expiration after a saved handoff is re-rendered, without modifying raw rows
+  or clinician-entered notes.
+- Encrypted archive save/reload and actual text, HTML, single PDF and Print All
+  PDF rendering, with exactly one automatic entry for each new result.
 
-The shared name-only formatter hides leading And:, Or:, generated Alternative
-order: labels, and recognized [START ON ...] annotations. Both regular
-medication and infusion summaries use it. Held/discontinued labels, Followed by,
-unknown bracketed context and custom handoff wording remain intact. A source
-containing only annotations falls back to its original text instead of becoming
-a blank entry.
+## Findings corrected during verification
 
-Tests cover standalone and inline connectors, trailing table connectors, blank
-dose columns, source identity, separate order counts, routes and frequencies,
-HTML escaping, editor source names, future-order checks, date-specific hidden
-rules, mapping keys, Last Admin selection, recorded rates and encrypted reload.
-Rendering does not modify the source record or substitute a display name into
-scheduling or rate calculations.
+The shared numeric recognizer can interpret a single trailing word as a unit.
+A numeric-looking result such as 1.2 pending is now excluded for the two new
+cardiovascular codes by the existing status-word rejection rule. Other analytes
+retain their prior window and selection behavior.
 
-## Supplied SmartPhrase
+One older navigation test failed identically in the untouched 6.63 package.
+Its fixture did not select Continue saved handoffs before testing old-workspace
+migration. The test now makes that selection and retains its original assertions
+about workspace migration and preservation of the unsaved draft. Production
+navigation and daily-start behavior were not changed.
 
-The latest supplied SmartPhrase contains 35 medication orders. All 35 import
-with unique identities and zero import errors. An independent source-column
-check matched all source medication names, doses, routes and frequencies,
-allowing the parser's intentional connector prefix.
+## Printed output
 
-The source has one And prefix, one Or prefix and five START ON annotations.
-All requested prefixes are absent from its displayed medication names. Text,
-HTML, individual PDF and Print All render successfully. Both PDF paths produce
-one page, and the complete imported sheet remains unchanged after rendering.
+examples/cardiovascular_labs_preview.pdf was rendered and visually inspected.
+Both labels, values and dates fit in the Cardiovascular column on one landscape
+page. Original clinician notes remain below them. Older test values are omitted
+and neither result is repeated in the lower laboratory band. Matching HTML and
+plain-text previews are included.
 
-Only counts and pass/fail results were recorded. The supplied clinical text,
-screenshots and generated output from that text are not included in this
-package. All new committed fixtures and previews use synthetic data.
+## Compatibility and limits
 
-## Synthetic preview
+All 61 application Python modules passed syntax validation. requirements.txt,
+models.py, security.py, github_store.py, daily_start.py, census_guard.py,
+medications.py and chemotherapy.py match the original package byte for byte.
+The archive schema remains 34, with no new dependency or encryption key.
 
-The 15-order synthetic example covers five asparaginase formulations, a held
-future doxorubicin order, dexamethasone, diphenhydramine alternatives, future
-antibiotics, Followed by wording, G-CSF and supportive medicines. Every visible
-order appears exactly once across the text, HTML, PDF and Print All paths.
-
-The included PDF was rendered and visually inspected. It is one page, with
-Chemotherapy in the Heme column, clean medication labels, retained held status
-and no clipping or overlapping content. These are software display examples,
-not a treatment regimen.
-
-## Verification runs
-
-| Scope | Result |
-| --- | --- |
-| Chemotherapy, dynamic categories, Epidural, expanded groups and respiratory/Heme infusions | 515 passed, plus 14 subtests |
-| New chemotherapy cases, included in the preceding run | 159 passed |
-| Medication labels, alternatives, tapers, infusions, PN and export behavior | 673 cases accounted for |
-| Final focused cleanup rerun, including all new cleanup cases and corrected legacy assertions | 57 passed |
-| New cleanup cases, included in the preceding runs | 41 passed |
-| Synthetic chemotherapy and label-cleanup integration | 14 passed |
-| MRSA, hypernatremia, line days, devices, daily start, login gate and PDF reset guard | 336 passed |
-
-The medication/export sweep initially passed 667 cases. Six older assertions
-still required the display labels that this release intentionally removes.
-Those expected strings were corrected, and all six cases passed in the final
-57-case focused rerun. Their source-name, dose, frequency and status checks were
-retained. No production code changed after that sweep, and no failure remains.
-
-Runs overlap, so these counts are not added into a claimed unique-test total.
-The only warning was an existing AnyIO/pytest plugin deprecation warning.
-Callback and page tests use the repository's simulated Streamlit environment,
-not a live browser deployment.
-
-Python syntax validation passed for all 61 application modules. The dependency
-requirements and schema-defining model module are byte-for-byte unchanged from
-6.62. Daily cleanup transactions, its review/Continue behavior, same-day reset
-protection and the shared PDF download guard remain covered.
-
-## Archive and package
-
-The stored schema remains 34. No new dependency, encryption key or conversion
-is required. The existing daily-start marker from 6.62 is retained. Original
-medication fields remain available for editing and later imports.
-
-The ZIP passes CRC validation and its complete SHA256 manifest matches every
-bundled file. Generated caches, compiled bytecode, credentials and supplied
-clinical attachments are excluded. The live Streamlit deployment and shared
-patient archive were not accessed or changed.
+The UI-related existing tests use simulated Streamlit widgets. A live browser
+session and the deployed application were not accessed. No new real-patient
+SmartPhrase was supplied for this change. The implementation was verified with
+synthetic component/value/date rows using the existing parser and export paths.

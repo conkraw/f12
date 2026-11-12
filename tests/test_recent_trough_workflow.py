@@ -255,6 +255,8 @@ def test_main_moves_old_instruction_workspace_to_handoff_without_losing_draft(ap
     ss['drafts']['P4102']['fields']['Other'] = 'SYNTHETIC UNSAVED NOTE'
     before = deepcopy(ss['drafts'])
     ss['page'] = 'Instructions / SmartPhrase'
+    # Workspace migration runs after the existing daily-start choice.
+    app.continue_patient_list()
     equip(app, monkeypatch)
     monkeypatch.setattr(app, 'load_config', lambda: ({'idle_minutes':15, **TEST_ADMIN_CONFIG}, None))
     app.main()
