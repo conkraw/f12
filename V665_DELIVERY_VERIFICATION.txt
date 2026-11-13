@@ -1,0 +1,28 @@
+PICU HANDOFF v6.65
+Prepared November 13, 2026
+
+Base: the user's latest available PICU664.zip application package.
+Output: PICU665.zip, containing one complete application folder.
+
+Changes:
+- Admin Mapping Sync with review, explicit conflict resolution and optional
+  hide/show synchronization across configured private data repositories.
+- Encrypted mapping-only backups, SHA-guarded saves and partial-outcome reporting.
+- Destination-specific patient recall data retained without cross-repository copy.
+- Respiratory > Leukotriene receptor antagonist for montelukast and Singulair.
+
+Validation:
+- Full regression suite: 5319 passed and 14 subtests passed.
+- Final new-feature rerun after Admin widget cleanup: 50 passed.
+- Python syntax, TOML examples, ZIP integrity and manifest verified.
+- No actual Secrets, credentials or encrypted patient archives included.
+
+Deployment:
+Upload this application's contents to each APP-CODE repository, keeping app.py
+at its root. Do not upload the application into a patient-data repository.
+Keep all existing deployment Secrets and the existing encryption key.
+Follow MAPPING_SYNC_SETUP.md to add the other two private DATA repositories to
+Secrets in the app that will run synchronization. No live deployment or repository
+synchronization has been performed while preparing this package.
+
+See TEST_REPORT.md for the complete test scope and limitations.

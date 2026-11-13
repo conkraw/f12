@@ -122,20 +122,20 @@ class BupivacainePlacementTests(unittest.TestCase):
     def test_full_legacy_catalog_keeps_every_existing_slot(self):
         vault = new_vault()
         old_catalog = [c for c in default_categories()
-                       if c["id"] not in ("group:epidural", "group:chemotherapy", "group:leukotriene_receptor_antagonist")]
+                       if c["id"] not in ("group:epidural", "group:chemotherapy", "group:leukotriene_receptor_antagonist", "gi:probiotic", "group:adh_analog")]
         for i in range(250 - len(old_catalog)):
             old_catalog.append(dict(id="custom:preserved_" + str(i), name="Preserved " + str(i),
                                     section="Neurologic", parent="", order=100))
         vault["settings"]["medication_categories"] = old_catalog
         before = deepcopy(vault)
         validate_vault(vault)
-        self.assertEqual(len(catalog(vault["settings"])), 253)
+        self.assertEqual(len(catalog(vault["settings"])), 255)
         key = Fernet.generate_key().decode()
         self.assertEqual(open_vault(seal_vault(vault, key), key), before)
         edited = save_category(vault["settings"], "Renamed preserved", "Neurologic",
                                ident="custom:preserved_0")
         validate_settings(edited)
-        self.assertEqual(len(edited["medication_categories"]), 253)
+        self.assertEqual(len(edited["medication_categories"]), 255)
         with self.assertRaises(ValueError):
             save_category(edited, "Over the preserved limit", "Neurologic")
         self.assertEqual(vault, before)

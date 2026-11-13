@@ -1,86 +1,99 @@
-# PICU Handoff v6.65: executed test report
+# PICU Handoff v6.66: executed test report
 
-Prepared November 13, 2026 from the user's available PICU664.zip source.
+Prepared November 13, 2026 from the supplied PICU665.zip source package.
 
-## Results
+## Final full regression result
 
-The complete application regression suite passed:
+Command: python -m pytest -q
 
-    PYTHONPATH=.:tests python -m pytest -q --disable-warnings --maxfail=12
-    5319 passed, 14 subtests passed in 151.15s
+5407 passed, 14 subtests passed in 154.93 seconds.
 
-After a final Admin widget-state cleanup, all 50 tests dedicated to the new
-mapping synchronization and montelukast features were rerun and passed:
+A targeted run covering mapping sync, the new diagnostics, new medication
+groups, montelukast, chemotherapy and bupivacaine also passed:
 
-    PYTHONPATH=.:tests python -m pytest -q tests/test_mapping_sync.py tests/test_mapping_sync_ui.py tests/test_montelukast.py --disable-warnings
-    50 passed in 1.33s
+306 passed, 14 subtests passed in 1.92 seconds.
 
-The final cleanup invalidates stale Admin mapping widgets after synchronization.
-It does not change stored patient data or patient draft widgets. The callback
-test explicitly checks this behavior and checks that unsaved drafts are retained.
+## Additional transport-level validation
 
-## New checks
+The real MappingRepository/GitHubVault request path was exercised against
+three independent synthetic in-memory GitHub services with a shared test key.
+All three scenarios passed:
 
-The new tests cover unique-rule merging, identical-rule deduplication, explicit
-conflict choices, normalization, custom-category ID reconciliation, category
-references, input validation and optional hide/show preference synchronization.
+| Scenario | Archive writes to apps 1, 2, 3 | Expected result |
+| --- | --- | --- |
+| Successful reviewed merge | 1, 1, 1 | All destinations updated and verified. |
+| Backup access denied in app 2 | 0, 0, 0 | No mapping writes start. Failed backup operation identified. |
+| Concurrent-write refusal in app 2 | 1, 0, 0 | Earlier update retained, later writes stopped, no forced overwrite. |
 
-Synthetic repositories test that each destination retains its own patient data,
-even when the same room identifier is used in all three. Current patient-only
-changes are preserved. Competing mapping changes abort the merge. Public
-repositories, unsupported schemas, incorrect keys, unsafe paths, invalid
-configuration, unreviewed plans and expired Admin approval are rejected.
+Each scenario confirmed that every destination retained its own patient-record
+collection. Decrypted mapping backups contained no patient-record content.
+Remote error-body sentinel text was excluded from results.
+Reproduce with python validation/check_mapping_sync_transport.py.
 
-Backup tests decrypt the generated mapping-only backup and verify its scope and
-original mappings. Patient records and credentials are not included. A backup
-failure prevents subsequent mapping writes. Partial saves and unconfirmed
-outcomes are reported without a destructive cross-repository rollback.
+## Diagnostic coverage
 
-UI tests use a Streamlit widget stub to exercise rendering, comparison, approval,
-conflict changes, overlap acknowledgement, preview expiry and authorization.
-No real browser session is represented by these tests.
+Failure injection covers HTTP 401, 403, 404, 429, redirects and server errors,
+rate-limit and SSO headers, timeouts and connection failures, public/archived
+repositories, missing branches and archives, unexpected response formats,
+base64 errors, oversized archives, malformed keys, incorrect keys/ciphertext,
+invalid JSON, incompatible numeric and malformed schema values, invalid
+mapping families, and complete-archive validation failures.
 
-Montelukast tests cover generic and Singulair names, boundary-safe matching,
-Respiratory placement, the new Leukotriene receptor antagonist subcategory,
-older saved category catalogs, hidden orders, explicit custom overrides and
-unchanged source medication details.
+Tests verify the failed step, diagnostic code and available HTTP status.
+Repository checks use GET requests only and do not make backups or saves.
+A failure in one repository does not hide results from others. Admin expiry
+stops subsequent repository checks. A stale merge preview cannot be reused
+after a failed comparison. Read-only checks do not create a merge preview.
+Configuration errors identify the numbered entry and field without echoing its
+value. Unexpected errors do not echo their message or clinical content.
 
-## Existing test maintenance
+UI callback/render tests use a Streamlit widget stub. They cover successful
+comparison, detailed failures, read-only checks, conflict review, approval,
+preview expiry, report output and authorization. Report content is checked
+for synthetic token/patient sentinels. Real browser interaction was not tested.
 
-Existing category-capacity tests were adjusted for one additional built-in group.
-The original 250 category slots are preserved, with three backfilled built-ins
-instead of two. No existing custom category is removed to make room.
+## Medication coverage
 
-Four stale tests failed in both the updated package and the untouched v6.64
-baseline. They expected an older reset notice or old medication display prefixes
-that v6.64 already removed. Only those assertions were corrected. The app's
-existing reset logic, source-order preservation and cleaned display behavior
-were not changed to satisfy those tests.
+Lactobacillus is placed under FEN / GI > Probiotic.
+Desmopressin and DDAVP are placed under Neurologic > ADH Analog.
+Tests cover generic/formulation names, case variation, supported source-label
+cleanup, multiple desmopressin routes, boundary-safe nonmatches, single output
+placement, hidden orders, explicit category overrides, Admin mapping choices,
+older catalogs, encrypted round trips and unchanged medication source fields.
+Existing montelukast, chemotherapy and bupivacaine behavior remains covered.
 
-## Packaging checks
+## Category-capacity fixture updates
 
-Every Python file in the final package was parsed successfully. The included TOML
-examples and Streamlit configuration were parsed successfully. Archive CRC and
-SHA-256 file-manifest checks passed. Python caches and temporary test outputs are
-excluded. No actual deployment Secrets or encrypted patient archive is included.
-The supplied examples and tests are synthetic development fixtures.
+The first regression run found three historical capacity assertions based on
+three backfilled built-ins. The new release adds two more reserved built-ins.
+The historical fixtures were corrected to omit those new categories when
+constructing a pre-update catalog and to expect 255 total slots after backfill.
+Their rejection tests for an additional custom category remain in place.
+The original 250 slots are preserved. No production capacity safeguard was
+removed to make the tests pass.
 
-Only app.py, categories.py and medication_groups.py changed among the existing
-application modules. mapping_sync.py and mapping_sync_ui.py are new. Existing
-models.py, security.py, github_store.py, reset handling and dependency versions
-remain unchanged. The archive schema remains version 34.
+## Packaging and unchanged components
+
+All Python sources and included TOML files are parsed during packaging.
+Archive CRC and the SHA-256 file manifest are checked before delivery.
+models.py, security.py and requirements.txt are byte-identical to PICU665.zip.
+The archive schema stays at 34, with the same encrypted archive path and key.
+No real deployment Secrets or patient archive is packaged. Runtime caches,
+pytest caches and local temporary logs are excluded.
 
 ## Verification limits
 
-No live GitHub repository was read or changed. The package has not been deployed
-to the user's three applications. Tests use synthetic encrypted archives and
-mocked GitHub responses, not real patient records or production credentials.
-Streamlit was not available in this execution environment, so live browser
-interaction and deployment compatibility still need to be checked in the user's
-deployment. Existing PDF export tests ran, but this release does not claim a new
-manual visual review of every PDF layout.
+No live GitHub repository was read or changed. This package has not been
+deployed to the user's apps, and the original production sync failure has not
+been reproduced with the user's credentials or archives. The new diagnostics
+are intended to identify that failure when run in the deployed app.
 
-Install v6.65 in all three apps before synchronization. Configure approved private
-data repositories and tokens in deployment Secrets, retain the existing shared
-key, compare the mappings, review conflicts, then explicitly approve the merge.
-The setup instructions are in MAPPING_SYNC_SETUP.md.
+Streamlit was unavailable in this execution environment. Installing it was
+blocked by network name-resolution failure, so no real Streamlit browser or
+Community Cloud session was tested. UI tests use a widget stub. GitHub tests
+use mocked responses and synthetic encrypted archives. These checks are not a
+security audit or a determination of regulatory compliance.
+
+Install v6.66 in all three apps, retain the existing web-based Secrets and key,
+then run Admin > Mapping Sync > Check connections (read only). Review the
+repository-specific result before attempting another approved merge.

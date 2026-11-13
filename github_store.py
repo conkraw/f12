@@ -14,7 +14,11 @@ from models import new_vault
 
 
 class StorageError(RuntimeError):
-    pass
+    """Static message plus optional safe transport metadata, never response bodies."""
+    def __init__(self, message: str, *, status_code=None, diagnostic_code=""):
+        super().__init__(message)
+        self.status_code = status_code if type(status_code) is int else None
+        self.diagnostic_code = diagnostic_code
 
 
 class ConflictError(StorageError):
@@ -55,12 +59,22 @@ class GitHubVault:
         try:
             response = self.http.request(method, self.url + endpoint, headers=self.headers,
                                          timeout=(10, 30), allow_redirects=False, **kwargs)
+        except requests.Timeout:
+            raise StorageError("Shared storage timed out. Reload and compare before retrying.", diagnostic_code="TIMEOUT") from None
         except requests.RequestException:
-            raise StorageError("Shared storage could not be reached. A save may have completed before the connection ended. Reload and compare before retrying.") from None
+            raise StorageError("Shared storage could not be reached. A save may have completed before the connection ended. Reload and compare before retrying.", diagnostic_code="NETWORK_ERROR") from None
         if response.status_code in (401, 403):
-            raise StorageError("Shared storage rejected access. Check the token permissions, organization approval, and rate limits.")
+            headers = getattr(response, "headers", {}) or {}
+            code = "TOKEN_REJECTED" if response.status_code == 401 else "ACCESS_FORBIDDEN"
+            if response.status_code == 403 and (headers.get("X-RateLimit-Remaining", headers.get("x-ratelimit-remaining")) == "0"
+                                               or headers.get("Retry-After", headers.get("retry-after"))):
+                code = "RATE_LIMIT"
+            elif response.status_code == 403 and headers.get("X-GitHub-SSO", headers.get("x-github-sso", "")).startswith("required"):
+                code = "SSO_REQUIRED"
+            raise StorageError("Shared storage rejected access. Check the token permissions, organization approval, and rate limits.",
+                               status_code=response.status_code, diagnostic_code=code)
         if 300 <= response.status_code < 400:
-            raise StorageError("Shared storage redirected the request. Check the repository/API address. No redirect was followed.")
+            raise StorageError("Shared storage redirected the request. Check the repository/API address. No redirect was followed.", status_code=response.status_code, diagnostic_code="REDIRECT_BLOCKED")
         return response
 
     @staticmethod

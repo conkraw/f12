@@ -1,0 +1,9 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>PICU Handoff 6.65</title>
+<style>body{max-width:850px;margin:40px auto;padding:0 20px;font:17px/1.6 system-ui;color:#172c3d}code{background:#f1f5f7;padding:2px 6px}h1,h2{line-height:1.2}</style></head>
+<body><h1>PICU Handoff 6.65</h1><p>Mapping Sync and the montelukast respiratory group.</p>
+<h2>Update each application</h2><p>Upload this folder's contents to each app-code repository, keeping <code>app.py</code> at its root. Restart Streamlit and confirm Version 6.65. Keep all existing passwords, Secrets, encryption keys and patient archives.</p>
+<h2>Connect your mapping repositories</h2><p>Read <code>MAPPING_SYNC_SETUP.md</code>. Append the two other private data repositories to your existing Streamlit Secrets using <code>MAPPING_SYNC_SECRETS.example.toml</code>. Your current data repository is included automatically.</p>
+<h2>Review before saving</h2><p>Open Admin, unlock it, and expand Mapping Sync. Compare the saved mappings, resolve conflicts, inspect the proposed rules, and approve the merge. There is no automatic synchronization.</p>
+<p>Patient records and mappings share one encrypted archive. Only mapping settings are synchronized. Each destination retains its own patient data. Encrypted mapping backups are created before mapping writes. A partial failure is reported per repository without a whole-archive rollback.</p>
+<h2>Montelukast</h2><p>The new automatic category is Respiratory &gt; Leukotriene receptor antagonist. Explicit custom assignments remain available. No medication dose or source value changes.</p>
+<p>See <code>TEST_REPORT.md</code> for verification. This package has not been deployed to your live apps.</p></body></html>

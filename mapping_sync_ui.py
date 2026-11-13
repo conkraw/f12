@@ -2,6 +2,7 @@
 from __future__ import annotations
 import time
 import uuid
+import logging
 from typing import Callable
 import streamlit as st
 from categories import target_label
@@ -9,6 +10,7 @@ from github_store import StorageError
 from mapping_sync import (LABELS, MAPPING_KEYS, MergePlan, SyncError,
                           configuration_fingerprint, configured_repositories,
                           make_plan, overlapping_rules, scope_keys, synchronize)
+from sync_diagnostics import DiagnosticError, passed, safe_error
 
 PREFIX = "mapping_sync_"
 PREVIEW_TTL = 15 * 60
@@ -36,7 +38,7 @@ branch = "main"
 
 def clear_preview(state) -> None:
     for key in list(state):
-        if key.startswith(PREFIX) and key not in (PREFIX + "include_visibility", PREFIX + "result"):
+        if key.startswith(PREFIX) and key not in (PREFIX + "include_visibility", PREFIX + "result", PREFIX + "diagnostics"):
             state.pop(key, None)
 
 
@@ -50,28 +52,141 @@ def _repositories(store):
     return configured_repositories(store, st.secrets.to_dict())
 
 
-def prepare_comparison(store, require_admin: Callable[[], bool], note: Callable) -> None:
+def _metadata(repo) -> dict:
+    config = getattr(repo.store, "config", None)
+    return {"App": repo.label, "Data repository": getattr(config, "repository", ""),
+            "Branch": getattr(config, "branch", ""),
+            "Archive path": "encrypted-data/handoff-v1.enc",
+            "Token source": getattr(repo, "credential_source", "Existing GitHub token")}
+
+
+def _record_failure(checks, exc, step):
+    error = safe_error(exc, step)
+    row = error.row()
+    if not checks or checks[-1] != row:
+        checks.append(row)
+    return error
+
+
+def prepare_comparison(store, require_admin: Callable[[], bool], note: Callable,
+                       diagnostics_only: bool = False) -> None:
+    """Check every configured repository. Keep no patient data in the UI state."""
     if not require_admin():
         return
     ss = st.session_state
     clear_preview(ss)
     ss.pop(PREFIX + "result", None)
+    report = {"at": time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime()),
+              "version": "6.66", "mode": "Read-only diagnostics" if diagnostics_only else "Mapping comparison",
+              "complete": False, "repositories": [], "comparison": []}
+    ss[PREFIX + "diagnostics"] = report
     try:
         repos = _repositories(store)
-        keys = scope_keys(bool(ss.get(PREFIX + "include_visibility", False)))
-        snapshots = []
-        for repo in repos:
-            if not require_admin():
-                raise SyncError("Admin authorization expired.")
-            snapshots.append(repo.snapshot(keys))
+    except Exception as exc:
+        error = _record_failure(report["comparison"], exc, "Read Streamlit Secrets configuration")
+        note("Mapping Sync configuration failed. See the diagnostic panel for the field to correct. No remote writes were attempted.", "error")
+        logging.getLogger(__name__).warning("Mapping Sync configuration check: %s at %s", error.code, error.step)
+        return
+    keys = scope_keys(bool(ss.get(PREFIX + "include_visibility", False)))
+    snapshots = []
+    expired = False
+    for index, repo in enumerate(repos, 1):
+        checks = []
+        record = dict(_metadata(repo), checks=checks)
+        report["repositories"].append(record)
+        if expired or not require_admin():
+            expired = True
+            error = DiagnosticError("ADMIN_EXPIRED", "Admin authorization")
+            checks.append(error.row())
+            continue
+        try:
+            snapshots.append(repo.snapshot(keys, checks=checks))
+        except Exception as exc:
+            error = _record_failure(checks, exc, "Read mapping-only snapshot")
+            logging.getLogger(__name__).warning("Mapping Sync repository %s: %s at %s", index, error.code, error.step)
+            # Continue checking other repositories to expose every failing source.
+    if expired or len(snapshots) != len(repos):
+        note("One or more repository checks failed. See the failed step and next action below. No mappings or patient records were changed.", "error")
+        return
+    if diagnostics_only:
+        report["complete"] = True
+        note("Read-only checks passed. Write permission has not been tested. Use Compare mappings to prepare a merge.", "info")
+        return
+    if len(repos) < 2:
+        error = DiagnosticError("CONFIG_INVALID", "Repository count",
+                                detail="At least two distinct data repositories are required for a comparison.")
+        report["comparison"].append(error.row())
+        note("Add the other data repositories in Streamlit Secrets. The current repository is included automatically.", "error")
+        return
+    try:
+        if not require_admin():
+            raise DiagnosticError("ADMIN_EXPIRED", "Admin authorization")
         plan = make_plan(snapshots, keys)
         ss[PREFIX + "preview"] = {
             "plan": plan, "created": time.monotonic(), "nonce": uuid.uuid4().hex,
             "configuration": configuration_fingerprint(repos),
         }
-    except (SyncError, StorageError, ValueError, TypeError, KeyError):
-        # Do not render remote response bodies or potentially clinical errors.
-        note("Comparison could not be completed. Check the two data-repository entries, private-repository permissions, shared key and app versions. No mappings or patient records were changed.", "error")
+        passed(report["comparison"], "Build mapping comparison", "The mapping-only comparison is ready. Review conflicts before any save.")
+        report["complete"] = True
+    except Exception as exc:
+        _record_failure(report["comparison"], exc, "Build mapping comparison")
+        note("Repository reads passed, but the mapping comparison failed. See the comparison step below. Nothing was changed.", "error")
+
+
+def diagnostic_text(report: dict) -> str:
+    """Serialize only known safe fields. Never export state, snapshots or exceptions."""
+    lines = ["PICU Handoff Mapping Sync diagnostics", "App version: " + report.get("version", "6.66"),
+             "Checked: " + report.get("at", ""), "Mode: " + report.get("mode", ""),
+             "Read-only checks. No backup or archive writes were attempted.",
+             "A successful read does not confirm write permission or another app's code version.",
+             "Repository names and branches are included. Tokens, keys, medication names and patient content are excluded.", ""]
+    for record in report.get("repositories", []):
+        for name in ("App", "Data repository", "Branch", "Archive path", "Token source"):
+            lines.append(name + ": " + str(record.get(name, "")))
+        for check in record.get("checks", []):
+            lines.append(" | ".join(str(check.get(name, "")) for name in ("Step", "Result", "Code", "HTTP", "Detail", "Next step")))
+        lines.append("")
+    for check in report.get("comparison", []):
+        lines.append(" | ".join(str(check.get(name, "")) for name in ("Step", "Result", "Code", "HTTP", "Detail", "Next step")))
+    return "\n".join(lines)
+
+
+def render_diagnostics(report) -> None:
+    if not report:
+        return
+    st.subheader("Mapping Sync diagnostics")
+    st.caption(report["mode"] + " | " + report["at"] + " | Version " + report["version"])
+    st.caption("These checks are read-only. They do not create backups, save mappings or change patient records. Write permission is checked only during an approved save.")
+    rows = []
+    for record in report["repositories"]:
+        bad = next((check for check in record["checks"] if check["Result"] == "Failed"), None)
+        last = bad or (record["checks"][-1] if record["checks"] else {})
+        rows.append({"App": record["App"], "Data repository": record["Data repository"],
+                     "Result": "Failed" if bad else "Passed" if record["checks"] else "Not checked",
+                     "Step": last.get("Step", ""), "Code": last.get("Code", ""), "HTTP": last.get("HTTP", "")})
+    if rows:
+        st.dataframe(rows, hide_index=True, width="stretch")
+    for record in report["repositories"]:
+        errors = [check for check in record["checks"] if check["Result"] == "Failed"]
+        with st.expander(record["App"] + " - " + ("Action needed" if errors else "Checks passed"), expanded=bool(errors)):
+            st.caption("Data repository: " + record["Data repository"] + " | Branch: " + record["Branch"])
+            st.caption("Archive: " + record["Archive path"] + " | Token source: " + record["Token source"] + " (value hidden)")
+            for check in errors:
+                st.error(check["Step"] + ": " + check["Detail"])
+                st.write("Next step: " + check["Next step"])
+                st.caption("Code: " + check["Code"] + (" | HTTP " + check["HTTP"] if check["HTTP"] else ""))
+            st.dataframe(record["checks"], hide_index=True, width="stretch")
+    for check in report["comparison"]:
+        if check["Result"] == "Failed":
+            st.error(check["Step"] + ": " + check["Detail"])
+            st.write("Next step: " + check["Next step"])
+            st.caption("Code: " + check["Code"])
+    with st.expander("Copy diagnostic report", expanded=False):
+        st.caption("Contains repository names and branches, but no credentials or patient content. Review before sharing.")
+        st.code(diagnostic_text(report), language="text")
+    st.download_button("Download diagnostic report", data=diagnostic_text(report),
+                       file_name="mapping_sync_diagnostics.txt", mime="text/plain",
+                       key=PREFIX + "download_diagnostics")
 
 
 def _choices(preview, state) -> dict:
@@ -127,11 +242,12 @@ def approve_sync(store, require_admin: Callable[[], bool], reload_archive: Calla
             note("Synchronization stopped. Review the per-repository results below. Some repositories may already have been updated. Compare again before retrying.", "warning")
     except SyncError as exc:
         note(str(exc), "error")
-    except (StorageError, ValueError, TypeError, KeyError):
+    except Exception as exc:
+        error = safe_error(exc, "Approve mapping synchronization")
         if attempted:
             clear_preview(ss)
             reload_archive(store)
-        note("Synchronization was not confirmed. Reload and compare before retrying. Do not assume all repositories were updated.", "error")
+        note("Synchronization was not confirmed. " + error.step + ": " + error.detail + " " + error.action, "error")
 
 
 def _description(entry, value: dict, items: list[dict]) -> str:
@@ -160,8 +276,11 @@ def mapping_sync_admin(store, require_admin: Callable[[], bool], reload_archive:
             return
         try:
             repos = _repositories(store)
-        except (SyncError, StorageError, ValueError, KeyError, TypeError):
-            st.error("Check the mapping_sync section in deployment Secrets.")
+        except Exception as exc:
+            error = safe_error(exc, "Read Streamlit Secrets configuration")
+            st.error(error.step + ": " + error.detail)
+            st.write("Next step: " + error.action)
+            st.caption("Code: " + error.code)
             with st.expander("Setup example"):
                 st.code(SETUP, language="toml")
             return
@@ -171,13 +290,18 @@ def mapping_sync_admin(store, require_admin: Callable[[], bool], reload_archive:
             st.caption("All apps must use the same encryption key. Tokens stay in Secrets and need access to the selected private data repositories. Follow MAPPING_SYNC_SETUP.md in this update.")
             return
         st.dataframe([{"App": r.label, "Data repository": r.store.config.repository,
-                       "Branch": r.store.config.branch} for r in repos], hide_index=True, width="stretch")
+                       "Branch": r.store.config.branch,
+                       "Token source (value hidden)": getattr(r, "credential_source", "Existing GitHub token")}
+                      for r in repos], hide_index=True, width="stretch")
         st.caption("Archive path: encrypted-data/handoff-v1.enc. No folder scan or whole-folder copy is performed.")
         st.checkbox("Also merge hidden-medication preferences", value=False, key=PREFIX + "include_visibility",
                     help="Off by default. Each app keeps its own hide/show preferences unless you select this.")
+        st.button("Check connections (read only)", key=PREFIX + "diagnose", on_click=prepare_comparison,
+                  args=(store, require_admin, note, True))
         st.button("Compare mappings", key=PREFIX + "compare", on_click=prepare_comparison,
                   args=(store, require_admin, note))
         ss = st.session_state
+        render_diagnostics(ss.get(PREFIX + "diagnostics"))
         result = ss.get(PREFIX + "result")
         if result:
             st.caption("Last sync attempt in this session: " + result["at"])
@@ -235,7 +359,7 @@ def mapping_sync_admin(store, require_admin: Callable[[], bool], reload_archive:
             st.dataframe(overlaps, hide_index=True, width="stretch")
             st.caption("At most 100 combinations are shown. Exact/prefix and route/frequency filters stay distinct. Existing app precedence is retained.")
             st.checkbox("I reviewed the overlapping rules and their precedence.", key=PREFIX + "overlap_reviewed")
-        st.checkbox("All selected apps are updated to v6.65 or later, and I approve this mapping-only merge.", key=PREFIX + "confirm")
+        st.checkbox("All selected apps are updated to v6.66 or later, and I approve this mapping-only merge.", key=PREFIX + "confirm")
         st.caption("Before any mapping writes, encrypted mapping-only backups are created in each changed repository. If a save fails, later repositories are not written. The result table reports what completed.")
         st.button("Save merged mappings to all listed apps", type="primary", key=PREFIX + "save",
                   disabled=not ss.get(PREFIX + "confirm", False) or bool(overlaps and not ss.get(PREFIX + "overlap_reviewed", False)),

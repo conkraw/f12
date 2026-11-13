@@ -1,0 +1,23 @@
+PICU Handoff v6.65, based on PICU664.zip
+
+Changed application files:
+app.py
+categories.py
+medication_groups.py
+
+New application files (required):
+mapping_sync.py
+mapping_sync_ui.py
+
+Upload all five together, or upload the full application folder contents.
+Keep app.py at the root of the APP-CODE repository, not the encrypted DATA repo.
+Install v6.65 on all three apps before synchronizing. Restart Streamlit.
+The sidebar should show Version 6.65 | Mapping Sync.
+
+Keep all existing Secrets, passwords, encryption keys and saved archives.
+Append only the mapping_sync configuration from the provided example.
+Read MAPPING_SYNC_SETUP.md for the first setup and failure-handling behavior.
+
+No new dependency. Archive schema remains 34.
+Saved patient records are preserved separately in each destination repository.
+No live repositories have been modified by preparing this update.

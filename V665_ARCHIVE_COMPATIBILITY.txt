@@ -1,0 +1,23 @@
+PICU Handoff v6.65 archive compatibility
+
+Archive schema remains 34. Existing schema-34 patient archives remain valid.
+Normal app loading retains existing migration behavior for older archives.
+Mapping Sync itself refuses older or unknown schemas and does not migrate them.
+
+New built-in category: group:leukotriene_receptor_antagonist
+Section: Respiratory
+Label: Leukotriene receptor antagonist
+Older category catalogs expose the built-in without altering saved definitions.
+All 250 original category slots remain available, plus the three backfilled
+Epidural, Chemotherapy and Leukotriene receptor antagonist built-ins.
+
+Install v6.65 on every app before saving or synchronizing the new group mode.
+Older application validators may reject a new explicit medication-group value.
+
+Only allowlisted mapping fields are replaced during synchronization. Patient
+records, saved source medications, notes, room lists, diagnosis settings,
+reset-generation values and daily-list timestamps are preserved per repository.
+Hidden-medication preferences are preserved unless explicitly included.
+
+Mapping-only backups have their own format. They are not handoff archives.
+Do not replace the main encrypted archive with a mapping backup.

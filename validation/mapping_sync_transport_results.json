@@ -1,0 +1,29 @@
+[
+  {
+    "scenario": "success",
+    "passed": true,
+    "writes": [
+      1,
+      1,
+      1
+    ]
+  },
+  {
+    "scenario": "backup_denial",
+    "passed": true,
+    "writes": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "scenario": "concurrent_save",
+    "passed": true,
+    "writes": [
+      1,
+      0,
+      0
+    ]
+  }
+]

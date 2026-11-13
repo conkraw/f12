@@ -57,7 +57,10 @@ class FakeRepo:
             self.before_read(self)
         return deepcopy(self.value), self.sha
 
-    def snapshot(self, keys=MAPPING_KEYS):
+    def snapshot(self, keys=MAPPING_KEYS, checks=None):
+        if checks is not None:
+            from sync_diagnostics import passed
+            passed(checks, "Extract mapping-only snapshot", "Synthetic read passed.")
         return Snapshot(self.source, self.label, self.sha, mapping_bundle(self.value["settings"], keys))
 
     def backup(self, value, sha, keys):

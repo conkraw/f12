@@ -134,6 +134,7 @@ def equip(ui):
     st.expander = lambda *args, **kwargs: Context()
     st.container = lambda *args, **kwargs: Context()
     st.button = lambda *args, **kwargs: False
+    st.download_button = lambda *args, **kwargs: False
     def checkbox(label, value=False, key=None, **kwargs):
         st.session_state.setdefault(key, value)
         return st.session_state[key]
@@ -167,3 +168,86 @@ def test_changed_conflict_choice_clears_old_approval(ui):
     ui.reset_approval()
     assert not ui.st.session_state.get("mapping_sync_confirm")
     assert not ui.st.session_state.get("mapping_sync_overlap_reviewed")
+
+
+def test_diagnostics_continue_after_failure_and_report_safe_details(ui, monkeypatch):
+    from sync_diagnostics import DiagnosticError
+    repos = make_repos()
+    stub_config(ui, monkeypatch, repos)
+    attempts = []
+    original = repos[2].snapshot
+    def broken(keys, checks=None):
+        attempts.append('second')
+        raise DiagnosticError('DECRYPTION_FAILED', 'Decrypt archive')
+    def third(keys, checks=None):
+        attempts.append('third')
+        return original(keys, checks=checks)
+    repos[1].snapshot = broken
+    repos[2].snapshot = third
+    events = []
+    ui.prepare_comparison(None, lambda: True, lambda *args: events.append(args))
+    report = ui.st.session_state['mapping_sync_diagnostics']
+    assert len(report['repositories']) == 3
+    assert attempts == ['second', 'third']
+    assert 'mapping_sync_preview' not in ui.st.session_state
+    assert report['repositories'][1]['checks'][-1]['Code'] == 'DECRYPTION_FAILED'
+    assert report['repositories'][2]['checks'][-1]['Result'] == 'Passed'
+    assert not report['complete']
+    text = ui.diagnostic_text(report)
+    assert 'SYNTHETIC_PATIENT_PRIVATE' not in text
+    assert not any(repo.writes or repo.backups for repo in repos)
+    assert events[-1][1] == 'error'
+    equip(ui)
+    ui.render_diagnostics(report)
+    assert any('Decrypt archive' in str(args) for name, args in ui.st.rendered)
+
+
+def test_read_only_diagnostics_do_not_create_merge_preview(ui, monkeypatch):
+    repos = make_repos()
+    stub_config(ui, monkeypatch, repos)
+    events = []
+    ui.prepare_comparison(None, lambda: True, lambda *args: events.append(args), True)
+    assert ui.st.session_state['mapping_sync_diagnostics']['complete']
+    assert 'mapping_sync_preview' not in ui.st.session_state
+    assert not any(repo.writes or repo.backups for repo in repos)
+    assert 'Write permission has not been tested' in events[-1][0]
+
+
+def test_unknown_error_is_safe_and_no_stale_preview_can_be_saved(ui, monkeypatch):
+    repos = make_repos()
+    stub_config(ui, monkeypatch, repos)
+    preview(ui, repos)
+    def broken(keys, checks=None):
+        raise KeyError('SYNTHETIC_TOKEN_AND_PATIENT_MUST_NOT_LEAK')
+    repos[0].snapshot = broken
+    ui.prepare_comparison(None, lambda: True, lambda *args: None)
+    assert 'mapping_sync_preview' not in ui.st.session_state
+    report = ui.st.session_state['mapping_sync_diagnostics']
+    assert 'SYNTHETIC_TOKEN_AND_PATIENT' not in ui.diagnostic_text(report)
+    assert report['repositories'][0]['checks'][-1]['Code'] == 'UNEXPECTED_ERROR'
+
+
+def test_configuration_failure_is_visible_with_safe_field_detail(ui, monkeypatch):
+    from sync_diagnostics import DiagnosticError
+    def broken(store):
+        raise DiagnosticError('CONFIG_INVALID', 'Secrets: mapping_sync.repositories entry 2.repository',
+                              detail='Use owner/repository, not a URL.')
+    monkeypatch.setattr(ui, '_repositories', broken)
+    ui.prepare_comparison(None, lambda: True, lambda *args: None)
+    report = ui.st.session_state['mapping_sync_diagnostics']
+    assert 'entry 2.repository' in ui.diagnostic_text(report)
+    equip(ui)
+    ui.mapping_sync_admin(object(), lambda: True, lambda store: True, lambda *args: None)
+    assert any('entry 2.repository' in str(args) for name, args in ui.st.rendered)
+
+
+def test_admin_expiry_stops_remaining_network_checks(ui, monkeypatch):
+    repos = make_repos()
+    stub_config(ui, monkeypatch, repos)
+    checks = iter([True, True, False])
+    ui.prepare_comparison(None, lambda: next(checks, False), lambda *args: None)
+    report = ui.st.session_state['mapping_sync_diagnostics']
+    assert report['repositories'][0]['checks'][-1]['Result'] == 'Passed'
+    assert all(r['checks'][-1]['Code'] == 'ADMIN_EXPIRED' for r in report['repositories'][1:])
+    assert not report['complete']
+    assert 'mapping_sync_preview' not in ui.st.session_state

@@ -16,13 +16,17 @@ from feeds import feeds_text
 from diet import diet_text
 from medication_groups import group_for as special_group, GROUP_SECTIONS
 
-MODES = ("auto", "prophylaxis", "bowel", "diuretic", "antiemetic", "endocrine", "prokinetic", "tpn", "hypoglycemia", "other")
-MODE_LABELS = {"auto": "Automatic", "prophylaxis": "GI prophylaxis", "bowel": "Bowel Regimen", "diuretic": "Diuretics", "antiemetic": "Antiemetics", "endocrine": "Endocrine Medications", "prokinetic": "Prokinetic Agents", "tpn": "TPN", "hypoglycemia": "Hypoglycemia:", "other": "No GI grouping"}
-GROUP_NAMES = {"prophylaxis": "GI prophylaxis", "bowel": "Bowel Regimen", "diuretic": "Diuretics", "antiemetic": "Antiemetics", "endocrine": "Endocrine Medications", "prokinetic": "Prokinetic Agents", "tpn": "TPN", "hypoglycemia": "Hypoglycemia:"}
+MODES = ("auto", "prophylaxis", "bowel", "diuretic", "antiemetic", "endocrine", "prokinetic", "tpn", "hypoglycemia", "probiotic", "other")
+MODE_LABELS = {"auto": "Automatic", "prophylaxis": "GI prophylaxis", "bowel": "Bowel Regimen", "diuretic": "Diuretics", "antiemetic": "Antiemetics", "endocrine": "Endocrine Medications", "prokinetic": "Prokinetic Agents", "tpn": "TPN", "hypoglycemia": "Hypoglycemia:", "probiotic": "Probiotic", "other": "No GI grouping"}
+GROUP_NAMES = {"prophylaxis": "GI prophylaxis", "bowel": "Bowel Regimen", "diuretic": "Diuretics", "antiemetic": "Antiemetics", "endocrine": "Endocrine Medications", "prokinetic": "Prokinetic Agents", "tpn": "TPN", "hypoglycemia": "Hypoglycemia:", "probiotic": "Probiotic"}
 
 
 def automatic_group(row: dict) -> str:
     name = match_name(row.get("name", ""))
+    # Match the generic genus at the start of the product name.
+    # No probiotic indication or dose is inferred.
+    if re.match(r"^lactobacillus(?=$|[\s(,./])", name):
+        return "probiotic"
     # Only a documented 50% dextrose infusion. Do not catch D5/D10, a 50 mL
     # bag, another drug diluted in dextrose, or a one-time D50 rescue bolus.
     if (re.match(r"^dextrose\s+50(?:\.0+)?\s*%(?=$|[^a-z0-9])", name)
@@ -90,7 +94,7 @@ def validate_gi_rules(rules: list[dict]) -> None:
         for key in ("name", "route", "frequency"):
             if not isinstance(rule[key], str) or len(rule[key]) > 4000 or any(c in rule[key] for c in "\n\r\t"):
                 raise ValueError("A FEN/GI display rule contains invalid text.")
-        if not rule["name"] or rule["mode"] not in ("prophylaxis", "bowel", "diuretic", "antiemetic", "endocrine", "prokinetic", "tpn", "hypoglycemia", "other"):
+        if not rule["name"] or rule["mode"] not in ("prophylaxis", "bowel", "diuretic", "antiemetic", "endocrine", "prokinetic", "tpn", "hypoglycemia", "probiotic", "other"):
             raise ValueError("A FEN/GI display rule has an invalid choice.")
         key = (rule["name"], rule["route"], rule["frequency"])
         if key in seen:

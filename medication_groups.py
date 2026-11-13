@@ -17,11 +17,11 @@ RESP_GROUPS = ("airway_cerebral_steroid", "airway_tone", "antisialorrhea", "beta
                "pulmonary_hypertension", "allergy_immunology", "airway_vasoconstrictor",
                "leukotriene_receptor_antagonist")
 # These groups follow the bedside sedation/PRN/paralytic blocks alphabetically.
-NEURO_OTHER_GROUPS = ("antiepileptic", "antispasmodic",
+NEURO_OTHER_GROUPS = ("adh_analog", "antiepileptic", "antispasmodic",
                       "epidural", "fever", "insomnia", "neuromodulation")
 NEURO_PRIORITY_GROUPS = ("sedative_prn", "paralytic_infusion", "paralytic_prn")
 MODES = (("auto", "dvt", "fever", "sedative_prn", "paralytic_prn", "antiepileptic",
-          "insomnia", "antispasmodic", "neuromodulation", "epidural",
+          "insomnia", "antispasmodic", "neuromodulation", "epidural", "adh_analog",
           "paralytic_infusion") + RESP_GROUPS + CV_GROUPS + ID_GROUPS + ("antiplatelet", "gcsf", "chemotherapy", "other",))
 MODE_LABELS = {
     "auto": "Automatic", "dvt": "DVT Prophylaxis",
@@ -33,6 +33,7 @@ MODE_LABELS = {
     "insomnia": "Insomnia", "antispasmodic": "Antispasmodic",
     "neuromodulation": "Neuromodulation",
     "epidural": "Epidural",
+    "adh_analog": "ADH Analog",
     "beta_agonist": "Beta-Agonist", "anticholinergic": "Anticholinergic",
     "leukotriene_receptor_antagonist": "Leukotriene receptor antagonist",
     "methylxanthine": "Methylxanthine", "corticosteroid": "Corticosteroid",
@@ -103,6 +104,9 @@ def automatic_system_group(row: dict) -> str:
     name = match_name(row.get("name", ""))
     if is_bupivacaine(name):
         return "epidural"
+    # User-requested display placement, regardless of indication.
+    if _starts(name, ("desmopressin", "ddavp")):
+        return "adh_analog"
     if is_chemotherapy(name):
         return "chemotherapy"
     # Filgrastim is G-CSF, not GM-CSF. Match the generic and its biosimilar

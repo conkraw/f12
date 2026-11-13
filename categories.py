@@ -14,7 +14,8 @@ from medications import DESTINATIONS, OR_PREFIX, is_bupivacaine, match_name, nor
 SETTINGS_KEYS = {"medication_categories", "medication_category_rules"}
 CATEGORY_SYSTEMS = tuple(x for x in DESTINATIONS if x != "Labs")
 # These built-ins were introduced without changing the saved archive schema.
-BACKFILLED_BUILTIN_IDS = ("group:epidural", "group:chemotherapy", "group:leukotriene_receptor_antagonist")
+BACKFILLED_BUILTIN_IDS = ("group:epidural", "group:chemotherapy", "group:leukotriene_receptor_antagonist",
+                          "gi:probiotic", "group:adh_analog")
 
 
 def default_categories() -> list[dict]:

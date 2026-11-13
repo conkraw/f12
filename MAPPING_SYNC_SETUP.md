@@ -1,19 +1,31 @@
-# PICU Handoff 6.65: Mapping Sync
+# PICU Handoff 6.66: Mapping Sync
 
 ## Install the application update
 
 Upload the contents of this application folder to each of your three app-code
 repositories. Keep app.py at the repository root. Do not upload the application
 files into the private repositories that hold your encrypted patient archives.
-Restart each Streamlit app and confirm the sidebar says Version 6.65.
+Restart each Streamlit app and confirm the sidebar says Version 6.66.
 
 Keep your existing app password, Admin password, encryption key, GitHub storage
 settings, saved archive, custom categories and patient recall data. Do not run
 the original key-generation notebook again when installing an update.
 
-Install v6.65 on all three apps before merging. In particular, older app versions
-may not recognize a manually selected new montelukast medication-group value.
+Install v6.66 on all three apps before merging. In particular, older app versions
+may not recognize the new Probiotic or ADH Analog medication-group values.
 No archive-schema or dependency change is required for this release.
+
+## New diagnostic checks
+
+No new Secrets entries are needed when Mapping Sync is already configured.
+Keep using the web-based Streamlit Secrets editor. There is no local secrets
+file to create for your Community Cloud deployment.
+
+Open Admin > Mapping Sync > Check connections (read only). Each app gets a
+summary and detailed step results. Compare mappings runs the same checks.
+A failed check never creates backups or writes to any repository. It reports
+which repository and operation failed without displaying patient data or keys.
+See MAPPING_SYNC_DIAGNOSTICS.md for codes and suggested corrections.
 
 ## Connect the other two data repositories
 
@@ -140,6 +152,14 @@ group/category choices and hidden-order preferences still take priority, as in
 other ordinary automatic medication groups. A conflicting older explicit
 montelukast assignment can be changed in Admin to the new category.
 No dose, route, frequency, source order or clinical treatment is changed.
+
+## Lactobacillus and desmopressin
+
+Lactobacillus receives FEN / GI > Probiotic as an automatic display group.
+Desmopressin and DDAVP receive Neurology (the existing Neurologic section) >
+ADH Analog. The groups are available in Admin. Explicit existing category/group
+choices are retained, as are hidden orders and source medication details.
+No dose, indication or treatment change is inferred.
 
 ## Verification and limits
 

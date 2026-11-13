@@ -204,7 +204,7 @@ def test_existing_saved_order_is_grouped_once_in_all_exports_without_mutation():
 
 def legacy_settings(*, before_epidural=False, full=False):
     settings = new_vault()["settings"]
-    omitted = {"group:chemotherapy", "group:leukotriene_receptor_antagonist"}
+    omitted = {"group:chemotherapy", "group:leukotriene_receptor_antagonist", "gi:probiotic", "group:adh_analog"}
     if before_epidural:
         omitted.add("group:epidural")
     items = [item for item in default_categories() if item["id"] not in omitted]
@@ -246,12 +246,12 @@ def test_full_historical_catalog_preserves_every_slot_and_still_enforces_limit(b
     settings = legacy_settings(before_epidural=before_epidural, full=True)
     before = deepcopy(settings)
     expanded = catalog(settings)
-    assert len(expanded) == 253
+    assert len(expanded) == 255
     validate_settings(settings)
     assert expanded[:len(before["medication_categories"])] == before["medication_categories"]
     edited = save_category(settings, "Retained renamed", "Other Medications",
                            ident="custom:kept_0")
-    assert len(edited["medication_categories"]) == 253
+    assert len(edited["medication_categories"]) == 255
     with pytest.raises(ValueError, match="at most 250"):
         save_category(edited, "No remaining original slot", "Other Medications")
     assert settings == before
