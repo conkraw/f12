@@ -138,7 +138,8 @@ def test_stale_user_cannot_save_deleted_census_and_reload_removes_drafts(app):
     assert store.vault == remote and ss['drafts']
     app.reload_archive(store)
     assert not ss['drafts'] and ss['vault'] == remote
-    assert 'The shared handoffs were cleared.' in ss['notice'][1]
+    assert 'The patient list changed.' in ss['notice'][1]
+    assert 'older open drafts were discarded' in ss['notice'][1]
     app.save_all_rooms(store)
     assert store.vault == remote
 

@@ -1,0 +1,21 @@
+PICU Handoff 6.64, based on the latest PICU663.zip.
+
+METHB -> Methemoglobin in Cardiovascular: passed.
+O2SATV -> SvO2 in Cardiovascular: passed.
+Latest eligible result within the rolling 24-hour window: passed.
+Date-only cutoff, future times and daylight saving cases: passed.
+No stale lower laboratory or legacy G gas duplicate: passed.
+Stored source rows and clinician notes retained: passed.
+Encrypted archive roundtrip and single/batch exports: passed.
+Selected verification suite: 750 passed.
+Python syntax validation: all 61 application modules passed.
+Synthetic printed example: one page, rendered and visually checked.
+Dependency requirements and archive schema 34: unchanged.
+ZIP CRC and SHA256 file manifest: checked when packaging.
+
+Changed application files: app.py, lab_windows.py and clinical_style.py.
+Upload them together or use the complete application folder.
+Restart Streamlit and refresh the browser. Check Version 6.64 in the sidebar.
+Keep existing Secrets, encryption key, archive, mappings and custom categories.
+This package has not been deployed to the live application.
+See README.md and TEST_REPORT.md for behavior and verification scope.

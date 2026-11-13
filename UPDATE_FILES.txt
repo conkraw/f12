@@ -1,28 +1,23 @@
-Version 6.64, based on the latest PICU663.zip package
+PICU Handoff v6.65, based on PICU664.zip
 
 Changed application files:
 app.py
-lab_windows.py
-clinical_style.py
+categories.py
+medication_groups.py
 
-Replace all three together, or upload the complete application folder.
-Keep app.py at the repository root. Restart Streamlit and refresh the browser.
-The sidebar should show Version 6.64 | Methemoglobin and SvO2.
+New application files (required):
+mapping_sync.py
+mapping_sync_ui.py
 
-METHB appears as Methemoglobin in Cardiovascular.
-O2SATV appears as SvO2 in Cardiovascular.
-Each shows its latest included numeric result within the past 24 hours.
-Results retain their source value, units, flags and collection date/time.
-No eligible result means no automatic entry for that test.
+Upload all five together, or upload the full application folder contents.
+Keep app.py at the root of the APP-CODE repository, not the encrypted DATA repo.
+Install v6.65 on all three apps before synchronizing. Restart Streamlit.
+The sidebar should show Version 6.65 | Mapping Sync.
 
-Include both codes in the G laboratory block. Collection times allow results
-from yesterday to qualify. Date-only rows qualify only when the start of the
-recorded Eastern date is within 24 hours. Existing saved rows work immediately.
-Paste a new SmartPhrase to add rows that were not previously included.
+Keep all existing Secrets, passwords, encryption keys and saved archives.
+Append only the mapping_sync configuration from the provided example.
+Read MAPPING_SYNC_SETUP.md for the first setup and failure-handling behavior.
 
-Existing Secrets, encryption key, saved archive, medication mappings and
-custom notes remain compatible. No new dependency or setup step is needed.
-
-Other changes: README.md, SMARTPHRASE_TEMPLATE.txt, START_HERE.html,
-ARCHIVE_COMPATIBILITY.txt, TEST_REPORT.md, DELIVERY_VERIFICATION.txt and checksums.
-A synthetic preview and focused tests are included.
+No new dependency. Archive schema remains 34.
+Saved patient records are preserved separately in each destination repository.
+No live repositories have been modified by preparing this update.

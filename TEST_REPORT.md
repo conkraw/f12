@@ -1,71 +1,86 @@
-# PICU Handoff 6.64 verification
+# PICU Handoff v6.65: executed test report
 
-Base: the latest PICU663.zip package. This update adds METHB as Methemoglobin
-and O2SATV as SvO2 in Cardiovascular, using the latest eligible numeric result
-within the past 24 hours. All new test data and preview files are synthetic.
+Prepared November 13, 2026 from the user's available PICU664.zip source.
 
-## Verification result
+## Results
 
-750 tests passed across the new cardiovascular cases and the selected existing
-laboratory, blood-gas, source ordering, workflow, formatting and export tests.
-This includes 85 new cardiovascular tests. One existing AnyIO pytest-plugin
-deprecation warning was emitted. It did not affect test results.
+The complete application regression suite passed:
 
-The selected files were test_cv_24h_labs.py, test_windows_problem_review.py,
-test_recent_trough_workflow.py, test_latest_gas.py, test_lab_routing_placement.py,
-test_diet_lactate.py, test_labs_vitals_visibility.py,
-test_labels_colors_groups.py and test_batch_exports.py.
+    PYTHONPATH=.:tests python -m pytest -q --disable-warnings --maxfail=12
+    5319 passed, 14 subtests passed in 151.15s
 
-## New behavior checked
+After a final Admin widget-state cleanup, all 50 tests dedicated to the new
+mapping synchronization and montelukast features were rerun and passed:
 
-- Exact inclusion at 24 hours, exclusion just before the cutoff and exclusion
-  of future results.
-- Independent latest-result selection for each code, including shuffled rows,
-  incomplete times and source-order ties.
-- Conservative date-only selection based on the beginning of the Eastern date.
-- UTC elapsed-time comparison, 25-hour days, ambiguous fall-back times and
-  nonexistent spring clock times.
-- Exact code matching without substituting arterial or generic saturations.
-- Preservation of source units, decimal values, numeric zero and abnormal flags.
-- Omission of pending, canceled, hemolyzed, invalid, hidden and failed-import
-  results from the new automatic displays.
-- Removal of both G codes from lower laboratory and legacy G gas output,
-  including when the values have expired.
-- Existing P blood-gas specimen/column behavior remains independent.
-- Expiration after a saved handoff is re-rendered, without modifying raw rows
-  or clinician-entered notes.
-- Encrypted archive save/reload and actual text, HTML, single PDF and Print All
-  PDF rendering, with exactly one automatic entry for each new result.
+    PYTHONPATH=.:tests python -m pytest -q tests/test_mapping_sync.py tests/test_mapping_sync_ui.py tests/test_montelukast.py --disable-warnings
+    50 passed in 1.33s
 
-## Findings corrected during verification
+The final cleanup invalidates stale Admin mapping widgets after synchronization.
+It does not change stored patient data or patient draft widgets. The callback
+test explicitly checks this behavior and checks that unsaved drafts are retained.
 
-The shared numeric recognizer can interpret a single trailing word as a unit.
-A numeric-looking result such as 1.2 pending is now excluded for the two new
-cardiovascular codes by the existing status-word rejection rule. Other analytes
-retain their prior window and selection behavior.
+## New checks
 
-One older navigation test failed identically in the untouched 6.63 package.
-Its fixture did not select Continue saved handoffs before testing old-workspace
-migration. The test now makes that selection and retains its original assertions
-about workspace migration and preservation of the unsaved draft. Production
-navigation and daily-start behavior were not changed.
+The new tests cover unique-rule merging, identical-rule deduplication, explicit
+conflict choices, normalization, custom-category ID reconciliation, category
+references, input validation and optional hide/show preference synchronization.
 
-## Printed output
+Synthetic repositories test that each destination retains its own patient data,
+even when the same room identifier is used in all three. Current patient-only
+changes are preserved. Competing mapping changes abort the merge. Public
+repositories, unsupported schemas, incorrect keys, unsafe paths, invalid
+configuration, unreviewed plans and expired Admin approval are rejected.
 
-examples/cardiovascular_labs_preview.pdf was rendered and visually inspected.
-Both labels, values and dates fit in the Cardiovascular column on one landscape
-page. Original clinician notes remain below them. Older test values are omitted
-and neither result is repeated in the lower laboratory band. Matching HTML and
-plain-text previews are included.
+Backup tests decrypt the generated mapping-only backup and verify its scope and
+original mappings. Patient records and credentials are not included. A backup
+failure prevents subsequent mapping writes. Partial saves and unconfirmed
+outcomes are reported without a destructive cross-repository rollback.
 
-## Compatibility and limits
+UI tests use a Streamlit widget stub to exercise rendering, comparison, approval,
+conflict changes, overlap acknowledgement, preview expiry and authorization.
+No real browser session is represented by these tests.
 
-All 61 application Python modules passed syntax validation. requirements.txt,
-models.py, security.py, github_store.py, daily_start.py, census_guard.py,
-medications.py and chemotherapy.py match the original package byte for byte.
-The archive schema remains 34, with no new dependency or encryption key.
+Montelukast tests cover generic and Singulair names, boundary-safe matching,
+Respiratory placement, the new Leukotriene receptor antagonist subcategory,
+older saved category catalogs, hidden orders, explicit custom overrides and
+unchanged source medication details.
 
-The UI-related existing tests use simulated Streamlit widgets. A live browser
-session and the deployed application were not accessed. No new real-patient
-SmartPhrase was supplied for this change. The implementation was verified with
-synthetic component/value/date rows using the existing parser and export paths.
+## Existing test maintenance
+
+Existing category-capacity tests were adjusted for one additional built-in group.
+The original 250 category slots are preserved, with three backfilled built-ins
+instead of two. No existing custom category is removed to make room.
+
+Four stale tests failed in both the updated package and the untouched v6.64
+baseline. They expected an older reset notice or old medication display prefixes
+that v6.64 already removed. Only those assertions were corrected. The app's
+existing reset logic, source-order preservation and cleaned display behavior
+were not changed to satisfy those tests.
+
+## Packaging checks
+
+Every Python file in the final package was parsed successfully. The included TOML
+examples and Streamlit configuration were parsed successfully. Archive CRC and
+SHA-256 file-manifest checks passed. Python caches and temporary test outputs are
+excluded. No actual deployment Secrets or encrypted patient archive is included.
+The supplied examples and tests are synthetic development fixtures.
+
+Only app.py, categories.py and medication_groups.py changed among the existing
+application modules. mapping_sync.py and mapping_sync_ui.py are new. Existing
+models.py, security.py, github_store.py, reset handling and dependency versions
+remain unchanged. The archive schema remains version 34.
+
+## Verification limits
+
+No live GitHub repository was read or changed. The package has not been deployed
+to the user's three applications. Tests use synthetic encrypted archives and
+mocked GitHub responses, not real patient records or production credentials.
+Streamlit was not available in this execution environment, so live browser
+interaction and deployment compatibility still need to be checked in the user's
+deployment. Existing PDF export tests ran, but this release does not claim a new
+manual visual review of every PDF layout.
+
+Install v6.65 in all three apps before synchronization. Configure approved private
+data repositories and tokens in deployment Secrets, retain the existing shared
+key, compare the mappings, review conflicts, then explicitly approve the merge.
+The setup instructions are in MAPPING_SYNC_SETUP.md.

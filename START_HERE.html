@@ -1,32 +1,9 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8">
-<title>PICU Handoff 6.64</title><style>body{max-width:850px;margin:40px auto;padding:0 20px;font:17px/1.6 system-ui;color:#172c3d}code{background:#f1f5f7;padding:2px 6px}h1,h2{line-height:1.2}</style></head>
-<body><h1>PICU Handoff 6.64</h1>
-<h2>Methemoglobin and SvO2</h2>
-<p>The latest eligible METHB result appears as Methemoglobin, and O2SATV appears as SvO2, in Cardiovascular. Both use a rolling 24-hour cutoff and show the source date and time. Older values are omitted from the automatic handoff display.</p>
-<p>Include both codes in the G laboratory block. Collection times are needed to use results from yesterday. A date-only row qualifies only when the beginning of that Eastern date is within 24 hours, which normally means today's date. Source values, units and flags are retained.</p>
-<p>Replace <code>app.py</code>, <code>lab_windows.py</code> and <code>clinical_style.py</code> together, or upload the complete application folder. Restart Streamlit and refresh the browser. The sidebar should show Version 6.64.</p>
-<p>Existing saved rows work immediately. Paste a fresh SmartPhrase to add missing results. The cutoff is checked again when the handoff is opened, refreshed or exported. See <a href="examples/cardiovascular_labs_preview.pdf">the synthetic printed example</a>.</p>
-<h2>Chemotherapy and clean medication labels</h2>
-<p>Recognized chemotherapy drugs now appear under Hematology &gt; Chemotherapy. Dexamethasone is excluded from this new rule. Existing explicit group and category choices remain available.</p>
-<p>Leading And:, Or: and [START ON ...] annotations are hidden in the displayed medication name. Stored orders, doses, routes, frequencies and scheduling data stay intact. Held and discontinued labels remain visible.</p>
-<p>The latest supplied SmartPhrase imports all 35 medication orders. See <a href="CHEMOTHERAPY_REFERENCE.md">the supported chemotherapy names</a> and <a href="examples/chemotherapy_clean_labels_preview.pdf">the synthetic printed example</a>.</p>
-<h2>Choose how to start after sign-in</h2>
-<p><strong>Start new patient list</strong> shows a review of the rooms to remove and keep. Confirm to remove older handoffs and today's handoffs last saved from 5:00 AM through 8:30 AM Eastern, then enter your patients.</p>
-<p><strong>Continue saved handoffs</strong> keeps the existing list so you can print processed handoffs, update patients or add patients. Signing in and choosing Continue do not delete anything.</p>
-<p>Today's handoffs saved outside the morning window stay. Missing, invalid or future save times are kept for review. After the first successful start, later sign-ins keep that day's list and cannot repeat the daily cleanup.</p>
-<p>Cleared handoffs include their difficult-airway details. The keep-airway reset option and airway Keep/Delete pop-up are removed. The normal airway editor remains.</p>
-<p>The complete folder includes <code>chemotherapy.py</code> and the related formatting changes from the previous release.</p><h2>Included features</h2><ul>
-<li>Medication imports recognize Or, And and Followed by. Linked alternatives retain their source order within a category.</li>
-<li>TMax remains regular text in the preview and PDF.</li>
-<li>MRSA Screen: appears in demographics, with a bold label and the newest supplied result across MRSADNA and MRSANPADM, selected by the laboratory collection date and time.</li>
-<li>Bupivacaine orders appear once under Neuro &gt; Epidural, preserving their documented dose, route and rate.</li>
-<li>Hypernatremia appears in Problems when the latest usable blood sodium is above 145.</li>
-<li>Vascular lines keep their insertion date and gain the current Day number. Insertion is Day 1, using Eastern calendar dates.</li>
-</ul>
-<h2>Install</h2><p>Upload this folder's contents to your existing code repository, keeping <code>app.py</code> at the root. Include <code>chemotherapy.py</code>, <code>daily_start.py</code>, <code>census_guard.py</code> and all earlier modules. Restart the app and refresh your browser.</p>
-<p>Keep your existing Streamlit Secrets, passwords, encryption key, mappings, custom categories, BMI reference data and shared archive. Do not rerun setup generators. No new dependencies or archive-schema changes are needed.</p>
-<p>Save-before-Print-All, per-room saved timestamps and conflict checks remain in place. PDF downloads check for a shared patient-list reset before releasing a new file.</p>
-<h2>Source data and printing</h2><p>MRSADNA and MRSANPADM are read from the G laboratory block. Each result needs its laboratory collection date. The newest result across both codes is shown. Existing saved results, orders and line dates gain the new displays immediately. Paste a fresh SmartPhrase to add data that was not previously included.</p>
-<p>The preview and new downloads calculate current line days. Previously downloaded PDFs remain fixed snapshots.</p>
-<p>See <a href="README.md">README.md</a> for details and <a href="examples/mrsa_epidural_sodium_line_days_preview.pdf">the synthetic example</a> for the printed layout.</p>
-</body></html>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>PICU Handoff 6.65</title>
+<style>body{max-width:850px;margin:40px auto;padding:0 20px;font:17px/1.6 system-ui;color:#172c3d}code{background:#f1f5f7;padding:2px 6px}h1,h2{line-height:1.2}</style></head>
+<body><h1>PICU Handoff 6.65</h1><p>Mapping Sync and the montelukast respiratory group.</p>
+<h2>Update each application</h2><p>Upload this folder's contents to each app-code repository, keeping <code>app.py</code> at its root. Restart Streamlit and confirm Version 6.65. Keep all existing passwords, Secrets, encryption keys and patient archives.</p>
+<h2>Connect your mapping repositories</h2><p>Read <code>MAPPING_SYNC_SETUP.md</code>. Append the two other private data repositories to your existing Streamlit Secrets using <code>MAPPING_SYNC_SECRETS.example.toml</code>. Your current data repository is included automatically.</p>
+<h2>Review before saving</h2><p>Open Admin, unlock it, and expand Mapping Sync. Compare the saved mappings, resolve conflicts, inspect the proposed rules, and approve the merge. There is no automatic synchronization.</p>
+<p>Patient records and mappings share one encrypted archive. Only mapping settings are synchronized. Each destination retains its own patient data. Encrypted mapping backups are created before mapping writes. A partial failure is reported per repository without a whole-archive rollback.</p>
+<h2>Montelukast</h2><p>The new automatic category is Respiratory &gt; Leukotriene receptor antagonist. Explicit custom assignments remain available. No medication dose or source value changes.</p>
+<p>See <code>TEST_REPORT.md</code> for verification. This package has not been deployed to your live apps.</p></body></html>

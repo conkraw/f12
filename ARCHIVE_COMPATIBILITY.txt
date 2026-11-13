@@ -1,16 +1,23 @@
-Version 6.64 accepts the same schema-34 archives as 6.63.
+PICU Handoff v6.65 archive compatibility
 
-No clinical data field, archive schema, dependency or encryption format changes.
-Source laboratory rows already store the exact component, value, date and
-inclusion setting needed for METHB and O2SATV. Both displays are derived when
-rendering. Existing saved rows work without a migration or another paste.
+Archive schema remains 34. Existing schema-34 patient archives remain valid.
+Normal app loading retains existing migration behavior for older archives.
+Mapping Sync itself refuses older or unknown schemas and does not migrate them.
 
-Neither raw laboratory rows nor clinician-entered notes are rewritten by the
-new display. Old results stay available in the laboratory editor but disappear
-from the automatic Cardiovascular display after the cutoff. New exports
-recalculate the window. Previously downloaded PDFs and HTML are snapshots.
+New built-in category: group:leukotriene_receptor_antagonist
+Section: Respiratory
+Label: Leukotriene receptor antagonist
+Older category catalogs expose the built-in without altering saved definitions.
+All 250 original category slots remain available, plus the three backfilled
+Epidural, Chemotherapy and Leukotriene receptor antagonist built-ins.
 
-The prior chemotherapy categories, clean medication labels, daily-start marker,
-shared archive conflict checks and reset guards are included unchanged.
-Keep existing Streamlit Secrets, encryption key, shared archive and mappings.
-No setup generator or new key is needed.
+Install v6.65 on every app before saving or synchronizing the new group mode.
+Older application validators may reject a new explicit medication-group value.
+
+Only allowlisted mapping fields are replaced during synchronization. Patient
+records, saved source medications, notes, room lists, diagnosis settings,
+reset-generation values and daily-list timestamps are preserved per repository.
+Hidden-medication preferences are preserved unless explicitly included.
+
+Mapping-only backups have their own format. They are not handoff archives.
+Do not replace the main encrypted archive with a mapping backup.

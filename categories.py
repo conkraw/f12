@@ -14,7 +14,7 @@ from medications import DESTINATIONS, OR_PREFIX, is_bupivacaine, match_name, nor
 SETTINGS_KEYS = {"medication_categories", "medication_category_rules"}
 CATEGORY_SYSTEMS = tuple(x for x in DESTINATIONS if x != "Labs")
 # These built-ins were introduced without changing the saved archive schema.
-BACKFILLED_BUILTIN_IDS = ("group:epidural", "group:chemotherapy")
+BACKFILLED_BUILTIN_IDS = ("group:epidural", "group:chemotherapy", "group:leukotriene_receptor_antagonist")
 
 
 def default_categories() -> list[dict]:
@@ -107,7 +107,7 @@ def validate_catalog(items: list[dict]) -> None:
         for ident in BACKFILLED_BUILTIN_IDS
     ) if isinstance(items, list) else 0
     if not isinstance(items, list) or len(items) > 250 + extra_builtin:
-        raise ValueError("Use at most 250 medication categories and subcategories, plus the Epidural and Chemotherapy built-ins.")
+        raise ValueError("Use at most 250 medication categories and subcategories, plus the backfilled built-in categories.")
     ids, labels = {}, set()
     for item in items:
         if not isinstance(item, dict) or set(item) != {"id", "name", "section", "parent", "order"}:

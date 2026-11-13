@@ -1,21 +1,28 @@
-PICU Handoff 6.64, based on the latest PICU663.zip.
+PICU HANDOFF v6.65
+Prepared November 13, 2026
 
-METHB -> Methemoglobin in Cardiovascular: passed.
-O2SATV -> SvO2 in Cardiovascular: passed.
-Latest eligible result within the rolling 24-hour window: passed.
-Date-only cutoff, future times and daylight saving cases: passed.
-No stale lower laboratory or legacy G gas duplicate: passed.
-Stored source rows and clinician notes retained: passed.
-Encrypted archive roundtrip and single/batch exports: passed.
-Selected verification suite: 750 passed.
-Python syntax validation: all 61 application modules passed.
-Synthetic printed example: one page, rendered and visually checked.
-Dependency requirements and archive schema 34: unchanged.
-ZIP CRC and SHA256 file manifest: checked when packaging.
+Base: the user's latest available PICU664.zip application package.
+Output: PICU665.zip, containing one complete application folder.
 
-Changed application files: app.py, lab_windows.py and clinical_style.py.
-Upload them together or use the complete application folder.
-Restart Streamlit and refresh the browser. Check Version 6.64 in the sidebar.
-Keep existing Secrets, encryption key, archive, mappings and custom categories.
-This package has not been deployed to the live application.
-See README.md and TEST_REPORT.md for behavior and verification scope.
+Changes:
+- Admin Mapping Sync with review, explicit conflict resolution and optional
+  hide/show synchronization across configured private data repositories.
+- Encrypted mapping-only backups, SHA-guarded saves and partial-outcome reporting.
+- Destination-specific patient recall data retained without cross-repository copy.
+- Respiratory > Leukotriene receptor antagonist for montelukast and Singulair.
+
+Validation:
+- Full regression suite: 5319 passed and 14 subtests passed.
+- Final new-feature rerun after Admin widget cleanup: 50 passed.
+- Python syntax, TOML examples, ZIP integrity and manifest verified.
+- No actual Secrets, credentials or encrypted patient archives included.
+
+Deployment:
+Upload this application's contents to each APP-CODE repository, keeping app.py
+at its root. Do not upload the application into a patient-data repository.
+Keep all existing deployment Secrets and the existing encryption key.
+Follow MAPPING_SYNC_SETUP.md to add the other two private DATA repositories to
+Secrets in the app that will run synchronization. No live deployment or repository
+synchronization has been performed while preparing this package.
+
+See TEST_REPORT.md for the complete test scope and limitations.

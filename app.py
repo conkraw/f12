@@ -1,4 +1,4 @@
-"""PICU SmartPhrase v6.64: recent methemoglobin and SvO2 in Cardiovascular."""
+"""PICU SmartPhrase v6.65: mapping-only sync and montelukast grouping."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,
@@ -1735,7 +1735,7 @@ def main() -> None:
         return
     with st.sidebar:
         st.header("PICU Handoff")
-        st.caption("Version 6.64 | Methemoglobin and SvO2")
+        st.caption("Version 6.65 | Mapping Sync")
         # Retire the old instructions workspace without discarding room drafts.
         if st.session_state.get("page") == "Instructions / SmartPhrase":
             st.session_state["page"] = "Handoff"
@@ -2537,6 +2537,8 @@ def admin_page(store: GitHubVault | None) -> None:
     st.caption("Admin locks when you leave this workspace, after 15 minutes without Admin activity, or after one hour. Routine handoffs remain available.")
     reset_handoffs_admin(store)
     guide_admin(store)
+    from mapping_sync_ui import mapping_sync_admin
+    mapping_sync_admin(store, require_admin, reload_archive, note)
     category_admin(store, require_admin, commit, reapply_open_mappings, note)
     with st.expander("Existing mapping and display settings", expanded=False):
         st.caption("A category assignment above takes priority over these earlier routing controls. Hidden-medication choices still apply.")

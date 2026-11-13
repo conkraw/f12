@@ -189,8 +189,11 @@ def test_filgrastim_defaults_to_one_hematology_destination(name):
     assert where['section'] == 'Hematology' and where['name'] == 'G-CSF Stimulator'
     s = new_sheet('P4102'); s['medications'] = assigned
     fields = fields_with_medications(s)
-    assert fields['Hematology'].count(name) == 1
-    assert name not in fields['Other Medications']
+    expected_name = name.removeprefix('[START ON 11/10/2026] ')
+    assert fields['Hematology'].count(expected_name) == 1
+    assert '[START ON' not in fields['Hematology']
+    assert expected_name not in fields['Other Medications']
+    assert assigned[0]['name'] == name
 
 @pytest.mark.parametrize('name', ['pegfilgrastim injection', 'sargramostim injection', 'filgrastimxyz', 'Example drug with filgrastim'])
 def test_unrequested_growth_factors_or_embedded_names_not_automapped(name):

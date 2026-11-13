@@ -1,0 +1,15 @@
+Implementation references checked November 13, 2026
+
+GitHub REST API: repository contents, required file SHA for updates, private-repository permissions, and conflict responses.
+https://docs.github.com/en/rest/repos/contents
+
+Streamlit Session State: per-session state and callback order.
+https://docs.streamlit.io/develop/api-reference/caching-and-state/st.session_state
+
+Cryptography Fernet: authenticated symmetric encryption and key handling.
+https://cryptography.io/en/latest/fernet/
+
+DailyMed: Montelukast is a leukotriene receptor antagonist.
+https://www.dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=583a9499-97f0-2ebf-e063-6394a90a35af
+
+These sources describe the APIs and drug class. They do not verify a live deployment or establish institutional approval for a clinical-data environment.

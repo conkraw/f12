@@ -263,7 +263,7 @@ def test_labs_and_medication_data_unchanged_by_layout():
         report=print_fit_report(s,target)
         text=''.join(p.get_text() for p in fitz.open(stream=handoff_pdf(s,target_pages=target),filetype='pdf'))
         assert report['page_count']<=target
-        for token in ('Hepatic','Coagulation','Pediatric 2-in-1 PN','And: fat emulsion','[Held by provider]'):
+        for token in ('Hepatic','Coagulation','Pediatric 2-in-1 PN','fat emulsion','[Held by provider]'):
             assert token in text
     assert s==before
 

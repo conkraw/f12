@@ -157,9 +157,11 @@ def test_tpn_defaults_single_location_and_infusion_emphasis(name):
     s=new_sheet('P4102');s['medications']=[row];before=deepcopy(s)
     f=fields_with_medications(s)
     assert placement(row)['name']=='TPN' and effective_section(row)=='FEN / GI'
-    assert f['FEN / GI'].count(name)==1 and name not in f['Other Medications']
+    expected_name = name.removeprefix('[START ON 11/10/2026] ')
+    assert f['FEN / GI'].count(expected_name)==1 and expected_name not in f['Other Medications']
+    assert '[START ON' not in f['FEN / GI']
     assert '<b>TPN</b>' in handoff_html(s,NOW)
-    assert '<b>'+name.replace('&','&amp;')+'</b>' in handoff_html(s,NOW)
+    assert '<b>'+expected_name.replace('&','&amp;')+'</b>' in handoff_html(s,NOW)
     assert s==before
 
 @pytest.mark.parametrize('name', ['aspirin chewable tablet 40.5 mg','cangrelor (Kengreal) infusion','[Held by provider] aspirin tablet 81 mg'])

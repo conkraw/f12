@@ -1,0 +1,16 @@
+Version 6.64 accepts the same schema-34 archives as 6.63.
+
+No clinical data field, archive schema, dependency or encryption format changes.
+Source laboratory rows already store the exact component, value, date and
+inclusion setting needed for METHB and O2SATV. Both displays are derived when
+rendering. Existing saved rows work without a migration or another paste.
+
+Neither raw laboratory rows nor clinician-entered notes are rewritten by the
+new display. Old results stay available in the laboratory editor but disappear
+from the automatic Cardiovascular display after the cutoff. New exports
+recalculate the window. Previously downloaded PDFs and HTML are snapshots.
+
+The prior chemotherapy categories, clean medication labels, daily-start marker,
+shared archive conflict checks and reset guards are included unchanged.
+Keep existing Streamlit Secrets, encryption key, shared archive and mappings.
+No setup generator or new key is needed.

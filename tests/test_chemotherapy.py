@@ -204,7 +204,7 @@ def test_existing_saved_order_is_grouped_once_in_all_exports_without_mutation():
 
 def legacy_settings(*, before_epidural=False, full=False):
     settings = new_vault()["settings"]
-    omitted = {"group:chemotherapy"}
+    omitted = {"group:chemotherapy", "group:leukotriene_receptor_antagonist"}
     if before_epidural:
         omitted.add("group:epidural")
     items = [item for item in default_categories() if item["id"] not in omitted]
@@ -231,7 +231,7 @@ def test_schema34_saved_catalog_and_name_collisions_expand_without_mutation():
     expanded = catalog(vault["settings"])
     chemo = next(item for item in expanded if item["id"] == "group:chemotherapy")
     assert chemo["name"] == "Chemotherapy (default 2)"
-    assert expanded[:-1] == before["settings"]["medication_categories"]
+    assert expanded[:len(before["settings"]["medication_categories"])] == before["settings"]["medication_categories"]
     mapped = apply_category_rules(sheet["medications"], vault["settings"])[0]
     assert placement(mapped)["id"] == "group:chemotherapy"
     assert placement(mapped)["name"] == "Chemotherapy (default 2)"
@@ -246,12 +246,12 @@ def test_full_historical_catalog_preserves_every_slot_and_still_enforces_limit(b
     settings = legacy_settings(before_epidural=before_epidural, full=True)
     before = deepcopy(settings)
     expanded = catalog(settings)
-    assert len(expanded) == 252
+    assert len(expanded) == 253
     validate_settings(settings)
     assert expanded[:len(before["medication_categories"])] == before["medication_categories"]
     edited = save_category(settings, "Retained renamed", "Other Medications",
                            ident="custom:kept_0")
-    assert len(edited["medication_categories"]) == 252
+    assert len(edited["medication_categories"]) == 253
     with pytest.raises(ValueError, match="at most 250"):
         save_category(edited, "No remaining original slot", "Other Medications")
     assert settings == before

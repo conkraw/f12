@@ -14,7 +14,8 @@ HEME_GROUPS = ("dvt", "antiplatelet", "gcsf", "chemotherapy")
 CV_GROUPS = ("antiarrhythmic", "antihypertensive", "inotrope", "vasopressor", "adrenocortical", "vasodilator")
 RESP_GROUPS = ("airway_cerebral_steroid", "airway_tone", "antisialorrhea", "beta_agonist",
                "anticholinergic", "methylxanthine", "corticosteroid", "inhaled_corticosteroid",
-               "pulmonary_hypertension", "allergy_immunology", "airway_vasoconstrictor")
+               "pulmonary_hypertension", "allergy_immunology", "airway_vasoconstrictor",
+               "leukotriene_receptor_antagonist")
 # These groups follow the bedside sedation/PRN/paralytic blocks alphabetically.
 NEURO_OTHER_GROUPS = ("antiepileptic", "antispasmodic",
                       "epidural", "fever", "insomnia", "neuromodulation")
@@ -33,6 +34,7 @@ MODE_LABELS = {
     "neuromodulation": "Neuromodulation",
     "epidural": "Epidural",
     "beta_agonist": "Beta-Agonist", "anticholinergic": "Anticholinergic",
+    "leukotriene_receptor_antagonist": "Leukotriene receptor antagonist",
     "methylxanthine": "Methylxanthine", "corticosteroid": "Corticosteroid",
     "inhaled_corticosteroid": "Inhaled Corticosteroids", "airway_tone": "Airway Tone Modulator",
     "pulmonary_hypertension": "Pulmonary Hypertension",
@@ -145,6 +147,8 @@ def automatic_system_group(row: dict) -> str:
                           "inhalation", "inhaled", "respiratory (inhalation)"}
         nonairway_form = bool(re.search(r"\b(?:injection|injectable|infusion|autoinjector|auto-injector)\b", name))
         return "airway_vasoconstrictor" if (not route or route in inhaled_routes) and not nonairway_form else ""
+    if _starts(name, ("montelukast", "singulair")):
+        return "leukotriene_receptor_antagonist"
     if _starts(name, ("albuterol",)):
         return "beta_agonist"
     if _starts(name, ("ipratropium", "ipratroppium")):
