@@ -1,28 +1,28 @@
-PICU Handoff v6.66, based on the supplied PICU665.zip
+PICU Handoff v6.67 update from v6.66
 
-Changed existing application files:
-app.py
-categories.py
-fen_gi.py
-github_store.py
-mapping_sync.py
-mapping_sync_ui.py
-medication_groups.py
+This is the complete application, not a patch-only ZIP.
 
-New application file required:
-sync_diagnostics.py
+Changed application files (copy all six together):
+  app.py
+  arterial_pressure.py  [NEW]
+  clinical_style.py
+  fen_gi.py
+  fluid_balance.py
+  vitals.py
 
-Upload these together, or use the complete application folder. Keep app.py at
-its existing deployed location in the APP-CODE repository. Do not upload this
-application into a DATA repository or replace its encrypted archive.
+New synthetic test files:
+  tests/test_arterial_pressure.py
+  tests/test_io_hour_window.py
 
-Install on all three apps before merging the new medication groups.
-Keep every existing web-based Streamlit Secret, password and encryption key.
-No additional Secrets fields and no dependency changes are required.
-Restart and confirm Version 6.66 | Mapping Sync diagnostics.
+Updated existing test expectations:
+  tests/test_fen_gi.py
+  tests/test_labels_colors_groups.py
+  Only the expected I/O heading now includes the source hour.
 
-Then open Admin > Mapping Sync > Check connections (read only).
-Use Download diagnostic report if a check fails.
+Release notes, setup entry page, verification reports and checksums are updated.
+The previous release's root documentation is retained with a V666_ prefix.
 
-The archive path and schema remain unchanged. Patient recall data is not
-copied across repositories. No live deployment was changed during preparation.
+Upload application files to APP-CODE repositories only. Keep app.py at its
+existing deployed location and include the new arterial_pressure.py.
+Do not replace any encrypted data archive. Keep all existing Streamlit Secrets.
+No new dependency or Secrets field is required. Restart and confirm v6.67.

@@ -1,0 +1,23 @@
+PICU Handoff v6.66 archive compatibility
+
+Archive schema: 34, unchanged.
+Archive path: encrypted-data/handoff-v1.enc, unchanged.
+Encryption key: keep the existing original key. Do not generate a new key.
+
+models.py and security.py are unchanged from PICU665.zip.
+The two new built-in display categories are backfilled in the effective
+catalog without mutating the saved archive during load or diagnostics.
+The original 250 category slots are retained, with five reserved backfilled
+built-ins. Historical capacity tests have been updated accordingly.
+
+Probiotic and ADH Analog are new supported medication-group choices.
+Update all three apps to v6.66 before synchronizing those mapping values.
+Older app code may reject a newly selected group value even though the
+archive schema number has not changed.
+
+Read-only checks and comparison do not migrate, repair or save archives.
+Each approved mapping merge starts with that destination's latest archive,
+changes only the mapping allowlist, and uses its current GitHub SHA.
+Patient records, room lists, reset markers and other destination settings
+remain those of that destination. Conflict review and encrypted mapping-only
+backups remain required. Cross-repository writes are not atomic.

@@ -25,7 +25,7 @@ LABEL = re.compile(
     r"ICP(?: Mean)?(?: \(mmHg\))?|CPP|Resp(?:iratory Rate)?|RR|"
     r"FiO2(?:[ \t]*\(%\))?|SpO2|Pulse Ox(?:imetry)?|"
     r"ETCO2(?:[ \t]*\(mmHg\))?|VP|Heart Rate|HR|Pulse(?: rate)?|BP|"
-    r"Blood pressure|Systolic|Diastolic|SBP|DBP|MAP(?: \(mmHg\))?|"
+    r"Blood pressure|Cuff|(?:Last )?ART (?:BP|MAP)|Systolic|Diastolic|SBP|DBP|MAP(?: \(mmHg\))?|"
     r"Mean arterial pressure|ABP|Arterial(?: line)?(?: BP| pressure| blood pressure)?(?: \(mmHg\))?|"
     r"Central venous pressure(?: \(mean\))?|PAP|Pulmonary artery pressure|"
     r"Respirations|SaO2|Oxygen saturation|O2 saturation|T min|"

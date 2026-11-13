@@ -11,7 +11,7 @@ import re
 from medications import is_bupivacaine, match_name, normalized, visible, format_medication
 from output_text import medication_output
 from clinical_style import clinical_markup
-from fluid_balance import balance_text
+from fluid_balance import balance_text, balance_heading
 from feeds import feeds_text
 from diet import diet_text
 from medication_groups import group_for as special_group, GROUP_SECTIONS
@@ -136,7 +136,8 @@ def fen_gi_body(notes: str, rows: list[dict], intake_output: dict | None, rich: 
     sections = []
     totals = balance_text(intake_output, dosing_weight)
     if totals:
-        sections.append(("<b>Intake/Output:</b>\n" + clinical_markup(totals, esc)) if rich else "Intake/Output:\n" + totals)
+        heading = balance_heading(intake_output) + ":"
+        sections.append(("<b>" + esc(heading) + "</b>\n" + clinical_markup(totals, esc)) if rich else heading + "\n" + totals)
     diet_summary = diet_text(diet, rich, esc)
     if diet_failed:
         diet_summary = ("<b>Diet:</b>" if rich else "Diet:") + " Not updated. Review needed."

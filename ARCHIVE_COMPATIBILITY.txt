@@ -1,23 +1,14 @@
-PICU Handoff v6.66 archive compatibility
+PICU Handoff v6.67 archive compatibility
 
-Archive schema: 34, unchanged.
-Archive path: encrypted-data/handoff-v1.enc, unchanged.
-Encryption key: keep the existing original key. Do not generate a new key.
+Schema remains 34. Patient vital and intake/output record shapes are unchanged.
+The existing as_of field supplies the source hour for display. Exact timestamps
+are retained. Older first-colon-split arterial vital rows are interpreted only
+for presentation, without altering their stored values.
 
-models.py and security.py are unchanged from PICU665.zip.
-The two new built-in display categories are backfilled in the effective
-catalog without mutating the saved archive during load or diagnostics.
-The original 250 category slots are retained, with five reserved backfilled
-built-ins. Historical capacity tests have been updated accordingly.
+models.py, security.py, github_store.py, mapping_sync.py, mapping_sync_ui.py,
+sync_diagnostics.py and requirements.txt match the supplied v6.66 package.
+The encryption method, encryption key, archive path and Mapping Sync procedure
+are not changed. No migration or additional Streamlit Secrets are needed.
 
-Probiotic and ADH Analog are new supported medication-group choices.
-Update all three apps to v6.66 before synchronizing those mapping values.
-Older app code may reject a newly selected group value even though the
-archive schema number has not changed.
-
-Read-only checks and comparison do not migrate, repair or save archives.
-Each approved mapping merge starts with that destination's latest archive,
-changes only the mapping allowlist, and uses its current GitHub SHA.
-Patient records, room lists, reset markers and other destination settings
-remain those of that destination. Conflict review and encrypted mapping-only
-backups remain required. Cross-repository writes are not atomic.
+All three app-code repositories can use this package with their existing,
+separate data repositories. No patient recall data is copied between them.

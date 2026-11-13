@@ -1,6 +1,7 @@
 """S-block fluid totals copied verbatim, with no net calculation or H fallback."""
 from __future__ import annotations
 from dataclasses import dataclass, field
+from datetime import datetime
 import re
 
 FIELDS = ("intake", "output", "net")
@@ -132,3 +133,40 @@ def balance_text(data: dict | None, dosing_weight: str = "") -> str:
     if kg:
         rows.append("Using dosing weight: " + dosing_weight)
     return "\n".join(rows)
+
+
+def balance_heading(data: dict | None) -> str:
+    """Label a documented 24-hour snapshot by its source hour, not reprint time.
+
+    Minute precision remains in as_of. Only the displayed hour is abbreviated.
+    Missing/invalid timestamps and non-24-hour periods keep the generic title.
+    Last-filed time is not the reporting cutoff and is never a fallback.
+    """
+    validate_balance(data)
+    title = "Intake/Output"
+    if data is None or not re.fullmatch(r"(?:last|past)?\s*24\s*(?:hours?|hrs?|h)", data["period"].strip(), re.I):
+        return title
+    match = re.fullmatch(
+        r"(?P<date>\d{1,2}/\d{1,2}/(?:\d{4}|\d{2}))\s+"
+        r"(?P<hour>\d{1,2}):?(?P<minute>\d{2})(?:\s*(?P<meridiem>am|pm))?",
+        data["as_of"].strip(), re.I,
+    )
+    if match is None:
+        return title
+    try:
+        date = match.group("date")
+        datetime.strptime(date, "%m/%d/%Y" if len(date.rsplit("/", 1)[1]) == 4 else "%m/%d/%y")
+    except ValueError:
+        return title
+    hour, minute = int(match.group("hour")), int(match.group("minute"))
+    meridiem = (match.group("meridiem") or "").lower()
+    if not 0 <= minute < 60:
+        return title
+    if meridiem:
+        if not 1 <= hour <= 12:
+            return title
+        hour = hour % 12 + (12 if meridiem == "pm" else 0)
+    elif not 0 <= hour < 24:
+        return title
+    window = str(hour % 12 or 12) + ("a" if hour < 12 else "p")
+    return title + " (" + window + "-" + window + ")"

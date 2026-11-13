@@ -1,0 +1,14 @@
+PICU Handoff v6.66 delivery verification
+
+Source: the supplied PICU665.zip.
+Final regression: 5407 tests and 14 subtests passed.
+Targeted regression: 306 tests and 14 subtests passed.
+Additional transport integration: 3 synthetic scenarios passed.
+
+Python and TOML parsing, ZIP CRC and SHA-256 manifest are verified by the
+packaging script. No real Secrets, tokens, keys or encrypted patient archives
+are included. Runtime caches and local test logs are excluded.
+
+models.py, security.py and requirements.txt are unchanged from v6.65.
+No live repositories or deployments were accessed or changed.
+Read TEST_REPORT.md for test methods and limitations.

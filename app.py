@@ -1,4 +1,4 @@
-"""PICU SmartPhrase v6.66: safe Mapping Sync diagnostics, Probiotic and ADH Analog groups."""
+"""PICU SmartPhrase v6.67: cuff/arterial pressure layout and source-hour I/O headings."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,
@@ -66,7 +66,7 @@ from pacemaker import (validate_pacemaker, format_pacemaker, pacemaker_text,
 from devices import validate_devices, EDIT_FIELDS as DEVICE_EDIT_FIELDS, device_line, devices_markup, evd_text
 from diet import validate_diet, diet_text, diet_for_output, diet_failed
 from feeds import METHODS as FEED_METHODS, validate_feeds, feeds_text, feeds_for_output
-from fluid_balance import FIELDS as IO_FIELDS, META_FIELDS as IO_META_FIELDS, validate_balance, balance_text, empty_balance
+from fluid_balance import balance_heading, FIELDS as IO_FIELDS, META_FIELDS as IO_META_FIELDS, validate_balance, balance_text, empty_balance
 from fen_gi import (MODES as GI_MODES, MODE_LABELS as GI_MODE_LABELS, GROUP_NAMES,
                     automatic_group, group_for, effective_section, fen_gi_body,
                     apply_gi_rules, set_gi_rule, gi_key, gi_mode_for)
@@ -1735,7 +1735,7 @@ def main() -> None:
         return
     with st.sidebar:
         st.header("PICU Handoff")
-        st.caption("Version 6.66 | Mapping Sync diagnostics")
+        st.caption("Version 6.67 | Arterial BP and I/O time windows")
         # Retire the old instructions workspace without discarding room drafts.
         if st.session_state.get("page") == "Instructions / SmartPhrase":
             st.session_state["page"] = "Handoff"
@@ -2676,8 +2676,8 @@ def intake_output_change(room: str, field: str, key: str) -> None:
 
 
 def intake_output_editor(sheet: dict) -> None:
-    st.subheader("Intake / Output / Net")
     data = sheet["intake_output"]
+    st.subheader(balance_heading(data))
     if data is None:
         st.caption("Paste the paired S section to place its totals at the top of FEN/GI.")
         return
@@ -2696,6 +2696,7 @@ def intake_output_editor(sheet: dict) -> None:
         st.session_state[key] = data["include"]
     st.checkbox("Show intake/output totals", key=key, on_change=intake_output_change, args=(sheet["room"], "include", key))
     st.caption("Values are copied from S. Missing values are not zero. Net is not recalculated.")
+    st.caption("The time window uses the hour of the source 24-hour summary, not the time you reprint this handoff. Minutes remain visible in As of above.")
 
 
 def diet_row_change(room: str, row_id: str, field: str, key: str) -> None:

@@ -56,7 +56,7 @@ def populated():
 
 def test_source_totals_unchanged_and_top():
     s=populated(); before=deepcopy(s);text=fields_with_medications(s)['FEN / GI']
-    assert text.startswith('Intake/Output:\nIntake: 1200.5 ml\nOutput: 950 ml\nNet: 250.5 ml\n-----\nGI prophylaxis')
+    assert text.startswith('Intake/Output (6a-6a):\nIntake: 1200.5 ml\nOutput: 950 ml\nNet: 250.5 ml\n-----\nGI prophylaxis')
     assert text.index('GI prophylaxis') < text.index('Bowel Regimen') < text.index('Separate nutrition note') < text.index('Synthetic IV fluid')
     assert text.count('sennosides')==2 and 'q24h' in text and 'Nightly' in text
     assert s==before

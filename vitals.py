@@ -1,4 +1,4 @@
-"""Route E-block vitals and show explicit SpO2/ETCO2/CVP summary ranges.
+"""Route E-block vitals and show explicit oxygenation and pressure ranges.
 
 No endpoint or clinical value is calculated. Ordinary labeled vital lines stay
 verbatim. Summary Min/Max fields are kept as documented, with no clipping of
@@ -7,6 +7,7 @@ are ignored rather than becoming patient values or invalidating the E block.
 """
 from dataclasses import dataclass, field
 from decimal import Decimal
+from arterial_pressure import parse_arterial_line, arterial_display_rows
 import re
 
 
@@ -180,6 +181,17 @@ def parse_vitals(block: str) -> VitalsResult:
         text = raw.strip()
         if not text or text.rstrip(':').casefold() in ('vitals', 'vital signs', 'none', 'not documented'):
             continue
+        try:
+            arterial = parse_arterial_line(text)
+        except ValueError as exc:
+            out.error = f'Vital-sign line {number}: {exc}'
+            return out
+        if arterial is not None:
+            label, value = arterial
+            if label:
+                out.rows.append({'label': label, 'value': value,
+                                 'section': 'Cardiovascular', 'include': True})
+            continue
         last = re.match(r'(?i)^Last\s+(SpO[2₂]|Pulse Ox(?:imetry)?|ET\s*CO[2₂]|CVP)\s*:\s*(.*)$', text)
         if last:
             kind = monitor_kind(last.group(1))
@@ -257,7 +269,7 @@ def _latest_parts(value: str) -> tuple[str, str] | None:
 
 def text_by_system(rows: list[dict]) -> dict[str, str]:
     result = {}
-    active = [r for r in rows if r['include']]
+    active = arterial_display_rows(rows)
     consumed = set()
     def add(section, text):
         result[section] = (result.get(section, '') + '\n' + text).strip()

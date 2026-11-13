@@ -216,10 +216,10 @@ def test_complete_output_labels_intake_heading_pdf_and_source_unchanged():
         pdf=handoff_pdf(s,NOW)
     for label in ['CAPD','SBS','WAT-1 total score (0-12)','Resp','Temp','Heart Rate','BP','FiO2 (%)','SpO2']:
         assert '<b>'+label+':</b>' in html
-    assert '<b>Intake/Output:</b>' in html
+    assert '<b>Intake/Output (3p-3p):</b>' in html
     reader=PdfReader(BytesIO(pdf))
     text='\n'.join(p.extract_text() for p in reader.pages)
-    assert 'Intake/Output:' in text and '100 ml' in text
+    assert 'Intake/Output (3p-3p):' in text and '100 ml' in text
     assert s==before
 
 
