@@ -1,0 +1,31 @@
+PICU Handoff v6.71 update from v6.70
+
+Complete application package. Replace the application files together.
+
+Changed application files:
+  app.py
+  diet.py
+  error_store.py
+  fen_gi.py
+  import_review.py
+  importing.py
+  nutrition_display.py
+
+The nutrition renderer shows one Tube feed heading, Diet for oral intake,
+explicit daily calories and dosing-weight-normalized volume. It omits feeding
+instructions, additives, the daily-volume equation and weight-basis line.
+A blank continuous duration defaults to 24 hours, and 24 is not printed.
+Other explicit durations remain visible. Conflicted duration is not defaulted.
+
+Detailed and recorded feeds share a reconciliation rule, keeping dietary
+formula/rate authoritative. Calories require an explicit density. Existing
+structured snapshots and T-only records both use the compact handoff display.
+
+Synthetic nutrition tests and legacy display/version expectations are updated.
+Documentation and synthetic PDF, HTML and text previews are updated.
+The previous root release documentation is retained with a V670_ prefix.
+
+Keep app.py at its deployed location. Include all application files when
+updating from an earlier release. Keep existing Secrets and encrypted data
+repositories. Restart and confirm Version 6.71. No reimport is needed merely
+to display saved nutrition records in the compact format.

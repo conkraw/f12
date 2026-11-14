@@ -1,71 +1,54 @@
-# Compact nutrition display
+# Nutrition display tweaks in 6.72
 
-Version 6.71 updates the presentation introduced in 6.70.
+Version 6.72 adds kcal/kg/day and removes unknown feeding placeholders.
 
-## Printed format
+## Example
 
 ```text
 Diet: Peds Regular
 Tube feed:
-GT: Synthetic Formula (24 kcal/oz) @ 30 mL/hr (20 hr/day) | 480 kcal/day | 60 mL/kg/day
+GT: Synthetic Formula (24 kcal/oz) @ 30 mL/hr (20 hr/day) | 480 kcal/day (48 kcal/kg/day) | 60 mL/kg/day
 ```
 
-This synthetic example uses a dosing weight of 10 kg. A 24-hour feed omits the
-hour annotation. The Tube feed heading appears once even when several distinct
-tubes are listed. Oral feed records use Diet, alongside other oral diet orders.
+This synthetic example uses a dosing weight of 10 kg. Formula, route, rate and
+non-24-hour duration remain together. kcal/kg/day appears beside kcal/day.
 
-Instructions and additives are stored for source review but do not print.
-The display omits the multiplication equation, mL/day total and separate
-Using dosing weight line.
+## Weight-normalized calories
 
-## Calculations
+Daily calories still use the documented hourly rate, feeding hours and explicit
+final caloric density. kcal/kg/day is the unrounded daily calorie total divided
+by dosing weight in kg, then rounded to one decimal with trailing zeros removed.
+Daily calories and weight-normalized calories are rounded independently.
 
-For an active continuous order:
+The same dosing-weight rule applies to kcal/kg/day and mL/kg/day. A measured
+weight is never substituted. Missing, zero or invalid dosing weight omits both
+normalized values. A failed weight import also prevents using retained DCW.
+Daily kcal can remain visible when density and rate are known but DCW is absent.
 
-```text
-daily mL = hourly mL times daily feeding hours
-mL/kg/day = daily mL divided by dosing weight in kg
-kcal/day = daily mL times kcal/mL
-kcal/day = daily mL times kcal/oz divided by 30
-kcal/day = daily mL times kcal/L divided by 1000
-```
+All 6.71 duration, listed-volume, held/future/bolus and explicit-density guards
+remain. A missing continuous duration uses 24 hours. An unreadable or conflicting
+supplied duration does not default, including after acknowledgment or recall.
 
-Blank duration defaults to 24 hours. Explicit conflicting or invalid duration
-blocks that default. A provided duration other than 24 is printed, including
-20 hours. Dosing weight accepts kg or g. Measured weight is never substituted.
-Daily kcal and mL/kg are rounded to one decimal, with trailing zeros removed.
-No calories are inferred from formula brand numbers, ketogenic ratios or
-recipe ingredient amounts. The final feed density must be explicit. If no
-density is present, the calorie total is omitted.
+## Missing fields
 
-The 30 mL/oz nutrition convention is also used in the Children's Hospital of
-Philadelphia patient instructions for preparing 24 kcal/oz infant formula:
-https://chopib.staywellsolutionsonline.com/Bedside/22%2C38223
-This reference supports the unit convention only. It does not supply any
-patient-specific formula, recipe, density or feeding recommendation.
+A missing or UNK formula is omitted while its known rate remains visible. A
+missing rate is omitted while its known formula remains. The @ separator only
+appears when both are present. A rate-only entry may retain its own explicit
+density and valid calculated totals. An entry with neither formula nor rate
+does not print. An empty Tube feed heading does not print.
 
-Held, future and bolus orders remain labelled and do not receive continuous
-daily totals. A disagreement between the listed daily volume and rate times
-hours withholds calculated totals for source review.
+The stored source remains editable, so a later correction can restore the
+missing field. This applies to detailed dietary orders and recorded T-only
+feeds. The Print All eligibility check uses the compact display, preventing an
+otherwise empty record from being selected solely for an unknown feed row.
 
-## Source reconciliation
+## Prior compact behavior
 
-A dietary order takes precedence over its matched current T-section record.
-Matching first uses formula and compatible route, then a mutually unique
-remaining compatible route. Formula differences are not interpreted as a
-mixture or proof of equivalence. The displayed formula and calculation fields
-stay together in the dietary order. A different recorded rate is not combined
-with the dietary order's hours.
+Tube feeds appear in one place. Dietary orders remain authoritative over their
+uniquely matched recorded counterparts. Distinct devices remain separate.
+Instructions, additives, the daily-volume equation and the dosing-weight basis
+line do not print. Oral intake is labelled Diet. PN deduplication is unchanged.
 
-Unmatched distinct devices may appear as additional rows under the same
-heading. Multiple ambiguous same-route devices are not silently collapsed.
-Existing inclusion choices, current recorded_feed_ids, hidden-import guards
-and PN medication deduplication continue to apply.
-
-## Source and archive support
-
-AB remains the detailed Dietary Orders section. X supports its existing diet
-summary and detailed compact orders. T remains the recorded feeding source.
-No SmartPhrase divider change or data migration is needed for this update.
-Caloric-density fields support kcal/oz, kcal/mL and kcal/L. Original comments,
-additives and source strings remain editable in the expanded source editor.
+The explicit-density unit convention and calculation details are documented
+in V671_NUTRITION_ORDERS_UPDATE.md. This version changes neither that convention
+nor how caloric density is parsed.

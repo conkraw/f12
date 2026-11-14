@@ -78,7 +78,7 @@ def test_detailed_table_and_summary_are_one_order_with_twenty_hour_calculation()
     sheet = imported()
     assert len(sheet['diet']['enteral']) == 1
     text = output(sheet)
-    assert 'Tube feed:\nGT: Synthetic Formula 1.0 (24 kcal/oz) @ 30 mL/hr (20 hr/day) | 480 kcal/day | 60 mL/kg/day' in text
+    assert 'Tube feed:\nGT: Synthetic Formula 1.0 (24 kcal/oz) @ 30 mL/hr (20 hr/day) | 480 kcal/day (48 kcal/kg/day) | 60 mL/kg/day' in text
     assert text.count('Synthetic Formula 1.0') == 1
     assert 'four-hour daily break' not in text and 'Using dosing weight' not in text
     assert '600 mL/day' not in text and ' = ' not in text
@@ -122,7 +122,7 @@ def test_different_formula_current_nj_and_postpyloric_order_use_one_ordered_prim
     assert sheet['feeds']['rows'][0]['formula'] == 'Recorded Formula B'
     text = output(sheet)
     assert text.count('Tube feed:') == 1 and text.count('Synthetic Milk') == 1
-    assert 'NJ: Synthetic Milk (24 kcal/oz) @ 30 mL/hr (20 hr/day) | 480 kcal/day | 60 mL/kg/day' in text
+    assert 'NJ: Synthetic Milk (24 kcal/oz) @ 30 mL/hr (20 hr/day) | 480 kcal/day (48 kcal/kg/day) | 60 mL/kg/day' in text
     assert 'Recorded Formula B' not in text and 'Post-pyloric:' not in text
 
 
@@ -134,7 +134,7 @@ def test_distinct_gt_and_nj_feeds_keep_their_own_routes_and_formulas():
     assert 'GT: Synthetic Formula 1.0' in text
     nj_line = next(line for line in text.splitlines() if line.startswith('NJ:'))
     assert 'Recorded Formula B @ 12 mL/hr' in nj_line and '28.8 mL/kg/day' in nj_line
-    assert 'kcal/day' not in nj_line and '24 hr/day' not in nj_line
+    assert 'kcal/day' not in nj_line and 'kcal/kg/day' not in nj_line and '24 hr/day' not in nj_line
 
 
 def test_ambiguous_two_nj_devices_are_not_collapsed_into_one_order():
@@ -187,7 +187,7 @@ def test_later_explicit_t_update_is_available_without_changing_saved_order_route
     assert sheet['diet']['recorded_feed_ids'] == [sheet['feeds']['rows'][0]['id']]
     text = output(sheet)
     assert 'Recorded rate:' not in text and '15 mL/hr' not in text
-    assert '30 mL/hr (20 hr/day) | 480 kcal/day | 60 mL/kg/day' in text
+    assert '30 mL/hr (20 hr/day) | 480 kcal/day (48 kcal/kg/day) | 60 mL/kg/day' in text
 
 
 def test_failed_ab_keeps_values_for_review_and_cannot_restore_old_t_display():
@@ -204,19 +204,20 @@ def test_failed_ab_keeps_values_for_review_and_cannot_restore_old_t_display():
     assert 'ab' not in recovered['import_warnings'] and '60 mL/kg/day' in output(recovered)
 
 
-def test_current_weight_only_is_not_used_in_place_of_dosing_weight():
+def test_current_weight_only_is_not_used_in_place_of_valid_dosing_weight():
     sheet = imported(weight='')
     sheet['nutrition'] = {'weight': '10 kg', 'z_score': '', 'include': True}
     assert '480 kcal/day' in output(sheet) and 'mL/kg/day' not in output(sheet)
+    assert 'kcal/kg/day' not in output(sheet)
     sheet['dosing_weight'] = '5 kg'
-    assert '120 mL/kg/day' in output(sheet)
+    assert '480 kcal/day (96 kcal/kg/day) | 120 mL/kg/day' in output(sheet)
 
 
 @pytest.mark.parametrize('hours,daily', [('', ''), ('24', '720')])
 def test_missing_or_explicit_twenty_four_hour_schedule_is_compact(hours, daily):
     sheet = imported(scheduled_source(hours, daily))
     text = output(sheet)
-    assert '30 mL/hr | 576 kcal/day | 72 mL/kg/day' in text
+    assert '30 mL/hr | 576 kcal/day (57.6 kcal/kg/day) | 72 mL/kg/day' in text
     assert '24 hr/day' not in text and 'Assum' not in text and '720 mL/day' not in text
     assert sheet['diet']['enteral'][0]['hours'] == hours
 
@@ -228,7 +229,7 @@ def test_explicit_unusable_hours_do_not_become_a_twenty_four_hour_calculation(ho
     assert any(item['field'] == 'hours' for item in sheet['import_warnings']['ab'])
     text = output(sheet)
     assert '30 mL/hr' in text
-    assert 'mL/kg/day' not in text and 'kcal/day' not in text and '24 hr/day' not in text
+    assert 'mL/kg/day' not in text and 'kcal/day' not in text and 'kcal/kg/day' not in text and '24 hr/day' not in text
 
 
 def test_conflicting_hour_sources_stay_uncalculated_after_duplicate_summary():
@@ -237,7 +238,7 @@ def test_conflicting_hour_sources_stay_uncalculated_after_duplicate_summary():
     assert len(sheet['diet']['enteral']) == 1 and sheet['diet']['enteral'][0]['hours'] == ''
     assert any(item['field'] == 'hours' for item in sheet['import_warnings']['ab'])
     text = output(sheet)
-    assert '30 mL/hr' in text and 'mL/kg/day' not in text and 'kcal/day' not in text
+    assert '30 mL/hr' in text and 'mL/kg/day' not in text and 'kcal/day' not in text and 'kcal/kg/day' not in text
 
 
 @pytest.mark.parametrize('kind', ['invalid', 'conflicting'])
@@ -254,11 +255,13 @@ def test_acknowledging_hours_warning_cannot_create_default_totals_before_manual_
     acknowledged = ss['drafts']['P4102']
     assert 'ab' not in acknowledged['import_warnings']
     assert 'mL/kg/day' not in output(acknowledged) and 'kcal/day' not in output(acknowledged)
+    assert 'kcal/kg/day' not in output(acknowledged)
     app.save_room(None)
     key = generate_key()
     recalled = open_vault(seal_vault(ss['vault'], key), key)['rooms']['P4102']
     assert recalled['diet']['enteral'][0]['hours'] == ''
     assert 'mL/kg/day' not in output(recalled) and 'kcal/day' not in output(recalled)
+    assert 'kcal/kg/day' not in output(recalled)
     app.set_editor('P4102', recalled)
     row = ss['drafts']['P4102']['diet']['enteral'][0]
     widget = 'diet_enteral_' + row['id'] + '_hours'
@@ -266,22 +269,35 @@ def test_acknowledging_hours_warning_cannot_create_default_totals_before_manual_
     app.dietary_order_change('P4102', 'enteral', row['id'], 'hours', widget)
     assert row['hours'] == '24'
     corrected = output(ss['drafts']['P4102'])
-    assert '576 kcal/day' in corrected and '72 mL/kg/day' in corrected
+    assert '576 kcal/day (57.6 kcal/kg/day) | 72 mL/kg/day' in corrected
 
 
-@pytest.mark.parametrize('qa_unit,value,stored_density,calories', [
-    ('kcal per ounce', '24', '24 kcal/oz', '480'),
-    ('kcal/mL', '1.5', '1.5 kcal/mL', '900'),
-    ('kcal/L', '1000', '1000 kcal/L', '600'),
+@pytest.mark.parametrize('qa_unit,value,stored_density,calories,per_kg', [
+    ('kcal per ounce', '24', '24 kcal/oz', '480', '48'),
+    ('kcal/mL', '1.5', '1.5 kcal/mL', '900', '90'),
+    ('kcal/L', '1000', '1000 kcal/L', '600', '60'),
 ])
-def test_explicit_density_units_produce_the_corresponding_daily_calories(qa_unit, value, stored_density, calories):
+def test_explicit_density_units_produce_the_corresponding_daily_calories(qa_unit, value, stored_density, calories, per_kg):
     source = (DIET.replace('; No Additives; 24', '; No Additives; ' + stored_density)
               .replace('Caloric density (kcal per ounce):\t24',
                        'Caloric density (' + qa_unit + '):\t' + value))
     sheet = imported(source)
     assert sheet['diet']['enteral'][0]['caloric_density'] == stored_density
     text = output(sheet)
-    assert calories + ' kcal/day' in text and '60 mL/kg/day' in text
+    assert calories + ' kcal/day (' + per_kg + ' kcal/kg/day) | 60 mL/kg/day' in text
+
+
+def test_weight_normalized_calories_use_the_unrounded_daily_result():
+    source = (scheduled_source('20', '32.51').replace('; 30;', '; 1.6255;')
+              .replace('\t30', '\t1.6255')
+              .replace('; No Additives; 24', '; No Additives; 1.5 kcal/mL')
+              .replace('Caloric density (kcal per ounce):\t24', 'Caloric density (kcal/mL):\t1.5'))
+    sheet = imported(source, weight='1.4 kg')
+    text = output(sheet)
+    # 1.6255 * 20 * 1.5 = 48.765 kcal/day. Dividing the displayed 48.8 by
+    # 1.4 kg would incorrectly round the normalized result up to 34.9.
+    assert '48.8 kcal/day (34.8 kcal/kg/day) | 23.2 mL/kg/day' in text
+    assert '34.9 kcal/kg/day' not in text
 
 
 def test_numeric_formula_name_does_not_supply_an_unstated_caloric_density():
@@ -291,6 +307,7 @@ def test_numeric_formula_name_does_not_supply_an_unstated_caloric_density():
     text = output(sheet)
     assert 'Synthetic Formula 1.0' in text and '60 mL/kg/day' in text
     assert not sheet['diet']['enteral'][0]['caloric_density'] and 'kcal/day' not in text
+    assert 'kcal/kg/day' not in text
 
 
 def test_conflicting_density_blocks_calories_but_keeps_volume_normalization():
@@ -300,6 +317,7 @@ def test_conflicting_density_blocks_calories_but_keeps_volume_normalization():
     assert any(item['field'] == 'caloric_density' for item in sheet['import_warnings']['ab'])
     text = output(sheet)
     assert '60 mL/kg/day' in text and 'kcal/day' not in text
+    assert 'kcal/kg/day' not in text
 
 
 def test_t_only_legacy_input_uses_the_compact_tube_feed_display():
@@ -310,6 +328,21 @@ def test_t_only_legacy_input_uses_the_compact_tube_feed_display():
     text = output(result.sheet)
     assert 'Tube feed:\nGT: Synthetic Formula 1.0 @ 30 mL/hr | 72 mL/kg/day' in text
     assert 'Feeding Method:' not in text and '24 hr/day' not in text and 'kcal/day' not in text
+    assert 'kcal/kg/day' not in text
+
+
+def test_empty_legacy_feed_has_no_heading_and_is_not_selected_for_print_all():
+    initial = new_sheet('P4102')
+    source = T.replace('Synthetic Formula 1.0', '').replace('30 mL', '')
+    result = import_sections(initial, block('t', source), new_vault()['settings'])
+    assert not result.errors and result.sheet['diet'] is None
+    sheet = result.sheet
+    assert sheet['feeds']['rows']
+    assert all(not row['formula'] and not row['rate'] for row in sheet['feeds']['rows'])
+    sheet['import_warnings'] = {}
+    assert not sheet['dosing_weight'] and not any(sheet['fields'].values())
+    assert 'Tube feed:' not in output(sheet) and 'UNK' not in output(sheet)
+    assert 'P4102' not in available_handoffs(new_vault(), {'P4102': sheet})
 
 
 def test_npo_medication_exception_uses_diet_without_creating_tube_feed():
@@ -327,10 +360,42 @@ def test_updated_dietary_snapshot_survives_encrypted_recall_without_mutation():
     loaded = open_vault(seal_vault(vault, key), key)
     assert loaded == vault and loaded['schema'] == 34
     assert output(loaded['rooms']['P4102']) == output(sheet)
+    assert '480 kcal/day (48 kcal/kg/day) | 60 mL/kg/day' in output(loaded['rooms']['P4102'])
     assert sheet == before
     legacy = new_vault()
     legacy['rooms']['P4104'] = new_sheet('P4104')
     assert open_vault(seal_vault(legacy, key), key) == legacy
+
+
+@pytest.mark.parametrize('missing', [('formula',), ('rate',), ('formula', 'rate')])
+def test_missing_fields_survive_recall_and_all_exports_without_unknown_placeholders(missing):
+    source = DIET
+    if 'formula' in missing:
+        source = source.replace('Synthetic Formula 1.0', '')
+    if 'rate' in missing:
+        source = source.replace('; 30;', '; ;').replace('rate (mL/hr):\t30', 'rate (mL/hr):\t')
+    original = imported(source)
+    key = generate_key()
+    saved = save_sheet_in(new_vault(), original)
+    sheet = open_vault(seal_vault(saved, key), key)['rooms']['P4102']
+    assert sheet == saved['rooms']['P4102'] and sheet['diet'] == original['diet']
+    row = sheet['diet']['enteral'][0]
+    assert all(row[field] == '' for field in missing)
+    stamp = datetime(2026, 1, 5, 14, tzinfo=timezone.utc)
+    exports = [handoff_text(sheet, stamp), handoff_html(sheet, stamp)]
+    for data in (handoff_pdf(sheet, stamp), handoffs_pdf([sheet], stamp)):
+        with fitz.open(stream=data, filetype='pdf') as pdf:
+            exports.append(re.sub(r'\s+', ' ', ''.join(page.get_text() for page in pdf)))
+    for text in exports:
+        assert 'UNK formula' not in text and 'UNK rate' not in text and ' @ ' not in text
+        if len(missing) == 2:
+            assert 'Tube feed:' not in text and 'GT:' not in text
+        elif 'formula' in missing:
+            assert 'GT: 30 mL/hr (24 kcal/oz) (20 hr/day)' in text
+            assert '480 kcal/day (48 kcal/kg/day) | 60 mL/kg/day' in text
+        else:
+            assert 'GT: Synthetic Formula 1.0 (24 kcal/oz)' in text
+            assert 'kcal/day' not in text and 'kcal/kg/day' not in text and 'mL/kg/day' not in text
 
 
 def test_nutrition_does_not_change_qtc_avaps_nirs_or_other_saved_data():
@@ -349,7 +414,7 @@ def test_compact_text_html_single_and_batch_pdf_keep_calculations_without_verbos
     fortified = (DIET.replace('; No Additives; 24', '; Additives; Synthetic Fortifier = 24 kcal/oz')
                  .replace('Additives?\tNo Additives', 'Additives?\tAdditives\nSelect Additive\tSynthetic Fortifier = 24 kcal/oz'))
     sheet = imported(fortified + ORAL + PN)
-    other = imported(DIET.replace('30;', '15;').replace('600;', '300;').replace('\t30', '\t15').replace('\t600', '\t300'))
+    other = imported(DIET.replace('30;', '15;').replace('600;', '300;').replace('\t30', '\t15').replace('\t600', '\t300'), weight='20 kg')
     other['room'] = 'P4104'
     stamp = datetime(2026, 1, 5, 14, tzinfo=timezone.utc)
     stored = sheet['diet']['enteral'][0]
@@ -366,10 +431,12 @@ def test_compact_text_html_single_and_batch_pdf_keep_calculations_without_verbos
         first = re.sub(r'\s+', ' ', pdf[0].get_text())
         second = re.sub(r'\s+', ' ', pdf[1].get_text())
         exports.append(first)
-        assert '30 mL/kg/day' in second and '240 kcal/day' in second
-        assert '60 mL/kg/day' not in second and '480 kcal/day' not in second
+        assert '240 kcal/day (12 kcal/kg/day) | 15 mL/kg/day' in second
+        assert '60 mL/kg/day' not in second and '480 kcal/day' not in second and '48 kcal/kg/day' not in second
+        assert '24 kcal/kg/day' not in second and '30 mL/kg/day' not in second
     for text in exports:
-        assert '60 mL/kg/day' in text and '480 kcal/day' in text
+        assert '480 kcal/day (48 kcal/kg/day) | 60 mL/kg/day' in text
+        assert '12 kcal/kg/day' not in text
         assert 'Diet:' in text and text.count('Tube feed:') == 1
         assert all(value not in text for value in forbidden)
 

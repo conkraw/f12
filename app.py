@@ -1,4 +1,4 @@
-"""PICU SmartPhrase v6.71: compact diet and tube feeding summaries."""
+"""PICU SmartPhrase v6.72: weight-normalized calories and clean feeding summaries."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,
@@ -1774,7 +1774,7 @@ def main() -> None:
         return
     with st.sidebar:
         st.header("PICU Handoff")
-        st.caption("Version 6.71 | Compact diet and tube feeds")
+        st.caption("Version 6.72 | kcal/kg/day and clean tube feeds")
         # Retire the old instructions workspace without discarding room drafts.
         if st.session_state.get("page") == "Instructions / SmartPhrase":
             st.session_state["page"] = "Handoff"
@@ -2774,7 +2774,7 @@ def diet_editor(sheet: dict) -> None:
         st.text(diet_text(data))
     with st.expander("Edit diet / review source", expanded=False):
         if has_detailed_nutrition(data):
-            st.caption("Tube feeds appear once with formula, route and rate. Daily totals use the feeding hours, or 24 when no duration is supplied. kcal/day uses the documented caloric density (30 mL per oz). mL/kg/day uses dosing weight. Instructions and additives stay here for source review.")
+            st.caption("Tube feeds show available formula, route and rate without UNK placeholders. Daily totals use the feeding hours, or 24 when no duration is supplied. Calories use the documented density (30 mL per oz). kcal/kg/day and mL/kg/day use dosing weight. Instructions and additives stay here for source review.")
         else:
             st.caption("X supplies diet type. Detailed dietary orders can be added in the paired AB section. Review multiple listed diets against Epic.")
         if not data["rows"]:
@@ -2987,12 +2987,12 @@ def feeds_editor(sheet: dict) -> None:
         st.text(nutrition_text({"rows": [], "enteral": [], "parenteral": []}, data,
                                dosing_weight=sheet["dosing_weight"], sheet=sheet))
     with st.expander("Edit feeds / review source", expanded=False):
-        st.caption("Each entry belongs to one tube. Blank formula or rate prints UNK. A volume in mL is not an hourly rate.")
+        st.caption("Each entry belongs to one tube. Missing formula or rate is omitted from the handoff. If both are missing, the entry does not print. A volume in mL is not an hourly rate.")
         for number, row in enumerate(data["rows"], 1):
             st.text("Feed " + str(number))
             if row["device"]:
                 st.caption("Source device: " + row["device"])
-            for field, label in (("method", "Feeding method"), ("formula", "Formula"), ("rate", "Rate (mL/hr, or blank for UNK)"), ("include", "Include this feeding entry")):
+            for field, label in (("method", "Feeding method"), ("formula", "Formula"), ("rate", "Rate (mL/hr, leave blank to omit)"), ("include", "Include this feeding entry")):
                 key = "feed_" + row["id"] + "_" + field
                 if key not in st.session_state:
                     st.session_state[key] = row[field]

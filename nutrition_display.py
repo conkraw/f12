@@ -3,7 +3,8 @@
 Dietary rates and schedules describe ordered nutrition. A missing continuous
 schedule defaults to 24 hours unless the supplied duration was invalid or
 conflicting. Daily kcal needs an explicit calorie density. A dosing weight is
-required for mL/kg/day. Stored source rows are never changed by rendering.
+required for kcal/kg/day and mL/kg/day. Unknown formula and rate fields are
+omitted. Stored source rows are never changed by rendering.
 """
 from __future__ import annotations
 
@@ -79,6 +80,11 @@ def _formula_key(value: str) -> str:
     # Decimal strengths and ratios are formulation data, not punctuation noise.
     text = re.sub(r"(?<=\d)\s*([.:/%+\-])\s*(?=\d)", r"\1", value.casefold())
     return re.sub(r"[^\w.:/%+\-]+", " ", text).strip()
+
+
+def _known_formula(value: str) -> str:
+    value = value.strip()
+    return "" if value.casefold() in {"unk", "unknown"} else value
 
 
 def _pn_key(name: str) -> str:
@@ -170,8 +176,8 @@ def recorded_feed_matches(ordered: list[dict], recorded: list[dict]) -> dict[int
                 if j in consumed or not _compatible_route(order.get("method", "UNK"), row.get("method", "UNK")):
                     continue
                 if exact_formula:
-                    left = _formula_key(order.get("formula", ""))
-                    right = _formula_key(row.get("formula", ""))
+                    left = _formula_key(_known_formula(order.get("formula", "")))
+                    right = _formula_key(_known_formula(row.get("formula", "")))
                     if not left or not right or left != right:
                         continue
                 choices.append(j)
@@ -259,11 +265,15 @@ def _compact_feed_line(row: dict, kg: Decimal | None, conflicts: set[str]) -> st
     method = row.get("method", "UNK")
     status = row.get("status", "active")
     prefix = _STATUS_LABELS.get(status, "")
-    formula = row.get("formula", "") or "UNK formula"
-    density = row.get("caloric_density", "").strip()
-    if density and density.casefold() not in formula.casefold():
-        formula += " (" + density + ")"
+    formula = _known_formula(row.get("formula", ""))
     rate = row.get("rate", "").strip()
+    if RATE.fullmatch(rate) is None:
+        rate = ""
+    if not formula and not rate:
+        return ""
+    density = row.get("caloric_density", "").strip()
+    if formula and density and density.casefold() not in formula.casefold():
+        formula += " (" + density + ")"
     hours_text = row.get("hours", "").strip()
     hours = _number(hours_text)
     continuous = _continuous(row)
@@ -273,7 +283,10 @@ def _compact_feed_line(row: dict, kg: Decimal | None, conflicts: set[str]) -> st
         hours = Decimal("24")
     rate_number = _rate_number(rate)
     daily = _number(row.get("daily_volume", ""))
-    line = prefix + method + ": " + formula + " @ " + (rate or "UNK rate")
+    details = formula + " @ " + rate if formula and rate else formula or rate
+    if not formula and density:
+        details += " (" + density + ")"
+    line = prefix + (method + ": " if method and method != "UNK" else "") + details
     if hours is not None and 0 < hours < 24:
         line += " (" + _display_number(hours) + " hr/day)"
     elif not continuous and row.get("feeding_type", "").strip():
@@ -292,7 +305,10 @@ def _compact_feed_line(row: dict, kg: Decimal | None, conflicts: set[str]) -> st
         if total is not None and not schedule_issue:
             density_number = _density_per_ml(density)
             if density_number is not None:
-                line += " | " + _display_number(total * density_number, 1) + " kcal/day"
+                calories = total * density_number
+                line += " | " + _display_number(calories, 1) + " kcal/day"
+                if kg is not None:
+                    line += " (" + _display_number(calories / kg, 1) + " kcal/kg/day)"
             if kg is not None:
                 line += " | " + _display_number(total / kg, 1) + " mL/kg/day"
     if schedule_issue and status == "active":
@@ -341,16 +357,20 @@ def nutrition_sections(diet: dict | None, feeds: dict | None = None, medications
     for row in ordered:
         if not row["include"]:
             continue
-        target = oral_feeds if row["method"] == "PO" else lines
-        target.append(_compact_feed_line(row, kg, conflicts))
+        line = _compact_feed_line(row, kg, conflicts)
+        if line:
+            target = oral_feeds if row["method"] == "PO" else lines
+            target.append(line)
     for index, row in enumerate(recorded):
         if index in consumed or not row["include"]:
             continue
         if ordered and _rate_number(row["rate"]) is None:
             # A formula-only device may be used for venting or medication.
             continue
-        target = oral_feeds if row["method"] == "PO" else lines
-        target.append(_recorded_feed_line(row, kg, conflicts))
+        line = _recorded_feed_line(row, kg, conflicts)
+        if line:
+            target = oral_feeds if row["method"] == "PO" else lines
+            target.append(line)
     if oral or oral_feeds:
         content = ([" | ".join(oral)] if oral else []) + oral_feeds
         parts.append(label("Diet:") + " " + "\n".join(encode(value) for value in content))

@@ -1,71 +1,58 @@
-# PICU Handoff v6.71 validation
+# PICU Handoff v6.72 validation
 
-Built from PICU670.zip. No live repository or hosted deployment was changed.
+Built from PICU671.zip. No live repository or hosted deployment was changed.
 
-## Regression result
+## Executed verification
 
-The final full regression run passed: 6101 tests and 14 subtests in 108.96 seconds. The only warning is the existing third-party anyio pytest deprecation warning.
+The final focused regression run passed all 680 tests in 23.27 seconds:
 
-Focused checks also passed before the final full run: 96 nutrition-renderer
-cases, 87 detailed dietary-parser cases, 43 nutrition-integration cases and
-348 existing feeds, FEN/GI, diet/lactate and measurement/version cases.
+```text
+python3 -m pytest -q tests/test_nutrition_display.py tests/test_nutrition_integration.py tests/test_feeds.py tests/test_fen_gi.py tests/test_diet_lactate.py tests/test_batch_exports.py tests/test_save_before_print.py tests/test_workflow_print.py tests/test_print_fit_reset.py tests/test_measurement_notes_observed_pip.py
+```
 
-## Compact display and source reconciliation
+The only warning is the existing third-party anyio pytest deprecation warning.
+The full application suite was not repeated for these scoped display changes.
+The preceding 6.71 full-run result is retained in V671_TEST_REPORT.md.
 
-Diet labels replace Oral labels. Tube feeds share one heading. Dietary and
-recorded counterparts appear once, including the supplied screenshot pattern
-of a post-pyloric order and an NJ record with a different formula label.
-Synthetic tests retain the dietary formula and rate, preserve separate GT/NJ
-routes and ambiguous same-route devices, respect excluded entries, and prevent
-old recorded feeds from returning after a new empty or failed dietary update.
+## Calories per kg
 
-Instructions, additives, the daily-volume equation and the dosing-weight basis
-line are absent from text, HTML, individual PDF and Print All PDF. Those source
-fields remain stored and editable. Existing PN medication deduplication and
-hidden/Ignore choices continue to pass.
+The display adds kcal/kg/day beside kcal/day when explicit caloric density,
+a valid rate and schedule, and positive dosing weight are available. Tests
+cover kg and g, different room weights, missing/invalid DCW, failed weight
+imports, no measured-weight fallback, zero rate, fractional calories and
+independent final rounding from the unrounded calorie calculation.
 
-## Calculations
+Existing duration, held/future/bolus, listed-volume, field-conflict and numeric
+bounds remain covered. Invalid duration remains uncalculated after warning
+acknowledgment and encrypted save/recall. Explicit valid edits still resolve it.
 
-Tests cover explicit 20-hour and 24-hour schedules, the missing continuous
-schedule default, decimal rates, kcal/oz, kcal/mL and kcal/L, positive kg/g
-DCW, absent/invalid DCW, failed weight imports and no measured-weight fallback.
+## Missing fields
 
-An explicit non-24-hour duration prints. A 24-hour duration does not print.
-Invalid, conflicting and explicitly unknown durations do not default. Their
-constraint is rechecked against retained source even after a review warning
-is acknowledged or an encrypted record is reopened. A valid manual duration
-resolves it. Bolus, held and future orders do not get continuous daily totals.
-Listed-volume conflicts withhold calculated totals for source review.
+Formula-only and rate-only rows keep known details without UNK placeholders
+or a dangling @. Literal UNK/Unknown formula values are treated as missing,
+while real formula names containing those words remain intact. Zero is a
+known rate, not a missing value. Rows missing both formula and rate disappear,
+including an otherwise empty section heading. Stored source remains editable.
 
-Calorie calculations use explicit final density. Brand numbers, ratios,
-recipes, dilution, signed or ranged density text and multiple densities do
-not create calorie totals. T-only records accept an unambiguous ending density
-in their own formula. Bounded Decimal arithmetic handles extreme stored
-numeric values without crashing the handoff.
+These behaviors are checked in text, HTML, individual PDF and Print All PDF,
+as well as encrypted recall. A legacy T-only record with no remaining visible
+feed data does not qualify for Print All solely because of that empty row.
 
-## Editing, recall and prior features
+## Layout and compatibility
 
-Tests exercise editing callbacks, invalid values, pending edits, source
-retention, inclusion settings, save/recall, room separation and PDF downloads.
-Schema remains 34. Old archives need no migration. UI tests use existing
-Streamlit widget stubs, not a live browser.
+The two-room synthetic preview was regenerated and visually inspected. The
+20-hour GT and 24-hour NJ examples show kcal/kg/day correctly. Each room still
+fits the existing seven-column landscape layout without clipping or overlap.
+Instructions/additives remain hidden, the PN entry remains deduplicated, and
+the old dated QTc and Long QTc problem remain visible in the preview.
 
-models.py, exports.py, security.py, github_store.py, mapping_sync.py,
-mapping_sync_ui.py, sync_diagnostics.py, requirements.txt, ecg.py, nirs.py,
-ventilation.py, medications.py, parser.py, feeds.py and batching.py are byte
-identical to v6.70. QTc, NIRS, Override Pull Ignore and AVAPS support remains.
-
-## Visual and package verification
-
-A two-page synthetic PDF was rendered and visually inspected. Its first room
-shows a 20-hour GT feed, oral diet and one PN medication. Its second room shows
-a 24-hour NJ feed with the duration omitted and the recorded formula duplicate
-suppressed. Both fit the existing one-page-per-room seven-column layout
-without clipping or overlap. A dated red QTc and Long QTc problem remain
-visible in the synthetic preview.
+Only app.py, batching.py, error_store.py and nutrition_display.py changed among
+application modules. All other application Python modules and requirements.txt
+are byte-identical to v6.71. Schema remains 34. No data migration, encryption,
+Secrets, dependency, storage or medication-mapping change is required.
 
 All 173 Python files parse with ast and all three TOML files with tomllib.
-ZIP CRC and all regenerated SHA256SUMS entries are verified before delivery.
-No supplied clinical source or screenshot is included. Packaged examples are
-synthetic. Existing dependencies, Secrets and encrypted data repositories
-remain compatible. No hosted Streamlit session was exercised or deployed.
+ZIP CRC and regenerated SHA256SUMS are verified before delivery. Packaged
+examples are synthetic. No supplied clinical source or screenshot is included.
+UI checks use the existing Streamlit widget stubs. No live hosted app was
+exercised or deployed.

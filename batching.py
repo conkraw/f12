@@ -9,7 +9,7 @@ from blood_gases import latest_sample
 from cbc import cbc_cards
 from recurring_orders import selected_orders
 from fluid_balance import balance_text
-from feeds import feeds_text, feeds_for_output
+from feeds import feeds_for_output
 from devices import devices_text, evd_text
 from pacemaker import pacemaker_text
 from diet import diet_text, diet_for_output
@@ -36,7 +36,9 @@ def available_handoffs(vault: dict, drafts: dict) -> dict:
         dietary = diet_for_output(sheet)
         nutrition_present = bool(nutrition_text(dietary, feeds_for_output(sheet), sheet["medications"],
                                 dosing_weight=sheet["dosing_weight"], sheet=sheet)) if has_detailed_nutrition(dietary) else bool(diet_text(dietary))
-        legacy_feeds_present = not has_detailed_nutrition(dietary) and bool(feeds_text(feeds_for_output(sheet)))
+        legacy_feeds_present = not has_detailed_nutrition(dietary) and bool(nutrition_text(
+            {"rows": [], "enteral": [], "parenteral": []}, feeds_for_output(sheet),
+            dosing_weight=sheet["dosing_weight"], sheet=sheet))
         if sheet.get("ecg") or sbs_display_rows(sheet) or airway_summary(sheet) or any(sheet.get("anthropometrics", {}).values()) or sheet.get("import_warnings") or any(v.strip() for v in sheet["fields"].values()) or any(visible(r) for r in sheet["medications"]) or sheet["ventilation"] or sheet["noninvasive"] or any(r["include"] for r in sheet["vitals"]) or any(r["include"] for r in sheet["labs"]["rows"]) or sheet["labs"]["notes"] or cbc_cards(sheet["labs"], sheet["cbc"]) or latest_sample(sheet["blood_gas"])[0] or any(r["include"] for rows in sheet["neuro_vitals"].values() for r in rows) or format_nutrition(sheet["nutrition"]) or sheet["dosing_weight"] or sheet["admission_date"] or viral_text(sheet["viral_panel"]) or any(r["include"] for r in sheet["cultures"]["rows"]) or selected_orders(sheet["recurring_orders"]) or balance_text(sheet["intake_output"]) or legacy_feeds_present or devices_text(sheet) or evd_text(sheet) or pacemaker_text(sheet) or nutrition_present:
             ready[room] = sheet
     return {room: ready[room] for room in sorted(ready, key=room_order)}

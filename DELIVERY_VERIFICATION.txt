@@ -1,26 +1,26 @@
-PICU Handoff v6.71 delivery verification
+PICU Handoff v6.72 delivery verification
 
-Source: PICU670.zip, version 6.70.
-The final full regression run passed: 6101 tests and 14 subtests in 108.96 seconds. The only warning is the existing third-party anyio pytest deprecation warning.
+Source: PICU671.zip, version 6.71.
+Final focused regression: 680 passed in 23.27 seconds.
+Only the existing anyio pytest deprecation warning occurred.
+The full application suite was not repeated for this scoped update.
 
-Tube feeding appears once in one Tube feed section. Diet labels oral intake.
-Formula, route and hourly rate remain visible. Only a non-24-hour schedule
-prints. Daily kcal requires an explicit density, and mL/kg/day requires DCW.
-Missing continuous duration uses 24 hours. Conflicting duration does not,
-including after warning acknowledgment or encrypted save/recall.
+kcal/kg/day divides unrounded daily calories by documented dosing weight.
+Daily and normalized calories round independently. Missing/failed DCW does
+not use measured weight. Existing duration and conflict guards remain.
 
-Instructions, additives, the daily-volume equation and dosing-weight basis
-line do not print. Source fields remain stored and editable. Separate devices,
-existing inclusion choices and PN deduplication remain supported.
+Missing formula or rate is omitted without UNK or a dangling @. Known fields
+remain visible. Completely empty feed rows and their empty heading disappear.
+Stored source is retained. Legacy Print All presence uses the same renderer.
 
-Text, HTML, individual PDF and Print All PDF checks pass. The two-room
-synthetic PDF was visually inspected and fits the existing landscape layout.
-All 173 Python and three TOML files parse. ZIP CRC and SHA256SUMS are verified.
+Text, HTML, single PDF, Print All and encrypted recall checks pass. The two-room
+synthetic PDF was visually inspected. All 173 Python and three TOML files
+parse. ZIP CRC and all SHA256SUMS entries are verified.
 
-Schema remains 34. Fifteen core files, including encryption, storage, export,
-QTc, NIRS, ventilation and medication code, are identical to v6.70. Existing
-Secrets and encrypted data repositories require no changes.
+Changed application modules: app.py, batching.py, error_store.py and
+nutrition_display.py. All other application Python modules and requirements
+match v6.71. Schema, Secrets, encrypted data and dependencies are unchanged.
 
-Replace the complete application code set and restart. Confirm Version 6.71.
-Saved nutrition records use the compact display without reimport.
+Replace the complete application code set and restart. Confirm Version 6.72.
+Saved nutrition records use the new display without reimport.
 No live deployment or external repository write was performed.

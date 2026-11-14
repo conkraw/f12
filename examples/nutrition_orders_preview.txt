@@ -3,7 +3,7 @@ PICU HANDOFF
 Room: P4102
 Age: 8 y.o.
 Sex: Female
-Handoff reference: 4a839796
+Handoff reference: 5bcfc4e2
 Last saved: Not saved yet
 Confirm patient identity in Epic. A room is not a patient identifier.
 
@@ -27,7 +27,7 @@ FEN / GI
 Diet: Peds Regular
 -----
 Tube feed:
-GT: Synthetic Formula A (24 kcal/oz) @ 30 mL/hr (20 hr/day) | 480 kcal/day | 60 mL/kg/day
+GT: Synthetic Formula A (24 kcal/oz) @ 30 mL/hr (20 hr/day) | 480 kcal/day (48 kcal/kg/day) | 60 mL/kg/day
 -----
 TPN
 Pediatric 2-in-1 PN (Continuous)
@@ -53,7 +53,7 @@ PICU HANDOFF
 Room: P4104
 Age: 8 y.o.
 Sex: Female
-Handoff reference: 3f2d3ad3
+Handoff reference: 2de21b7c
 Last saved: Not saved yet
 Confirm patient identity in Epic. A room is not a patient identifier.
 
@@ -77,7 +77,7 @@ FEN / GI
 Diet: Peds Regular
 -----
 Tube feed:
-NJ: Synthetic Formula A (24 kcal/oz) @ 15 mL/hr | 288 kcal/day | 60 mL/kg/day
+NJ: Synthetic Formula A (24 kcal/oz) @ 15 mL/hr | 288 kcal/day (48 kcal/kg/day) | 60 mL/kg/day
 -----
 TPN
 Pediatric 2-in-1 PN (Continuous)

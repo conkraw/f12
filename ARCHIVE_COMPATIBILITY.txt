@@ -1,16 +1,13 @@
-PICU Handoff v6.71 archive compatibility
+PICU Handoff v6.72 archive compatibility
 
 Schema remains 34. Existing archives open without migration. No saved field
-is removed. The diet rows, enteral and parenteral lists, recorded_feed_ids,
-comments, additives and original source remain stored as in v6.70.
-Calculated display amounts are not saved as source data.
+is added or removed. Nutrition source, inclusion choices, duration, rate,
+formula, density, comments and additives are retained.
 
-Existing v6.70 records display in the compact format after installing v6.71.
-Structured nutrition records and AB diagnostics still require v6.70 or later.
-Use v6.71 to retain the new presentation, calorie calculations and duration
-rules. Older releases do not reproduce these display choices.
+kcal/kg/day is calculated at display time. Unknown feeding fields are omitted
+at display time. Saved v6.70 and v6.71 nutrition records use the new format
+without being reimported. Edit or reimport to correct the clinical source.
 
-security.py, github_store.py, mapping_sync.py, mapping_sync_ui.py,
-sync_diagnostics.py, models.py, exports.py and requirements.txt match v6.70.
-No encryption key, repository path or Secrets field changes. Each app retains
-its separate encrypted data repository and current medication mappings.
+No encryption key, repository path, Streamlit Secrets or dependency changes.
+Each app retains its encrypted data repository and medication mappings.
+Use the complete v6.72 application file set for consistent display and Print All.

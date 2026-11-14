@@ -1,31 +1,22 @@
-PICU Handoff v6.71 update from v6.70
+PICU Handoff v6.72 update from v6.71
 
 Complete application package. Replace the application files together.
 
 Changed application files:
   app.py
-  diet.py
+  batching.py
   error_store.py
-  fen_gi.py
-  import_review.py
-  importing.py
   nutrition_display.py
 
-The nutrition renderer shows one Tube feed heading, Diet for oral intake,
-explicit daily calories and dosing-weight-normalized volume. It omits feeding
-instructions, additives, the daily-volume equation and weight-basis line.
-A blank continuous duration defaults to 24 hours, and 24 is not printed.
-Other explicit durations remain visible. Conflicted duration is not defaulted.
+Adds kcal/kg/day beside kcal/day, using unrounded calories and dosing weight.
+Missing formula or rate is omitted without UNK placeholders or a dangling @.
+Known fields remain visible. Entries with neither formula nor rate do not print.
+Print All uses the same compact feed display when identifying nonempty rooms.
 
-Detailed and recorded feeds share a reconciliation rule, keeping dietary
-formula/rate authoritative. Calories require an explicit density. Existing
-structured snapshots and T-only records both use the compact handoff display.
+Nutrition display/integration tests and feed-output/version expectations are
+updated. Synthetic PDF, HTML and text previews are regenerated. Previous root
+release documentation is retained with a V671_ prefix.
 
-Synthetic nutrition tests and legacy display/version expectations are updated.
-Documentation and synthetic PDF, HTML and text previews are updated.
-The previous root release documentation is retained with a V670_ prefix.
-
-Keep app.py at its deployed location. Include all application files when
-updating from an earlier release. Keep existing Secrets and encrypted data
-repositories. Restart and confirm Version 6.71. No reimport is needed merely
-to display saved nutrition records in the compact format.
+Replace the complete application code set and restart. Confirm Version 6.72.
+Saved nutrition records use the new display without reimport. Existing Secrets,
+encrypted data repositories, schema and dependencies remain compatible.

@@ -228,7 +228,8 @@ def test_partial_conflict_displays_readable_fields_and_unknown_rate():
     r=import_sections(new_sheet('P4102'),wrap(source()+'\n'+NJ+'-'+LABEL+': 30 mL'),new_vault()['settings'])
     assert not r.errors and r.sheet['import_warnings']['t']
     assert feeds_for_output(r.sheet) is not None
-    assert 'Synthetic formula @ UNK' in fields_with_medications(r.sheet)['FEN / GI']
+    output=fields_with_medications(r.sheet)['FEN / GI']
+    assert 'NJ: Synthetic formula' in output and 'UNK' not in output and ' @ ' not in output
 
 
 def test_bad_divider_leaves_T_retained_hidden_and_a_imported():
