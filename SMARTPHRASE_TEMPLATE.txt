@@ -47,6 +47,9 @@ gggggggggggggggggggggggggggggggg
 hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh
 INTAKE/OUTPUT:
 [Insert your existing Epic intake/output SmartLink here]
+
+IO Current Shift:
+[Insert the existing Epic current-shift I/O SmartLink, including I/O this shift, Out breakdown and Weight.]
 hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh
 
 iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii

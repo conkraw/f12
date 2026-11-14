@@ -1,74 +1,66 @@
-# PICU Handoff 6.72
+# PICU Handoff 6.73
 
-## Compact nutrition in FEN/GI
+## Current Shift outputs
 
-Oral intake is labelled Diet. Tube feeding appears under one Tube feed heading.
-Each feed shows its documented route, formula and rate, followed by kcal/day
-when an explicit caloric density is available. kcal/kg/day and mL/kg/day use
-the documented dosing weight. A synthetic example is:
+This update adds a separate Current Shift block below the existing intake/output
+summary in FEN/GI. The original 24-hour totals, calculations, labels, source
+times, import behavior and editing controls are unchanged.
+
+Synthetic example, using 20 kg and 7.5 elapsed hours:
 
 ```text
-Diet: Peds Regular
-Tube feed:
-GT: Synthetic Formula (24 kcal/oz) @ 30 mL/hr (20 hr/day) | 480 kcal/day (48 kcal/kg/day) | 60 mL/kg/day
+Current Shift (11pm - 6:30am)
+UOP: 2.00 mL/kg/hr
+Drains: 0.10 mL/kg/hr
+Chest Tube: 0.20 mL/kg/hr
+Other: 0.40 mL/kg/hr
 ```
 
-Missing formula or rate is omitted without an UNK placeholder or a dangling @.
-A known formula can appear without a rate, and a known rate without a formula.
-An entry with neither is omitted, along with its empty Tube feed heading.
+Only supplied categories appear. Explicit zero remains zero. Missing categories
+are not invented. Other is never added to UOP. No current-shift intake, total
+output or net balance is displayed.
 
-For continuous feeding, a blank duration uses 24 hours. A supplied 24-hour
-schedule is also used without printing it. Other documented durations are
-printed and used in the calculation. An invalid or conflicting duration does
-not receive the default. Bolus, held and future orders do not get continuous
-daily totals.
+The new importer reads the H block's IO Current Shift / I/O this shift section.
+It reads each category from the Out breakdown and uses that section's Weight.
+It does not substitute the dosing weight or nutrition weight. The cutoff is
+the source Intake/Output Summary timestamp within H, not Last data filed or
+the time the handoff is printed later.
 
-Instructions, additives, the daily-volume equation and the dosing-weight basis
-line are omitted from the handoff. The original fields remain in Edit diet /
-review source. Existing saved nutrition records use the compact display after
-installing this version.
-
-## One feeding entry
-
-The dietary order supplies the formula, rate, duration and caloric density.
-A matching current T-section record does not produce another entry. Exact
-formula matches are paired first. An otherwise unique compatible tube can
-also match when its recorded formula label differs. The recorded formula and
-rate do not replace the dietary order. Separate and ambiguous devices remain
-separate rows within the same Tube feed section.
-
-A generic post-pyloric route can become NJ or ND only when the same import has
-one unambiguous explicit device. Older saved T rows cannot refine a new order.
-A T-only feeding record still displays compactly, using its own documented
-hourly rate and the 24-hour default. Intake volume is never converted to rate.
-
-## Calories and weight
-
-Ordered daily volume equals hourly rate times feeding hours. Daily calories
-use an explicit kcal/oz, kcal/mL or kcal/L density. The kcal/oz calculation uses
-30 mL per ounce. No calorie value is inferred from a product name, recipe or
-brand number. Missing density omits kcal/day and kcal/kg/day. Missing dosing
-weight omits kcal/kg/day and mL/kg/day. kcal/kg/day divides the unrounded daily
-calorie total by dosing weight and rounds the final result to one decimal. Measured weight is not substituted for dosing weight.
-
-Conflicting supplied totals or values require source review and withhold the
-related calculated amounts. Calculations are display values, not measured
-intake or stored source facts.
-
-PN present in both diet and medications continues to appear once. Oral diet,
-tube feeding and PN can coexist. Hidden or ignored PN choices remain effective.
+Shifts begin at 7am, 3pm and 11pm. Each rate is the documented volume divided
+by the source weight and elapsed shift hours. The saved snapshot retains its
+source cutoff when recalled or reprinted. Refresh it by pasting current data.
 
 ## Install
 
-Replace the complete application file set in each app-code repository. Include
-nutrition_display.py, and keep app.py at its deployed location. Restart and
-confirm Version 6.72 | kcal/kg/day and clean tube feeds.
+Extract PICU673.zip. Upload the contents of the enclosed application folder to
+each existing app-code repository, replacing matching files. Keep app.py at its
+existing deployed location. Include the new current_shift.py module.
 
-Keep existing Streamlit Secrets and encrypted data repositories. No key or
-dependency changes are needed. Existing detailed nutrition records display in
-the new format without reimport. Re-paste current dietary orders when their
-clinical contents have changed.
+Keep existing Streamlit Secrets, encryption key and encrypted data repositories.
+Do not upload application files into a patient-data repository. No dependency or
+schema migration is required. Restart and confirm:
 
-The earlier QTc, NIRS, Ignore and AVAPS updates remain included. This ZIP has
-not been deployed to the live apps. See NUTRITION_ORDERS_UPDATE.md,
-TEST_REPORT.md and ARCHIVE_COMPATIBILITY.txt. Packaged examples are synthetic.
+Version 6.73 | Current Shift outputs
+
+Re-paste each patient's SmartPhrase with the Current Shift section. Earlier
+versions did not retain these values, so old saved handoffs cannot reconstruct
+them. This ZIP has not been deployed to the hosted apps.
+
+## Safety and retained features
+
+Invalid or missing source time/weight withholds calculated rates. A failed new H
+import clears the prior shift snapshot rather than leaving old rates available
+as refreshed data. Import review explains the problem. Re-paste a valid current
+source to restore the block. A partial update without H retains the original
+snapshot and its original cutoff.
+
+The output is a documented-volume average over elapsed shift time. It cannot
+recover uncharted outputs or establish that charting is complete through the
+cutoff. Source timestamps are interpreted in US Eastern time, matching the
+existing app. Daylight-saving changes use actual elapsed hours. Ambiguous or
+nonexistent source times and an exact shift-start time withhold rates.
+
+The recent nutrition changes, including kcal/kg/day and omission of unknown
+formula/rate, remain included. Medication mapping, storage and existing print
+layout behavior are unchanged. See CURRENT_SHIFT_UPDATE.md and TEST_REPORT.md.
+Packaged examples are synthetic.

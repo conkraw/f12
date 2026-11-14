@@ -1,58 +1,60 @@
-# PICU Handoff v6.72 validation
+# PICU Handoff 6.73 validation
 
-Built from PICU671.zip. No live repository or hosted deployment was changed.
+Built from PICU672.zip, Library version 5. No live repository or hosted app was
+changed. The complete 6.72 code set is retained apart from the listed changes.
 
-## Executed verification
+## Completed test runs
 
-The final focused regression run passed all 680 tests in 23.27 seconds:
+957 selected tests passed in two completed regression runs.
+
+Main focused run: 764 passed in 23.28 seconds.
 
 ```text
-python3 -m pytest -q tests/test_nutrition_display.py tests/test_nutrition_integration.py tests/test_feeds.py tests/test_fen_gi.py tests/test_diet_lactate.py tests/test_batch_exports.py tests/test_save_before_print.py tests/test_workflow_print.py tests/test_print_fit_reset.py tests/test_measurement_notes_observed_pip.py
+python -m pytest -q tests/test_current_shift.py tests/test_current_shift_integration.py tests/test_fen_gi.py tests/test_nutrition_display.py tests/test_nutrition_integration.py tests/test_feeds.py tests/test_diet_lactate.py tests/test_batch_exports.py tests/test_save_before_print.py tests/test_workflow_print.py tests/test_print_fit_reset.py tests/test_measurement_notes_observed_pip.py
 ```
 
-The only warning is the existing third-party anyio pytest deprecation warning.
-The full application suite was not repeated for these scoped display changes.
-The preceding 6.71 full-run result is retained in V671_TEST_REPORT.md.
+Additional compatibility run: 193 passed in 2.33 seconds.
 
-## Calories per kg
+```text
+python -m pytest -q tests/test_arterial_pressure.py tests/test_callbacks.py tests/test_error_journal.py tests/test_import_recovery.py tests/test_parser.py tests/test_security_models.py tests/test_ui_smoke.py
+```
 
-The display adds kcal/kg/day beside kcal/day when explicit caloric density,
-a valid rate and schedule, and positive dosing weight are available. Tests
-cover kg and g, different room weights, missing/invalid DCW, failed weight
-imports, no measured-weight fallback, zero rate, fractional calories and
-independent final rounding from the unrounded calorie calculation.
+The new current-shift tests account for 84 of the 764 tests. The only existing
+test assertion changed is the expected technical-report version, 6.72 to 6.73.
+No existing behavioral regression was removed or weakened.
 
-Existing duration, held/future/bolus, listed-volume, field-conflict and numeric
-bounds remain covered. Invalid duration remains uncalculated after warning
-acknowledgment and encrypted save/recall. Explicit valid edits still resolve it.
+A broader full-suite attempt reached approximately 41 percent without a reported
+failure before the 200-second execution limit. That attempt did not finish and
+is not represented as a full-suite pass. The completed focused and compatibility
+runs above are the release verification evidence.
 
-## Missing fields
+## Covered behavior
 
-Formula-only and rate-only rows keep known details without UNK placeholders
-or a dangling @. Literal UNK/Unknown formula values are treated as missing,
-while real formula names containing those words remain intact. Zero is a
-known rate, not a missing value. Rows missing both formula and rate disappear,
-including an otherwise empty section heading. Stored source remains editable.
+Tests cover all three shifts, midnight, source-clock formats, daylight-saving
+changes, exact shift-start boundaries, explicit zero, missing values, grams,
+very small positive rates, comma-separated volumes, wrapped output lines,
+unknown categories, invalid units, duplicate values and malformed sections.
 
-These behaviors are checked in text, HTML, individual PDF and Print All PDF,
-as well as encrypted recall. A legacy T-only record with no remaining visible
-feed data does not qualify for Print All solely because of that empty row.
+Integration checks verify that the 24-hour snapshot object, its source times,
+its text and its heading are unchanged. H does not replace S totals. The
+snapshot survives encrypted save/reload and appears in text, HTML, individual
+PDF and Print All. Reprinting later does not change the rates. Failed new H
+imports clear old shift rates, and acknowledgment does not restore them.
 
-## Layout and compatibility
+The two uploaded text examples were also exercised locally against both the
+current-shift parser and the full importer. Both imported their intended shift
+outputs without skipped sections. No uploaded patient source is packaged.
 
-The two-room synthetic preview was regenerated and visually inspected. The
-20-hour GT and 24-hour NJ examples show kcal/kg/day correctly. Each room still
-fits the existing seven-column landscape layout without clipping or overlap.
-Instructions/additives remain hidden, the PN entry remains deduplicated, and
-the old dated QTc and Long QTc problem remain visible in the preview.
+## Layout and integrity
 
-Only app.py, batching.py, error_store.py and nutrition_display.py changed among
-application modules. All other application Python modules and requirements.txt
-are byte-identical to v6.71. Schema remains 34. No data migration, encryption,
-Secrets, dependency, storage or medication-mapping change is required.
+A synthetic one-room PDF and three-room Print All PDF were generated. The
+one-room preview was visually inspected after rasterization. Current Shift
+appears below existing I/O, with no clipping or overlap. Print All produces one
+page per synthetic room. All generated previews contain synthetic data only.
 
-All 173 Python files parse with ast and all three TOML files with tomllib.
-ZIP CRC and regenerated SHA256SUMS are verified before delivery. Packaged
-examples are synthetic. No supplied clinical source or screenshot is included.
-UI checks use the existing Streamlit widget stubs. No live hosted app was
-exercised or deployed.
+All Python and TOML files are parsed during packaging. ZIP CRC and the file
+SHA256 manifest are checked. No Secrets, encryption key, medication-mapping,
+data-repository or dependency change is required.
+
+UI coverage uses existing widget stubs. A live Streamlit browser session and
+hosted deployment were not exercised.

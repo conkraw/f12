@@ -1,22 +1,19 @@
-PICU Handoff v6.72 update from v6.71
+PICU Handoff 6.73
 
-Complete application package. Replace the application files together.
+Recommended installation: replace the complete application file set in each
+app-code repository, then restart the deployment. Preserve Secrets and the
+separate encrypted data repositories.
 
-Changed application files:
-  app.py
-  batching.py
-  error_store.py
-  nutrition_display.py
+Application modules added/changed:
+app.py
+batching.py
+current_shift.py
+error_store.py
+fen_gi.py
+import_review.py
+importing.py
+models.py
 
-Adds kcal/kg/day beside kcal/day, using unrounded calories and dosing weight.
-Missing formula or rate is omitted without UNK placeholders or a dangling @.
-Known fields remain visible. Entries with neither formula nor rate do not print.
-Print All uses the same compact feed display when identifying nonempty rooms.
-
-Nutrition display/integration tests and feed-output/version expectations are
-updated. Synthetic PDF, HTML and text previews are regenerated. Previous root
-release documentation is retained with a V671_ prefix.
-
-Replace the complete application code set and restart. Confirm Version 6.72.
-Saved nutrition records use the new display without reimport. Existing Secrets,
-encrypted data repositories, schema and dependencies remain compatible.
+current_shift.py is required. The remaining application modules and all
+runtime dependencies are unchanged. Documentation, the SmartPhrase template,
+new synthetic tests and synthetic previews are also included.

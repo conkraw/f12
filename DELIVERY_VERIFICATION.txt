@@ -1,26 +1,14 @@
-PICU Handoff v6.72 delivery verification
+PICU Handoff 6.73 delivery verification
 
-Source: PICU671.zip, version 6.71.
-Final focused regression: 680 passed in 23.27 seconds.
-Only the existing anyio pytest deprecation warning occurred.
-The full application suite was not repeated for this scoped update.
+Source: PICU672.zip, Library version 5.
+957 selected tests passed in completed regression runs.
+Full-suite attempt was time-limited and is not claimed as completed.
+176 Python files parse successfully. 3 TOML files parse successfully.
 
-kcal/kg/day divides unrounded daily calories by documented dosing weight.
-Daily and normalized calories round independently. Missing/failed DCW does
-not use measured weight. Existing duration and conflict guards remain.
-
-Missing formula or rate is omitted without UNK or a dangling @. Known fields
-remain visible. Completely empty feed rows and their empty heading disappear.
-Stored source is retained. Legacy Print All presence uses the same renderer.
-
-Text, HTML, single PDF, Print All and encrypted recall checks pass. The two-room
-synthetic PDF was visually inspected. All 173 Python and three TOML files
-parse. ZIP CRC and all SHA256SUMS entries are verified.
-
-Changed application modules: app.py, batching.py, error_store.py and
-nutrition_display.py. All other application Python modules and requirements
-match v6.71. Schema, Secrets, encrypted data and dependencies are unchanged.
-
-Replace the complete application code set and restart. Confirm Version 6.72.
-Saved nutrition records use the new display without reimport.
-No live deployment or external repository write was performed.
+The 24-hour I/O parser, nutrition calculations, exports, encryption, GitHub
+storage and requirements files are byte-identical to 6.72.
+The SHA256SUMS.txt manifest covers every packaged file except itself.
+ZIP integrity is verified before delivery.
+No uploaded clinical source, screenshot, token, patient-data archive, or runtime
+log was added to this package. Packaged new examples are synthetic.
+No live application or repository was deployed or modified.

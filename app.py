@@ -1,4 +1,4 @@
-"""PICU SmartPhrase v6.72: weight-normalized calories and clean feeding summaries."""
+"""PICU SmartPhrase v6.73: separate current-shift outputs in mL/kg/hr."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,
@@ -67,6 +67,7 @@ from devices import validate_devices, EDIT_FIELDS as DEVICE_EDIT_FIELDS, device_
 from diet import validate_diet, diet_text, diet_for_output, diet_failed
 from nutrition_display import has_detailed_nutrition, nutrition_text
 from feeds import METHODS as FEED_METHODS, validate_feeds, feeds_for_output
+from current_shift import current_shift_text, current_shift_heading, current_shift_rows, current_shift_issues
 from fluid_balance import balance_heading, FIELDS as IO_FIELDS, META_FIELDS as IO_META_FIELDS, validate_balance, balance_text, empty_balance
 from fen_gi import (MODES as GI_MODES, MODE_LABELS as GI_MODE_LABELS, GROUP_NAMES,
                     automatic_group, group_for, effective_section, fen_gi_body,
@@ -1774,7 +1775,7 @@ def main() -> None:
         return
     with st.sidebar:
         st.header("PICU Handoff")
-        st.caption("Version 6.72 | kcal/kg/day and clean tube feeds")
+        st.caption("Version 6.73 | Current Shift outputs")
         # Retire the old instructions workspace without discarding room drafts.
         if st.session_state.get("page") == "Instructions / SmartPhrase":
             st.session_state["page"] = "Handoff"
@@ -2046,6 +2047,7 @@ def handoff_notes(sheet: dict) -> None:
                 pacemaker_editor(sheet)
             if section == "FEN / GI":
                 intake_output_editor(sheet)
+                current_shift_editor(sheet)
                 diet_editor(sheet)
                 feeds_editor(sheet)
             if section == "Labs" and orders_text(sheet["recurring_orders"]):
@@ -2079,8 +2081,8 @@ def handoff_notes(sheet: dict) -> None:
                 st.markdown('<div style="white-space:pre-wrap">------\n' + culture_markup(sheet["cultures"], empty_none=True) + '</div>', unsafe_allow_html=True)
                 st.caption("Edit imported specimens and results in Cultures. Temperature stays first in the printed ID column.")
             if section == "FEN / GI":
-                st.markdown('<div style="white-space:pre-wrap">' + fen_gi_body("", sheet["medications"], None, True, sheet=sheet) + "</div>", unsafe_allow_html=True)
-                st.caption("Printed order: Intake/Output/Net, Diet, Tube feed, TPN, GI prophylaxis, Bowel Regimen, Diuretics, Antiemetics, Endocrine Medications, then separate notes and remaining FEN/GI medications.")
+                st.markdown('<div style="white-space:pre-wrap">' + fen_gi_body("", sheet["medications"], None, True, sheet=sheet, include_current_shift=False) + "</div>", unsafe_allow_html=True)
+                st.caption("Printed order: Intake/Output/Net, Current Shift outputs, Diet, Tube feed, TPN, GI prophylaxis, Bowel Regimen, Diuretics, Antiemetics, Endocrine Medications, then separate notes and remaining FEN/GI medications.")
             elif section in INFUSION_SECTIONS:
                 render_body = {"Neurologic": neuro_body, "Cardiovascular": cardiovascular_body, "Hematology": hematology_body, "Respiratory": respiratory_body}[section]
                 st.markdown('<div style="white-space:pre-wrap">' + render_body("", sheet["medications"], True, sheet=sheet) + '</div>', unsafe_allow_html=True)
@@ -2743,6 +2745,23 @@ def intake_output_editor(sheet: dict) -> None:
     st.caption("The time window uses the hour of the source 24-hour summary, not the time you reprint this handoff. Minutes remain visible in As of above.")
 
 
+def current_shift_editor(sheet: dict) -> None:
+    """Read-only imported snapshot, independent of existing I/O editing."""
+    data = sheet.get("current_shift")
+    if data is None:
+        return
+    st.subheader(current_shift_heading(data))
+    rows = current_shift_rows(data)
+    if current_shift_text(sheet) and rows:
+        st.text(rows)
+    for issue in current_shift_issues(data):
+        st.warning(issue)
+    source = data["as_of"].replace("T", " ") or "unavailable"
+    weight = data["weight_kg"] + " kg" if data["weight_kg"] else "unavailable"
+    st.caption("Source: " + source + " | Current-shift weight: " + weight)
+    st.caption("Outputs only. Shifts begin at 7am, 3pm and 11pm. Rates use the source summary time, not Last data filed or the later print time. Re-paste to refresh.")
+
+
 def diet_row_change(room: str, row_id: str, field: str, key: str) -> None:
     if not require_session() or room != st.session_state.get("current_room") or field not in ("text", "include"):
         return
@@ -3155,12 +3174,13 @@ def import_review_editor(sheet: dict, compact: bool = False) -> None:
     if not compact:
         st.warning(summary)
     with st.expander("Review skipped or incomplete imports", expanded=False):
-        st.caption("Valid sections were updated. An unreadable section keeps its previous values with this warning. Failed orders, diet, feeds, device, pacemaker and ECG imports are retained for review but hidden from print. Import warnings appear only here, not on downloaded handoffs. Do not treat skipped values as refreshed.")
+        st.caption("Valid sections were updated. An unreadable section keeps its previous values with this warning. Failed current-shift imports clear the old shift snapshot. Failed orders, diet, feeds, device, pacemaker and ECG imports are retained for review but hidden from print. Import warnings appear only here, not on downloaded handoffs. Do not treat skipped values as refreshed.")
         for section, items in sheet["import_warnings"].items():
             if not compact:
                 for item in items:
                     st.text(diagnostic_text(item))
-            label = ("Use retained orders after checking Epic" if section == 'r' else
+            label = ("Acknowledge current-shift issue" if section == 'h' else
+                     "Use retained orders after checking Epic" if section == 'r' else
                      "Use retained diet after checking Epic" if section in ("x", "ab") and any(i["action"] == "diet_hidden" for i in items) else
                      "Use retained feeds after checking Epic" if section == 't' and any(i['action'] == 'feeds_hidden' for i in items) else
                      "Use retained pacemaker settings after checking Epic" if section == "w" and any(i["action"] == "pacemaker_hidden" for i in items) else

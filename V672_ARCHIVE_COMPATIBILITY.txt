@@ -1,0 +1,13 @@
+PICU Handoff v6.72 archive compatibility
+
+Schema remains 34. Existing archives open without migration. No saved field
+is added or removed. Nutrition source, inclusion choices, duration, rate,
+formula, density, comments and additives are retained.
+
+kcal/kg/day is calculated at display time. Unknown feeding fields are omitted
+at display time. Saved v6.70 and v6.71 nutrition records use the new format
+without being reimported. Edit or reimport to correct the clinical source.
+
+No encryption key, repository path, Streamlit Secrets or dependency changes.
+Each app retains its encrypted data repository and medication mappings.
+Use the complete v6.72 application file set for consistent display and Print All.

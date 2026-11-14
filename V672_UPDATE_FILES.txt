@@ -1,0 +1,22 @@
+PICU Handoff v6.72 update from v6.71
+
+Complete application package. Replace the application files together.
+
+Changed application files:
+  app.py
+  batching.py
+  error_store.py
+  nutrition_display.py
+
+Adds kcal/kg/day beside kcal/day, using unrounded calories and dosing weight.
+Missing formula or rate is omitted without UNK placeholders or a dangling @.
+Known fields remain visible. Entries with neither formula nor rate do not print.
+Print All uses the same compact feed display when identifying nonempty rooms.
+
+Nutrition display/integration tests and feed-output/version expectations are
+updated. Synthetic PDF, HTML and text previews are regenerated. Previous root
+release documentation is retained with a V671_ prefix.
+
+Replace the complete application code set and restart. Confirm Version 6.72.
+Saved nutrition records use the new display without reimport. Existing Secrets,
+encrypted data repositories, schema and dependencies remain compatible.

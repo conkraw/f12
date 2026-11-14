@@ -12,6 +12,7 @@ from medications import ignored, is_bupivacaine, match_name, normalized, visible
 from output_text import medication_output
 from clinical_style import clinical_markup
 from fluid_balance import balance_text, balance_heading
+from current_shift import current_shift_text
 from diet import diet_text
 from nutrition_display import has_detailed_nutrition, nutrition_sections, parenteral_kind
 from medication_groups import group_for as special_group, GROUP_SECTIONS
@@ -131,7 +132,7 @@ def apply_gi_rules(rows: list[dict], rules: list[dict]) -> list[dict]:
     return result
 
 
-def fen_gi_body(notes: str, rows: list[dict], intake_output: dict | None, rich: bool = False, esc=escape, feeds: dict | None = None, feeds_failed: bool = False, diet: dict | None = None, diet_failed: bool = False, dosing_weight: str = "", sheet: dict | None = None) -> str:
+def fen_gi_body(notes: str, rows: list[dict], intake_output: dict | None, rich: bool = False, esc=escape, feeds: dict | None = None, feeds_failed: bool = False, diet: dict | None = None, diet_failed: bool = False, dosing_weight: str = "", sheet: dict | None = None, include_current_shift: bool = True) -> str:
     """Totals, then feeds.  Each visible order appears exactly once, without changing doses."""
     encode = esc if rich else lambda s: s
     meds = [r for r in rows if visible(r) and effective_section(r) == "FEN / GI"]
@@ -140,6 +141,9 @@ def fen_gi_body(notes: str, rows: list[dict], intake_output: dict | None, rich: 
     if totals:
         heading = balance_heading(intake_output) + ":"
         sections.append(("<b>" + esc(heading) + "</b>\n" + clinical_markup(totals, esc)) if rich else heading + "\n" + totals)
+    shift = current_shift_text(sheet or {}, rich, esc) if include_current_shift else ""
+    if shift:
+        sections.append(shift)
     if has_detailed_nutrition(diet) and not diet_failed:
         sections.extend(nutrition_sections(diet, None if feeds_failed else feeds, rows,
                         dosing_weight=dosing_weight, sheet=sheet, rich=rich, esc=esc))

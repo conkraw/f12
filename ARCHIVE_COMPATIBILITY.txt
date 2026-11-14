@@ -1,13 +1,15 @@
-PICU Handoff v6.72 archive compatibility
+PICU Handoff 6.73 archive compatibility
 
-Schema remains 34. Existing archives open without migration. No saved field
-is added or removed. Nutrition source, inclusion choices, duration, rate,
-formula, density, comments and additives are retained.
+Schema remains 34. Existing archives open without migration and do not need a
+new encryption key or Secrets change. Existing medication mappings are intact.
 
-kcal/kg/day is calculated at display time. Unknown feeding fields are omitted
-at display time. Saved v6.70 and v6.71 nutrition records use the new format
-without being reimported. Edit or reimport to correct the clinical source.
+The new optional current_shift field is validated when present. Old sheets do
+not acquire invented shift data. A new source paste is required to populate it.
+Save/reload and Print All preserve the original source cutoff and source weight.
 
-No encryption key, repository path, Streamlit Secrets or dependency changes.
-Each app retains its encrypted data repository and medication mappings.
-Use the complete v6.72 application file set for consistent display and Print All.
+Update all app-code repositories sharing an archive. Once a new shift snapshot
+is saved, an older build does not recognize that optional field. Avoid running
+older app code against that updated archive.
+
+The existing fluid_balance.py, nutrition_display.py, exports.py, security.py,
+github_store.py and requirements.txt are byte-identical to version 6.72.

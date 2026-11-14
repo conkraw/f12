@@ -20,6 +20,7 @@ from blood_gases import parse_gases
 from cbc import parse_cbc
 from recurring_orders import parse_orders, selected_orders
 from fluid_balance import parse_balance
+from current_shift import parse_current_shift
 from feeds import parse_feeds
 from devices import parse_devices
 from pacemaker import parse_pacemaker
@@ -29,7 +30,7 @@ from fen_gi import apply_gi_rules
 from medication_groups import apply_group_rules
 from import_review import diagnostic, diagnostic_text
 
-SUPPORTED_SECTIONS = tuple("abcdefgiklmnopqrstuvwxyz") + ("ab",)
+SUPPORTED_SECTIONS = tuple("abcdefghiklmnopqrstuvwxyz") + ("ab",)
 
 
 @dataclass
@@ -74,7 +75,7 @@ def import_sections(sheet: dict, text: str, settings: dict) -> ImportResult:
     parsed = parse_smartphrase(text)
     relevant = set(SUPPORTED_SECTIONS) & (set(parsed.blocks) | parsed.invalid)
     if not relevant:
-        out.errors.append("No supported block was found. Use paired A, B, C, D, E, F, G, I, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z or AB dividers.")
+        out.errors.append("No supported block was found. Use paired A, B, C, D, E, F, G, H, I, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z or AB dividers.")
         return out
     # Repeated paired sections can mean two patients were pasted together.
     # That document-wide identity ambiguity cannot be repaired by partial import.
@@ -86,8 +87,12 @@ def import_sections(sheet: dict, text: str, settings: dict) -> ImportResult:
     candidate = deepcopy(sheet)
     def reject(group, code='section_parse_failed', line=0):
         nonlocal candidate
+        if group == 'h':
+            # Never restore an old shift after a failed new H import, including
+            # after acknowledgment of the import warning.
+            candidate['current_shift'] = None
         item = diagnostic(group, code,
-                          action='orders_hidden' if group == 'r' else 'feeds_hidden' if group == 't' else 'devices_hidden' if group == 'u' else 'neuro_devices_hidden' if group == 'v' else 'pacemaker_hidden' if group == 'w' else 'diet_hidden' if group in ('x', 'ab') else 'ecg_hidden' if group == 'z' else 'not_updated', line=line)
+                          action='current_shift_hidden' if group == 'h' else 'orders_hidden' if group == 'r' else 'feeds_hidden' if group == 't' else 'devices_hidden' if group == 'u' else 'neuro_devices_hidden' if group == 'v' else 'pacemaker_hidden' if group == 'w' else 'diet_hidden' if group in ('x', 'ab') else 'ecg_hidden' if group == 'z' else 'not_updated', line=line)
         candidate['import_warnings'][group] = [item]
         out.diagnostics.append(item)
         if group not in out.skipped:
@@ -244,6 +249,16 @@ def import_sections(sheet: dict, text: str, settings: dict) -> ImportResult:
                 out.notices.extend(orders.issues)
                 count = len(selected_orders(orders.data))
                 out.imported.append(str(count) + " recurring lab/imaging orders" if count else "recurring lab/imaging orders cleared")
+            elif letter == "h":
+                shift = parse_current_shift(parsed.blocks[letter])
+                if shift.error:
+                    out.errors.append(shift.error)
+                    continue
+                candidate["current_shift"] = shift.data
+                out.notices.extend(shift.issues)
+                if shift.issues:
+                    recoveries = [diagnostic('h', 'current_shift_incomplete', action='row_omitted')]
+                out.imported.append("current-shift outputs" if shift.data else "current-shift display cleared")
             elif letter == "s":
                 balance = parse_balance(parsed.blocks[letter])
                 if balance.error:
