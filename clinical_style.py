@@ -22,7 +22,7 @@ LABEL = re.compile(
     r"^(?:Room|Age|Sex|Admission|Diagnoses|Weight|Z-score|Dosing weight|Height|BSA|BMI|MRSA Screen|EVD|"
     r"SBS(?: target)?|RASS|Target Arousal Level(?: \(SBS\))?|"
     r"WAT(?:-1)?(?: total score)?(?: \(0-12\))?|CAPD|"
-    r"ICP(?: Mean)?(?: \(mmHg\))?|CPP|Resp(?:iratory Rate)?|RR|"
+    r"ICP(?: Mean)?(?: \(mmHg\))?|CPP|(?:Last )?NIRS|QTc|Resp(?:iratory Rate)?|RR|"
     r"FiO2(?:[ \t]*\(%\))?|SpO2|Pulse Ox(?:imetry)?|"
     r"ETCO2(?:[ \t]*\(mmHg\))?|VP|Heart Rate|HR|Pulse(?: rate)?|BP|"
     r"Blood pressure|Cuff|(?:Last )?ART (?:BP|MAP)|Systolic|Diastolic|SBP|DBP|MAP(?: \(mmHg\))?|"
@@ -76,6 +76,9 @@ def value_markup(text: str, esc=escape) -> str:
 def clinical_runs(text: str) -> list[tuple[str, bool, str]]:
     """Plain text segments with bold/color metadata, for vector drawing."""
     label, colon, rest = text.partition(":")
+    if (colon and label.strip().casefold() == "qtc"
+            and re.fullmatch(r"\s+\d+(?:\.\d+)? msec(?: \[[^]\r\n]+\])? \(!\)\s*", rest)):
+        return [(label + colon, True, HIGH_COLOR), (rest, False, HIGH_COLOR)]
     if colon and LABEL.fullmatch(label.strip()):
         if label.strip().lower().startswith("inflammatory markers") and "[" in label:
             head, date = label.split("[", 1)
@@ -87,7 +90,11 @@ def clinical_runs(text: str) -> list[tuple[str, bool, str]]:
 def clinical_markup(text: str, esc=escape) -> str:
     lines = []
     for line in text.split("\n"):
-        lines.append("".join(("<b>" + esc(value) + "</b>") if bold else
-                     (('<font color="' + color + '">' + esc(value) + '</font>')
-                      if color else esc(value)) for value, bold, color in clinical_runs(line)))
+        parts = []
+        for value, bold, color in clinical_runs(line):
+            markup = "<b>" + esc(value) + "</b>" if bold else esc(value)
+            if color:
+                markup = '<font color="' + color + '">' + markup + '</font>'
+            parts.append(markup)
+        lines.append("".join(parts))
     return "\n".join(lines)

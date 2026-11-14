@@ -4,7 +4,7 @@ from copy import deepcopy
 from categories import (CATEGORY_SYSTEMS, catalog, target_label, system_targets,
                         save_category, delete_category, set_category_rule, rule_key,
                         matching_target, placement)
-from medications import match_name, normalized
+from medications import ignored, match_name, normalized
 
 
 def targets(settings: dict) -> list[str]:
@@ -14,7 +14,8 @@ def targets(settings: dict) -> list[str]:
 
 def local_target(row: dict, settings: dict) -> str:
     key = (match_name(row["name"]), "exact", normalized(row["route"]), normalized(row["frequency"]))
-    return next((r["target"] for r in settings.get("medication_category_rules", []) if rule_key(r) == key), "auto")
+    return next((r["target"] for r in settings.get("medication_category_rules", []) if rule_key(r) == key),
+                "system:Ignore" if ignored(row) else "auto")
 
 
 def placement_picker(row: dict, number: int, room: str, store, callback) -> None:

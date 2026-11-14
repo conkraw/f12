@@ -9,10 +9,10 @@ SECTION_NAMES = {
     "a": "Diagnoses", "b": "Medications", "c": "Invasive Ventilation",
     "d": "Non-invasive Ventilation", "e": "VITALS", "f": "CULTURES",
     "g": "LABS", "h": "INTAKE/OUTPUT", "i": "NUTRITION", "j": "Wound Review",
-    "k": "Target Arousal Level", "l": "WAT Score", "m": "ICP Trends", "n": "Date of Admission", "o": "Respiratory Viral Panel", "p": "Blood Gas", "q": "Complete Blood Count", "r": "Orders Placed This Encounter", "s": "Intake / Output totals", "t": "Feeds", "u": "Devices", "v": "Intracranial Pressure Monitor", "w": "Pacemaker", "x": "Diet", "y": "CAPD",
+    "k": "Target Arousal Level", "l": "WAT Score", "m": "ICP Trends", "n": "Date of Admission", "o": "Respiratory Viral Panel", "p": "Blood Gas", "q": "Complete Blood Count", "r": "Orders Placed This Encounter", "s": "Intake / Output totals", "t": "Feeds", "u": "Devices", "v": "Intracranial Pressure Monitor", "w": "Pacemaker", "x": "Diet", "y": "CAPD", "z": "ECG",
 }
 MAX_PASTE = 150_000
-DIVIDER = re.compile(r"^([a-y])\1{7,}$", re.I)
+DIVIDER = re.compile(r"^([a-z])\1{7,}$", re.I)
 NUMBER_OR_BULLET = re.compile(r"^\s*(?:\d+[.)]\s+|[•\-]\s+)")
 
 
@@ -22,6 +22,9 @@ def _heading(line: str) -> str | None:
         return "n"
     if re.match(r"^(?:capd|cornell assessment of pediatric delirium)(?:\b|:)", text):
         return "y"
+    if (text in ("ecg", "ekg", "electrocardiogram")
+            or re.match(r"^(?:ecg|ekg)(?:\s*:|\s+\d+\s*[- ]?\s*leads?\b)", text)):
+        return "z"
     if text in ("sbs", "sbs score", "sbs observations", "state behavioral scale", "state behavioral scale (sbs)"):
         return "k"
     if text in ("orders", "recurring orders", "labs/imaging"):
@@ -43,7 +46,7 @@ class ParseResult:
 
 
 def parse_smartphrase(text: str) -> ParseResult:
-    """Accept matching a..y divider lines of any length >= 8.
+    """Accept matching a..z divider lines of any length >= 8.
 
     Ambiguous/missing/duplicate boundaries fail closed for that section.
     Issues in a later section do not invalidate a complete, unambiguous a block.
@@ -119,7 +122,7 @@ def parse_smartphrase(text: str) -> ParseResult:
             r"^(?:(?:Last|Observed|Recorded|Actual)\s+)?(?:SBS\b|State\s+Behavio(?:u)?r(?:al)?\s+Scale\b)|^(?:results? from |patient vitals? for |Date(?:/Time)?\s|\d{1,2}/\d{1,2}/\d{2,4}\b)",
             nonempty[0], re.I)))
         # T contains device-prefixed lines and may have no heading at all.
-        t_start = key in ("t", "u", "v", "w", "x", "y")
+        t_start = key in ("t", "u", "v", "w", "x", "y", "z")
         if not p_start and not r_start and not s_start and not t_start and not m_start and not k_start and (not nonempty or _heading(nonempty[0]) != key):
             result.invalid.add(key)
             result.issues.append(f"The {SECTION_NAMES[key]} divider pair must begin with its matching heading.")

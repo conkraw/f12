@@ -8,7 +8,7 @@ from __future__ import annotations
 from copy import deepcopy
 from html import escape
 import re
-from medications import is_bupivacaine, match_name, normalized, visible, format_medication
+from medications import ignored, is_bupivacaine, match_name, normalized, visible, format_medication
 from output_text import medication_output
 from clinical_style import clinical_markup
 from fluid_balance import balance_text, balance_heading
@@ -70,6 +70,8 @@ def group_for(row: dict) -> str:
 
 
 def effective_section(row: dict) -> str:
+    if ignored(row):
+        return "Ignore"
     if is_bupivacaine(row.get("name", "")):
         return "Neurologic"
     if row.get("category_path") is not None:

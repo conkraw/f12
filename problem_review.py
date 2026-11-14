@@ -19,6 +19,7 @@ from cbc import cbc_cards
 from medications import visible
 from fen_gi import effective_section, group_for as gi_group
 from lab_windows import clock, eligible_time, measured
+from ecg import long_qtc, format_ecg
 
 TITLE = 'Problems'
 STATUSES = ('review', 'confirmed', 'dismissed')
@@ -33,6 +34,7 @@ RULES = {
     'BILITOT': 'Hyperbilirubinemia',
     'CALCIUM_HIGH': 'Hypercalcemia', 'PHOS_HIGH': 'Hyperphosphatemia',
     'coagulopathy': 'Coagulopathy',
+    'QTC': 'Long QTc',
 }
 LOW_RULES = tuple(k for k in RULES if k in ('NA','K','ALBUMIN','CO2','MG','PHOS','HGB','PLT'))
 LABELS = {'NA':'Sodium', 'K':'Potassium', 'ALBUMIN':'Albumin', 'CO2':'Serum CO2',
@@ -241,6 +243,9 @@ def suggestions(sheet: dict, as_of: datetime | None = None) -> list[dict]:
         if support:
             add('respiratory', ', '.join(dict.fromkeys(support)),
                 'Support alone does not establish acute hypoxemia. Verify acuity, oxygenation and whether support is baseline or for airway protection.', [vent, sheet.get('noninvasive')])
+    if 'z' not in sheet.get('import_warnings', {}) and long_qtc(sheet.get('ecg')):
+        add('QTC', format_ecg(sheet['ecg']) + ', above 450 msec',
+            'Configured Bazett QTc cutoff is greater than 450 msec. The ECG date is retained without a recency limit.', sheet['ecg'])
     latest = _latest_rows(sheet, now)
     for key in LOW_RULES:
         row = latest.get(key)

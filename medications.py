@@ -17,7 +17,7 @@ from medication_columns import split_medication_columns
 from output_text import medication_name_output
 
 DESTINATIONS = ("Neurologic", "Respiratory", "Cardiovascular", "FEN / GI", "Hematology",
-                "Infectious Disease", "Labs", "Skin / Wounds", "Other Medications")
+                "Infectious Disease", "Labs", "Skin / Wounds", "Other Medications", "Ignore")
 BULLET = re.compile(r"^\s*[•●▪◦\-]\s*")
 SPACE = re.compile(r"\s+")
 CONNECTOR = re.compile(r"^(followed\s+by|and|or)\s*:?$", re.I)
@@ -28,6 +28,7 @@ OR_PREFIX = re.compile(r"^or\s*:\s+", re.I)
 STATUS_PREFIX = re.compile(r"^\[(?:held by provider|discontinued)\]\s*", re.I)
 SCHEDULE_PREFIX = re.compile(r"^\[START\s+ON\s+[^\]\r\n]+\]\s*", re.I)
 RATE = re.compile(r"^\s*(\d+(?:\.\d+)?\s*(?:m[lL]|[uµμ]g|mcg|mg|g|units?|Units?|mEq)(?:\s*/\s*(?:kg|hr|min|h|day|24h)){1,3})\b", re.I)
+OVERRIDE_PULL = re.compile(r"\boverride[\s\-‐‑–]+pull\b", re.I)
 FIELDS = {"id", "name", "dose", "route", "frequency", "last_rate", "rate_time", "section",
           "custom_text", "include", "warnings", "hidden"}
 
@@ -71,6 +72,24 @@ def is_bupivacaine(name: str) -> bool:
     return bool(re.search(r"(?<![a-z0-9])bupivacaine(?![a-z0-9])", match_name(name)))
 
 
+def is_override_pull(name: str) -> bool:
+    """Recognize the source annotation without broadening to a drug family."""
+    return bool(OVERRIDE_PULL.search(clean(name)))
+
+
+def ignored(row: dict) -> bool:
+    """Keep old and new override entries out of every output by default.
+
+    A saved restoration marker is written only by an explicit exact mapping
+    or restore choice. Older category snapshots cannot restore an override.
+    Ordinary hidden/excluded flags remain independent of this classification.
+    """
+    if is_override_pull(row.get("name", "")) and not row.get("override_pull_restored", False):
+        return True
+    path = row.get("category_path")
+    return (path["section"] if path is not None else row.get("section")) == "Ignore"
+
+
 def visibility_name(value: str) -> str:
     return normalized(_without_context(value, strip_schedule=False))
 
@@ -97,6 +116,25 @@ def suggested_key(name: str) -> str:
 
 
 def destination_for(name: str, rules: list[dict]) -> str:
+    if is_override_pull(name):
+        exact = [r for r in rules if r["match"] == "exact" and _destination_rule_matches(name, r)]
+        return max(exact, key=lambda r: len(normalized(r["name"])))["destination"] if exact else "Ignore"
+    return _ordinary_destination(name, rules)
+
+
+def explicit_ignore_mapping(name: str, rules: list[dict]) -> bool:
+    """Whether the most specific matching legacy rule explicitly says Ignore.
+
+    The built-in override default is not a rule. Include matching prefixes
+    here because an explicit restore would otherwise reuse that legacy
+    destination and remain ignored while the UI reports a restoration.
+    """
+    choices = [(rule["match"] == "exact", len(normalized(rule["name"])), rule["destination"])
+               for rule in rules if _destination_rule_matches(name, rule)]
+    return bool(choices) and max(choices)[2] == "Ignore"
+
+
+def _ordinary_destination(name: str, rules: list[dict]) -> str:
     if is_bupivacaine(name):
         return "Neurologic"
     choices = []
@@ -105,6 +143,20 @@ def destination_for(name: str, rules: list[dict]) -> str:
         if _destination_rule_matches(name, rule):
             choices.append((rule["match"] == "exact", len(term), rule["destination"]))
     return max(choices)[2] if choices else "Other Medications"
+
+
+def _apply_override_default(row: dict, rules: list[dict], visibility: list[dict]) -> None:
+    if not is_override_pull(row.get("name", "")):
+        row.pop("override_pull_restored", None)
+        return
+    exact_restore = any(r["match"] == "exact" and not r["hidden"]
+                        and normalized(r["name"]) == visibility_name(row["name"])
+                        for r in visibility)
+    destination = destination_for(row["name"], rules)
+    restored = destination != "Ignore" or exact_restore
+    row["override_pull_restored"] = restored
+    row["section"] = (_ordinary_destination(row["name"], rules)
+                      if restored and destination == "Ignore" else destination)
 
 
 def validate_rules(rules: list[dict]) -> None:
@@ -134,8 +186,10 @@ def upsert_rule(rules: list[dict], name: str, destination: str, match: str = "pr
 
 
 def validate_medication(row: dict) -> None:
-    if not isinstance(row, dict) or not FIELDS.issubset(row) or set(row) - FIELDS - {"infusion_mode", "gi_mode", "group_mode", "category_path"} - set(ADMIN_FIELDS):
+    if not isinstance(row, dict) or not FIELDS.issubset(row) or set(row) - FIELDS - {"infusion_mode", "gi_mode", "group_mode", "category_path", "override_pull_restored"} - set(ADMIN_FIELDS):
         raise ValueError("A medication entry has an invalid structure.")
+    if "override_pull_restored" in row and type(row["override_pull_restored"]) is not bool:
+        raise ValueError("The override-pull restoration choice is invalid.")
     if "category_path" in row:
         from categories import validate_snapshot
         validate_snapshot(row["category_path"])
@@ -198,6 +252,7 @@ def remap(rows: list[dict], rules: list[dict], visibility: list[dict] | None = N
         row["section"] = destination_for(row["name"], rules)
         if visibility is not None:
             row["hidden"] = hidden_for(row["name"], visibility)
+        _apply_override_default(row, rules, visibility or [])
     return result
 
 
@@ -322,11 +377,11 @@ def parse_medications(block: str, rules: list[dict] | None = None, visibility: l
         cols = [clean(c) for c in source_cols]
         while len(cols) > 7 and not cols[-1]:
             cols.pop()
-        # A clearly labelled ADS Override Pull can legitimately be a name-only
+        # A clearly labelled Override Pull can legitimately be a name-only
         # source row after clipboard trimming. Only pad when every later cell
         # is blank and the marker ends the name. Never rescue an ordinary order
         # or silently drop nonempty dose/route/frequency fragments.
-        if (cols and re.search(r"\bADS\s+Override\s+Pull\s*$", cols[0], re.I)
+        if (cols and re.search(r"\boverride[\s\-‐‑–]+pull\s*$", cols[0], re.I)
                 and not any(cols[1:])):
             cols = [cols[0]] + [''] * 6
         # Allow omitted trailing empty cells, but never infer missing internal columns.
@@ -336,14 +391,14 @@ def parse_medications(block: str, rules: list[dict] | None = None, visibility: l
             continue
         cols += [''] * (7-len(cols))
         name, dose, route, frequency, _provider, raw_rate, _last_admin = cols
-        override_pull = bool(re.search(r"\bADS\s+Override\s+Pull\b", name, re.I))
+        override_pull = is_override_pull(name)
         if not name or ((not route or not frequency) and not override_pull):
             result.issues.append(f"Medication row {index}: name, route, or frequency is missing. Check the original table.")
             result.error = "At least one medication row is incomplete. Nothing has been applied."
             continue
         warnings = list(clipboard_warnings)
         if override_pull:
-            warnings.append("ADS Override Pull: retained as a separate source entry. Blank dose, route or frequency are not inferred. Hide this exact entry if it should not print.")
+            warnings.append("Override Pull: Ignore by default. Choose a category or Restore to handoff to include this exact entry. Blank source fields are not inferred.")
         rate, rate_time = '', ''
         if raw_rate:
             m = RATE.match(raw_rate)
@@ -370,6 +425,7 @@ def parse_medications(block: str, rules: list[dict] | None = None, visibility: l
                "frequency": frequency, "last_rate": rate, "rate_time": rate_time,
                "section": destination_for(name, rules), "custom_text": "", "include": True,
                "warnings": warnings, "hidden": hidden_for(name, visibility or [])}
+        _apply_override_default(row, rules, visibility or [])
         if continuous_order(row):
             row.update(parse_last_admin(_last_admin))
             if row["last_admin_status"] == "rate":
@@ -394,6 +450,8 @@ def rule_for_inline_mapping(name: str, rules: list[dict]) -> tuple[str, str]:
     prefix (for example heparin flush rather than heparin). Exact rules remain
     editable without creating a conflicting lower-priority rule.
     """
+    if is_override_pull(name):
+        return match_name(name), "exact"
     matches = [rule for rule in rules if _destination_rule_matches(name, rule)]
     suggested = suggested_key(name)
     if matches:
@@ -444,4 +502,4 @@ def set_visibility_rule(rules: list[dict], name: str, hidden: bool, match: str =
 
 
 def visible(row: dict) -> bool:
-    return row["include"] and not row.get("hidden", False)
+    return row["include"] and not row.get("hidden", False) and not ignored(row)

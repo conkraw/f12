@@ -1,0 +1,28 @@
+PICU Handoff v6.67 update from v6.66
+
+This is the complete application, not a patch-only ZIP.
+
+Changed application files (copy all six together):
+  app.py
+  arterial_pressure.py  [NEW]
+  clinical_style.py
+  fen_gi.py
+  fluid_balance.py
+  vitals.py
+
+New synthetic test files:
+  tests/test_arterial_pressure.py
+  tests/test_io_hour_window.py
+
+Updated existing test expectations:
+  tests/test_fen_gi.py
+  tests/test_labels_colors_groups.py
+  Only the expected I/O heading now includes the source hour.
+
+Release notes, setup entry page, verification reports and checksums are updated.
+The previous release's root documentation is retained with a V666_ prefix.
+
+Upload application files to APP-CODE repositories only. Keep app.py at its
+existing deployed location and include the new arterial_pressure.py.
+Do not replace any encrypted data archive. Keep all existing Streamlit Secrets.
+No new dependency or Secrets field is required. Restart and confirm v6.67.

@@ -1,0 +1,25 @@
+PICU Handoff v6.67 delivery verification
+
+Source: PICU666.zip supplied in the conversation.
+Full regression: 5581 passed, 14 subtests passed.
+Final new-feature rerun: 174 passed.
+Targeted compatibility run: 447 passed.
+
+The complete supplied example imports without errors or skipped sections.
+25 non-vital field groups match v6.66 after generated identifiers/timestamps
+are excluded. Synthetic single/batch output tests and a rendered synthetic PDF
+check passed. No real patient source is included in this package.
+
+All packaged Python files are parsed with ast. Packaged TOML files are parsed
+with tomllib. Archive members pass CRC validation. SHA256SUMS.txt is regenerated
+for this package and excludes its own entry.
+
+Archive schema stays at 34. Existing Secrets and the same encryption key are
+retained. No new dependencies or secret fields. Mapping Sync is unchanged.
+
+Live Streamlit deployment, live GitHub access and a real browser session were
+not tested. Streamlit UI tests use widget stubs. The Chromium executable was
+not installed, so the separate browser check could not run.
+
+Install in app-code repositories only, not encrypted data repositories.
+Include the new arterial_pressure.py module with all updated source files.

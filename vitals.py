@@ -8,6 +8,7 @@ are ignored rather than becoming patient values or invalidating the E block.
 from dataclasses import dataclass, field
 from decimal import Decimal
 from arterial_pressure import parse_arterial_line, arterial_display_rows
+from nirs import is_nirs_label, parse_nirs_line, nirs_display_rows
 import re
 
 
@@ -30,6 +31,8 @@ _NO_DATA = {'no data recorded', 'not recorded', 'not documented', 'none', 'n/a',
 
 def route(label: str) -> str:
     key = re.sub(r'\s+', ' ', label.strip().casefold().replace('₂', '2'))
+    if is_nirs_label(key):
+        return 'Neurologic'
     if re.match(r'^last\s+', key):
         return route(re.sub(r'^last\s+', '', key))
     if re.match(r'^(?:pulse ox(?:imetry)?|pulse oxygen)\b', key):
@@ -182,6 +185,17 @@ def parse_vitals(block: str) -> VitalsResult:
         if not text or text.rstrip(':').casefold() in ('vitals', 'vital signs', 'none', 'not documented'):
             continue
         try:
+            nirs = parse_nirs_line(text)
+        except ValueError as exc:
+            out.error = f'Vital-sign line {number}: {exc}'
+            return out
+        if nirs is not None:
+            label, value = nirs
+            if label:
+                out.rows.append({'label': label, 'value': value,
+                                 'section': 'Neurologic', 'include': True})
+            continue
+        try:
             arterial = parse_arterial_line(text)
         except ValueError as exc:
             out.error = f'Vital-sign line {number}: {exc}'
@@ -269,7 +283,7 @@ def _latest_parts(value: str) -> tuple[str, str] | None:
 
 def text_by_system(rows: list[dict]) -> dict[str, str]:
     result = {}
-    active = arterial_display_rows(rows)
+    active = nirs_display_rows(arterial_display_rows(rows))
     consumed = set()
     def add(section, text):
         result[section] = (result.get(section, '') + '\n' + text).strip()

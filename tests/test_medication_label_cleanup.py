@@ -135,9 +135,10 @@ def test_custom_handoff_wording_remains_authoritative(custom):
 def test_all_systems_and_export_paths_clean_labels_without_merging_source_orders():
     sheet = new_sheet('P4102')
     names = []
+    ignored_names = []
     for index, section in enumerate(DESTINATIONS):
         name = 'Synthetic' + chr(ord('A') + index)
-        names.append(name)
+        (ignored_names if section == 'Ignore' else names).append(name)
         row = order(('And: ' if index % 2 else 'Or: ') + START + ' ' + name)
         row.update(section=section, group_mode='other', gi_mode='other', infusion_mode='other')
         sheet['medications'].append(row)
@@ -157,11 +158,15 @@ def test_all_systems_and_export_paths_clean_labels_without_merging_source_orders
         assert 'And:' not in output and 'Or:' not in output
         for name in names:
             assert compact.count(name) == 1
+        for name in ignored_names:
+            assert name not in compact
         assert 'Last Admin rate: 5 mL/hr' in compact
         assert 'Recorded rate: 9 mL/hr' in compact
         assert 'Intravenous | Continuous' in compact
     fields = fields_with_medications(sheet)
-    assert all(names[index] in fields[section] for index, section in enumerate(DESTINATIONS))
+    visible_destinations = [section for section in DESTINATIONS if section != 'Ignore']
+    assert all(names[index] in fields[section] for index, section in enumerate(visible_destinations))
+    assert 'Ignore' not in fields
     assert sheet == before
 
 

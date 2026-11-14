@@ -9,10 +9,10 @@ from __future__ import annotations
 from copy import deepcopy
 import re
 import uuid
-from medications import DESTINATIONS, OR_PREFIX, is_bupivacaine, match_name, normalized, visible
+from medications import DESTINATIONS, OR_PREFIX, _apply_override_default, ignored, is_override_pull, is_bupivacaine, match_name, normalized, visible
 
 SETTINGS_KEYS = {"medication_categories", "medication_category_rules"}
-CATEGORY_SYSTEMS = tuple(x for x in DESTINATIONS if x != "Labs")
+CATEGORY_SYSTEMS = tuple(x for x in DESTINATIONS if x not in ("Labs", "Ignore"))
 # These built-ins were introduced without changing the saved archive schema.
 BACKFILLED_BUILTIN_IDS = ("group:epidural", "group:chemotherapy", "group:leukotriene_receptor_antagonist",
                           "gi:probiotic", "group:adh_analog")
@@ -157,12 +157,14 @@ def validate_settings(settings: dict) -> None:
 
 
 def system_targets() -> dict[str, str]:
-    return {"system:" + section: section for section in CATEGORY_SYSTEMS}
+    return {"system:" + section: section for section in (*CATEGORY_SYSTEMS, "Ignore")}
 
 
 def target_label(target: str, items: list[dict]) -> str:
     if target == "auto":
         return "Automatic / existing mappings"
+    if target == "system:Ignore":
+        return "Ignore"
     if target in system_targets():
         return system_targets()[target] + " / No category"
     node = next((x for x in items if x["id"] == target), None)
@@ -187,7 +189,7 @@ def target_snapshot(target: str, items: list[dict]) -> dict:
 def validate_snapshot(value: dict) -> None:
     if not isinstance(value, dict) or set(value) != {"id", "name", "section", "parent_id", "parent_name", "order", "parent_order"}:
         raise ValueError("A medication category assignment is invalid.")
-    if value["section"] not in CATEGORY_SYSTEMS:
+    if value["section"] not in (*CATEGORY_SYSTEMS, "Ignore"):
         raise ValueError("A medication category has an invalid system.")
     for field, n in (("id", 100), ("name", 80), ("parent_id", 100), ("parent_name", 80)):
         if not _text(value[field], n, field != "id"):
@@ -217,6 +219,10 @@ def matching_target(row: dict, settings: dict) -> str:
     name, route, frequency = match_name(row.get("name", "")), normalized(row.get("route", "")), normalized(row.get("frequency", ""))
     matches = []
     for rule in settings.get("medication_category_rules", []):
+        # A broad drug-family assignment cannot turn a default-ignored
+        # override pull into an active handoff order.
+        if is_override_pull(row.get("name", "")) and rule["match"] != "exact":
+            continue
         term = rule["name"]
         if rule["route"] and rule["route"] != route or rule["frequency"] and rule["frequency"] != frequency:
             continue
@@ -227,6 +233,8 @@ def matching_target(row: dict, settings: dict) -> str:
 
 def legacy_target(row: dict) -> str:
     """Compute one legacy placement, honoring prior explicit overrides."""
+    if ignored(row):
+        return "system:Ignore"
     from medication_groups import group_for
     from fen_gi import group_for as gi_group, effective_section
     from infusions import is_infusion, INFUSION_SECTIONS
@@ -250,13 +258,26 @@ def apply_category_rules(rows: list[dict], settings: dict) -> list[dict]:
     result = deepcopy(rows)
     for row in result:
         row.pop("category_path", None)
+        if is_override_pull(row.get("name", "")):
+            _apply_override_default(row, settings.get("medication_mappings", []),
+                                    settings.get("medication_visibility", []))
+        target = matching_target(row, settings)
+        override = is_override_pull(row.get("name", ""))
+        if override and target:
+            row["override_pull_restored"] = target != "system:Ignore"
+            row["section"] = target_snapshot(target, items)["section"]
+            row["category_path"] = target_snapshot(target, items)
+            continue
+        if target == "system:Ignore" or (not target and ignored(row)):
+            row["section"] = "Ignore"
+            row["category_path"] = target_snapshot("system:Ignore", items)
+            continue
         if is_bupivacaine(row.get("name", "")):
             row["section"] = "Neurologic"
             # The explicit bupivacaine placement takes precedence over older
             # name, group, and category assignments. No source amount changes.
             row["category_path"] = target_snapshot("group:epidural", default_categories())
             continue
-        target = matching_target(row, settings)
         if target:
             row["category_path"] = target_snapshot(target, items)
         else:
@@ -268,6 +289,8 @@ def apply_category_rules(rows: list[dict], settings: dict) -> list[dict]:
 
 def placement(row: dict) -> dict:
     # Render saved handoffs correctly before any reimport or settings save.
+    if ignored(row):
+        return target_snapshot("system:Ignore", default_categories())
     if is_bupivacaine(row.get("name", "")):
         return target_snapshot("group:epidural", default_categories())
     if row.get("category_path") is not None:

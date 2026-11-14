@@ -1,10 +1,10 @@
-"""PICU SmartPhrase v6.67: cuff/arterial pressure layout and source-hour I/O headings."""
+"""PICU SmartPhrase v6.68: dated QTc, neurologic NIRS and ignored override pulls."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,
                           alert_lines_html, remember_notice, remember_import, workspace_attention)
 from empty_groups import refresh_empty_group_layout
-from categories import apply_category_rules, set_category_rule, theophylline_anchor
+from categories import apply_category_rules, set_category_rule, theophylline_anchor, matching_target
 from category_ui import placement_picker, category_admin, local_target
 from html import escape
 from pathlib import Path
@@ -24,7 +24,7 @@ from models import (MAX_FIELD, SYSTEMS, ValidationError, new_sheet, new_vault,
                     upgrade_vault, fields_with_medications, respiratory_text, automatic_vitals, SCHEMA_VERSION, DEFAULT_ROOMS, section_label)
 from infusion_rates import ADMIN_FIELDS, ADMIN_STATUSES, ADMIN_STATUS_LABELS, continuous_order, merge_admin_edits
 from medications import (DESTINATIONS, format_medication, suggested_key, upsert_rule,
-                         remap, rule_for_inline_mapping, validate_medication, visible, hidden_for, set_visibility_rule)
+                         remap, rule_for_inline_mapping, validate_medication, visible, hidden_for, set_visibility_rule, ignored, explicit_ignore_mapping)
 from ventilation import LABELS, format_ventilation, validate_ventilation
 from noninvasive import DEVICE_FIELDS, format_noninvasive, validate_noninvasive
 from importing import import_sections, SUPPORTED_SECTIONS
@@ -870,6 +870,19 @@ def hide_medication(room: str, row_id: str, hidden: bool, store: GitHubVault | N
         return
     row = next((r for r in st.session_state["drafts"][room]["medications"] if r["id"] == row_id), None)
     if row:
+        settings = st.session_state["vault"]["settings"]
+        if not hidden and (matching_target(row, settings) == "system:Ignore"
+                           or explicit_ignore_mapping(row["name"], settings["medication_mappings"])):
+            candidate = deepcopy(st.session_state["vault"])
+            try:
+                candidate["settings"] = set_category_rule(candidate["settings"], row["name"], "system:Other Medications", "exact", row["route"], row["frequency"])
+                candidate["settings"]["medication_visibility"] = set_visibility_rule(candidate["settings"]["medication_visibility"], row["name"], False, "exact")
+                commit(candidate, store)
+                reapply_open_mappings()
+                note("Medication restored to handoff. Choose its category if needed." + (" Rule saved to shared storage." if store else " Session-only mode."), "success")
+            except (ValueError, StorageError) as exc:
+                note(str(exc) + " The medication was not restored.", "error")
+            return
         change_visibility_rule(row["name"], hidden, "exact", store)
 
 
@@ -1735,7 +1748,7 @@ def main() -> None:
         return
     with st.sidebar:
         st.header("PICU Handoff")
-        st.caption("Version 6.67 | Arterial BP and I/O time windows")
+        st.caption("Version 6.68 | QTc, NIRS and override-pull medications")
         # Retire the old instructions workspace without discarding room drafts.
         if st.session_state.get("page") == "Instructions / SmartPhrase":
             st.session_state["page"] = "Handoff"
@@ -1768,7 +1781,7 @@ def medication_editor(rows: list[dict], room: str, store: GitHubVault | None) ->
         prefix = "med_draft_" + row["id"] + "_"
         summary, destination = st.columns([3, 1])
         with summary:
-            suffix = " [HIDDEN]" if row["hidden"] else "" if row["include"] else " [EXCLUDED]"
+            suffix = " [IGNORE]" if ignored(row) else " [HIDDEN]" if row["hidden"] else "" if row["include"] else " [EXCLUDED]"
             if supports_infusion_display(row) and is_infusion(row):
                 st.markdown('<div style="white-space:pre-wrap;border-left:3px solid #555;padding-left:8px">' +
                             str(number) + '. <b>Infusion</b>' + suffix + '\n' +
@@ -1784,7 +1797,8 @@ def medication_editor(rows: list[dict], room: str, store: GitHubVault | None) ->
             st.selectbox("Infusion emphasis for order " + str(number), MODES, key=key,
                          format_func=lambda value: MODE_LABELS[value], on_change=medication_row_change,
                          args=(room, row["id"], "infusion_mode", key, store))
-        st.button("Restore to handoff" if row["hidden"] else "Hide from handoff", key="hide_med_" + row["id"], on_click=hide_medication, args=(room, row["id"], not row["hidden"], store))
+        needs_restore = row["hidden"] or ignored(row)
+        st.button("Restore to handoff" if needs_restore else "Hide from handoff", key="hide_med_" + row["id"], on_click=hide_medication, args=(room, row["id"], not needs_restore, store))
         with st.expander("Edit details for order " + str(number), expanded=False):
             def widget(field: str, label: str, kind: str = "text"):
                 key = prefix + field
@@ -2012,7 +2026,10 @@ def handoff_notes(sheet: dict) -> None:
                 st.text(orders_text(sheet["recurring_orders"]) + "\n-----")
                 st.caption("Edit the imported recurring orders in Labs/Imaging. Notes below stay separate.")
             if section in observed_vitals:
-                st.text(observed_vitals[section] + "\n-----")
+                if section == "Cardiovascular" and sheet.get("ecg"):
+                    st.markdown('<div style="white-space:pre-wrap">' + clinical_markup(observed_vitals[section] + "\n-----") + '</div>', unsafe_allow_html=True)
+                else:
+                    st.text(observed_vitals[section] + "\n-----")
             if section == "Demographics / Weight" and sheet["admission_date"]:
                 st.text("Admission: " + sheet["admission_date"])
             if section == "Demographics / Weight" and mrsa_screen_text(sheet):
@@ -2123,11 +2140,12 @@ def handoff_page(store: GitHubVault | None) -> None:
                 room_preview(sheet, store)
             elif label == "Medications":
                 st.caption("Choose one destination per order. Mapping changes are remembered.")
-                active = [row for row in sheet["medications"] if not row["hidden"]]
-                hidden = [row for row in sheet["medications"] if row["hidden"]]
+                active = [row for row in sheet["medications"] if not row["hidden"] and not ignored(row)]
+                hidden = [row for row in sheet["medications"] if row["hidden"] or ignored(row)]
                 medication_editor(active, room, store)
                 if hidden:
-                    with st.expander("Hidden medications (" + str(len(hidden)) + ")", expanded=False):
+                    label = "Ignored / hidden medications" if any(ignored(row) for row in hidden) else "Hidden medications"
+                    with st.expander(label + " (" + str(len(hidden)) + ")", expanded=False):
                         medication_editor(hidden, room, store)
                 if not sheet["medications"]:
                     st.caption("No medications imported.")
@@ -3052,7 +3070,7 @@ def import_review_editor(sheet: dict, compact: bool = False) -> None:
     if not compact:
         st.warning(summary)
     with st.expander("Review skipped or incomplete imports", expanded=False):
-        st.caption("Valid sections were updated. An unreadable section keeps its previous values with this warning. Failed orders, diet, feeds, device and pacemaker imports are retained for review but hidden from print. Import warnings appear only here, not on downloaded handoffs. Do not treat skipped values as refreshed.")
+        st.caption("Valid sections were updated. An unreadable section keeps its previous values with this warning. Failed orders, diet, feeds, device, pacemaker and ECG imports are retained for review but hidden from print. Import warnings appear only here, not on downloaded handoffs. Do not treat skipped values as refreshed.")
         for section, items in sheet["import_warnings"].items():
             if not compact:
                 for item in items:
@@ -3061,6 +3079,7 @@ def import_review_editor(sheet: dict, compact: bool = False) -> None:
                      "Use retained diet after checking Epic" if section == "x" and any(i["action"] == "diet_hidden" for i in items) else
                      "Use retained feeds after checking Epic" if section == 't' and any(i['action'] == 'feeds_hidden' for i in items) else
                      "Use retained pacemaker settings after checking Epic" if section == "w" and any(i["action"] == "pacemaker_hidden" for i in items) else
+                     "Use retained QTc after checking Epic" if section == "z" and any(i["action"] == "ecg_hidden" for i in items) else
                      "Use retained devices after checking Epic" if section in ('u', 'v') and any(i['action'].endswith('_hidden') for i in items) else
                      "Acknowledge reviewed omissions" if any(i['action'].endswith('omitted') for i in items) else
                      "Accept retained values after checking Epic")

@@ -1,0 +1,14 @@
+PICU Handoff v6.67 archive compatibility
+
+Schema remains 34. Patient vital and intake/output record shapes are unchanged.
+The existing as_of field supplies the source hour for display. Exact timestamps
+are retained. Older first-colon-split arterial vital rows are interpreted only
+for presentation, without altering their stored values.
+
+models.py, security.py, github_store.py, mapping_sync.py, mapping_sync_ui.py,
+sync_diagnostics.py and requirements.txt match the supplied v6.66 package.
+The encryption method, encryption key, archive path and Mapping Sync procedure
+are not changed. No migration or additional Streamlit Secrets are needed.
+
+All three app-code repositories can use this package with their existing,
+separate data repositories. No patient recall data is copied between them.

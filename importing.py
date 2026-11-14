@@ -24,11 +24,12 @@ from feeds import parse_feeds
 from devices import parse_devices
 from pacemaker import parse_pacemaker
 from diet import parse_diet
+from ecg import parse_ecg
 from fen_gi import apply_gi_rules
 from medication_groups import apply_group_rules
 from import_review import diagnostic, diagnostic_text
 
-SUPPORTED_SECTIONS = "abcdefgiklmnopqrstuvwxy"
+SUPPORTED_SECTIONS = "abcdefgiklmnopqrstuvwxyz"
 
 
 @dataclass
@@ -52,7 +53,7 @@ def import_sections(sheet: dict, text: str, settings: dict) -> ImportResult:
     parsed = parse_smartphrase(text)
     relevant = set(SUPPORTED_SECTIONS) & (set(parsed.blocks) | parsed.invalid)
     if not relevant:
-        out.errors.append("No supported block was found. Use paired A, B, C, D, E, F, G, I, K, L, M, N, O, P, Q, R, S, T, U, V, W, X or Y dividers.")
+        out.errors.append("No supported block was found. Use paired A, B, C, D, E, F, G, I, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y or Z dividers.")
         return out
     # Repeated paired sections can mean two patients were pasted together.
     # That document-wide identity ambiguity cannot be repaired by partial import.
@@ -65,7 +66,7 @@ def import_sections(sheet: dict, text: str, settings: dict) -> ImportResult:
     def reject(group, code='section_parse_failed', line=0):
         nonlocal candidate
         item = diagnostic(group, code,
-                          action='orders_hidden' if group == 'r' else 'feeds_hidden' if group == 't' else 'devices_hidden' if group == 'u' else 'neuro_devices_hidden' if group == 'v' else 'pacemaker_hidden' if group == 'w' else 'diet_hidden' if group == 'x' else 'not_updated', line=line)
+                          action='orders_hidden' if group == 'r' else 'feeds_hidden' if group == 't' else 'devices_hidden' if group == 'u' else 'neuro_devices_hidden' if group == 'v' else 'pacemaker_hidden' if group == 'w' else 'diet_hidden' if group == 'x' else 'ecg_hidden' if group == 'z' else 'not_updated', line=line)
         candidate['import_warnings'][group] = [item]
         out.diagnostics.append(item)
         if group not in out.skipped:
@@ -262,6 +263,14 @@ def import_sections(sheet: dict, text: str, settings: dict) -> ImportResult:
                 recoveries = diet.diagnostics
                 out.notices.extend(diet.issues)
                 out.imported.append("diet" if diet.data["rows"] else "diet display cleared")
+            elif letter == "z":
+                ecg = parse_ecg(parsed.blocks[letter])
+                if ecg.error:
+                    out.errors.append(ecg.error)
+                    continue
+                candidate["ecg"] = ecg.data
+                out.notices.extend(ecg.issues)
+                out.imported.append("ECG / QTc" if ecg.data else "QTc display cleared")
             elif letter == "k":
                 from sbs import parse_sbs, snapshot_reference
                 snapshot_at, snapshot_kind = snapshot_reference(parsed.blocks)

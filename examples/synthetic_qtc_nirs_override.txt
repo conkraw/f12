@@ -1,0 +1,28 @@
+aaaaaaaaaaaa
+Diagnoses:
+Synthetic demonstration
+aaaaaaaaaaaa
+
+bbbbbbbbbbbb
+Medications:
+•	midazolam 1 mg/mL injection - ADS Override Pull
+•	midazolam injection 1 mg	1 mg	Intravenous	q1h PRN
+bbbbbbbbbbbb
+
+eeeeeeeeeeee
+VITALS:
+Heart Rate: [90-130] 110
+BP: (88-116)/(42-70) 104/54
+Arterial Line BP Min: 80/40 Max: 112/65
+Last Arterial BP: Arterial Line BP: 108/60
+Arterial Line MAP (mmHg) Avg: 63 mmHg Min: 52 mmHg Max: 75 mmHg
+Last Arterial MAP: Arterial Line MAP (mmHg): 72 mmHg
+NIRS Range: rSO2 Cerebral % Avg: 62.8 % Min: 60 % Max: 68 %
+Last NIRS: rSO2 Cerebral %: 66 %
+eeeeeeeeeeee
+
+zzzzzzzzzzzz
+ECG 12 lead 11/13/2026
+Q-T Interval: 280 ms
+QTC Calculation(Bazett): 480 ms
+zzzzzzzzzzzz

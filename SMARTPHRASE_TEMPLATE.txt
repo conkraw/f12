@@ -21,6 +21,8 @@ dddddddddddddddddddddddddddddddd
 eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
 VITALS:
 [Insert your existing Epic vital-sign SmartLink here]
+NIRS Range: [Insert your recorded cerebral NIRS Min/Max summary here]
+Last NIRS: [Insert your latest recorded cerebral NIRS value here]
 eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
 
 ffffffffffffffffffffffffffffffff
@@ -148,3 +150,11 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxx
 yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
 CAPD: [Insert your actual Epic CAPD total-score SmartLink here. Do not use a sample patient score as a reusable template. A blank result displays CAPD: None.]
 yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+
+
+zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz
+ECG:
+[Insert your existing Epic ECG result SmartLink here. Include the ECG date and
+QTc Calculation(Bazett) value in ms. The most recent dated Bazett QTc supplied
+is used without a recency restriction. Use your real SmartLink definition.]
+zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz

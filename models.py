@@ -32,6 +32,7 @@ from feeds import validate_feeds, feeds_for_output
 from devices import validate_devices, evd_text
 from pacemaker import validate_pacemaker, pacemaker_text
 from diet import validate_diet, diet_for_output, diet_failed
+from ecg import validate_ecg, ecg_text
 from fluid_balance import validate_balance
 from fen_gi import validate_gi_rules, effective_section, fen_gi_body
 
@@ -84,7 +85,7 @@ def new_vault() -> dict:
 
 
 def validate_sheet(sheet: dict) -> None:
-    if not isinstance(sheet, dict) or set(sheet) - {"anthropometrics", "problem_review", "difficult_airway", "empty_group_layout", "sbs_observations", "sbs_vent_mode"} != {"id", "room", "created_at", "updated_at", "fields", "medications", "ventilation", "noninvasive", "vitals", "labs", "neuro_vitals", "nutrition", "cultures", "dosing_weight", "admission_date", "viral_panel", "blood_gas", "cbc", "recurring_orders", "intake_output", "feeds", "devices", "neuro_devices", "pacemaker", "diet", "import_warnings"}:
+    if not isinstance(sheet, dict) or set(sheet) - {"anthropometrics", "problem_review", "difficult_airway", "empty_group_layout", "sbs_observations", "sbs_vent_mode", "ecg"} != {"id", "room", "created_at", "updated_at", "fields", "medications", "ventilation", "noninvasive", "vitals", "labs", "neuro_vitals", "nutrition", "cultures", "dosing_weight", "admission_date", "viral_panel", "blood_gas", "cbc", "recurring_orders", "intake_output", "feeds", "devices", "neuro_devices", "pacemaker", "diet", "import_warnings"}:
         raise ValidationError("The handoff structure is invalid.")
     if not isinstance(sheet["id"], str) or not re.fullmatch(r"[0-9a-f]{32}", sheet["id"]):
         raise ValidationError("The handoff identifier is invalid.")
@@ -126,6 +127,7 @@ def validate_sheet(sheet: dict) -> None:
         validate_devices(sheet["neuro_devices"], "v")
         validate_pacemaker(sheet["pacemaker"])
         validate_diet(sheet["diet"])
+        validate_ecg(sheet.get("ecg"))
         validate_anthropometrics(sheet.get("anthropometrics", empty_anthropometrics()))
         validate_import_warnings(sheet["import_warnings"])
         validate_review(sheet.get("problem_review", empty_review()))
@@ -602,4 +604,8 @@ def automatic_vitals(sheet: dict) -> dict[str, str]:
     if pacing:
         old = result.get("Cardiovascular", "")
         result["Cardiovascular"] = (old + "\n" if old else "") + pacing
+    qtc = ecg_text(sheet)
+    if qtc:
+        old = result.get("Cardiovascular", "")
+        result["Cardiovascular"] = (old + "\n" if old else "") + qtc
     return result
