@@ -1,25 +1,22 @@
-PICU Handoff v6.69 archive compatibility
+PICU Handoff v6.70 archive compatibility
 
-Schema remains 34. Existing archives remain readable without migration.
-The new AVAPS values use the existing ventilation values dictionary.
-Existing field indexes are unchanged. New fields append to the label list:
+Schema remains 34. Existing archives open without migration.
+The existing diet field accepts its legacy rows-only structure or a structured
+snapshot with rows, enteral and parenteral lists. It can also carry validated
+recorded_feed_ids that link feeding rows from the same dietary import.
 
-  AVAPS rate (cm H2O/min)
-  AVAPS Respiratory Rate
-  Vt Set/Target ml
-  Pressure Support Min (cm H2O)
-  Pressure Support Max (cm H2O)
-  AVAPS Observed TV (mL)
+Oral rows retain their previous source/text/include format. Enteral records
+store explicit route, method, formula, feeding type, hourly rate, feeding hours,
+listed daily volume, caloric density, additives, comments, order status and
+inclusion. PN records store source, name, rate, status and inclusion.
+Calculated amounts are produced for display rather than saved as source facts.
 
-Saved records using these fields require v6.69 or later. Older code rejects
-unrecognized ventilation keys. Update app.py and ventilation.py together, or
-replace the complete application file set. No new dependency is required.
-
-QTc, NIRS and override-pull behavior from v6.68 remain included. Records with
-those optional fields or Ignore mappings require v6.68 or later. Update all
-three apps before using Mapping Sync with Ignore rules.
+Stored snapshots using these new fields or AB diagnostic flags require v6.70
+or later. Older versions reject the extra structured diet keys. Install the
+complete application code as a set. Existing manual medication mappings and
+visibility choices remain in place.
 
 security.py, github_store.py, mapping_sync.py, mapping_sync_ui.py,
-sync_diagnostics.py, noninvasive.py, models.py, exports.py and requirements.txt
-match the v6.68 source package. No encryption setting, key, archive path or
-Secrets field is changed. Each app uses its existing encrypted data repository.
+sync_diagnostics.py, models.py, exports.py and requirements.txt match v6.69.
+No encryption key, repository path or Secrets field changes. Each app retains
+its existing separate encrypted data repository.

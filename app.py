@@ -1,4 +1,4 @@
-"""PICU SmartPhrase v6.69: AVAPS settings with separate target and observed volumes."""
+"""PICU SmartPhrase v6.70: oral, enteral and parenteral nutrition with documented feeding schedules."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,
@@ -65,6 +65,7 @@ from pacemaker import (validate_pacemaker, format_pacemaker, pacemaker_text,
                        EDIT_FIELDS as PACER_FIELDS, STATUSES as PACER_STATUSES, normalize_mode, normalize_rate)
 from devices import validate_devices, EDIT_FIELDS as DEVICE_EDIT_FIELDS, device_line, devices_markup, evd_text
 from diet import validate_diet, diet_text, diet_for_output, diet_failed
+from nutrition_display import has_detailed_nutrition, nutrition_text
 from feeds import METHODS as FEED_METHODS, validate_feeds, feeds_text, feeds_for_output
 from fluid_balance import balance_heading, FIELDS as IO_FIELDS, META_FIELDS as IO_META_FIELDS, validate_balance, balance_text, empty_balance
 from fen_gi import (MODES as GI_MODES, MODE_LABELS as GI_MODE_LABELS, GROUP_NAMES,
@@ -79,6 +80,23 @@ from medication_groups import (MODES as GROUP_MODES, MODE_LABELS as GROUP_MODE_L
 
 ROOT = Path(__file__).resolve().parent
 st.set_page_config(page_title="PICU Handoff", layout="wide", initial_sidebar_state="expanded")
+
+DIET_ORDER_FIELDS = {
+    "enteral": (("method", "Feeding method"), ("route", "Recorded route"),
+                ("formula", "Formula"), ("feeding_type", "Feeding type"),
+                ("rate", "Rate (mL/hr)"), ("hours", "Feeding hours per day"),
+                ("daily_volume", "Listed daily volume (mL)"),
+                ("caloric_density", "Caloric density"), ("additives", "Fortifier / additives"),
+                ("comments", "Feeding instructions"), ("status", "Order status"),
+                ("include", "Include this tube feeding order")),
+    "parenteral": (("name", "PN order"), ("rate", "Rate (mL/hr)"),
+                   ("status", "Order status"), ("include", "Include this PN order")),
+}
+DIET_ORDER_LIMITS = {"route": 600, "formula": 600, "feeding_type": 600,
+                     "rate": 80, "hours": 80, "daily_volume": 80,
+                     "caloric_density": 600, "additives": 1200,
+                     "comments": 4000, "name": 600}
+DIET_ORDER_STATUS = {"active": "Active", "held": "Held", "future": "Future"}
 
 
 def note(text: str, kind: str = "info") -> None:
@@ -211,6 +229,14 @@ def editor_snapshot(room: str) -> dict:
             if key in ss:
                 value = ss[key]
                 row[field] = value.strip() if isinstance(value, str) else value
+    for group, fields in DIET_ORDER_FIELDS.items():
+        for row in (sheet["diet"] or {}).get(group, []):
+            for field, _ in fields:
+                key = "diet_" + group + "_" + row["id"] + "_" + field
+                if key in ss:
+                    value = ss[key]
+                    row[field] = (" ".join(value.split()) if field in ("comments", "additives")
+                                  else value.strip()) if isinstance(value, str) else value
     for source in ("devices", "neuro_devices"):
         for row in (sheet[source] or {}).get("rows", []):
             for field in DEVICE_EDIT_FIELDS:
@@ -1748,7 +1774,7 @@ def main() -> None:
         return
     with st.sidebar:
         st.header("PICU Handoff")
-        st.caption("Version 6.69 | AVAPS ventilator settings")
+        st.caption("Version 6.70 | Oral, tube feeds and TPN")
         # Retire the old instructions workspace without discarding room drafts.
         if st.session_state.get("page") == "Instructions / SmartPhrase":
             st.session_state["page"] = "Handoff"
@@ -2054,7 +2080,7 @@ def handoff_notes(sheet: dict) -> None:
                 st.caption("Edit imported specimens and results in Cultures. Temperature stays first in the printed ID column.")
             if section == "FEN / GI":
                 st.markdown('<div style="white-space:pre-wrap">' + fen_gi_body("", sheet["medications"], None, True, sheet=sheet) + "</div>", unsafe_allow_html=True)
-                st.caption("Printed order: Intake/Output/Net, Diet, Feeds, TPN, GI prophylaxis, Bowel Regimen, Diuretics, Antiemetics, Endocrine Medications, then separate notes and remaining FEN/GI medications.")
+                st.caption("Printed order: Intake/Output/Net, oral intake, tube feeds, TPN, GI prophylaxis, Bowel Regimen, Diuretics, Antiemetics, Endocrine Medications, then separate notes and remaining FEN/GI medications.")
             elif section in INFUSION_SECTIONS:
                 render_body = {"Neurologic": neuro_body, "Cardiovascular": cardiovascular_body, "Hematology": hematology_body, "Respiratory": respiratory_body}[section]
                 st.markdown('<div style="white-space:pre-wrap">' + render_body("", sheet["medications"], True, sheet=sheet) + '</div>', unsafe_allow_html=True)
@@ -2740,13 +2766,19 @@ def diet_editor(sheet: dict) -> None:
     if data is None:
         return
     if diet_failed(sheet):
-        st.warning("X was not updated. Retained diet information is hidden until reviewed or reimported.")
+        st.warning("Dietary orders were not updated. Retained diet information is hidden until reviewed or reimported.")
+    elif has_detailed_nutrition(data):
+        st.text(nutrition_text(data, feeds_for_output(sheet), sheet["medications"],
+                               dosing_weight=sheet["dosing_weight"], sheet=sheet))
     elif diet_text(data):
         st.text(diet_text(data))
     with st.expander("Edit diet / review source", expanded=False):
-        st.caption("X supplies diet type. PN, label printing and other non-diet items are omitted. Tube-feed rates still come from T. Review multiple listed diets against Epic.")
+        if has_detailed_nutrition(data):
+            st.caption("Oral intake, tube feeding and PN orders are separate. Tube-feed totals use the ordered rate and feeding hours. mL/kg/day uses the documented dosing weight. Review feeding instructions and any advancement plan.")
+        else:
+            st.caption("X supplies diet type. Detailed dietary orders can be added in the paired AB section. Review multiple listed diets against Epic.")
         if not data["rows"]:
-            st.caption("No diet order was included in the last X section.")
+            st.caption("No oral diet order was included in this dietary snapshot.")
         for row in data["rows"]:
             st.text("Source: " + row["source"])
             for field, label in (("text", "Diet summary"), ("include", "Include diet on handoff")):
@@ -2758,6 +2790,53 @@ def diet_editor(sheet: dict) -> None:
                     st.checkbox(label, key=key, on_change=diet_row_change, args=args)
                 else:
                     st.text_input(label, key=key, max_chars=500, on_change=diet_row_change, args=args)
+        for group, fields in DIET_ORDER_FIELDS.items():
+            for number, row in enumerate(data.get(group, []), 1):
+                st.markdown(("Tube feeding order " if group == "enteral" else "PN order ") + str(number))
+                st.caption("Source: " + row["source"])
+                for field, label in fields:
+                    key = "diet_" + group + "_" + row["id"] + "_" + field
+                    if key not in st.session_state:
+                        st.session_state[key] = row[field]
+                    args = (sheet["room"], group, row["id"], field, key)
+                    if field == "include":
+                        st.checkbox(label, key=key, on_change=dietary_order_change, args=args)
+                    elif field == "method":
+                        st.selectbox(label, FEED_METHODS, key=key, on_change=dietary_order_change, args=args)
+                    elif field == "status":
+                        st.selectbox(label, tuple(DIET_ORDER_STATUS), key=key,
+                                     format_func=lambda value: DIET_ORDER_STATUS[value],
+                                     on_change=dietary_order_change, args=args)
+                    elif field in ("comments", "additives"):
+                        st.text_area(label, key=key, height=100, max_chars=DIET_ORDER_LIMITS[field],
+                                     on_change=dietary_order_change, args=args)
+                    else:
+                        st.text_input(label, key=key, max_chars=DIET_ORDER_LIMITS[field],
+                                      on_change=dietary_order_change, args=args)
+
+
+def dietary_order_change(room: str, group: str, row_id: str, field: str, key: str) -> None:
+    if not require_session() or room != st.session_state.get("current_room") or key not in st.session_state:
+        return
+    if group not in DIET_ORDER_FIELDS or field not in dict(DIET_ORDER_FIELDS[group]):
+        return
+    ss = st.session_state
+    data = ss["drafts"][room].get("diet")
+    original = next((row for row in (data or {}).get(group, []) if row["id"] == row_id), None)
+    if original is None:
+        return
+    candidate = deepcopy(original)
+    value = ss[key]
+    candidate[field] = (" ".join(value.split()) if field in ("comments", "additives")
+                        else value.strip()) if isinstance(value, str) else value
+    snapshot = {"rows": [], "enteral": [], "parenteral": []}
+    snapshot[group] = [candidate]
+    try:
+        validate_diet(snapshot)
+        original.update(candidate)
+    except ValueError as exc:
+        ss[key] = original[field]
+        note(str(exc), "error")
 
 
 def feed_row_change(room: str, row_id: str, field: str, key: str) -> None:
@@ -2895,7 +2974,10 @@ def feeds_editor(sheet: dict) -> None:
     st.subheader("Feeds")
     data = sheet["feeds"]
     if data is None or not data["rows"]:
-        st.caption("Paste the paired T section to add feeding method, formula and rate below intake/output in FEN/GI.")
+        if has_detailed_nutrition(sheet.get("diet")):
+            st.caption("Tube feeding orders are shown in the dietary editor above.")
+        else:
+            st.caption("Paste the paired AB dietary orders or T feeding section to add feeding details in FEN/GI.")
         return
     if any(i["action"] == "feeds_hidden" for i in sheet["import_warnings"].get("t", [])):
         st.warning("The T section was not updated. The retained feeding entries below are hidden from the handoff until reviewed.")
@@ -3076,7 +3158,7 @@ def import_review_editor(sheet: dict, compact: bool = False) -> None:
                 for item in items:
                     st.text(diagnostic_text(item))
             label = ("Use retained orders after checking Epic" if section == 'r' else
-                     "Use retained diet after checking Epic" if section == "x" and any(i["action"] == "diet_hidden" for i in items) else
+                     "Use retained diet after checking Epic" if section in ("x", "ab") and any(i["action"] == "diet_hidden" for i in items) else
                      "Use retained feeds after checking Epic" if section == 't' and any(i['action'] == 'feeds_hidden' for i in items) else
                      "Use retained pacemaker settings after checking Epic" if section == "w" and any(i["action"] == "pacemaker_hidden" for i in items) else
                      "Use retained QTc after checking Epic" if section == "z" and any(i["action"] == "ecg_hidden" for i in items) else

@@ -1,68 +1,70 @@
-# PICU Handoff 6.69
+# PICU Handoff 6.70
 
-## AVAPS settings in Respiratory
+## Nutrition in FEN/GI
 
-When the invasive ventilation mode is Average Volume-Assured Pressure Support,
-the handoff reads the AVAPS subsection of C. It includes the documented AVAPS
-rate, target tidal volume, observed tidal volume, and minimum and maximum
-pressure support. Blank settings and No data recorded are omitted.
+The new AB dietary section accepts the detailed Dietary Orders table and the
+compact Diet Orders list. Use paired alternating abab... dividers, as shown in
+SMARTPHRASE_TEMPLATE.txt. Keep each patient's orders in a separate paste.
 
-This synthetic example shows the output:
+Oral intake, tube feeds and PN can appear together. Oral Regular, Clear Liquid,
+NPO and NPO exceptions remain separate from tube-feed orders. An NJ medication
+exception or a breast-milk label request does not create a tube feed. Oral-swab
+instructions remain attached to their documented order.
 
-```text
-Mode: AVAPS
-AVAPS rate: 3 cm H2O/min
-Target TV: 130 mL
-Observed TV: 145 mL
-PS Min: 9 cm H2O
-PS Max: 24 cm H2O
-```
-
-The nested source label AVAPS rate (cm H2O/min) retains that unit. It does not
-become a respiratory rate in breaths per minute. A separately documented
-Resp Rate (Set) still appears as Set RR. Target and observed volumes remain
-separate. The new AVAPS fields are editable and survive encrypted save/recall.
-
-The same settings appear in the app preview, text, HTML, PDF and Print All.
-They display only with the invasive AVAPS mode. Other modes keep their existing
-rules. Explicit noninvasive AVAPS continues to use the noninvasive parser.
-
-FiO2 recorded in E remains in respiratory vitals. A blank C FiO2 is not filled
-with a D or E value. See AVAPS_UPDATE.md for field mapping and compatibility.
-
-## Included from 6.68
-
-Cardiac shows the newest dated QTc Calculation(Bazett) supplied by the ECG
-section, with no recency cutoff, as QTc: 425 msec [11/13/2026]. A value greater
-than 450 is red, has (!), and adds Long QTc to Problems. Exactly 450 is unflagged.
-
-NIRS appears in Neuro only when available, using minimum to maximum and the
-latest value. Override-pull medication entries default to Ignore and stay out
-of Other Medications and handoff exports. You can restore an individual entry
-from Ignored / hidden medications. QTC_NIRS_OVERRIDE_UPDATE.md has the details.
-
-## Install the update
-
-This folder contains the complete application. Replace the application files
-in each app-code repository, keeping app.py at its deployed location. If each
-app already runs 6.68, the application code changes are app.py and ventilation.py.
-Copy both together. UPDATE_FILES.txt also explains updates from 6.67.
-
-Restart each app and confirm:
+Tube feeds show the documented method, formula, rate and hours per day. The
+calculation is rate in mL/hr multiplied by the recorded hours per day, then
+divided by the documented dosing weight in kg. A synthetic example is:
 
 ```text
-Version 6.69 | AVAPS ventilator settings
+Oral: Peds Regular
+Tube feeds (ordered, GT): Synthetic Formula 1.0 (24 kcal/oz)
+@ 30 mL/hr x 20 hr/day = 600 mL/day (60 mL/kg/day)
+Using dosing weight: 10 kg
 ```
 
-Use each app's existing Streamlit Secrets, encryption key and separate data
-repository. No new dependency or Secrets field is required. Paste the updated
-SmartPhrase again to populate the AVAPS fields in an existing handoff.
+These are ordered volumes. Feeding advancement, mixture instructions, breaks,
+fortifiers and caloric density remain visible. A 20-hour order is not treated
+as 24 hours. No dosing weight means no mL/kg/day value. Missing duration is not
+filled in, and measured weight is not substituted for dosing weight.
 
-## Validation and compatibility
+A documented NJ route prints as NJ. Generic post-pyloric orders stay generic
+unless the same paste supplies one matching explicit NJ or ND feeding record.
+A later dietary update cannot borrow a tube route from an older feeding record.
 
-See TEST_REPORT.md for executed checks and ARCHIVE_COMPATIBILITY.txt for saved
-record details. The examples directory contains synthetic input and PDF/HTML
-previews. The supplied clinical sample is not included in the package.
+## PN appears once
 
-This package has not been deployed to the live apps. Existing QTc, NIRS,
-medication controls, arterial BP, I/O headings and Mapping Sync are included.
+A matching PN medication supplies the medication entry, and its dietary copy is
+omitted. A deliberately hidden or ignored matching medication is not restored
+through the diet section. A PN order available only in diet is shown there.
+Distinct PN formulations and lipid products remain separate.
+
+## Edit and print
+
+Open FEN/GI, then Edit diet / review source to edit the imported nutrition
+fields, feeding hours, fortification, instructions, order status and inclusion.
+The same values appear in the preview, individual handoff and Print All.
+An unreadable dietary update retains the previous snapshot for review while
+hiding its structured nutrition and recorded-feed output.
+
+## Install
+
+Replace the complete application file set in each app-code repository. Include
+the new nutrition_display.py module. Keep app.py at its deployed location.
+Restart and confirm:
+
+```text
+Version 6.70 | Oral, tube feeds and TPN
+```
+
+Keep the existing Streamlit Secrets and each app's encrypted data repository.
+No dependency or key change is required. Re-paste the SmartPhrase with the new
+AB dietary section to populate the detailed feeding fields.
+
+The complete package includes the earlier QTc, NIRS, Ignore and AVAPS updates.
+The latest QTc troubleshooting example already parsed correctly in 6.69 and
+continues to do so. This release adds nutrition support.
+
+See NUTRITION_ORDERS_UPDATE.md, TEST_REPORT.md and ARCHIVE_COMPATIBILITY.txt.
+The examples folder contains synthetic input and PDF/HTML/text previews. The
+supplied clinical source examples are not included in the package. This ZIP
+has not been deployed to the live apps.

@@ -29,7 +29,7 @@ from fen_gi import apply_gi_rules
 from medication_groups import apply_group_rules
 from import_review import diagnostic, diagnostic_text
 
-SUPPORTED_SECTIONS = "abcdefgiklmnopqrstuvwxyz"
+SUPPORTED_SECTIONS = tuple("abcdefgiklmnopqrstuvwxyz") + ("ab",)
 
 
 @dataclass
@@ -40,6 +40,29 @@ class ImportResult:
     imported: list[str] = field(default_factory=list)
     diagnostics: list[dict] = field(default_factory=list)
     skipped: list[str] = field(default_factory=list)
+
+
+def _attach_current_feeds(diet: dict, feeds: dict | None, *, refine_routes: bool) -> None:
+    """Link only the feeding rows supplied with this dietary snapshot.
+
+    A post-pyloric order can be labelled NJ/ND only when the same paste has
+    exactly one corroborating tube and the same explicitly recorded formula.
+    Previously retained feeding data must not establish a new route.
+    """
+    rows = feeds['rows'] if feeds else []
+    diet['recorded_feed_ids'] = [row['id'] for row in rows]
+    if not refine_routes:
+        return
+    def formula_key(value: str) -> str:
+        return re.sub(r'\s+', ' ', value.strip()).casefold()
+    for order in diet['enteral']:
+        formula = formula_key(order['formula'])
+        if order['method'] != 'Post-pyloric' or not formula:
+            continue
+        matches = [row for row in rows if row['include'] and row['method'] in ('NJ', 'ND')
+                   and formula_key(row['formula']) == formula]
+        if len(matches) == 1:
+            order['method'] = matches[0]['method']
 
 
 def import_sections(sheet: dict, text: str, settings: dict) -> ImportResult:
@@ -53,7 +76,7 @@ def import_sections(sheet: dict, text: str, settings: dict) -> ImportResult:
     parsed = parse_smartphrase(text)
     relevant = set(SUPPORTED_SECTIONS) & (set(parsed.blocks) | parsed.invalid)
     if not relevant:
-        out.errors.append("No supported block was found. Use paired A, B, C, D, E, F, G, I, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y or Z dividers.")
+        out.errors.append("No supported block was found. Use paired A, B, C, D, E, F, G, I, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z or AB dividers.")
         return out
     # Repeated paired sections can mean two patients were pasted together.
     # That document-wide identity ambiguity cannot be repaired by partial import.
@@ -66,7 +89,7 @@ def import_sections(sheet: dict, text: str, settings: dict) -> ImportResult:
     def reject(group, code='section_parse_failed', line=0):
         nonlocal candidate
         item = diagnostic(group, code,
-                          action='orders_hidden' if group == 'r' else 'feeds_hidden' if group == 't' else 'devices_hidden' if group == 'u' else 'neuro_devices_hidden' if group == 'v' else 'pacemaker_hidden' if group == 'w' else 'diet_hidden' if group == 'x' else 'ecg_hidden' if group == 'z' else 'not_updated', line=line)
+                          action='orders_hidden' if group == 'r' else 'feeds_hidden' if group == 't' else 'devices_hidden' if group == 'u' else 'neuro_devices_hidden' if group == 'v' else 'pacemaker_hidden' if group == 'w' else 'diet_hidden' if group in ('x', 'ab') else 'ecg_hidden' if group == 'z' else 'not_updated', line=line)
         candidate['import_warnings'][group] = [item]
         out.diagnostics.append(item)
         if group not in out.skipped:
@@ -74,6 +97,10 @@ def import_sections(sheet: dict, text: str, settings: dict) -> ImportResult:
 
     for letter in SUPPORTED_SECTIONS:
         group = 'cd' if letter in 'cd' else letter
+        # Detailed dietary orders replace the abbreviated X summary for this
+        # snapshot. A malformed AB block must not silently fall back to X.
+        if letter == 'x' and ('ab' in parsed.blocks or 'ab' in parsed.invalid):
+            continue
         if letter == 'd' and ('c' in parsed.blocks or 'c' in parsed.invalid):
             continue
         if letter in 'cd' and set('cd') & parsed.invalid:
@@ -254,15 +281,19 @@ def import_sections(sheet: dict, text: str, settings: dict) -> ImportResult:
                 recoveries = pacing.diagnostics
                 out.notices.extend(pacing.issues)
                 out.imported.append("pacemaker" if pacing.data else "pacemaker display cleared")
-            elif letter == "x":
-                diet = parse_diet(parsed.blocks[letter])
+            elif letter in ("x", "ab"):
+                diet = parse_diet(parsed.blocks[letter], detailed=letter == "ab")
                 if diet.error:
                     out.errors.append(diet.error)
                     continue
+                if 'enteral' in diet.data:
+                    current_feeds = candidate['feeds'] if 't' in parsed.blocks and 't' not in out.skipped else None
+                    _attach_current_feeds(diet.data, current_feeds, refine_routes=True)
                 candidate["diet"] = diet.data
-                recoveries = diet.diagnostics
+                recoveries = [dict(item, section=group) for item in diet.diagnostics]
                 out.notices.extend(diet.issues)
-                out.imported.append("diet" if diet.data["rows"] else "diet display cleared")
+                populated = any(diet.data.get(name) for name in ('rows', 'enteral', 'parenteral'))
+                out.imported.append("dietary orders" if populated and 'enteral' in diet.data else "diet" if populated else "diet display cleared")
             elif letter == "z":
                 ecg = parse_ecg(parsed.blocks[letter])
                 if ecg.error:
@@ -312,11 +343,20 @@ def import_sections(sheet: dict, text: str, settings: dict) -> ImportResult:
                     message = out.errors[index].replace('Nothing was imported.', '').replace('Nothing has been applied.', '')
                     out.errors[index] = SECTION_NAMES[letter] + ': ' + message.strip() + ' Only this section was skipped.'
             elif len(out.imported) > import_count:
+                if group in ('x', 'ab'):
+                    candidate['import_warnings'].pop('x', None)
+                    candidate['import_warnings'].pop('ab', None)
                 candidate['import_warnings'].pop(group, None)
                 if recoveries:
                     candidate['import_warnings'][group] = recoveries
                     out.diagnostics.extend(recoveries)
     from empty_groups import refresh_empty_group_layout
+    # A later explicit T-only update makes those newly supplied feeding rows
+    # available without borrowing a route for an older dietary order.
+    if ('t' in parsed.blocks and 't' not in out.skipped
+            and not ({'x', 'ab'} & (set(parsed.blocks) | parsed.invalid))
+            and isinstance(candidate.get('diet'), dict) and 'enteral' in candidate['diet']):
+        _attach_current_feeds(candidate['diet'], candidate['feeds'], refine_routes=False)
     refresh_empty_group_layout(candidate, settings)
     validate_sheet(candidate)
     out.sheet = candidate

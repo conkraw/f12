@@ -14,6 +14,7 @@ from clinical_style import clinical_markup
 from fluid_balance import balance_text, balance_heading
 from feeds import feeds_text
 from diet import diet_text
+from nutrition_display import has_detailed_nutrition, nutrition_sections, parenteral_kind
 from medication_groups import group_for as special_group, GROUP_SECTIONS
 
 MODES = ("auto", "prophylaxis", "bowel", "diuretic", "antiemetic", "endocrine", "prokinetic", "tpn", "hypoglycemia", "probiotic", "other")
@@ -36,7 +37,7 @@ def automatic_group(row: dict) -> str:
             and (row.get("infusion_mode") == "infusion" or
                  re.search(r"\bcontinuous\b|\btitrat(?:e|able)\b", normalized(row.get("frequency", ""))))):
         return "hypoglycemia"
-    if (re.match(r"^pediatric\s+2[- ]in[- ]1\s+pn\b", name)
+    if (parenteral_kind(name) == "pn"
             or re.match(r"^smoflipid\b", name)
             or (name.startswith("fat emulsion ") and "smoflipid" in name)):
         # Name/route grouping only. Do not infer the current bag or calculate a rate.
@@ -140,16 +141,22 @@ def fen_gi_body(notes: str, rows: list[dict], intake_output: dict | None, rich: 
     if totals:
         heading = balance_heading(intake_output) + ":"
         sections.append(("<b>" + esc(heading) + "</b>\n" + clinical_markup(totals, esc)) if rich else heading + "\n" + totals)
-    diet_summary = diet_text(diet, rich, esc)
-    if diet_failed:
-        diet_summary = ("<b>Diet:</b>" if rich else "Diet:") + " Not updated. Review needed."
-    if diet_summary:
-        sections.append(diet_summary)
-    feeding = feeds_text(feeds, rich, esc)
-    if feeds_failed:
-        feeding = ("<b>Feeds:</b>" if rich else "Feeds:") + "\nNot updated. Review needed."
-    if feeding:
-        sections.append(feeding)
+    if has_detailed_nutrition(diet) and not diet_failed:
+        sections.extend(nutrition_sections(diet, None if feeds_failed else feeds, rows,
+                        dosing_weight=dosing_weight, sheet=sheet, rich=rich, esc=esc))
+        if feeds_failed:
+            sections.append(("<b>Recorded feeds:</b>" if rich else "Recorded feeds:") + " Not updated. Review needed.")
+    else:
+        diet_summary = diet_text(diet, rich, esc)
+        if diet_failed:
+            diet_summary = ("<b>Diet:</b>" if rich else "Diet:") + " Not updated. Review needed."
+        if diet_summary:
+            sections.append(diet_summary)
+        feeding = feeds_text(feeds, rich, esc)
+        if feeds_failed:
+            feeding = ("<b>Feeds:</b>" if rich else "Feeds:") + "\nNot updated. Review needed."
+        if feeding:
+            sections.append(feeding)
     from categories import medication_blocks
     from infusions import render_body_blocks
     body = render_body_blocks(medication_blocks("FEN / GI", notes, rows, sheet), rich, esc)

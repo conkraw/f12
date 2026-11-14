@@ -150,7 +150,7 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 xxxxxxxxxxxxxxxxxxxxxxxxxxxx
 Diet:
 [Insert your Epic diet-order SmartLink. X imports diet types and NPO exceptions.
-PN and label-only orders are omitted here. T remains the source of feed rates.]
+The detailed AB dietary section supplies oral, tube-feed and PN orders when present. T can supply matching recorded feeding details.]
 xxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 
@@ -165,3 +165,12 @@ ECG:
 QTc Calculation(Bazett) value in ms. The most recent dated Bazett QTc supplied
 is used without a recency restriction. Use your real SmartLink definition.]
 zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz
+
+
+ababababababababababababababababa
+Dietary Orders:
+[Insert your actual Epic detailed Dietary Orders SmartLink and the Diet Orders
+summary. Keep each order's Question/Answer table, route, formula, feeding type,
+infusion time, hourly rate, daily volume, fortifier and feeding instructions.
+Use the real institutional SmartLink definitions, not sample patient values.]
+ababababababababababababababababa

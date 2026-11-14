@@ -16,7 +16,7 @@ from github_store import GitHubVault, StorageError, ConflictError
 from import_review import validate_diagnostic
 
 PREFIX = 'encrypted-data/import-errors'
-APP_VERSION = '6.48'
+APP_VERSION = '6.70'
 MAX_RECORD_BYTES = 100000
 NAME = re.compile(r'^\d{8}T\d{6}Z-[0-9a-f]{32}\.enc$')
 

@@ -1,0 +1,26 @@
+PICU Handoff v6.69 update from v6.68
+
+Complete application package.
+
+Changed application files from v6.68, copy both together:
+  app.py
+  ventilation.py
+
+New synthetic tests:
+  tests/test_avaps_settings.py
+  tests/test_avaps_integration.py
+
+SMARTPHRASE_TEMPLATE.txt now illustrates the AVAPS subsection within C.
+Release documentation, synthetic previews and checksums are updated.
+Previous root documentation is retained with a V668_ prefix.
+
+If upgrading directly from v6.67, use the complete application file set.
+It includes ecg.py and nirs.py and all changes listed in V668_UPDATE_FILES.txt.
+
+Install in app-code repositories. Keep app.py at its deployed location.
+Retain existing Streamlit Secrets, encryption keys and encrypted data
+repositories. No new dependency is needed. Restart and confirm Version 6.69.
+Re-paste the updated SmartPhrase to populate AVAPS settings.
+
+All three apps should use v6.68 or later before syncing Ignore mappings.
+Saved AVAPS fields introduced in this release require v6.69 or later.

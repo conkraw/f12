@@ -302,4 +302,12 @@ def feeds_for_output(sheet: dict) -> dict | None:
     flags = sheet.get('import_warnings', {}).get('t', [])
     if any(item['action'] in ('feeds_hidden', 'not_updated') for item in flags):
         return None
+    diet = sheet.get('diet')
+    if isinstance(diet, dict) and 'enteral' in diet:
+        # A failed detailed dietary update must not bring its earlier linked
+        # feeding snapshot back through the legacy T-only display path.
+        warnings = sheet.get('import_warnings', {})
+        if any(item['action'] == 'diet_hidden' for section in ('x', 'ab')
+               for item in warnings.get(section, [])):
+            return None
     return sheet.get('feeds')

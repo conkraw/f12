@@ -1,26 +1,39 @@
-PICU Handoff v6.69 update from v6.68
+PICU Handoff v6.70 update from v6.69
 
-Complete application package.
+Complete application package. Replace the application files together.
 
-Changed application files from v6.68, copy both together:
+Changed application files:
   app.py
-  ventilation.py
+  batching.py
+  diet.py
+  error_store.py  [diagnostic version updated to 6.70]
+  feeds.py
+  fen_gi.py
+  import_review.py
+  importing.py
+  parser.py
+
+New application module:
+  nutrition_display.py
 
 New synthetic tests:
-  tests/test_avaps_settings.py
-  tests/test_avaps_integration.py
+  tests/test_dietary_boundaries.py
+  tests/test_dietary_orders.py
+  tests/test_nutrition_display.py
+  tests/test_nutrition_integration.py
 
-SMARTPHRASE_TEMPLATE.txt now illustrates the AVAPS subsection within C.
-Release documentation, synthetic previews and checksums are updated.
-Previous root documentation is retained with a V668_ prefix.
+Updated existing tests:
+  tests/test_diet_lactate.py
+  One detailed tube-order case now checks structured feeding fields instead
+  of the former generic Infant Tube Feeding label.
+  tests/test_measurement_notes_observed_pip.py
+  The technical-report version expectation now matches release 6.70.
 
-If upgrading directly from v6.67, use the complete application file set.
-It includes ecg.py and nirs.py and all changes listed in V668_UPDATE_FILES.txt.
+SMARTPHRASE_TEMPLATE.txt adds the AB dietary-orders section.
+Documentation, synthetic previews and SHA256SUMS.txt are updated.
+Previous root release documentation is retained with a V669_ prefix.
 
-Install in app-code repositories. Keep app.py at its deployed location.
-Retain existing Streamlit Secrets, encryption keys and encrypted data
-repositories. No new dependency is needed. Restart and confirm Version 6.69.
-Re-paste the updated SmartPhrase to populate AVAPS settings.
-
-All three apps should use v6.68 or later before syncing Ignore mappings.
-Saved AVAPS fields introduced in this release require v6.69 or later.
+Keep app.py at its deployed location in each app-code repository. Include all
+application files when updating from an earlier release. Keep existing Secrets
+and encrypted data repositories. Restart and confirm Version 6.70. Re-paste
+with the detailed AB dietary section to populate the new nutrition fields.

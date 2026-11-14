@@ -10,11 +10,13 @@ SECTIONS = {
     'e': 'Vitals', 'f': 'Cultures', 'g': 'Labs', 'i': 'Weight / measurements',
     'k': 'Arousal target', 'l': 'WAT', 'm': 'ICP / CPP', 'n': 'Admission',
     'o': 'Viral panel', 'p': 'Blood gas', 'q': 'CBC', 'r': 'Orders',
-    's': 'Intake / output', 't': 'Feeds', 'u': 'Devices', 'v': 'Neuro devices', 'w': 'Pacemaker', 'x': 'Diet', 'y': 'CAPD', 'z': 'ECG / QTc', 'document': 'Paste',
+    's': 'Intake / output', 't': 'Feeds', 'u': 'Devices', 'v': 'Neuro devices', 'w': 'Pacemaker', 'x': 'Diet', 'y': 'CAPD', 'z': 'ECG / QTc', 'ab': 'Dietary orders', 'document': 'Paste',
 }
 CODES = {
     'diet_multiple': 'Multiple distinct diet orders are listed. All are retained; verify which apply.',
     'diet_unrecognized': 'A diet line was not recognized and was omitted. Review the dietary summary.',
+    'nutrition_conflict': 'Nutrition fields disagree or could not be read. The affected field is omitted pending review.',
+    'nutrition_incomplete': 'A tube feeding order has incomplete formula, route, rate or feeding hours. Missing values are not inferred.',
 
     'pacemaker_incomplete': 'A pacemaker mode or matching rate was not supplied. Missing values are shown as UNK.',
     'section_parse_failed': 'This section was not updated. Previous values are retained for review.',
@@ -39,7 +41,7 @@ CODES = {
     'device_missing_status': 'An EVD was identified without a drain status. Its status is shown as UNK.',
     'document_rejected': 'The paste could not be assigned safely to one handoff. Nothing was changed.',
 }
-FIELDS = {'', 'WBC', 'HGB', 'HGB_ISTAT', 'HCT', 'HCT_ISTAT', 'MCV', 'PLT', 'ANC', 'ALC', 'method', 'formula', 'rate', 'device_date', 'device_size', 'device_secured', 'device_status'}
+FIELDS = {'', 'WBC', 'HGB', 'HGB_ISTAT', 'HCT', 'HCT_ISTAT', 'MCV', 'PLT', 'ANC', 'ALC', 'method', 'formula', 'rate', 'hours', 'daily_volume', 'caloric_density', 'additives', 'route', 'feeding_type', 'device_date', 'device_size', 'device_secured', 'device_status'}
 ACTIONS = {'not_updated', 'orders_hidden', 'cell_omitted', 'row_omitted', 'nothing_changed', 'field_unknown', 'feeds_hidden', 'devices_hidden', 'neuro_devices_hidden', 'pacemaker_hidden', 'diet_hidden', 'ecg_hidden'}
 
 
@@ -84,7 +86,7 @@ def diagnostic_text(item: dict) -> str:
 def review_summary(sheet: dict) -> str:
     parts = []
     for section, items in sheet.get('import_warnings', {}).items():
-        if section == 'x':
+        if section in ('x', 'ab'):
             note = 'not updated; prior diet hidden' if any(i['action'] == 'diet_hidden' for i in items) else 'review diet orders'
         elif section == 'r':
             note = 'orders skipped; prior list hidden'

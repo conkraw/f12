@@ -1,13 +1,12 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PICU Handoff 6.69</title><style>body{font-family:system-ui,sans-serif;max-width:850px;margin:44px auto;padding:0 24px;line-height:1.55;color:#18303e}h1,h2{line-height:1.2}section{margin:28px 0;padding:22px;border:1px solid #d9e1e6;border-radius:12px}code{background:#f0f4f6;padding:2px 5px}pre{white-space:pre-wrap}a{color:#125d81}</style></head>
-<body><h1>PICU Handoff 6.69</h1><p>AVAPS settings in Respiratory, with the QTc, NIRS and override-pull medication changes from 6.68 included.</p>
-<section><h2>Install</h2><p>Replace the application files in each app-code repository. Keep app.py at its deployed location. If an app already runs 6.68, copy app.py and ventilation.py together. Restart and confirm Version 6.69.</p><p>Keep your existing Streamlit Secrets, encryption key and separate data repositories. Re-paste the updated SmartPhrase to populate the AVAPS settings.</p></section>
-<section><h2>AVAPS in Respiratory</h2><pre>Mode: AVAPS
-AVAPS rate: 3 cm H2O/min
-Target TV: 130 mL
-Observed TV: 145 mL
-PS Min: 9 cm H2O
-PS Max: 24 cm H2O</pre><p>The rate keeps the unit from the nested source label. Target and observed volumes remain separate. Only available settings appear. FiO2 recorded in the vital-sign section remains in respiratory vitals.</p><p><a href="examples/avaps_settings_preview.pdf">Synthetic print preview</a> | <a href="examples/avaps_settings_preview.html">Synthetic HTML preview</a></p></section>
-<section><h2>QTc, NIRS and medications</h2><p>The newest dated Bazett QTc supplied is eligible without an age limit. Above 450, the QTc line is red with (!) and Long QTc appears in Problems.</p><p>NIRS appears in Neuro when available, with its recorded minimum, maximum and latest value. Override-pull medications default to Ignore. You can restore an entry from Ignored / hidden medications.</p></section>
-<p>Values on this page are synthetic examples.</p><p><a href="README.md">Release overview</a> | <a href="TEST_REPORT.md">Test report</a> | <a href="AVAPS_UPDATE.md">AVAPS details</a> | <a href="QTC_NIRS_OVERRIDE_UPDATE.md">QTc, NIRS and medication details</a></p></body></html>
+<title>PICU Handoff 6.70</title><style>body{font-family:system-ui,sans-serif;max-width:870px;margin:40px auto;padding:0 24px;line-height:1.55;color:#18303e}h1,h2{line-height:1.2}section{margin:26px 0;padding:22px;border:1px solid #d9e1e6;border-radius:12px}code{background:#f0f4f6;padding:2px 5px}pre{white-space:pre-wrap}a{color:#125d81}</style></head>
+<body><h1>PICU Handoff 6.70</h1><p>Oral intake, tube feeds and TPN are clearly identified in FEN/GI.</p>
+<section><h2>Install</h2><p>Replace the complete application file set in each app-code repository. Include nutrition_display.py. Restart and confirm Version 6.70.</p><p>Keep the existing Streamlit Secrets and separate encrypted data repositories. Re-paste the SmartPhrase with the new alternating AB dietary section.</p></section>
+<section><h2>Feeding details and daily amount</h2><pre>Oral: Peds Regular
+Tube feeds (ordered, GT): Synthetic Formula 1.0 (24 kcal/oz)
+@ 30 mL/hr x 20 hr/day = 600 mL/day (60 mL/kg/day)
+Using dosing weight: 10 kg</pre><p>The documented hourly rate and feeding hours determine the ordered daily volume. Dosing weight supplies the denominator. Missing hours or weight are not guessed. Fortifiers, mixture instructions, advancement plans and feeding breaks remain visible.</p><p>These are synthetic examples.</p></section>
+<section><h2>Combined nutrition</h2><p>Oral feeding, tube feeding and PN may appear together. A matching PN medication prints once. A dietary PN entry appears when there is no corresponding medication entry. Hidden medication choices are respected.</p><p>NPO medication exceptions and breast-milk label printing do not create tube feeds. Generic post-pyloric routes stay generic unless the same paste supplies matching precise route information.</p></section>
+<p><a href="examples/nutrition_orders_preview.pdf">Synthetic PDF preview</a> | <a href="examples/nutrition_orders_preview.html">Synthetic HTML preview</a> | <a href="NUTRITION_ORDERS_UPDATE.md">Nutrition details</a> | <a href="TEST_REPORT.md">Validation</a></p>
+<p>QTc, NIRS, Ignore and AVAPS support from the previous release remain included.</p></body></html>

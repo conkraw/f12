@@ -1,0 +1,30 @@
+PICU Handoff v6.69 delivery verification
+
+Source: PICU668.zip, v6.68.
+Full regression: 5775 passed, 14 subtests passed in 101.62 seconds.
+Final focused run after the observed-alias isolation fix: 407 passed in 1.36 seconds.
+The full suite was not repeated after that final fix. See TEST_REPORT.md.
+
+The supplied C/D/E/Z extracts import without errors or skipped sections.
+All five AVAPS settings display with the documented invasive AVAPS mode.
+The rate preserves its source unit. Target and observed TV stay separate.
+FiO2 in E remains in respiratory vitals. Absent NIRS and ECG are omitted.
+The complete clinical sample was not separately revalidated in this release.
+
+Synthetic text, HTML, individual PDF and combined PDF checks pass.
+A Poppler-rendered synthetic PDF was visually inspected. All AVAPS settings
+fit the Respiratory column. The clinical source is excluded from the package.
+
+All 168 Python files and three TOML files parse. ZIP CRC and regenerated
+SHA256SUMS.txt checks complete before delivery. Cache files are excluded.
+
+Schema remains 34. Old archives are accepted without migration. New AVAPS
+fields require v6.69 or later after saving. Existing editor indexes remain
+unchanged. Encryption, data repositories, dependencies and Secrets stay in place.
+
+Only app.py and ventilation.py change application code from v6.68. Copy both
+together when upgrading from v6.68, or upload the complete application file set.
+QTc, NIRS and Ignore behavior from v6.68 are included.
+
+No live deployment or external repository write was performed. Restart each
+updated app and confirm Version 6.69, then re-paste the updated SmartPhrase.

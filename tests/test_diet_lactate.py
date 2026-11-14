@@ -36,7 +36,6 @@ def imported(text='Diet:\nAdult diet Regular: General starting at 01/02 0853', s
  ('NPO diet NPO except: No Exceptions: NPO starting at 01/02 0942','NPO'),
  ('NPO diet NPO except: Other (specify); Explanatory comment: except for medications (NJ): NPO starting at 01/02 1003','NPO except meds (NJ)'),
  ('Diet, tube feeding no tray Continuous; Gastrostomy tube; 30; Synthetic formula: Tube Feeding starting at 01/02 0922','Tube Feeding (no tray)'),
- ('Infant tube feeding Infant Tube Feeding; Breast Milk; Continuous Feeds; Nasoenteric (post-pyloric) tube; 24 hours; 20; Additives: Tube Feeding starting at 01/02 0852','Infant Tube Feeding'),
  ('NPO diet NPO except: Medications: NPO starting at 01/02 1200','NPO except meds'),
  ('NPO diet NPO except: Sips with meds [2]: NPO starting at 01/02 1200','NPO except Sips with meds'),
  ('Adult diet Full Liquid: General starting at 01/02 1200','Adult Full Liquid'),
@@ -53,6 +52,19 @@ def test_supported_diet_summaries(source,expected):
     assert not r.error and not r.diagnostics
     assert diet_text(r.data)=='Diet: '+expected
     assert r.data['rows'][0]['source']==source
+
+
+def test_detailed_x_tube_order_retains_route_formula_rate_and_hours():
+    # v6.70 imports a detailed tube order as a feed instead of dropping its
+    # settings into the older generic Diet: Infant Tube Feeding label.
+    source = ('Infant tube feeding Infant Tube Feeding; Breast Milk; Continuous Feeds; '
+              'Nasoenteric (post-pyloric) tube; 24 hours; 20; Additives: Tube Feeding starting at 01/02 0852')
+    result = parse_diet('Diet:\nDiet Orders\n\t' + source)
+    assert not result.error and not result.diagnostics
+    assert not result.data['rows'] and len(result.data['enteral']) == 1
+    row = result.data['enteral'][0]
+    assert (row['method'], row['formula'], row['rate'], row['hours']) == ('Post-pyloric', 'Breast Milk', '20 mL/hr', '24')
+    assert source in row['source'] and diet_text(result.data) == ''
 
 @pytest.mark.parametrize('line',[
  'Pediatric 2-in-1 PN (Continuous) at 10 mL/hr starting at 01/02 2100',

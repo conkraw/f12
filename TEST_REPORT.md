@@ -1,86 +1,107 @@
-# PICU Handoff v6.69 validation
+# PICU Handoff v6.70 validation
 
-Built from PICU668.zip, version 6.68. No live repository or deployment was changed.
+Built from PICU669.zip. No live repository or hosted deployment was changed.
 
-## Executed tests
+## Executed regression checks
 
-Full regression: 5775 passed, 14 subtests passed in 101.62 seconds.
+The full regression run completed with 6013 passed and 14 subtests passed in
+109.41 seconds. One existing test still expected technical report version 6.48
+and failed against the corrected release version 6.70. Its version expectation
+was updated. No application behavior was changed to satisfy that old assertion.
 
-A final observed-volume alias isolation fix was then checked with the affected
-AVAPS, integration, mode-specific ventilation, basic ventilation, noninvasive,
-and setting-marker suites:
+The final focused run, after that correction and support for multiline feeding
+instruction edits, passed all 554 tests in 2.60 seconds:
 
 ```text
-python3 -m pytest -q tests/test_avaps_settings.py tests/test_avaps_integration.py tests/test_mode_specific_ventilator.py tests/test_ventilation.py tests/test_noninvasive.py tests/test_vent_markers_clean_start.py
+python3 -m pytest -q tests/test_nutrition_integration.py tests/test_dietary_orders.py tests/test_nutrition_display.py tests/test_dietary_boundaries.py tests/test_diet_lactate.py tests/test_feeds.py tests/test_fen_gi.py tests/test_measurement_notes_observed_pip.py
 ```
 
-Final result: 407 passed in 1.36 seconds. This run includes the 34 additional
-cases for the final alias fix. The full suite was not repeated after that fix.
-No pre-existing test expectations were changed in this release.
+The full suite was not repeated after these final focused changes. The only
+warning was the existing pytest plugin's deprecated internal import.
 
-## AVAPS parser and display
+Two existing test expectations changed. One detailed semicolon tube order now
+checks structured feeding fields instead of its former generic label. The
+technical-report version test now expects the release's actual version.
+All other pre-existing test expectations remain unchanged.
 
-Tests cover the supplied nested label structure, all new AVAPS fields, direct
-labels, unit typography, missing and no-data settings, markers, repeated-field
-conflicts, AVAPS-only rendering and old conventional AVAPS fields.
+## Supplied dietary examples
 
-AVAPS rate (cm H2O/min) retains its source unit and remains separate from Set RR.
-If an explicit value conflicts with that unit, the label and raw value remain
-available with an import review issue. No conversion is inferred.
+All 17 supplied dietary examples were tested separately through the AB import
+and FEN/GI renderer. Each imported without errors, skipped sections or warnings.
+Repeated detailed and compact views produced one order.
 
-Target and observed volumes stay separate. Dedicated AVAPS observations retain
-their source scope for observed, expiratory and inspiratory aliases and ranges.
-A stale AVAPS observation cannot replace a conventional PC observation.
-The existing PC observed-volume precedence remains unchanged.
+The GT, post-pyloric formula and fortified breast-milk examples retained their
+explicit route, formula, hourly rate, daily hours and recorded volume. Their
+rate-times-hours calculations matched the supplied daily totals. Mixture,
+fortifier, oral-swab, advancement and break instructions remained visible.
+NPO medication exceptions and milk-label orders did not create tube feeds.
+Regular, Clear Liquid, NPO and None produced the expected oral/empty results.
+No numeric mL/kg/day was generated without a documented dosing weight.
 
-Independent review also compared 60 old-record rendering cases against v6.68
-across included non-AVAPS modes. They matched. Five targeted checks verified
-the final alias fix and generic PC precedence.
+The supplied text was tested in memory and is not included in the package.
+Packaged fixtures and previews are synthetic.
 
-## Import, editing and encrypted recall
+## Source boundaries and freshness
 
-Integration checks exercise C/D import, E respiratory vitals, absent NIRS and
-empty Z ECG handling. Conflicting AVAPS values use the existing C/D review
-workflow while unrelated valid sections remain importable. A fresh change from
-AVAPS to PC removes the prior AVAPS values while preserving respiratory notes.
+AB markers support alternating ab text, case variants, odd final a and different
+valid marker lengths. AB remains separate from X and ECG Z. Repeated AB blocks
+retain the existing multiple-patient rejection. Malformed and unclosed markers
+fail the affected dietary section while unrelated valid sections can import.
 
-All six appended fields support editor callbacks, pending-edit capture and
-encrypted save/recall. Existing archives open, schema remains 34 and all 19
-existing ventilation editor indexes are unchanged. Saved new fields require
-v6.69 or later. Source objects remain unmodified by formatting and export.
+AB supplies the detailed dietary snapshot when both X and AB are present.
+A failed AB import does not silently use X. Successful dietary reimport clears
+prior dietary review flags. An unreadable detailed dietary update retains its
+records for review while hiding structured dietary and recorded-feed output.
 
-## Supplied example
+Only feeding rows supplied with the dietary update are linked automatically.
+A fresh None or NPO-only AB update does not resurrect older T rows. A later
+explicit T update can supply current recorded rows. Generic post-pyloric route
+refinement requires a uniquely matching formula and explicit NJ/ND device in
+the same import. Earlier retained devices do not establish the new route.
 
-The supplied C, D, E and Z extracts were checked together. They import without
-errors or skipped sections and produce the requested AVAPS mode, rate, target
-and observed volumes, and pressure-support limits. FiO2 remains in respiratory
-vitals. Absent NIRS and the empty ECG block produce no new values.
+## Calculations and deduplication
 
-The rest of this turn's full clinical sample was not separately revalidated.
-The supplied clinical source is not included in the deliverable. Packaged tests
-and previews use synthetic data.
+Tests cover 20- and 24-hour schedules, decimal rates, kg/g dosing weight,
+missing/invalid weight, absent duration, failed I imports, zero rates, held and
+future orders, bolus schedules and conflicting listed totals. Measured weight
+is not substituted. An hourly rate is never derived from an intake volume.
 
-## Rendering and package checks
+Oral, enteral and parenteral orders can coexist. Product identity keeps a PN
+medication from duplicating its dietary counterpart while preserving distinct
+PN formulations and lipid products. Matching hidden and Ignore medication
+choices remain effective. Decimal and ratio punctuation in formula names is
+preserved. A known recorded formula is not lost when the ordered formula is
+missing. Unmatched formula-only device records do not imply an extra feeding
+route alongside an explicit dietary tube order.
 
-Text, HTML, individual PDF and combined PDF outputs use the same settings.
-Batch checks verify that one room's target volume does not appear in another
-room's output. The editor renders and offers PDF downloads using widget stubs.
+## Editing, recall and exports
 
-A synthetic AVAPS PDF was rendered with Poppler and visually inspected.
-All settings fit within the Respiratory column with no clipping or overlap.
-Synthetic input, HTML, text and PDF previews are included in examples.
+Callbacks, pending edits, inclusion settings, invalid hour edits and multiline
+feeding instructions are exercised. Nutrition data survives encrypted save and
+reload. Old archives open without migration. Schema stays 34. Structured diet
+snapshots and AB diagnostic flags require v6.70 or later after saving.
 
-All 168 Python files parse with ast and all three TOML files with tomllib.
-The complete ZIP is checked for CRC integrity and includes regenerated SHA256SUMS.txt.
-Cache directories and the supplied clinical source are excluded.
+Text, HTML, single PDF and Print All PDF use the same calculated figures.
+Batch checks keep each room's amounts separate. Nutrition-only handoffs are
+eligible for Print All. Rendering and export do not mutate source records.
+Rich output escapes formulas, fortifiers, instructions and editable text.
 
-Only app.py and ventilation.py change application code from v6.68. Encryption,
-GitHub storage, Mapping Sync, archive paths, Secrets, dependencies, the explicit
-noninvasive path, and the QTc, NIRS and medication modules remain unchanged.
+The earlier full SmartPhrase supplied during QTc troubleshooting was also
+imported with the new code. The dated QTc remained visible, and its detailed
+feeding order used the recorded dosing weight correctly.
 
-## Verification limits
+A synthetic combined oral, tube-feed, PN and dated-QTc PDF was rendered with
+Poppler and visually inspected. Feeding instructions, daily calculations and
+one PN entry fit within FEN/GI without clipping or overlap. The old ECG remained
+visible in Cardiac with its requested flag and problem entry.
 
-UI checks use the existing Streamlit widget stubs. No live browser or hosted
-Streamlit deployment was exercised. Repository services are mocked in tests.
-One warning comes from the installed pytest plugin's deprecated internal
-import. It is not an application failure.
+## Package and verification limits
+
+All 173 Python files parse with ast and all three TOML files with tomllib.
+The release ZIP has CRC verification and regenerated SHA256SUMS.txt. Cache
+files and the supplied clinical source examples are excluded.
+
+UI checks use Streamlit widget stubs. No live browser or hosted Streamlit app
+was exercised. External repository services are mocked in tests. Encryption,
+GitHub storage, Mapping Sync, Secrets, archive paths and dependencies are
+unchanged. The new application module is nutrition_display.py.

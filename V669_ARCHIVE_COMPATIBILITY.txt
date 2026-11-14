@@ -1,0 +1,25 @@
+PICU Handoff v6.69 archive compatibility
+
+Schema remains 34. Existing archives remain readable without migration.
+The new AVAPS values use the existing ventilation values dictionary.
+Existing field indexes are unchanged. New fields append to the label list:
+
+  AVAPS rate (cm H2O/min)
+  AVAPS Respiratory Rate
+  Vt Set/Target ml
+  Pressure Support Min (cm H2O)
+  Pressure Support Max (cm H2O)
+  AVAPS Observed TV (mL)
+
+Saved records using these fields require v6.69 or later. Older code rejects
+unrecognized ventilation keys. Update app.py and ventilation.py together, or
+replace the complete application file set. No new dependency is required.
+
+QTc, NIRS and override-pull behavior from v6.68 remain included. Records with
+those optional fields or Ignore mappings require v6.68 or later. Update all
+three apps before using Mapping Sync with Ignore rules.
+
+security.py, github_store.py, mapping_sync.py, mapping_sync_ui.py,
+sync_diagnostics.py, noninvasive.py, models.py, exports.py and requirements.txt
+match the v6.68 source package. No encryption setting, key, archive path or
+Secrets field is changed. Each app uses its existing encrypted data repository.
