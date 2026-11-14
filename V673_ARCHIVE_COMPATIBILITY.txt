@@ -1,0 +1,15 @@
+PICU Handoff 6.73 archive compatibility
+
+Schema remains 34. Existing archives open without migration and do not need a
+new encryption key or Secrets change. Existing medication mappings are intact.
+
+The new optional current_shift field is validated when present. Old sheets do
+not acquire invented shift data. A new source paste is required to populate it.
+Save/reload and Print All preserve the original source cutoff and source weight.
+
+Update all app-code repositories sharing an archive. Once a new shift snapshot
+is saved, an older build does not recognize that optional field. Avoid running
+older app code against that updated archive.
+
+The existing fluid_balance.py, nutrition_display.py, exports.py, security.py,
+github_store.py and requirements.txt are byte-identical to version 6.72.

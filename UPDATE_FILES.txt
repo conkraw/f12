@@ -1,19 +1,21 @@
-PICU Handoff 6.73
+PICU Handoff 6.74
 
-Recommended installation: replace the complete application file set in each
-app-code repository, then restart the deployment. Preserve Secrets and the
-separate encrypted data repositories.
-
-Application modules added/changed:
+Required changed application modules relative to 6.73:
 app.py
 batching.py
-current_shift.py
+bowel_movements.py
+categories.py
 error_store.py
-fen_gi.py
 import_review.py
 importing.py
+io_sources.py
 models.py
+parser.py
 
-current_shift.py is required. The remaining application modules and all
-runtime dependencies are unchanged. Documentation, the SmartPhrase template,
-new synthetic tests and synthetic previews are also included.
+New files: bowel_movements.py and io_sources.py. Upload both.
+Other application modules and dependencies are unchanged from 6.73.
+
+Replace the complete application file set, or replace all ten files above
+as a group. Do not update only app.py. Preserve Streamlit Secrets and the
+separate encrypted data repositories. Restart, verify Version 6.74, and
+re-paste each current SmartPhrase. Previously omitted source data was not saved.

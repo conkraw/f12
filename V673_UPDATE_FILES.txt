@@ -1,0 +1,19 @@
+PICU Handoff 6.73
+
+Recommended installation: replace the complete application file set in each
+app-code repository, then restart the deployment. Preserve Secrets and the
+separate encrypted data repositories.
+
+Application modules added/changed:
+app.py
+batching.py
+current_shift.py
+error_store.py
+fen_gi.py
+import_review.py
+importing.py
+models.py
+
+current_shift.py is required. The remaining application modules and all
+runtime dependencies are unchanged. Documentation, the SmartPhrase template,
+new synthetic tests and synthetic previews are also included.

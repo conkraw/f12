@@ -19,8 +19,9 @@ from viral import parse_viral_panel
 from blood_gases import parse_gases
 from cbc import parse_cbc
 from recurring_orders import parse_orders, selected_orders
-from fluid_balance import parse_balance
+from io_sources import select_balance_source
 from current_shift import parse_current_shift
+from bowel_movements import parse_bowel_movement
 from feeds import parse_feeds
 from devices import parse_devices
 from pacemaker import parse_pacemaker
@@ -30,7 +31,7 @@ from fen_gi import apply_gi_rules
 from medication_groups import apply_group_rules
 from import_review import diagnostic, diagnostic_text
 
-SUPPORTED_SECTIONS = tuple("abcdefghiklmnopqrstuvwxyz") + ("ab",)
+SUPPORTED_SECTIONS = tuple("abcdefghiklmnopqrstuvwxyz") + ("ab", "ac")
 
 
 @dataclass
@@ -75,7 +76,7 @@ def import_sections(sheet: dict, text: str, settings: dict) -> ImportResult:
     parsed = parse_smartphrase(text)
     relevant = set(SUPPORTED_SECTIONS) & (set(parsed.blocks) | parsed.invalid)
     if not relevant:
-        out.errors.append("No supported block was found. Use paired A, B, C, D, E, F, G, H, I, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z or AB dividers.")
+        out.errors.append("No supported block was found. Use paired A, B, C, D, E, F, G, H, I, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, AB or AC dividers.")
         return out
     # Repeated paired sections can mean two patients were pasted together.
     # That document-wide identity ambiguity cannot be repaired by partial import.
@@ -84,15 +85,28 @@ def import_sections(sheet: dict, text: str, settings: dict) -> ImportResult:
         out.diagnostics.append(diagnostic('document', 'document_rejected', action='nothing_changed'))
         return out
     out.notices.extend(parsed.issues)
+    # Keep the totals separate from the H current-shift parser. In particular,
+    # a present-but-empty S must not erase an explicit 24-hour summary in H.
+    balance_selection = select_balance_source(parsed.blocks, parsed.invalid)
     candidate = deepcopy(sheet)
+    # A new I/O snapshot without AC cannot refresh a previous 24-hour BM claim.
+    # A limited non-I/O update retains the original snapshot, as other sections do.
+    if ({"h", "s"} & (set(parsed.blocks) | parsed.invalid)) and not (
+            "ac" in parsed.blocks or "ac" in parsed.invalid):
+        if candidate.get("bowel_movement") is not None:
+            candidate.pop("bowel_movement", None)
+            out.notices.append("Prior BM status was cleared because the new source snapshot has no AC stool block.")
     def reject(group, code='section_parse_failed', line=0):
         nonlocal candidate
         if group == 'h':
             # Never restore an old shift after a failed new H import, including
             # after acknowledgment of the import warning.
             candidate['current_shift'] = None
+        if group == 'ac':
+            # Failed source data is not No, and must not leave yesterday's Yes.
+            candidate['bowel_movement'] = None
         item = diagnostic(group, code,
-                          action='current_shift_hidden' if group == 'h' else 'orders_hidden' if group == 'r' else 'feeds_hidden' if group == 't' else 'devices_hidden' if group == 'u' else 'neuro_devices_hidden' if group == 'v' else 'pacemaker_hidden' if group == 'w' else 'diet_hidden' if group in ('x', 'ab') else 'ecg_hidden' if group == 'z' else 'not_updated', line=line)
+                          action='bowel_movement_hidden' if group == 'ac' else 'current_shift_hidden' if group == 'h' else 'orders_hidden' if group == 'r' else 'feeds_hidden' if group == 't' else 'devices_hidden' if group == 'u' else 'neuro_devices_hidden' if group == 'v' else 'pacemaker_hidden' if group == 'w' else 'diet_hidden' if group in ('x', 'ab') else 'ecg_hidden' if group == 'z' else 'not_updated', line=line)
         candidate['import_warnings'][group] = [item]
         out.diagnostics.append(item)
         if group not in out.skipped:
@@ -114,7 +128,7 @@ def import_sections(sheet: dict, text: str, settings: dict) -> ImportResult:
             out.errors.append("Check the " + SECTION_NAMES[letter] + " dividers. This section was not updated.")
             reject(group, "section_boundary")
             continue
-        if letter not in parsed.blocks:
+        if letter not in parsed.blocks and not (letter == "s" and balance_selection.source):
             continue
         before = deepcopy(candidate)
         error_count, import_count = len(out.errors), len(out.imported)
@@ -260,7 +274,7 @@ def import_sections(sheet: dict, text: str, settings: dict) -> ImportResult:
                     recoveries = [diagnostic('h', 'current_shift_incomplete', action='row_omitted')]
                 out.imported.append("current-shift outputs" if shift.data else "current-shift display cleared")
             elif letter == "s":
-                balance = parse_balance(parsed.blocks[letter])
+                balance = balance_selection.result
                 if balance.error:
                     out.errors.append(balance.error)
                     continue
@@ -307,6 +321,14 @@ def import_sections(sheet: dict, text: str, settings: dict) -> ImportResult:
                 out.notices.extend(diet.issues)
                 populated = any(diet.data.get(name) for name in ('rows', 'enteral', 'parenteral'))
                 out.imported.append("dietary orders" if populated and 'enteral' in diet.data else "diet" if populated else "diet display cleared")
+            elif letter == "ac":
+                bowel = parse_bowel_movement(parsed.blocks[letter])
+                if bowel.error:
+                    out.errors.append(bowel.error)
+                    continue
+                candidate["bowel_movement"] = bowel.data
+                out.notices.extend(bowel.issues)
+                out.imported.append("BM status (24 hours)")
             elif letter == "z":
                 ecg = parse_ecg(parsed.blocks[letter])
                 if ecg.error:

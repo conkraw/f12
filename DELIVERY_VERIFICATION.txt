@@ -1,14 +1,18 @@
-PICU Handoff 6.73 delivery verification
+PICU Handoff 6.74 delivery verification
 
-Source: PICU672.zip, Library version 5.
-957 selected tests passed in completed regression runs.
-Full-suite attempt was time-limited and is not claimed as completed.
-176 Python files parse successfully. 3 TOML files parse successfully.
+Built from the supplied PICU673.zip.
+1,261 selected tests passed in completed runs: 891 focused + 370 compatibility.
+180 Python files parse successfully. 3 TOML files parse successfully.
+The full test suite was not completed and is not claimed to have passed.
 
-The 24-hour I/O parser, nutrition calculations, exports, encryption, GitHub
-storage and requirements files are byte-identical to 6.72.
-The SHA256SUMS.txt manifest covers every packaged file except itself.
-ZIP integrity is verified before delivery.
-No uploaded clinical source, screenshot, token, patient-data archive, or runtime
-log was added to this package. Packaged new examples are synthetic.
-No live application or repository was deployed or modified.
+The latest inline I/O/AC snippet and six mounted full SmartPhrase examples
+were exercised locally. All six full sources now import H-based day totals.
+Synthetic single-room and three-room PDF exports were checked. The first
+was rasterized and visually inspected. BM font weight was checked in both.
+
+Core 24-hour/current-shift calculation and display modules, nutrition display,
+PDF/HTML export engine, encryption, storage and requirements are unchanged.
+SHA256SUMS.txt covers every packaged file except itself. ZIP CRC is checked.
+No uploaded clinical source, runtime log, font file, Secrets, encryption key,
+or patient-data archive was added. New preview content is synthetic.
+No live application or repository has been modified.

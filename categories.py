@@ -421,6 +421,25 @@ def medication_blocks(section: str, notes: str, rows: list[dict], sheet: dict | 
                 bucket = (root["children"].setdefault(path["id"], dict(name=path["name"],
                     order=path["order"], rows=[])) if path["parent_id"] else root)
             bucket.setdefault("labs", []).append(("lab", level))
+    if sheet is not None:
+        from bowel_movements import bowel_movement_text
+        bm = bowel_movement_text(sheet)
+        if bm:
+            # Follow the Bowel Regimen category even when it is renamed/nested.
+            # Observation data is not an order and never makes hidden meds visible.
+            path = target_snapshot("gi:bowel", default_categories())
+            candidates = list(sheet.get("empty_group_layout", []))
+            candidates += [placement(row) for row in rows]
+            for candidate in candidates:
+                if candidate["id"] == "gi:bowel":
+                    path = candidate
+            if path["section"] == section:
+                root_id = _display_root_key(path)
+                root = roots.setdefault(root_id, dict(name=path["parent_name"] or path["name"],
+                    order=path["parent_order"], direct=[], children={}))
+                bucket = (root["children"].setdefault(path["id"], dict(name=path["name"],
+                    order=path["order"], rows=[])) if path["parent_id"] else root)
+                bucket.setdefault("observations", []).append(("observation", bm))
     anchor = theophylline_anchor(sheet) if sheet else ""
     def entries(items):
         blocks = []
@@ -451,7 +470,9 @@ def medication_blocks(section: str, notes: str, rows: list[dict], sheet: dict | 
             else:
                 block += [("subheading", child["name"])] + entries(child["rows"])
             block += child.get("labs", [])
+            block += child.get("observations", [])
         block += root.get("labs", [])
+        block += root.get("observations", [])
         groups.append(block)
     if notes.strip():
         groups.append([("notes", notes.rstrip())])

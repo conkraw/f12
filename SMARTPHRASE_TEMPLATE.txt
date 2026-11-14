@@ -177,3 +177,11 @@ summary. Keep each order's Question/Answer table, route, formula, feeding type,
 infusion time, hourly rate, daily volume, fortifier and feeding instructions.
 Use the real institutional SmartLink definitions, not sample patient values.]
 ababababababababababababababababa
+
+
+acacacacacacacacacacacacacacacacac
+[Insert your institution's stool SmartLinks limited to the past 24 hours.
+Retain the field labels Stool Amount, Diaper Weight Mixed Urine/Stool (g),
+and/or Diaper Weight with Stool (g). Do not use a historical last-ever value.
+When the SmartLinks return no data, leave the paired AC block empty.]
+acacacacacacacacacacacacacacacacac

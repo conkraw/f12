@@ -10,7 +10,7 @@ SECTIONS = {
     'e': 'Vitals', 'f': 'Cultures', 'g': 'Labs', 'h': 'Current Shift', 'i': 'Weight / measurements',
     'k': 'Arousal target', 'l': 'WAT', 'm': 'ICP / CPP', 'n': 'Admission',
     'o': 'Viral panel', 'p': 'Blood gas', 'q': 'CBC', 'r': 'Orders',
-    's': 'Intake / output', 't': 'Feeds', 'u': 'Devices', 'v': 'Neuro devices', 'w': 'Pacemaker', 'x': 'Diet', 'y': 'CAPD', 'z': 'ECG / QTc', 'ab': 'Dietary orders', 'document': 'Paste',
+    's': 'Intake / output', 't': 'Feeds', 'u': 'Devices', 'v': 'Neuro devices', 'w': 'Pacemaker', 'x': 'Diet', 'y': 'CAPD', 'z': 'ECG / QTc', 'ab': 'Dietary orders', 'ac': 'BM status (24 hours)', 'document': 'Paste',
 }
 CODES = {
     'current_shift_incomplete': 'Current-shift time, weight, or output details are incomplete. Unavailable rates are withheld. Re-paste a complete current source snapshot.',
@@ -43,7 +43,7 @@ CODES = {
     'document_rejected': 'The paste could not be assigned safely to one handoff. Nothing was changed.',
 }
 FIELDS = {'', 'WBC', 'HGB', 'HGB_ISTAT', 'HCT', 'HCT_ISTAT', 'MCV', 'PLT', 'ANC', 'ALC', 'method', 'formula', 'rate', 'hours', 'daily_volume', 'caloric_density', 'additives', 'route', 'feeding_type', 'device_date', 'device_size', 'device_secured', 'device_status'}
-ACTIONS = {'not_updated', 'orders_hidden', 'cell_omitted', 'row_omitted', 'nothing_changed', 'field_unknown', 'feeds_hidden', 'devices_hidden', 'neuro_devices_hidden', 'pacemaker_hidden', 'diet_hidden', 'ecg_hidden', 'current_shift_hidden'}
+ACTIONS = {'not_updated', 'orders_hidden', 'cell_omitted', 'row_omitted', 'nothing_changed', 'field_unknown', 'feeds_hidden', 'devices_hidden', 'neuro_devices_hidden', 'pacemaker_hidden', 'diet_hidden', 'ecg_hidden', 'current_shift_hidden', 'bowel_movement_hidden'}
 
 
 def diagnostic(section: str, code: str, *, line: int = 0, column: int = 0,
@@ -81,7 +81,7 @@ def diagnostic_text(item: dict) -> str:
     position = (' | line ' + str(item['line']) if item['line'] else '')
     position += (' | column ' + str(item['column']) if item['column'] else '')
     field = (' | ' + item['field']) if item['field'] else ''
-    return SECTIONS[item['section']] + field + position + ': ' + CODES[item['code']] + (' Previous automatic orders are hidden from print.' if item['action'] == 'orders_hidden' and item['code'] != 'orders_skipped' else '') + (' Previous automatic feeds are hidden from print.' if item['action'] == 'feeds_hidden' else '') + (' Previous automatic device details are hidden from print.' if item['action'] in ('devices_hidden', 'neuro_devices_hidden') else '') + (' Previous automatic pacemaker settings are hidden from print.' if item['action'] == 'pacemaker_hidden' else '') + (' Previous automatic diet details are hidden from print.' if item['action'] == 'diet_hidden' else '') + (' Previous QTc and its automatic problem are hidden from print.' if item['action'] == 'ecg_hidden' else '')
+    return SECTIONS[item['section']] + field + position + ': ' + CODES[item['code']] + (' Previous automatic orders are hidden from print.' if item['action'] == 'orders_hidden' and item['code'] != 'orders_skipped' else '') + (' Previous automatic feeds are hidden from print.' if item['action'] == 'feeds_hidden' else '') + (' Previous automatic device details are hidden from print.' if item['action'] in ('devices_hidden', 'neuro_devices_hidden') else '') + (' Previous automatic pacemaker settings are hidden from print.' if item['action'] == 'pacemaker_hidden' else '') + (' Previous automatic diet details are hidden from print.' if item['action'] == 'diet_hidden' else '') + (' Previous QTc and its automatic problem are hidden from print.' if item['action'] == 'ecg_hidden' else '') + (' Prior BM status was cleared. No Yes/No is printed until a valid AC block is supplied.' if item['action'] == 'bowel_movement_hidden' else '')
 
 
 def review_summary(sheet: dict) -> str:
@@ -89,6 +89,8 @@ def review_summary(sheet: dict) -> str:
     for section, items in sheet.get('import_warnings', {}).items():
         if section in ('x', 'ab'):
             note = 'not updated; prior diet hidden' if any(i['action'] == 'diet_hidden' for i in items) else 'review diet orders'
+        elif section == 'ac':
+            note = 'not updated; prior BM status cleared'
         elif section == 'h':
             note = 'not updated; previous shift cleared' if any(i['action'] == 'current_shift_hidden' for i in items) else 'incomplete; unavailable rates withheld'
         elif section == 'r':

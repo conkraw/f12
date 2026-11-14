@@ -140,7 +140,7 @@ def test_duplicate_ab_sections_keep_the_document_rejection_signal():
     assert any(item.startswith("More than one Dietary Orders block") for item in parsed.issues)
 
 
-@pytest.mark.parametrize("marker", ["abababa", "babababa", "acacacac", "bcbcbcbc"])
+@pytest.mark.parametrize("marker", ["abababa", "babababa", "adadadad", "bcbcbcbc"])
 def test_other_alternating_strings_are_not_new_supported_dividers(marker):
     parsed = parse_smartphrase(DIAGNOSES + block(marker, DIETARY))
     assert "ab" not in parsed.blocks

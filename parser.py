@@ -9,11 +9,12 @@ SECTION_NAMES = {
     "a": "Diagnoses", "b": "Medications", "c": "Invasive Ventilation",
     "d": "Non-invasive Ventilation", "e": "VITALS", "f": "CULTURES",
     "g": "LABS", "h": "INTAKE/OUTPUT", "i": "NUTRITION", "j": "Wound Review",
-    "k": "Target Arousal Level", "l": "WAT Score", "m": "ICP Trends", "n": "Date of Admission", "o": "Respiratory Viral Panel", "p": "Blood Gas", "q": "Complete Blood Count", "r": "Orders Placed This Encounter", "s": "Intake / Output totals", "t": "Feeds", "u": "Devices", "v": "Intracranial Pressure Monitor", "w": "Pacemaker", "x": "Diet", "y": "CAPD", "z": "ECG", "ab": "Dietary Orders",
+    "k": "Target Arousal Level", "l": "WAT Score", "m": "ICP Trends", "n": "Date of Admission", "o": "Respiratory Viral Panel", "p": "Blood Gas", "q": "Complete Blood Count", "r": "Orders Placed This Encounter", "s": "Intake / Output totals", "t": "Feeds", "u": "Devices", "v": "Intracranial Pressure Monitor", "w": "Pacemaker", "x": "Diet", "y": "CAPD", "z": "ECG", "ab": "Dietary Orders", "ac": "Stool / bowel movement",
 }
 MAX_PASTE = 150_000
 DIVIDER = re.compile(r"^([a-z])\1{7,}$", re.I)
 DIETARY_DIVIDER = re.compile(r"^(?:ab){4,}a?$", re.I)
+STOOL_DIVIDER = re.compile(r"^(?:ac){4,}a?$", re.I)
 NUMBER_OR_BULLET = re.compile(r"^\s*(?:\d+[.)]\s+|[•\-]\s+)")
 
 
@@ -51,7 +52,7 @@ class ParseResult:
 
 
 def parse_smartphrase(text: str) -> ParseResult:
-    """Accept a..z repeated-letter dividers and alternating ab dietary dividers.
+    """Accept a..z dividers, alternating ab dietary and ac stool dividers.
 
     Ambiguous/missing/duplicate boundaries fail closed for that section.
     Issues in a later section do not invalidate a complete, unambiguous a block.
@@ -73,8 +74,9 @@ def parse_smartphrase(text: str) -> ParseResult:
         line = raw.strip()
         marker = DIVIDER.fullmatch(line)
         dietary_marker = DIETARY_DIVIDER.fullmatch(line)
-        if marker or dietary_marker:
-            key = "ab" if dietary_marker else marker.group(1).lower()
+        stool_marker = STOOL_DIVIDER.fullmatch(line)
+        if marker or dietary_marker or stool_marker:
+            key = "ac" if stool_marker else "ab" if dietary_marker else marker.group(1).lower()
             if active == key:
                 seen[key] = seen.get(key, 0) + 1
                 if seen[key] > 1:
@@ -96,6 +98,20 @@ def parse_smartphrase(text: str) -> ParseResult:
                     result.invalid.add(active)
                     result.issues.append(f"{SECTION_NAMES[active]} is missing its closing divider before line {n}.")
                 active, buffer = key, []
+            continue
+        # Reject near-AC dividers rather than consuming stool data into ECG,
+        # Dietary Orders or another patient section.
+        near_stool_marker = (
+            len(line) >= 8 and line.isalpha()
+            and re.search(r"(?:ac){3,}", line, re.I)
+            and sum(char.casefold() == ("a" if index % 2 == 0 else "c")
+                    for index, char in enumerate(line)) / len(line) >= 0.75
+        )
+        if near_stool_marker:
+            result.invalid.add("ac")
+            if active:
+                result.invalid.add(active)
+            result.issues.append(f"Malformed divider on line {n}. Use an uninterrupted alternating ac line for stool data.")
             continue
         # A near-AB divider must not become an ordinary dietary instruction.
         # It is flagged, never repaired or treated as a valid boundary.
@@ -142,7 +158,10 @@ def parse_smartphrase(text: str) -> ParseResult:
             r"^(?:(?:Last|Observed|Recorded|Actual)\s+)?(?:SBS\b|State\s+Behavio(?:u)?r(?:al)?\s+Scale\b)|^(?:results? from |patient vitals? for |Date(?:/Time)?\s|\d{1,2}/\d{1,2}/\d{2,4}\b)",
             nonempty[0], re.I)))
         # T contains device-prefixed lines and may have no heading at all.
-        t_start = key in ("t", "u", "v", "w", "x", "y", "z")
+        t_start = key in ("t", "u", "v", "w", "x", "y", "z", "ac")
+        if key == "ac" and nonempty and _heading(nonempty[0]) not in (None, "ac"):
+            result.invalid.add(key)
+            result.issues.append("Another section heading appears inside Stool / bowel movement. Check the dividers.")
         dietary_start = key == "ab" and (not nonempty or _heading(nonempty[0]) in ("ab", "x"))
         if not p_start and not r_start and not s_start and not t_start and not m_start and not k_start and not dietary_start and (not nonempty or _heading(nonempty[0]) != key):
             result.invalid.add(key)

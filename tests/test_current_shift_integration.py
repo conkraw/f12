@@ -40,7 +40,7 @@ def test_existing_24_hour_object_values_times_and_output_unchanged():
     old['intake_output'] = parse_balance(BALANCE).data
     before = deepcopy(old['intake_output'])
     old_text = fields_with_medications(old)['FEN / GI']
-    result = imported(old=old)
+    result = imported(old=old, extra=block('s', BALANCE))
     assert not result.errors
     sheet = result.sheet
     assert sheet['intake_output'] == before == old['intake_output']
@@ -49,9 +49,9 @@ def test_existing_24_hour_object_values_times_and_output_unchanged():
     assert sheet['intake_output']['last_filed'] == '01/05/2026 0545'
 
 
-def test_h_totals_never_repopulate_or_replace_s():
+def test_explicit_h_24h_totals_fill_missing_s_but_do_not_replace_populated_s():
     result = imported()
-    assert not result.errors and result.sheet['intake_output'] is None
+    assert not result.errors and result.sheet['intake_output']['intake'] == '1250 ml' 
     result = imported(extra=block('s', BALANCE))
     assert not result.errors and result.sheet['intake_output'] == parse_balance(BALANCE).data
     assert result.sheet['current_shift']['as_of'] == '2026-01-05T06:30:00'
@@ -64,7 +64,7 @@ def test_other_sheet_fields_unchanged_and_nutrition_follows_shift():
     old['dosing_weight'] = '5 kg'
     before = deepcopy(old)
     sheet = imported(old=old).sheet
-    assert {k: v for k, v in sheet.items() if k not in ('current_shift', 'empty_group_layout')} == {k: v for k, v in before.items() if k != 'empty_group_layout'}
+    assert {k: v for k, v in sheet.items() if k not in ('current_shift', 'intake_output', 'empty_group_layout')} == {k: v for k, v in before.items() if k not in ('intake_output', 'empty_group_layout')}
     text = fields_with_medications(sheet)['FEN / GI']
     assert text.index('Current Shift') < text.index('Synthetic separate notes')
     assert 'UOP: 2.00' in text
@@ -111,7 +111,7 @@ def test_shift_only_handoff_in_print_all_and_all_export_formats():
 def test_failed_new_h_clears_prior_shift_without_affecting_24h():
     old = imported(extra=block('s', BALANCE)).sheet
     before = deepcopy(old['intake_output'])
-    result = imported(source(out='Urine:NOT_A_VOLUME'), old=old)
+    result = imported(source(out='Urine:NOT_A_VOLUME'), old=old, extra=block('s', BALANCE))
     assert result.errors and result.sheet['current_shift'] is None
     assert 'h' in result.sheet['import_warnings']
     assert result.sheet['intake_output'] == before

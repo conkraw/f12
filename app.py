@@ -1,4 +1,4 @@
-"""PICU SmartPhrase v6.73: separate current-shift outputs in mL/kg/hr."""
+"""PICU SmartPhrase v6.74: BM status and H/S intake-output source recovery."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,
@@ -1775,7 +1775,7 @@ def main() -> None:
         return
     with st.sidebar:
         st.header("PICU Handoff")
-        st.caption("Version 6.73 | Current Shift outputs")
+        st.caption("Version 6.74 | BM status + I/O fix")
         # Retire the old instructions workspace without discarding room drafts.
         if st.session_state.get("page") == "Instructions / SmartPhrase":
             st.session_state["page"] = "Handoff"
@@ -2082,7 +2082,10 @@ def handoff_notes(sheet: dict) -> None:
                 st.caption("Edit imported specimens and results in Cultures. Temperature stays first in the printed ID column.")
             if section == "FEN / GI":
                 st.markdown('<div style="white-space:pre-wrap">' + fen_gi_body("", sheet["medications"], None, True, sheet=sheet, include_current_shift=False) + "</div>", unsafe_allow_html=True)
-                st.caption("Printed order: Intake/Output/Net, Current Shift outputs, Diet, Tube feed, TPN, GI prophylaxis, Bowel Regimen, Diuretics, Antiemetics, Endocrine Medications, then separate notes and remaining FEN/GI medications.")
+                st.caption("Printed order: Intake/Output/Net, Current Shift outputs, Diet, Tube feed, TPN, GI prophylaxis, Bowel Regimen with Last BM (24 hours), Diuretics, Antiemetics, Endocrine Medications, then separate notes and remaining FEN/GI medications.")
+                if sheet.get("bowel_movement") is not None:
+                    from bowel_movements import HELP as bowel_help
+                    st.caption(bowel_help)
             elif section in INFUSION_SECTIONS:
                 render_body = {"Neurologic": neuro_body, "Cardiovascular": cardiovascular_body, "Hematology": hematology_body, "Respiratory": respiratory_body}[section]
                 st.markdown('<div style="white-space:pre-wrap">' + render_body("", sheet["medications"], True, sheet=sheet) + '</div>', unsafe_allow_html=True)
@@ -2725,7 +2728,7 @@ def intake_output_editor(sheet: dict) -> None:
     data = sheet["intake_output"]
     st.subheader(balance_heading(data))
     if data is None:
-        st.caption("Paste the paired S section to place its totals at the top of FEN/GI.")
+        st.caption("Paste the 24-hour summary in H, or the paired S totals section, to place totals at the top of FEN/GI.")
         return
     meta = " | ".join(x for x in (data["period"], "As of " + data["as_of"] if data["as_of"] else "", "Last filed " + data["last_filed"] if data["last_filed"] else "") if x)
     st.text(balance_text(data, sheet["dosing_weight"] if "i" not in sheet["import_warnings"] else ""))
@@ -2741,7 +2744,7 @@ def intake_output_editor(sheet: dict) -> None:
     if key not in st.session_state:
         st.session_state[key] = data["include"]
     st.checkbox("Show intake/output totals", key=key, on_change=intake_output_change, args=(sheet["room"], "include", key))
-    st.caption("Values are copied from S. Missing values are not zero. Net is not recalculated.")
+    st.caption("Values are copied from the source summary. Populated S totals take priority. Otherwise, an explicit 24-hour H summary is used. Missing values are not zero. Net is not recalculated.")
     st.caption("The time window uses the hour of the source 24-hour summary, not the time you reprint this handoff. Minutes remain visible in As of above.")
 
 

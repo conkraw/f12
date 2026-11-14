@@ -35,6 +35,7 @@ from diet import validate_diet, diet_for_output, diet_failed
 from ecg import validate_ecg, ecg_text
 from fluid_balance import validate_balance
 from current_shift import validate_current_shift
+from bowel_movements import validate_bowel_movement
 from fen_gi import validate_gi_rules, effective_section, fen_gi_body
 
 from import_review import validate_import_warnings, orders_for_output
@@ -86,7 +87,7 @@ def new_vault() -> dict:
 
 
 def validate_sheet(sheet: dict) -> None:
-    if not isinstance(sheet, dict) or set(sheet) - {"anthropometrics", "problem_review", "difficult_airway", "empty_group_layout", "sbs_observations", "sbs_vent_mode", "ecg", "current_shift"} != {"id", "room", "created_at", "updated_at", "fields", "medications", "ventilation", "noninvasive", "vitals", "labs", "neuro_vitals", "nutrition", "cultures", "dosing_weight", "admission_date", "viral_panel", "blood_gas", "cbc", "recurring_orders", "intake_output", "feeds", "devices", "neuro_devices", "pacemaker", "diet", "import_warnings"}:
+    if not isinstance(sheet, dict) or set(sheet) - {"anthropometrics", "problem_review", "difficult_airway", "empty_group_layout", "sbs_observations", "sbs_vent_mode", "ecg", "current_shift", "bowel_movement"} != {"id", "room", "created_at", "updated_at", "fields", "medications", "ventilation", "noninvasive", "vitals", "labs", "neuro_vitals", "nutrition", "cultures", "dosing_weight", "admission_date", "viral_panel", "blood_gas", "cbc", "recurring_orders", "intake_output", "feeds", "devices", "neuro_devices", "pacemaker", "diet", "import_warnings"}:
         raise ValidationError("The handoff structure is invalid.")
     if not isinstance(sheet["id"], str) or not re.fullmatch(r"[0-9a-f]{32}", sheet["id"]):
         raise ValidationError("The handoff identifier is invalid.")
@@ -124,6 +125,7 @@ def validate_sheet(sheet: dict) -> None:
         validate_orders(sheet["recurring_orders"])
         validate_balance(sheet["intake_output"])
         validate_current_shift(sheet.get("current_shift"))
+        validate_bowel_movement(sheet.get("bowel_movement"))
         validate_feeds(sheet["feeds"])
         validate_devices(sheet["devices"], "u")
         validate_devices(sheet["neuro_devices"], "v")
