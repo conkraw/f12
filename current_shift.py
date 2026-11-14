@@ -112,15 +112,19 @@ def _eastern(naive: datetime) -> datetime:
 
 
 def shift_window(stamp: str) -> tuple[datetime, datetime, Decimal]:
-    """Return local boundaries and actual elapsed hours for 7am/3pm/11pm."""
+    """Return the 7am/7pm shift start and actual elapsed hours to the source time.
+
+    The overnight shift begins at 7pm on the previous calendar day. Rates use
+    elapsed time, not a fixed 12-hour denominator. Stored volumes are unchanged.
+    """
     if not stamp:
         raise ValueError("The source summary timestamp is missing. Current-shift rates are withheld.")
     end = datetime.fromisoformat(stamp)
     if end.hour < 7:
-        start = (end - timedelta(days=1)).replace(hour=23, minute=0, second=0)
+        start = (end - timedelta(days=1)).replace(hour=19, minute=0, second=0, microsecond=0)
     else:
-        start = end.replace(hour=7 if end.hour < 15 else 15 if end.hour < 23 else 23,
-                            minute=0, second=0)
+        start = end.replace(hour=7 if end.hour < 19 else 19,
+                            minute=0, second=0, microsecond=0)
     start_utc = _eastern(start).astimezone(timezone.utc)
     end_utc = _eastern(end).astimezone(timezone.utc)
     seconds = int((end_utc - start_utc).total_seconds())

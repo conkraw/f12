@@ -1,18 +1,24 @@
-PICU Handoff 6.74 delivery verification
+PICU Handoff 6.75 delivery verification
 
-Built from the supplied PICU673.zip.
-1,261 selected tests passed in completed runs: 891 focused + 370 compatibility.
-180 Python files parse successfully. 3 TOML files parse successfully.
-The full test suite was not completed and is not claimed to have passed.
+Built from the supplied PICU674.zip. Five application modules changed:
+app.py
+bowel_movements.py
+current_shift.py
+error_store.py
+infusions.py
 
-The latest inline I/O/AC snippet and six mounted full SmartPhrase examples
-were exercised locally. All six full sources now import H-based day totals.
-Synthetic single-room and three-room PDF exports were checked. The first
-was rasterized and visually inspected. BM font weight was checked in both.
+597 selected tests passed in completed runs: 238 focused + 359 compatibility.
+181 Python files parse successfully. 3 TOML files parse successfully.
+A broader test run did not complete. No full-suite pass is claimed.
 
-Core 24-hour/current-shift calculation and display modules, nutrition display,
-PDF/HTML export engine, encryption, storage and requirements are unchanged.
-SHA256SUMS.txt covers every packaged file except itself. ZIP CRC is checked.
-No uploaded clinical source, runtime log, font file, Secrets, encryption key,
-or patient-data archive was added. New preview content is synthetic.
-No live application or repository has been modified.
+Synthetic individual and two-room PDF/HTML/text previews were generated.
+The updated one-room PDF and BM close-up were visually inspected.
+PDF text/font/spacing checks passed for label-only bolding and no added gap.
+
+24-hour I/O calculation, format, source selection and source timestamps are
+unchanged. Saved current-shift snapshots use corrected 7am/7pm rates on reprint.
+Schema, encryption, storage and dependencies are unchanged.
+
+SHA256SUMS.txt covers all packaged files except itself. ZIP CRC is verified.
+No clinical paste, runtime log, font file, Secrets, encryption key or patient-data
+archive was added. No live application or repository was changed.

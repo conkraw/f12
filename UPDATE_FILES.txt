@@ -1,21 +1,18 @@
-PICU Handoff 6.74
+PICU Handoff 6.75
 
-Required changed application modules relative to 6.73:
+Required changed application modules relative to 6.74:
 app.py
-batching.py
 bowel_movements.py
-categories.py
+current_shift.py
 error_store.py
-import_review.py
-importing.py
-io_sources.py
-models.py
-parser.py
+infusions.py
 
-New files: bowel_movements.py and io_sources.py. Upload both.
-Other application modules and dependencies are unchanged from 6.73.
+Replace all five together, or replace the complete application file set.
+No new module or dependency is required. Keep all other existing modules,
+including io_sources.py. Preserve Streamlit Secrets and separate encrypted
+patient-data and mapping repositories.
 
-Replace the complete application file set, or replace all ten files above
-as a group. Do not update only app.py. Preserve Streamlit Secrets and the
-separate encrypted data repositories. Restart, verify Version 6.74, and
-re-paste each current SmartPhrase. Previously omitted source data was not saved.
+Restart and verify: Version 6.75 | 12-hour shifts + BM label
+Existing stored current-shift snapshots recalculate on opening/reprinting.
+Download fresh handoffs. Previously downloaded files cannot update themselves.
+No live app or repository was modified when this package was prepared.

@@ -1,0 +1,21 @@
+PICU Handoff 6.74
+
+Required changed application modules relative to 6.73:
+app.py
+batching.py
+bowel_movements.py
+categories.py
+error_store.py
+import_review.py
+importing.py
+io_sources.py
+models.py
+parser.py
+
+New files: bowel_movements.py and io_sources.py. Upload both.
+Other application modules and dependencies are unchanged from 6.73.
+
+Replace the complete application file set, or replace all ten files above
+as a group. Do not update only app.py. Preserve Streamlit Secrets and the
+separate encrypted data repositories. Restart, verify Version 6.74, and
+re-paste each current SmartPhrase. Previously omitted source data was not saved.

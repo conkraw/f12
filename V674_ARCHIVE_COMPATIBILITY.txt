@@ -1,0 +1,17 @@
+PICU Handoff 6.74 archive compatibility
+
+Schema remains 34. Existing archives load without a new key, Secrets change,
+or data migration. Existing medication mappings remain unchanged.
+
+bowel_movement is a new optional validated field containing only a boolean.
+Legacy sheets without it remain valid and do not display an invented BM result.
+Fresh valid AC imports populate it. Reimport and encrypted save/reload preserve it.
+
+The intake_output structure is unchanged. The source-selection fix restores
+missing totals only after a fresh paste. No raw source text is saved in archives.
+
+Update all deployments that share an archive. Earlier app builds do not recognize
+the new optional bowel_movement field. Avoid downgrading after saving this field.
+
+fluid_balance.py, current_shift.py, fen_gi.py, nutrition_display.py, exports.py,
+security.py, github_store.py and requirements.txt are byte-identical to 6.73.

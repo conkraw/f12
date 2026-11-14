@@ -69,7 +69,7 @@ def test_bad_h_totals_do_not_erase_valid_shift():
     result = run(source().replace('Intake 1250 ml', 'Intake unreadable'), '', old=old)
     assert result.errors and 's' in result.skipped and 'h' not in result.skipped
     assert result.sheet['intake_output'] == old['intake_output']
-    assert 'UOP: 2.00' in current_shift_text(result.sheet)
+    assert 'UOP: 1.30' in current_shift_text(result.sheet)
 
 
 def test_invalid_s_is_not_silently_replaced_by_valid_h():
@@ -115,7 +115,7 @@ def test_source_clock_last_filed_and_legacy_heading_preserved():
     assert result.sheet['intake_output']['as_of'] == '01/05/2026 1712'
     assert result.sheet['intake_output']['last_filed'] == '01/05/2026 0400'
     assert balance_heading(result.sheet['intake_output']) == 'Intake/Output (5p-5p)'
-    assert current_shift_text(result.sheet).startswith('Current Shift (3pm - 5:12pm)')
+    assert current_shift_text(result.sheet).startswith('Current Shift (7am - 5:12pm)')
 
 
 def test_empty_s_alone_still_clears_legacy_snapshot():
@@ -146,20 +146,21 @@ def test_multiple_h_summaries_rejected_without_overwriting_day_total():
     assert result.sheet['intake_output'] == old['intake_output']
 
 
-def test_all_formats_include_totals_shift_and_plain_bm_once():
+def test_all_formats_include_totals_shift_and_bm_once():
     result = run(source(), '', ac='Diaper Weight Mixed Urine/Stool (g): 51 g')
     assert not result.errors
     sheet = result.sheet
-    for text in [handoff_text(sheet), handoff_html(sheet)]:
+    for text, bm in [(handoff_text(sheet), 'Last BM (24 Hours): Yes'),
+                     (handoff_html(sheet), '<b>Last BM (24 Hours):</b> Yes')]:
         assert text.count('Intake/Output (6a-6a)') == 1
-        assert text.count('Current Shift (11pm - 6:30am)') == 1
-        assert text.count('Last BM (24 hours): Yes') == 1
+        assert text.count('Current Shift (7pm - 6:30am)') == 1
+        assert text.count(bm) == 1
         assert text.index('Intake/Output') < text.index('Current Shift') < text.index('Bowel Regimen') < text.index('Last BM')
     for payload in [handoff_pdf(sheet), handoffs_pdf([sheet])]:
         doc = fitz.open(stream=payload, filetype='pdf')
         text = '\n'.join(p.get_text() for p in doc)
         assert 'Intake: 1250 ml' in text and 'Output: 1100 ml' in text and 'Net: 150 ml' in text
-        assert 'Current Shift' in text and 'Last BM (24 hours): Yes' in text
+        assert 'Current Shift' in text and 'Last BM (24 Hours): Yes' in text
 
 
 def test_dosing_weight_math_unchanged_and_shift_uses_own_weight():
@@ -167,7 +168,7 @@ def test_dosing_weight_math_unchanged_and_shift_uses_own_weight():
     old['dosing_weight'] = '5 kg'
     sheet = run(source(weight='20 kg'), '', old=old).sheet
     assert 'In: 1250 ml (250 mL/kg)' in fields_with_medications(sheet)['FEN / GI']
-    assert 'UOP: 2.00 mL/kg/hr' in current_shift_text(sheet)
+    assert 'UOP: 1.30 mL/kg/hr' in current_shift_text(sheet)
 
 
 def test_encrypted_save_reload_preserves_both_and_never_retimes_on_print():
@@ -178,7 +179,7 @@ def test_encrypted_save_reload_preserves_both_and_never_retimes_on_print():
     assert restored['current_shift'] == sheet['current_shift']
     assert restored['bowel_movement'] == sheet['bowel_movement']
     printed = handoff_text(restored, datetime(2026, 1, 9, 17, tzinfo=timezone.utc))
-    assert 'Current Shift (11pm - 6:30am)' in printed
+    assert 'Current Shift (7pm - 6:30am)' in printed
 
 
 def test_callback_reimport_does_not_restore_stale_io_widget_values(app, monkeypatch):

@@ -8,9 +8,10 @@ Only the boolean is persisted. Raw stool descriptions, amounts and dates are not
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from html import escape
 import re
 
-LABEL = "Last BM (24 hours):"
+LABEL = "Last BM (24 Hours):"
 HELP = (
     "Reads only the AC stool block. Yes means a documented stool amount or a "
     "positive stool-containing diaper weight. No means no positive signal was "
@@ -95,7 +96,7 @@ def parse_bowel_movement(block: str) -> BowelMovementResult:
 
 
 def bowel_movement_text(sheet: dict) -> str:
-    """Render the requested line without bold markup or inferred dates."""
+    """Return plain text. Rich output emphasizes only the label, never Yes/No."""
     if "ac" in sheet.get("import_warnings", {}):
         return ""
     data = sheet.get("bowel_movement")
@@ -103,3 +104,10 @@ def bowel_movement_text(sheet: dict) -> str:
     if data is None:
         return ""
     return LABEL + (" Yes" if data["documented"] else " No")
+
+
+def bowel_movement_markup(text: str, esc=escape) -> str:
+    """Bold only the generated label, without adding spacing or styling notes."""
+    if text in (LABEL + " Yes", LABEL + " No"):
+        return "<b>" + esc(LABEL) + "</b>" + esc(text[len(LABEL):])
+    return esc(text)

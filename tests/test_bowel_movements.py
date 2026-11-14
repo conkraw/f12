@@ -50,7 +50,7 @@ def test_positive_stool_containing_diapers(label, value):
 def test_empty_and_zero_are_no(body):
     result = imported(body)
     assert not result.errors and result.sheet['bowel_movement'] == {'documented': False}
-    assert bowel_movement_text(result.sheet) == 'Last BM (24 hours): No'
+    assert bowel_movement_text(result.sheet) == 'Last BM (24 Hours): No'
 
 
 def test_multiple_positive_signals_collapse_to_one_yes_with_no_details():
@@ -58,10 +58,10 @@ def test_multiple_positive_signals_collapse_to_one_yes_with_no_details():
     result = imported(body)
     assert not result.errors
     text = handoff_text(result.sheet)
-    assert text.count('Last BM (24 hours): Yes') == 1
+    assert text.count('Last BM (24 Hours): Yes') == 1
     for private_detail in ['123 g', '69 g', 'Stool Amount', 'Small', 'Mixed Urine/Stool']:
         assert private_detail not in text and private_detail not in json.dumps(result.sheet)
-    assert text.index('Bowel Regimen') < text.index('Last BM (24 hours): Yes') < text.index('Diuretics')
+    assert text.index('Bowel Regimen') < text.index('Last BM (24 Hours): Yes') < text.index('Diuretics')
 
 
 @pytest.mark.parametrize('body', ['Stool Amount: -1', 'Diaper Weight Mixed Urine/Stool (g): -5 g',
@@ -107,7 +107,7 @@ def test_absent_ac_does_not_infer_from_generic_other_or_feeds_or_medication():
 def test_bowel_medication_alone_cannot_establish_yes():
     result = imported('')
     result.sheet['medications'] = [med('polyethylene glycol powder', '8.5 g', 'Oral', 'Daily')]
-    assert 'Last BM (24 hours): No' in handoff_text(result.sheet)
+    assert 'Last BM (24 Hours): No' in handoff_text(result.sheet)
 
 
 def test_reimport_blank_resets_yes_without_duplicate_lines():
@@ -115,8 +115,8 @@ def test_reimport_blank_resets_yes_without_duplicate_lines():
     first = imported('Stool Amount: Small', old)
     result = imported('', first.sheet)
     assert not result.errors
-    assert handoff_text(result.sheet).count('Last BM (24 hours): No') == 1
-    assert 'Last BM (24 hours): Yes' not in handoff_text(result.sheet)
+    assert handoff_text(result.sheet).count('Last BM (24 Hours): No') == 1
+    assert 'Last BM (24 Hours): Yes' not in handoff_text(result.sheet)
     assert old['bowel_movement'] == {'documented': True}
 
 
@@ -185,12 +185,15 @@ def test_bowel_only_handoff_in_print_all():
 
 
 @pytest.mark.parametrize('signal,status', [('Stool Amount: Large', 'Yes'), ('', 'No')])
-def test_bm_in_plain_html_and_pdf_is_not_bold_and_under_bowel(signal, status):
+def test_bm_label_bold_value_regular_and_directly_under_bowel(signal, status):
     sheet = imported(signal).sheet
-    label = 'Last BM (24 hours): ' + status
+    label = 'Last BM (24 Hours): ' + status
     html = handoff_html(sheet)
-    assert label in html and '<b>Last BM' not in html and '<strong>Last BM' not in html
-    assert html.index('Bowel Regimen') < html.index(label)
+    markup = '<b>Last BM (24 Hours):</b> ' + status
+    assert markup in html
+    assert '<b>Bowel Regimen: </b>' not in html
+    assert '\n\n' not in html[html.index('Bowel Regimen'):html.index(markup)]
+    assert html.index('Bowel Regimen') < html.index(markup)
     for payload in [handoff_pdf(sheet), handoffs_pdf([sheet])]:
         doc = fitz.open(stream=payload, filetype='pdf')
         text = '\n'.join(page.get_text() for page in doc)
@@ -198,7 +201,12 @@ def test_bm_in_plain_html_and_pdf_is_not_bold_and_under_bowel(signal, status):
         spans = [span for page in doc for block in page.get_text('dict')['blocks']
                  if 'lines' in block for line in block['lines'] for span in line['spans']
                  if 'Last BM' in span['text']]
-        assert spans and all(not (span['flags'] & 16) for span in spans)
+        assert spans and all(span['flags'] & 16 for span in spans)
+        bm_lines = [line for page in doc for block in page.get_text('dict')['blocks']
+                    if 'lines' in block for line in block['lines']
+                    if any('Last BM' in span['text'] for span in line['spans'])]
+        values = [span for line in bm_lines for span in line['spans'] if status in span['text']]
+        assert values and all(not (span['flags'] & 16) for span in values)
 
 
 def test_visible_bowel_medications_stay_above_observation():

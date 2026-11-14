@@ -1,17 +1,16 @@
-PICU Handoff 6.74 archive compatibility
+PICU Handoff 6.75 archive compatibility
 
-Schema remains 34. Existing archives load without a new key, Secrets change,
-or data migration. Existing medication mappings remain unchanged.
+Schema remains 34. There is no data-structure migration or new field.
+Existing 6.74 archives load without changing keys, Secrets or passwords.
 
-bowel_movement is a new optional validated field containing only a boolean.
-Legacy sheets without it remain valid and do not display an invented BM result.
-Fresh valid AC imports populate it. Reimport and encrypted save/reload preserve it.
+Existing current_shift snapshots are rendered using the corrected 7am/7pm
+schedule. They contain raw normalized volumes, source weight and source time,
+not a stored hourly rate. The correction does not require re-pasting.
+The bowel_movement boolean is unchanged. Only its rendered label changes.
 
-The intake_output structure is unchanged. The source-selection fix restores
-missing totals only after a fresh paste. No raw source text is saved in archives.
+intake_output, medication mappings and all other stored objects are unchanged.
+No values or timestamps are rewritten as part of this presentation/calculation
+change. Older downloaded handoff files remain unchanged. Download fresh copies.
 
-Update all deployments that share an archive. Earlier app builds do not recognize
-the new optional bowel_movement field. Avoid downgrading after saving this field.
-
-fluid_balance.py, current_shift.py, fen_gi.py, nutrition_display.py, exports.py,
-security.py, github_store.py and requirements.txt are byte-identical to 6.73.
+Every running deployment that should use the corrected schedule must be updated.
+Older applications will continue using their own old calculation code.

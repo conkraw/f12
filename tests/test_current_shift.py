@@ -33,22 +33,22 @@ def shown(result):
 
 
 def test_requested_format_and_four_independent_categories():
-    assert shown(parsed()) == ('Current Shift (11pm - 6:30am)\n'
-        'UOP: 2.00 mL/kg/hr\nDrains: 0.10 mL/kg/hr\n'
-        'Chest Tube: 0.20 mL/kg/hr\nOther: 0.40 mL/kg/hr')
+    assert shown(parsed()) == ('Current Shift (7pm - 6:30am)\n'
+        'UOP: 1.30 mL/kg/hr\nDrains: 0.07 mL/kg/hr\n'
+        'Chest Tube: 0.13 mL/kg/hr\nOther: 0.26 mL/kg/hr')
     text = shown(parsed())
     for forbidden in ('In:', 'Out:', 'Net:', '1250', '1100', '150 ml', '900', '405'):
         assert forbidden not in text
 
 
 @pytest.mark.parametrize('stamp,heading,hours', [
-    ('2026-01-05T06:30:00', 'Current Shift (11pm - 6:30am)', '7.5'),
+    ('2026-01-05T06:30:00', 'Current Shift (7pm - 6:30am)', '11.5'),
     ('2026-01-05T14:30:00', 'Current Shift (7am - 2:30pm)', '7.5'),
-    ('2026-01-05T22:30:00', 'Current Shift (3pm - 10:30pm)', '7.5'),
-    ('2026-01-05T23:30:00', 'Current Shift (11pm - 11:30pm)', '0.5'),
-    ('2026-01-05T00:00:00', 'Current Shift (11pm - 12am)', '1'),
+    ('2026-01-05T22:30:00', 'Current Shift (7pm - 10:30pm)', '3.5'),
+    ('2026-01-05T23:30:00', 'Current Shift (7pm - 11:30pm)', '4.5'),
+    ('2026-01-05T00:00:00', 'Current Shift (7pm - 12am)', '5'),
     ('2026-01-05T07:30:00', 'Current Shift (7am - 7:30am)', '0.5'),
-    ('2026-01-05T15:30:00', 'Current Shift (3pm - 3:30pm)', '0.5'),
+    ('2026-01-05T15:30:00', 'Current Shift (7am - 3:30pm)', '8.5'),
 ])
 def test_shift_windows(stamp, heading, hours):
     data = parsed().data
@@ -57,15 +57,15 @@ def test_shift_windows(stamp, heading, hours):
     assert current_shift_heading(data) == heading
 
 
-@pytest.mark.parametrize('clock', ['0700', '1500', '2300'])
+@pytest.mark.parametrize('clock', ['0700', '1900'])
 def test_exact_boundary_has_no_rate_and_no_divide_by_zero(clock):
     result = parsed(stamp='01/05/2026 ' + clock)
     assert result.data and result.issues and shown(result) == ''
 
 
 @pytest.mark.parametrize('cutoff,hours', [
-    ('2026-03-08T06:30:00', '6.5'),
-    ('2026-11-01T06:30:00', '8.5'),
+    ('2026-03-08T06:30:00', '10.5'),
+    ('2026-11-01T06:30:00', '12.5'),
 ])
 def test_dst_uses_actual_elapsed_time(cutoff, hours):
     assert shift_window(cutoff)[2] == Decimal(hours)
@@ -79,7 +79,7 @@ def test_dst_nonexistent_or_ambiguous_endpoint_withholds(stamp):
 
 @pytest.mark.parametrize('time', ['0630', '630', '06:30', '6:30 AM', '06:30:00 AM'])
 def test_source_clock_variants(time):
-    assert '11pm - 6:30am' in shown(parsed(stamp='1/5/26 ' + time))
+    assert '7pm - 6:30am' in shown(parsed(stamp='1/5/26 ' + time))
 
 
 @pytest.mark.parametrize('time', ['1455', '14:55', '2:55pm', '02:55 PM'])
@@ -116,12 +116,12 @@ def test_grams_convert_and_block_weight_controls():
     assert parsed(weight='20000 g').data['weight_kg'] == '20'
     sheet = {'current_shift': parsed().data, 'dosing_weight': '5 kg',
              'nutrition': {'weight': '15 kg'}}
-    assert 'UOP: 2.00 mL/kg/hr' in current_shift_text(sheet)
+    assert 'UOP: 1.30 mL/kg/hr' in current_shift_text(sheet)
 
 
 def test_other_is_not_urine_and_missing_categories_omitted():
     text = shown(parsed(out='Other:60'))
-    assert text.endswith('Other: 0.40 mL/kg/hr')
+    assert text.endswith('Other: 0.26 mL/kg/hr')
     assert not any(word in text for word in ('UOP', 'Drains', 'Chest Tube'))
 
 
@@ -138,12 +138,12 @@ def test_small_positive_rate_does_not_round_to_zero():
 
 @pytest.mark.parametrize('out', ['Urine:300 mL', 'Urine:300 cc', 'Urine:300 (15 mL/kg)', 'Urine:300 (2 mL/kg/hr)'])
 def test_volume_units_parentheticals(out):
-    assert 'UOP: 2.00 mL/kg/hr' in shown(parsed(out=out))
+    assert 'UOP: 1.30 mL/kg/hr' in shown(parsed(out=out))
 
 
 def test_comma_number_decimal_and_multiline_breakdown():
     text = shown(parsed(out='Urine:1,200.75;\n Chest Tube:30; Other:60'))
-    assert 'UOP: 8.01 mL/kg/hr' in text and 'Chest Tube: 0.20' in text
+    assert 'UOP: 5.22 mL/kg/hr' in text and 'Chest Tube: 0.13' in text
 
 
 @pytest.mark.parametrize('out', ['Urine:-5', 'Urine:5 mL/kg/hr', 'Urine:5 L', 'Urine:NaN', 'Urine:<5', 'Urine:1; Urine:2'])
@@ -154,7 +154,7 @@ def test_ambiguous_or_invalid_volume_rejected(out):
 
 def test_unknown_categories_not_reassigned():
     text = shown(parsed(out='Urine:300; Emesis/NG output:45; Stool:70'))
-    assert 'UOP: 2.00' in text and 'Other:' not in text and '45' not in text
+    assert 'UOP: 1.30' in text and 'Other:' not in text and '45' not in text
 
 
 @pytest.mark.parametrize('replacement', ['Out: 0', 'Out: 405 (20.25 mL/kg)', 'Out: 0 []'])

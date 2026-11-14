@@ -1,4 +1,4 @@
-"""PICU SmartPhrase v6.74: BM status and H/S intake-output source recovery."""
+"""PICU SmartPhrase v6.75: 12-hour current shifts and compact BM labeling."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,
@@ -1775,7 +1775,7 @@ def main() -> None:
         return
     with st.sidebar:
         st.header("PICU Handoff")
-        st.caption("Version 6.74 | BM status + I/O fix")
+        st.caption("Version 6.75 | 12-hour shifts + BM label")
         # Retire the old instructions workspace without discarding room drafts.
         if st.session_state.get("page") == "Instructions / SmartPhrase":
             st.session_state["page"] = "Handoff"
@@ -2082,7 +2082,7 @@ def handoff_notes(sheet: dict) -> None:
                 st.caption("Edit imported specimens and results in Cultures. Temperature stays first in the printed ID column.")
             if section == "FEN / GI":
                 st.markdown('<div style="white-space:pre-wrap">' + fen_gi_body("", sheet["medications"], None, True, sheet=sheet, include_current_shift=False) + "</div>", unsafe_allow_html=True)
-                st.caption("Printed order: Intake/Output/Net, Current Shift outputs, Diet, Tube feed, TPN, GI prophylaxis, Bowel Regimen with Last BM (24 hours), Diuretics, Antiemetics, Endocrine Medications, then separate notes and remaining FEN/GI medications.")
+                st.caption("Printed order: Intake/Output/Net, Current Shift outputs, Diet, Tube feed, TPN, GI prophylaxis, Bowel Regimen with Last BM (24 Hours), Diuretics, Antiemetics, Endocrine Medications, then separate notes and remaining FEN/GI medications.")
                 if sheet.get("bowel_movement") is not None:
                     from bowel_movements import HELP as bowel_help
                     st.caption(bowel_help)
@@ -2762,7 +2762,7 @@ def current_shift_editor(sheet: dict) -> None:
     source = data["as_of"].replace("T", " ") or "unavailable"
     weight = data["weight_kg"] + " kg" if data["weight_kg"] else "unavailable"
     st.caption("Source: " + source + " | Current-shift weight: " + weight)
-    st.caption("Outputs only. Shifts begin at 7am, 3pm and 11pm. Rates use the source summary time, not Last data filed or the later print time. Re-paste to refresh.")
+    st.caption("Outputs only. Shifts run 7am-7pm and 7pm-7am. Rates use elapsed hours since the applicable shift start, not a fixed 12 hours. Rates use the source summary time, not Last data filed or the later print time. Re-paste to refresh.")
 
 
 def diet_row_change(room: str, row_id: str, field: str, key: str) -> None:

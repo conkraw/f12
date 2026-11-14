@@ -178,6 +178,15 @@ def render_body_blocks(blocks: list[tuple[str, object]], rich: bool = False, esc
         elif kind == "lab" and rich:
             from clinical_style import clinical_markup
             lines.append(clinical_markup(item, esc))
+        elif kind == "observation":
+            from bowel_movements import LABEL as bm_label, bowel_movement_markup
+            if item in (bm_label + " Yes", bm_label + " No"):
+                # The BM line follows the regimen on the very next line.
+                if lines:
+                    lines[-1] = lines[-1].rstrip("\r\n")
+                lines.append(bowel_movement_markup(item, esc) if rich else item)
+            else:
+                lines.append(encode(item))
         elif kind == "medication":
             lines.append(encode(medication_output(format_medication(item))))
         else:

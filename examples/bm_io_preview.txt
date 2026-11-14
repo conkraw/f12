@@ -1,0 +1,47 @@
+Print prepared: 11/14/2026 05:47:06 PM EST
+PICU HANDOFF
+Room: P4102
+Age: --
+Sex: --
+Handoff reference: d98e475c
+Last saved: Not saved yet
+Confirm patient identity in Epic. A room is not a patient identifier.
+
+Problems: Constipation
+
+DIAGNOSES
+Synthetic layout example
+----
+Dosing weight: none
+
+NEUROLOGIC
+CAPD: None
+-----
+Fever Control: None
+
+FEN / GI
+Intake/Output (6a-6a):
+Intake: 1250 ml
+Output: 1100 ml
+Net: 150 ml
+-----
+Current Shift (7pm - 6:30am)
+UOP: 1.30 mL/kg/hr
+Drains: 0.07 mL/kg/hr
+Chest Tube: 0.13 mL/kg/hr
+Other: 0.26 mL/kg/hr
+-----
+GI Prophylaxis: None
+-----
+Bowel Regimen
+polyethylene glycol powder | Dose: 8.5 g | Oral | Daily
+Last BM (24 Hours): Yes
+-----
+Diuretics: None
+
+HEMATOLOGY
+DVT Prophylaxis: None
+
+INFECTIOUS DISEASE
+------
+Cultures: None

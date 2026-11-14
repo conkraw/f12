@@ -67,7 +67,7 @@ def test_other_sheet_fields_unchanged_and_nutrition_follows_shift():
     assert {k: v for k, v in sheet.items() if k not in ('current_shift', 'intake_output', 'empty_group_layout')} == {k: v for k, v in before.items() if k not in ('intake_output', 'empty_group_layout')}
     text = fields_with_medications(sheet)['FEN / GI']
     assert text.index('Current Shift') < text.index('Synthetic separate notes')
-    assert 'UOP: 2.00' in text
+    assert 'UOP: 1.30' in text
 
 
 def test_saved_old_archive_works_without_new_field():
@@ -101,11 +101,11 @@ def test_shift_only_handoff_in_print_all_and_all_export_formats():
     assert 'P4102' in available_handoffs(new_vault(), {'P4102': sheet})
     assert current_shift_text(sheet) in handoff_text(sheet)
     html = handoff_html(sheet)
-    assert 'Current Shift (11pm - 6:30am)' in html and '2.00 mL/kg/hr' in html
+    assert 'Current Shift (7pm - 6:30am)' in html and '1.30 mL/kg/hr' in html
     for pdf in (handoff_pdf(sheet), handoffs_pdf([sheet])):
         doc = fitz.open(stream=pdf, filetype='pdf')
         text = '\n'.join(page.get_text() for page in doc)
-        assert 'Current Shift' in text and '2.00 mL/kg/hr' in text and 'Chest Tube:' in text
+        assert 'Current Shift' in text and '1.30 mL/kg/hr' in text and 'Chest Tube:' in text
 
 
 def test_failed_new_h_clears_prior_shift_without_affecting_24h():
@@ -156,8 +156,8 @@ def test_current_shift_ui_is_read_only_and_displayed_once(app, monkeypatch):
     app.st.text = lambda label, **kwargs: texts.append(label)
     before = deepcopy(sheet)
     app.current_shift_editor(sheet)
-    assert headings == ['Current Shift (11pm - 6:30am)']
-    assert sum('UOP: 2.00' in text for text in texts) == 1
+    assert headings == ['Current Shift (7pm - 6:30am)']
+    assert sum('UOP: 1.30' in text for text in texts) == 1
     assert sheet == before
 
 
@@ -181,4 +181,4 @@ def test_reimport_replaces_shift_snapshot_and_removes_warnings():
     bad = imported(source(out='Urine:BAD'), old=imported().sheet).sheet
     fresh = imported(source(stamp='01/05/2026 1630', out='Urine:60'), old=bad)
     assert not fresh.errors and 'h' not in fresh.sheet['import_warnings']
-    assert current_shift_text(fresh.sheet) == 'Current Shift (3pm - 4:30pm)\nUOP: 2.00 mL/kg/hr'
+    assert current_shift_text(fresh.sheet) == 'Current Shift (7am - 4:30pm)\nUOP: 0.32 mL/kg/hr'
