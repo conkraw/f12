@@ -1,4 +1,4 @@
-"""PICU SmartPhrase v6.68: dated QTc, neurologic NIRS and ignored override pulls."""
+"""PICU SmartPhrase v6.69: AVAPS settings with separate target and observed volumes."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,
@@ -1748,7 +1748,7 @@ def main() -> None:
         return
     with st.sidebar:
         st.header("PICU Handoff")
-        st.caption("Version 6.68 | QTc, NIRS and override-pull medications")
+        st.caption("Version 6.69 | AVAPS ventilator settings")
         # Retire the old instructions workspace without discarding room drafts.
         if st.session_state.get("page") == "Instructions / SmartPhrase":
             st.session_state["page"] = "Handoff"

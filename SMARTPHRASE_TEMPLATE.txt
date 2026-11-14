@@ -11,6 +11,13 @@ bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
 cccccccccccccccccccccccccccccccc
 Invasive Ventilation:
 [Insert your existing Epic invasive ventilation SmartLink here]
+
+Average Volume-Assured Pressure Support Settings:
+AVAPS Respiratory Rate: [Insert your existing AVAPS rate SmartLink, retaining its recorded label and units]
+AVAPS Target TV: [Insert your existing Vt Set/Target ml SmartLink]
+Observed AVAPS TV: [Insert your existing Vt (observed, mL) SmartLink]
+PS Max: [Insert your existing Pressure Support Max (cm H2O) SmartLink]
+PS Min: [Insert your existing Pressure Support Min (cm H2O) SmartLink]
 cccccccccccccccccccccccccccccccc
 
 dddddddddddddddddddddddddddddddd

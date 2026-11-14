@@ -1,19 +1,25 @@
-PICU Handoff v6.68 archive compatibility
+PICU Handoff v6.69 archive compatibility
 
-Schema remains 34. Existing archives without ECG data or the new medication
-restoration marker remain readable without a data migration.
+Schema remains 34. Existing archives remain readable without migration.
+The new AVAPS values use the existing ventilation values dictionary.
+Existing field indexes are unchanged. New fields append to the label list:
 
-ECG is an optional sheet field. Its value is null or an object containing
-value and date strings. Only the selected QTc and ECG date are retained.
-NIRS uses the existing vital row structure and section controls.
-Override rows may contain the validated optional override_pull_restored Boolean.
-Ignore is a new valid medication destination and category target.
+  AVAPS rate (cm H2O/min)
+  AVAPS Respiratory Rate
+  Vt Set/Target ml
+  Pressure Support Min (cm H2O)
+  Pressure Support Max (cm H2O)
+  AVAPS Observed TV (mL)
 
-Saved records that use these additions require v6.68 or later. Older versions
-can reject those records or Ignore mappings. Install the application files as
-a set, and update all three apps before using Mapping Sync with Ignore rules.
+Saved records using these fields require v6.69 or later. Older code rejects
+unrecognized ventilation keys. Update app.py and ventilation.py together, or
+replace the complete application file set. No new dependency is required.
+
+QTc, NIRS and override-pull behavior from v6.68 remain included. Records with
+those optional fields or Ignore mappings require v6.68 or later. Update all
+three apps before using Mapping Sync with Ignore rules.
 
 security.py, github_store.py, mapping_sync.py, mapping_sync_ui.py,
-sync_diagnostics.py and requirements.txt match the v6.67 source package.
-No encryption setting, key, archive path or Secrets field is changed.
-Each app continues to use its existing separate encrypted data repository.
+sync_diagnostics.py, noninvasive.py, models.py, exports.py and requirements.txt
+match the v6.68 source package. No encryption setting, key, archive path or
+Secrets field is changed. Each app uses its existing encrypted data repository.

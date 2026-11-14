@@ -1,82 +1,86 @@
-# PICU Handoff v6.68 validation
+# PICU Handoff v6.69 validation
 
-Built from PICU667.zip, version 6.67. No live repository or deployment was changed.
+Built from PICU668.zip, version 6.68. No live repository or deployment was changed.
 
-## Regression results
+## Executed tests
 
-Full regression: 5719 passed, 14 subtests passed in 99.69 seconds.
+Full regression: 5775 passed, 14 subtests passed in 101.62 seconds.
 
-Focused final feature and medication-label run:
-`python3 -m pytest -q tests/test_medication_label_cleanup.py tests/test_qtc_nirs_override_integration.py tests/test_override_pull.py tests/test_ecg.py tests/test_nirs.py`
+A final observed-volume alias isolation fix was then checked with the affected
+AVAPS, integration, mode-specific ventilation, basic ventilation, noninvasive,
+and setting-marker suites:
 
-Result: 179 passed in 1.08 seconds.
+```text
+python3 -m pytest -q tests/test_avaps_settings.py tests/test_avaps_integration.py tests/test_mode_specific_ventilator.py tests/test_ventilation.py tests/test_noninvasive.py tests/test_vent_markers_clean_start.py
+```
 
-One existing test was updated for the new Ignore destination. It now requires
-ignored entries to be absent from output while all visible orders still appear
-exactly once. Its checks for source preservation, dose/rate labels, HTML, text,
-PDF, combined exports and removal of And/Or/Start On labels remain in place.
-No other pre-existing test expectations were changed.
+Final result: 407 passed in 1.36 seconds. This run includes the 34 additional
+cases for the final alias fix. The full suite was not repeated after that fix.
+No pre-existing test expectations were changed in this release.
 
-## ECG and problem checks
+## AVAPS parser and display
 
-Coverage includes the exact Bazett label structure, case and whitespace
-variants, old ECG dates, date/time ordering, tied results, missing dates,
-conflicting newest results, invalid units/dates, and exclusion of the Q-T
-interval and other QTc formulas. Tests cover 425, 450, 451 and fractional values
-above 450, plus removal of a previous Long QTc problem after a newer normal ECG.
+Tests cover the supplied nested label structure, all new AVAPS fields, direct
+labels, unit typography, missing and no-data settings, markers, repeated-field
+conflicts, AVAPS-only rendering and old conventional AVAPS fields.
 
-Z-block omission, empty imports, malformed boundaries, partial-section
-recovery and duplicate-patient rejection are checked. Failed ECG imports retain
-reviewable data while hiding the old QTc and automatic problem from output.
-ECG words within ordinary diagnoses remain valid diagnosis text.
+AVAPS rate (cm H2O/min) retains its source unit and remains separate from Set RR.
+If an explicit value conflicts with that unit, the label and raw value remain
+available with an import review issue. No conversion is inferred.
 
-Old archives without ECG data still open. New data survives encrypted save and
-reload, and ECG-only handoffs remain eligible for Print All. No ECG narrative
-is retained in the persisted snapshot.
+Target and observed volumes stay separate. Dedicated AVAPS observations retain
+their source scope for observed, expiratory and inspiratory aliases and ranges.
+A stale AVAPS observation cannot replace a conventional PC observation.
+The existing PC observed-volume precedence remains unchanged.
 
-## NIRS and medication checks
+Independent review also compared 60 old-record rendering cases against v6.68
+across included non-AVAPS modes. They matched. Five targeted checks verified
+the final alias fix and generic PC precedence.
 
-NIRS tests cover the repeated rSO2 Cerebral label, recorded Min/Max and latest,
-partial or absent values, reordered statistics, decimal percentages, hidden
-rows, section choices, old-row rendering and source nonmutation.
+## Import, editing and encrypted recall
 
-Override tests cover name variants, incomplete source rows, automatic groups,
-broad mappings, exact assignments, explicit Ignore, ordinary orders of the same
-drug, old saved rows, encrypted recall, and all export paths. UI callback checks
-exercise restoration from default Ignore, category Ignore, and the older Admin
-exact/prefix Ignore mappings. A failed storage write leaves data and settings
-unchanged. The ignored editor section offers Restore to handoff.
+Integration checks exercise C/D import, E respiratory vitals, absent NIRS and
+empty Z ECG handling. Conflicting AVAPS values use the existing C/D review
+workflow while unrelated valid sections remain importable. A fresh change from
+AVAPS to PC removes the prior AVAPS values while preserving respiratory notes.
+
+All six appended fields support editor callbacks, pending-edit capture and
+encrypted save/recall. Existing archives open, schema remains 34 and all 19
+existing ventilation editor indexes are unchanged. Saved new fields require
+v6.69 or later. Source objects remain unmodified by formatting and export.
 
 ## Supplied example
 
-The full supplied SmartPhrase imports with no errors and no skipped sections.
-Its ECG becomes QTc: 426 msec [11/13/2026]. Its Neuro line becomes
-NIRS: 60% to 68% [last 66]. That QTc does not add Long QTc.
+The supplied C, D, E and Z extracts were checked together. They import without
+errors or skipped sections and produce the requested AVAPS mode, rate, target
+and observed volumes, and pressure-support limits. FiO2 remains in respiratory
+vitals. Absent NIRS and the empty ECG block produce no new values.
 
-A normalized comparison with v6.67 found changes only in ecg and vitals.
-All 25 other imported data groups matched after excluding generated IDs and
-creation/update timestamps. The supplied clinical source is not in the package.
+The rest of this turn's full clinical sample was not separately revalidated.
+The supplied clinical source is not included in the deliverable. Packaged tests
+and previews use synthetic data.
 
 ## Rendering and package checks
 
-Synthetic individual and combined PDF/HTML/text outputs were checked.
-Both the QTc label and its value have red PDF text spans above the cutoff.
-A synthetic one-page PDF was rendered with Poppler and visually inspected.
-NIRS appears in Neuro, QTc in Cardiac, and Long QTc in Problems. The override
-entry is absent while the ordinary same-drug order remains visible. No content
-is clipped or overlaps adjacent columns.
+Text, HTML, individual PDF and combined PDF outputs use the same settings.
+Batch checks verify that one room's target volume does not appear in another
+room's output. The editor renders and offers PDF downloads using widget stubs.
 
-All 166 Python files were parsed with ast and all three TOML files with tomllib.
-The release ZIP is checked for CRC integrity and contains a regenerated
-SHA256SUMS.txt. Cache directories and real clinical samples are excluded.
+A synthetic AVAPS PDF was rendered with Poppler and visually inspected.
+All settings fit within the Respiratory column with no clipping or overlap.
+Synthetic input, HTML, text and PDF previews are included in examples.
+
+All 168 Python files parse with ast and all three TOML files with tomllib.
+The complete ZIP is checked for CRC integrity and includes regenerated SHA256SUMS.txt.
+Cache directories and the supplied clinical source are excluded.
+
+Only app.py and ventilation.py change application code from v6.68. Encryption,
+GitHub storage, Mapping Sync, archive paths, Secrets, dependencies, the explicit
+noninvasive path, and the QTc, NIRS and medication modules remain unchanged.
 
 ## Verification limits
 
-Streamlit UI checks use the existing widget stubs. No live browser or hosted
-Streamlit deployment was exercised. GitHub and Mapping Sync tests use mocked
-services. The only test-run warning comes from an installed pytest plugin's
-deprecated internal import. It is not an application failure.
-
-Encryption, archive paths, Secrets, repository access and Mapping Sync modules
-are unchanged. Existing archives are accepted. Records using the new optional
-fields or Ignore mappings require v6.68 or later.
+UI checks use the existing Streamlit widget stubs. No live browser or hosted
+Streamlit deployment was exercised. Repository services are mocked in tests.
+One warning comes from the installed pytest plugin's deprecated internal
+import. It is not an application failure.

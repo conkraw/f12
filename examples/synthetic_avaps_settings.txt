@@ -1,0 +1,44 @@
+cccccccccccccccccccccccccccccccc
+Invasive Ventilation:
+Mode: Vent Mode: Average Volume-Assured Pressure Support
+Respiratory Rate:
+Set PIP:
+Observed PIP: No data recorded
+Set TV:
+Observed TV: No data recorded
+Set PEEP:
+Inspiratory Time:
+FiO2:
+Pressure Support:
+Home Ventilator Settings:
+Pmin:
+Pmax:
+Timin:
+Timax:
+Average Volume-Assured Pressure Support Settings:
+AVAPS Respiratory Rate: AVAPS rate (cm H2O/min): 3
+AVAPS Target TV: Vt Set/Target ml: 130
+Observed AVAPS TV: Vt (observed, mL): 145 mL
+PS Max: Pressure Support Max (cm H2O): 24 cm H2O
+PS Min: Pressure Support Min (cm H2O): 9 cm H2O
+cccccccccccccccccccccccccccccccc
+
+dddddddddddddddddddddddddddddddd
+Non-invasive Ventilation:
+O2 Delivery Method: Trach tube, Other (Comment) (home vent)
+FiO2 (%): 35 %
+dddddddddddddddddddddddddddddddd
+
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+VITALS:
+Resp: [20-40] 28
+FiO2 (%): [30 %-35 %] 35 %
+SpO2 Avg: 96 % Min: 94 % Max: 99 %
+Last SPO2: SpO2: 97 %
+NIRS Range: No data recorded
+Last NIRS:
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+
+zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz
+No results found for this or any previous visit from the past 365 days.
+zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz

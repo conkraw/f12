@@ -1,0 +1,40 @@
+PICU Handoff v6.68 update from v6.67
+
+Complete application package.
+
+Changed application files, copy all together:
+  app.py
+  batching.py
+  categories.py
+  category_ui.py
+  clinical_style.py
+  ecg.py  [NEW]
+  fen_gi.py
+  import_review.py
+  importing.py
+  medications.py
+  models.py
+  nirs.py  [NEW]
+  parser.py
+  problem_review.py
+  vitals.py
+
+New synthetic tests:
+  tests/test_ecg.py
+  tests/test_nirs.py
+  tests/test_override_pull.py
+  tests/test_qtc_nirs_override_integration.py
+
+Updated existing test:
+  tests/test_medication_label_cleanup.py
+  Ignore is excluded while visible destinations still appear exactly once.
+
+SMARTPHRASE_TEMPLATE.txt adds optional E-block NIRS wrappers and a Z ECG block.
+Release documentation, synthetic previews and checksums are updated.
+Previous root documentation is retained with a V667_ prefix.
+
+Install in app-code repositories. Keep app.py at its deployed location.
+Include both new modules, ecg.py and nirs.py. Retain the existing Secrets,
+encryption key and encrypted data repositories. No new dependency is needed.
+Restart and confirm Version 6.68. Re-paste to populate ECG and NIRS.
+Update all three apps before syncing mappings that use Ignore.

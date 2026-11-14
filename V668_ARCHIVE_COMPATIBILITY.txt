@@ -1,0 +1,19 @@
+PICU Handoff v6.68 archive compatibility
+
+Schema remains 34. Existing archives without ECG data or the new medication
+restoration marker remain readable without a data migration.
+
+ECG is an optional sheet field. Its value is null or an object containing
+value and date strings. Only the selected QTc and ECG date are retained.
+NIRS uses the existing vital row structure and section controls.
+Override rows may contain the validated optional override_pull_restored Boolean.
+Ignore is a new valid medication destination and category target.
+
+Saved records that use these additions require v6.68 or later. Older versions
+can reject those records or Ignore mappings. Install the application files as
+a set, and update all three apps before using Mapping Sync with Ignore rules.
+
+security.py, github_store.py, mapping_sync.py, mapping_sync_ui.py,
+sync_diagnostics.py and requirements.txt match the v6.67 source package.
+No encryption setting, key, archive path or Secrets field is changed.
+Each app continues to use its existing separate encrypted data repository.

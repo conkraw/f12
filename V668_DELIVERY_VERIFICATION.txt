@@ -1,0 +1,25 @@
+PICU Handoff v6.68 delivery verification
+
+Source: PICU667.zip, v6.67.
+Full regression: 5719 passed, 14 subtests passed in 99.69 seconds.
+Final focused feature and medication-label checks: 179 passed.
+
+The complete supplied sample imports without errors or skipped sections.
+Only ECG and NIRS-related vital data change. All 25 other imported data groups
+match v6.67 after generated identifiers and timestamps are excluded.
+
+Synthetic HTML, text, individual PDF and combined PDF checks pass. Red QTc
+text spans are verified, and a Poppler-rendered synthetic PDF was inspected.
+No real patient source or raw ECG narrative is included in this package.
+
+All 166 Python and three TOML files parse. Archive CRC and regenerated
+SHA256SUMS.txt checks complete before delivery.
+
+Archive schema stays 34. ECG and the explicit medication restoration marker
+are optional, so existing archives need no migration. Data saved with these
+new additions requires v6.68 or later. Update all three apps before syncing
+mappings that use Ignore. Encryption and the existing Secrets stay in place.
+
+No live Streamlit deployment, repository write or browser session was tested.
+Upload the complete application file set, including ecg.py and nirs.py, to
+app-code repositories. Use the existing encrypted data repositories.

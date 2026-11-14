@@ -1,0 +1,48 @@
+Print prepared: 11/13/2026 10:00:00 PM EST
+PICU HANDOFF
+Room: P4102
+Age: --
+Sex: --
+Handoff reference: 47df7b43
+Last saved: Not saved yet
+Confirm patient identity in Epic. A room is not a patient identifier.
+
+Problems: Acute hypoxemic respiratory failure
+
+DIAGNOSES
+Synthetic AVAPS preview
+----
+Dosing weight: none
+
+NEUROLOGIC
+CAPD: None
+-----
+Fever Control: None
+
+RESPIRATORY
+Resp: [20-40] 28
+FiO2 (%): [30 %-35 %] 35 %
+SpO2: 94% to 99% [97]
+-----
+Vent Settings
+Mode: AVAPS
+AVAPS rate: 3 cm H2O/min
+Target TV: 130 mL
+Observed TV: 145 mL
+PS Min: 9 cm H2O
+PS Max: 24 cm H2O
+-----
+
+FEN / GI
+GI Prophylaxis: None
+-----
+Bowel Regimen: None
+-----
+Diuretics: None
+
+HEMATOLOGY
+DVT Prophylaxis: None
+
+INFECTIOUS DISEASE
+------
+Cultures: None

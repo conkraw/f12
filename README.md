@@ -1,81 +1,68 @@
-# PICU Handoff 6.68
+# PICU Handoff 6.69
 
-## QTc from the ECG section
+## AVAPS settings in Respiratory
 
-The new Z block reads QTc Calculation(Bazett) and the date of its ECG.
-Cardiac displays the newest dated Bazett result supplied, with no recency or
-admission-date cutoff. A result from years ago remains eligible.
+When the invasive ventilation mode is Average Volume-Assured Pressure Support,
+the handoff reads the AVAPS subsection of C. It includes the documented AVAPS
+rate, target tidal volume, observed tidal volume, and minimum and maximum
+pressure support. Blank settings and No data recorded are omitted.
 
-```text
-QTc: 425 msec [11/13/2026]
-```
-
-When the value is greater than 450 msec, the QTc line is red in the preview,
-HTML and PDF, includes (!), and adds Long QTc to the existing Problems review.
-Exactly 450 is not flagged. The threshold follows the requested display rule.
-A newer normal QTc removes the automatic flag and Long QTc problem.
-
-The parser uses the explicitly named Bazett result, not Q-T interval or another
-QTc formula. Multiple ECGs are selected by their own dates and available times.
-An undated result does not receive an invented date. Conflicting newest results
-remain available for review through the existing import warning workflow.
-
-Only the QTc value and ECG date are retained. The ECG narrative is not stored.
-A new empty Z block clears the snapshot. Omitting Z keeps the prior snapshot.
-An unreadable Z block retains previous data for review but hides its automatic
-QTc and Long QTc output until reviewed or successfully reimported.
-
-## NIRS in Neuro
-
-The E vital-sign block accepts NIRS Range and Last NIRS, including Epic's
-repeated rSO2 Cerebral % label. A synthetic example displays:
+This synthetic example shows the output:
 
 ```text
-NIRS: 60% to 68% [last 66]
+Mode: AVAPS
+AVAPS rate: 3 cm H2O/min
+Target TV: 130 mL
+Observed TV: 145 mL
+PS Min: 9 cm H2O
+PS Max: 24 cm H2O
 ```
 
-The summary uses documented minimum, maximum and latest values. It does not
-use the average as an endpoint. Absent NIRS data produces no placeholder.
-Partial data keeps its available labels. Existing inclusion and section
-controls continue to apply. A fresh E block without NIRS removes prior NIRS.
+The nested source label AVAPS rate (cm H2O/min) retains that unit. It does not
+become a respiratory rate in breaths per minute. A separately documented
+Resp Rate (Set) still appears as Set RR. Target and observed volumes remain
+separate. The new AVAPS fields are editable and survive encrypted save/recall.
 
-## Override-pull medication entries
+The same settings appear in the app preview, text, HTML, PDF and Print All.
+They display only with the invasive AVAPS mode. Other modes keep their existing
+rules. Explicit noninvasive AVAPS continues to use the noninvasive parser.
 
-Medication names containing Override Pull, including ADS Override Pull and
-Override-Pull, default to Ignore. They do not appear in system medication
-lists, Other Medications, or individual and combined handoff exports.
-A normal order for the same medication remains visible.
+FiO2 recorded in E remains in respiratory vitals. A blank C FiO2 is not filled
+with a D or E value. See AVAPS_UPDATE.md for field mapping and compatibility.
 
-Open Medications, then Ignored / hidden medications to find these retained
-entries. Choose Restore to handoff or select a specific category to include
-one deliberately. The exact entry's choice is remembered for future imports.
-Broad drug mappings and automatic drug groups do not restore an override entry.
-Existing saved override entries are also excluded without requiring reimport.
+## Included from 6.68
+
+Cardiac shows the newest dated QTc Calculation(Bazett) supplied by the ECG
+section, with no recency cutoff, as QTc: 425 msec [11/13/2026]. A value greater
+than 450 is red, has (!), and adds Long QTc to Problems. Exactly 450 is unflagged.
+
+NIRS appears in Neuro only when available, using minimum to maximum and the
+latest value. Override-pull medication entries default to Ignore and stay out
+of Other Medications and handoff exports. You can restore an individual entry
+from Ignored / hidden medications. QTC_NIRS_OVERRIDE_UPDATE.md has the details.
 
 ## Install the update
 
-This folder contains the complete application. Replace its application files
-in each app-code repository, keeping app.py at its existing deployed location.
-Include the new ecg.py and nirs.py modules. UPDATE_FILES.txt lists the files
-changed from v6.67. Restart each app and confirm:
+This folder contains the complete application. Replace the application files
+in each app-code repository, keeping app.py at its deployed location. If each
+app already runs 6.68, the application code changes are app.py and ventilation.py.
+Copy both together. UPDATE_FILES.txt also explains updates from 6.67.
+
+Restart each app and confirm:
 
 ```text
-Version 6.68 | QTc, NIRS and override-pull medications
+Version 6.69 | AVAPS ventilator settings
 ```
 
-Use the existing Streamlit Secrets, encryption key and separate data repository
-for each app. There are no new dependencies or Secrets fields. Update all three
-apps before syncing mappings that use the new Ignore destination.
-
-Paste the updated SmartPhrase again to add ECG and NIRS to an existing handoff.
-The included SMARTPHRASE_TEMPLATE.txt illustrates the new Z boundaries and E
-labels. Keep your institution's real SmartLink definitions.
+Use each app's existing Streamlit Secrets, encryption key and separate data
+repository. No new dependency or Secrets field is required. Paste the updated
+SmartPhrase again to populate the AVAPS fields in an existing handoff.
 
 ## Validation and compatibility
 
 See TEST_REPORT.md for executed checks and ARCHIVE_COMPATIBILITY.txt for saved
-record details. The supplied clinical sample is not included in this package.
-The examples directory contains a separate synthetic input and PDF/HTML preview.
+record details. The examples directory contains synthetic input and PDF/HTML
+previews. The supplied clinical sample is not included in the package.
 
-The package has not been deployed to your live apps. Existing arterial BP,
-source-hour I/O headings, medication mappings and Mapping Sync remain included.
+This package has not been deployed to the live apps. Existing QTc, NIRS,
+medication controls, arterial BP, I/O headings and Mapping Sync are included.

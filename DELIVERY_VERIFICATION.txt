@@ -1,25 +1,30 @@
-PICU Handoff v6.68 delivery verification
+PICU Handoff v6.69 delivery verification
 
-Source: PICU667.zip, v6.67.
-Full regression: 5719 passed, 14 subtests passed in 99.69 seconds.
-Final focused feature and medication-label checks: 179 passed.
+Source: PICU668.zip, v6.68.
+Full regression: 5775 passed, 14 subtests passed in 101.62 seconds.
+Final focused run after the observed-alias isolation fix: 407 passed in 1.36 seconds.
+The full suite was not repeated after that final fix. See TEST_REPORT.md.
 
-The complete supplied sample imports without errors or skipped sections.
-Only ECG and NIRS-related vital data change. All 25 other imported data groups
-match v6.67 after generated identifiers and timestamps are excluded.
+The supplied C/D/E/Z extracts import without errors or skipped sections.
+All five AVAPS settings display with the documented invasive AVAPS mode.
+The rate preserves its source unit. Target and observed TV stay separate.
+FiO2 in E remains in respiratory vitals. Absent NIRS and ECG are omitted.
+The complete clinical sample was not separately revalidated in this release.
 
-Synthetic HTML, text, individual PDF and combined PDF checks pass. Red QTc
-text spans are verified, and a Poppler-rendered synthetic PDF was inspected.
-No real patient source or raw ECG narrative is included in this package.
+Synthetic text, HTML, individual PDF and combined PDF checks pass.
+A Poppler-rendered synthetic PDF was visually inspected. All AVAPS settings
+fit the Respiratory column. The clinical source is excluded from the package.
 
-All 166 Python and three TOML files parse. Archive CRC and regenerated
-SHA256SUMS.txt checks complete before delivery.
+All 168 Python files and three TOML files parse. ZIP CRC and regenerated
+SHA256SUMS.txt checks complete before delivery. Cache files are excluded.
 
-Archive schema stays 34. ECG and the explicit medication restoration marker
-are optional, so existing archives need no migration. Data saved with these
-new additions requires v6.68 or later. Update all three apps before syncing
-mappings that use Ignore. Encryption and the existing Secrets stay in place.
+Schema remains 34. Old archives are accepted without migration. New AVAPS
+fields require v6.69 or later after saving. Existing editor indexes remain
+unchanged. Encryption, data repositories, dependencies and Secrets stay in place.
 
-No live Streamlit deployment, repository write or browser session was tested.
-Upload the complete application file set, including ecg.py and nirs.py, to
-app-code repositories. Use the existing encrypted data repositories.
+Only app.py and ventilation.py change application code from v6.68. Copy both
+together when upgrading from v6.68, or upload the complete application file set.
+QTc, NIRS and Ignore behavior from v6.68 are included.
+
+No live deployment or external repository write was performed. Restart each
+updated app and confirm Version 6.69, then re-paste the updated SmartPhrase.

@@ -2,8 +2,8 @@
 
 Explicit source modes and set/observed fields are preserved separately.
 Known non-invasive modes use the C/D support parser. Mode names alone do not
-establish airway route. No D/E values, target Vt, observed rate, or equipment
-fields are substituted for a C-block setting.
+establish airway route. No D/E values, observed rate, or equipment fields are
+substituted for a C-block setting. AVAPS targets retain their own source fields.
 """
 from __future__ import annotations
 from dataclasses import dataclass, field
@@ -30,6 +30,12 @@ LABELS = (
     "Pmax",
     "Ti Min",
     "Ti Max",
+    "AVAPS rate (cm H2O/min)",
+    "AVAPS Respiratory Rate",
+    "Vt Set/Target ml",
+    "Pressure Support Min (cm H2O)",
+    "Pressure Support Max (cm H2O)",
+    "AVAPS Observed TV (mL)",
 )
 
 
@@ -102,6 +108,14 @@ def _observed(value: str, unit: str = "mL") -> str:
     return _measurement(text, unit)
 
 
+def _avaps_rate_unit_needs_review(value: str) -> bool:
+    """Do not discard a label/value unit disagreement or guess a conversion."""
+    text = _clean_output(value)
+    if re.fullmatch(r"[+-]?(?:\d+(?:\.\d*)?|\.\d+)", text):
+        return False
+    return re.search(r"\bcm H2O\s*/\s*min(?:ute)?s?\b", text, re.I) is None
+
+
 def home_vent(data: dict | None) -> bool:
     if not data:
         return False
@@ -126,9 +140,21 @@ def format_ventilation(data: dict | None) -> str:
             lines.append(label + ": " + _measurement(value, unit))
 
     add("Resp Rate (Set)", "Set RR")
+    if family == "AVAPS":
+        # Epic's AVAPS rate field explicitly uses pressure/time units. Keep
+        # it distinct from an actual recorded respiratory-rate setting.
+        add("AVAPS Respiratory Rate", "AVAPS Respiratory Rate")
+        rate = values.get("AVAPS rate (cm H2O/min)", "")
+        rate_label = "AVAPS rate (cm H2O/min)" if is_present(rate) and _avaps_rate_unit_needs_review(rate) else "AVAPS rate"
+        add("AVAPS rate (cm H2O/min)", rate_label, "cm H2O/min")
     if family == "PC":
         add("PIP Set (cm H2O)", "Set PIP", "cm H2O")
-    elif family in {"PRVC", "VC", "AVAPS", "VSV"}:
+    elif family == "AVAPS":
+        if is_present(values.get("Vt Set/Target ml", "")):
+            add("Vt Set/Target ml", "Target TV", "mL")
+        else:
+            add("Vt (Set, mL)", "Set TV", "mL")
+    elif family in {"PRVC", "VC", "VSV"}:
         add("Vt (Set, mL)", "Set TV", "mL")
     elif family != "PS":
         # No mode-specific interpretation is invented for other supported modes.
@@ -139,7 +165,14 @@ def format_ventilation(data: dict | None) -> str:
     observed_pip = values.get("PIP Observed (cm H2O)", "")
     if is_present(observed_pip):
         lines.append("Observed PIP: " + _observed(observed_pip, "cm H2O"))
-    if family == "PC":
+    if family == "AVAPS":
+        # Keep a dedicated AVAPS observation separate from the conventional
+        # observation that may coexist in the SmartPhrase's generic template.
+        for source in ("AVAPS Observed TV (mL)", "Vt (observed, mL)", "Vt Exp ml", "Vt Insp ml"):
+            if is_present(values.get(source, "")):
+                lines.append("Observed TV: " + _observed(values[source]))
+                break
+    elif family == "PC":
         # Preserve source selection and phase in stored values. The compact handoff
         # uses the generic TV label for either phase, never relabeling Insp as Exp.
         if is_present(values.get("Vt Exp ml", "")):
@@ -151,6 +184,9 @@ def format_ventilation(data: dict | None) -> str:
     add("PEEP (cm H2O)", "Set PEEP", "cm H2O")
     add("Insp Time (sec)", "Inspiratory Time", "sec")
     add("Pressure Support (cm H2O)", "Pressure Support", "cm H2O")
+    if family == "AVAPS":
+        add("Pressure Support Min (cm H2O)", "PS Min", "cm H2O")
+        add("Pressure Support Max (cm H2O)", "PS Max", "cm H2O")
     if home:
         add("Pmin", "Pmin", "cm H2O")
         add("Pmax", "Pmax", "cm H2O")
@@ -179,7 +215,37 @@ WRAPPERS = {
     "fio2": "FiO2 (%)", "pressure support": "Pressure Support (cm H2O)",
     "pmin": "Pmin", "pmax": "Pmax", "timin": "Ti Min", "timax": "Ti Max",
     "tmin": "Ti Min", "tmax": "Ti Max",
+    "avaps respiratory rate": "AVAPS Respiratory Rate",
+    "avaps target tv": "Vt Set/Target ml",
+    "observed avaps tv": "AVAPS Observed TV (mL)",
+    "ps min": "Pressure Support Min (cm H2O)",
+    "ps max": "Pressure Support Max (cm H2O)",
 }
+
+# Typography aliases do not change a field's meaning or unit. Include them
+# when unwrapping a nested SmartLink label as well as when reading the value.
+AVAPS_LABEL_ALIASES = {
+    "avaps rate (cmh2o/min)": "AVAPS rate (cm H2O/min)",
+    "avaps rate (cm h20/min)": "AVAPS rate (cm H2O/min)",
+    "avaps rate (cmh20/min)": "AVAPS rate (cm H2O/min)",
+    "pressure support min (cmh2o)": "Pressure Support Min (cm H2O)",
+    "pressure support min (cm h20)": "Pressure Support Min (cm H2O)",
+    "pressure support min (cmh20)": "Pressure Support Min (cm H2O)",
+    "pressure support max (cmh2o)": "Pressure Support Max (cm H2O)",
+    "pressure support max (cm h20)": "Pressure Support Max (cm H2O)",
+    "pressure support max (cmh20)": "Pressure Support Max (cm H2O)",
+}
+
+OBSERVED_VOLUME_ALIASES = {
+    "vti": "Vt Insp ml", "observed tvi": "Vt Insp ml",
+    "vte": "Vt Exp ml", "observed tve": "Vt Exp ml",
+    "vt exp ml": "Vt Exp ml", "vt (exhaled, ml)": "Vt Exp ml",
+    "vt expired ml": "Vt Exp ml", "vt expiratory ml": "Vt Exp ml",
+    "vt (inspired, ml)": "Vt Insp ml",
+}
+OBSERVED_VOLUME_LABELS = {
+    normalize(label) for label in ("Vt (observed, mL)", "Vt Insp ml", "Vt Exp ml")
+} | set(OBSERVED_VOLUME_ALIASES)
 
 
 def unwrap_vent_line(raw: str) -> str:
@@ -202,7 +268,20 @@ def unwrap_vent_line(raw: str) -> str:
         nested_content = strip_setting_marker(content)
         inner = re.match(r"^(.+?)\s+(?:Avg|Min|Max)\s*:", nested_content, re.I)
         inner_key = normalize(nested_content.split(":", 1)[0]) if ":" in nested_content else ""
-        known_labels = {normalize(x) for x in LABELS} | {"ti min", "ti max", "observed tve", "observed tvi", "vte", "vti"}
+        if target == "AVAPS Observed TV (mL)":
+            # The same inner Epic labels also appear under generic Observed TV.
+            # Preserve the AVAPS wrapper's source scope so stale AVAPS values
+            # cannot replace or conflict with active conventional-mode values.
+            if inner_key in OBSERVED_VOLUME_LABELS:
+                line = target + ": " + nested_content.split(":", 1)[1].strip()
+            elif inner and normalize(inner.group(1)) in OBSERVED_VOLUME_LABELS:
+                line = target + ": " + nested_content[len(inner.group(1)):].strip()
+            else:
+                # Unknown nested content stays within its explicit AVAPS scope.
+                # In particular it must not route into a generic C-block field.
+                line = target + ": " + content
+            break
+        known_labels = {normalize(x) for x in LABELS} | set(AVAPS_LABEL_ALIASES) | {"ti min", "ti max", "observed tve", "observed tvi", "vte", "vti"}
         if inner_key in known_labels or (inner and normalize(inner.group(1)) in known_labels):
             if nested_content == line:
                 break
@@ -228,13 +307,8 @@ class VentilationResult:
 def parse_ventilation(block: str) -> VentilationResult:
     result = VentilationResult()
     aliases = {normalize(label): label for label in LABELS}
-    aliases.update({
-        "vti": "Vt Insp ml", "observed tvi": "Vt Insp ml",
-        "vte": "Vt Exp ml", "observed tve": "Vt Exp ml",
-        "vt exp ml": "Vt Exp ml", "vt (exhaled, ml)": "Vt Exp ml",
-        "vt expired ml": "Vt Exp ml", "vt expiratory ml": "Vt Exp ml",
-        "vt (inspired, ml)": "Vt Insp ml",
-    })
+    aliases.update(AVAPS_LABEL_ALIASES)
+    aliases.update(OBSERVED_VOLUME_ALIASES)
     # Subscript characters in labels are typography only. Values stay verbatim.
     def label_key(label: str) -> str:
         return normalize(label.replace("₂", "2"))
@@ -242,7 +316,7 @@ def parse_ventilation(block: str) -> VentilationResult:
     meaningful = []
     for raw in block.replace("\r\n", "\n").replace("\r", "\n").splitlines():
         line = unwrap_vent_line(raw)
-        if not line or normalize(line.rstrip(":")) in ("invasive ventilation", "vent information", "settings", "home ventilator settings"):
+        if not line or normalize(line.rstrip(":")) in ("invasive ventilation", "vent information", "settings", "home ventilator settings", "average volume-assured pressure support settings", "avaps settings"):
             continue
         meaningful.append(line)
         if ":" not in line:
@@ -286,9 +360,16 @@ def parse_ventilation(block: str) -> VentilationResult:
     required = ["Resp Rate (Set)", "PEEP (cm H2O)"]
     if family == "PC":
         required.append("PIP Set (cm H2O)")
-    elif family in {"PRVC", "VC", "AVAPS", "VSV"}:
+    elif family == "AVAPS":
+        if not is_present(entries.get("Vt Set/Target ml", "")):
+            required.append("Vt (Set, mL)")
+        if is_present(entries.get("AVAPS Respiratory Rate", "")):
+            required.remove("Resp Rate (Set)")
+    elif family in {"PRVC", "VC", "VSV"}:
         required.append("Vt (Set, mL)")
     missing = [label for label in required if not entries.get(label, "").strip()]
     if missing:
         result.issues.append("Requested fields absent from C were left out: " + ", ".join(missing) + ".")
+    if family == "AVAPS" and is_present(entries.get("AVAPS rate (cm H2O/min)", "")) and _avaps_rate_unit_needs_review(entries["AVAPS rate (cm H2O/min)"]):
+        result.issues.append("The AVAPS rate value does not match its source field's cm H2O/min unit. The source label and value were retained for review.")
     return result
