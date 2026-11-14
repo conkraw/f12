@@ -1,107 +1,71 @@
-# PICU Handoff v6.70 validation
+# PICU Handoff v6.71 validation
 
-Built from PICU669.zip. No live repository or hosted deployment was changed.
+Built from PICU670.zip. No live repository or hosted deployment was changed.
 
-## Executed regression checks
+## Regression result
 
-The full regression run completed with 6013 passed and 14 subtests passed in
-109.41 seconds. One existing test still expected technical report version 6.48
-and failed against the corrected release version 6.70. Its version expectation
-was updated. No application behavior was changed to satisfy that old assertion.
+The final full regression run passed: 6101 tests and 14 subtests in 108.96 seconds. The only warning is the existing third-party anyio pytest deprecation warning.
 
-The final focused run, after that correction and support for multiline feeding
-instruction edits, passed all 554 tests in 2.60 seconds:
+Focused checks also passed before the final full run: 96 nutrition-renderer
+cases, 87 detailed dietary-parser cases, 43 nutrition-integration cases and
+348 existing feeds, FEN/GI, diet/lactate and measurement/version cases.
 
-```text
-python3 -m pytest -q tests/test_nutrition_integration.py tests/test_dietary_orders.py tests/test_nutrition_display.py tests/test_dietary_boundaries.py tests/test_diet_lactate.py tests/test_feeds.py tests/test_fen_gi.py tests/test_measurement_notes_observed_pip.py
-```
+## Compact display and source reconciliation
 
-The full suite was not repeated after these final focused changes. The only
-warning was the existing pytest plugin's deprecated internal import.
+Diet labels replace Oral labels. Tube feeds share one heading. Dietary and
+recorded counterparts appear once, including the supplied screenshot pattern
+of a post-pyloric order and an NJ record with a different formula label.
+Synthetic tests retain the dietary formula and rate, preserve separate GT/NJ
+routes and ambiguous same-route devices, respect excluded entries, and prevent
+old recorded feeds from returning after a new empty or failed dietary update.
 
-Two existing test expectations changed. One detailed semicolon tube order now
-checks structured feeding fields instead of its former generic label. The
-technical-report version test now expects the release's actual version.
-All other pre-existing test expectations remain unchanged.
+Instructions, additives, the daily-volume equation and the dosing-weight basis
+line are absent from text, HTML, individual PDF and Print All PDF. Those source
+fields remain stored and editable. Existing PN medication deduplication and
+hidden/Ignore choices continue to pass.
 
-## Supplied dietary examples
+## Calculations
 
-All 17 supplied dietary examples were tested separately through the AB import
-and FEN/GI renderer. Each imported without errors, skipped sections or warnings.
-Repeated detailed and compact views produced one order.
+Tests cover explicit 20-hour and 24-hour schedules, the missing continuous
+schedule default, decimal rates, kcal/oz, kcal/mL and kcal/L, positive kg/g
+DCW, absent/invalid DCW, failed weight imports and no measured-weight fallback.
 
-The GT, post-pyloric formula and fortified breast-milk examples retained their
-explicit route, formula, hourly rate, daily hours and recorded volume. Their
-rate-times-hours calculations matched the supplied daily totals. Mixture,
-fortifier, oral-swab, advancement and break instructions remained visible.
-NPO medication exceptions and milk-label orders did not create tube feeds.
-Regular, Clear Liquid, NPO and None produced the expected oral/empty results.
-No numeric mL/kg/day was generated without a documented dosing weight.
+An explicit non-24-hour duration prints. A 24-hour duration does not print.
+Invalid, conflicting and explicitly unknown durations do not default. Their
+constraint is rechecked against retained source even after a review warning
+is acknowledged or an encrypted record is reopened. A valid manual duration
+resolves it. Bolus, held and future orders do not get continuous daily totals.
+Listed-volume conflicts withhold calculated totals for source review.
 
-The supplied text was tested in memory and is not included in the package.
-Packaged fixtures and previews are synthetic.
+Calorie calculations use explicit final density. Brand numbers, ratios,
+recipes, dilution, signed or ranged density text and multiple densities do
+not create calorie totals. T-only records accept an unambiguous ending density
+in their own formula. Bounded Decimal arithmetic handles extreme stored
+numeric values without crashing the handoff.
 
-## Source boundaries and freshness
+## Editing, recall and prior features
 
-AB markers support alternating ab text, case variants, odd final a and different
-valid marker lengths. AB remains separate from X and ECG Z. Repeated AB blocks
-retain the existing multiple-patient rejection. Malformed and unclosed markers
-fail the affected dietary section while unrelated valid sections can import.
+Tests exercise editing callbacks, invalid values, pending edits, source
+retention, inclusion settings, save/recall, room separation and PDF downloads.
+Schema remains 34. Old archives need no migration. UI tests use existing
+Streamlit widget stubs, not a live browser.
 
-AB supplies the detailed dietary snapshot when both X and AB are present.
-A failed AB import does not silently use X. Successful dietary reimport clears
-prior dietary review flags. An unreadable detailed dietary update retains its
-records for review while hiding structured dietary and recorded-feed output.
+models.py, exports.py, security.py, github_store.py, mapping_sync.py,
+mapping_sync_ui.py, sync_diagnostics.py, requirements.txt, ecg.py, nirs.py,
+ventilation.py, medications.py, parser.py, feeds.py and batching.py are byte
+identical to v6.70. QTc, NIRS, Override Pull Ignore and AVAPS support remains.
 
-Only feeding rows supplied with the dietary update are linked automatically.
-A fresh None or NPO-only AB update does not resurrect older T rows. A later
-explicit T update can supply current recorded rows. Generic post-pyloric route
-refinement requires a uniquely matching formula and explicit NJ/ND device in
-the same import. Earlier retained devices do not establish the new route.
+## Visual and package verification
 
-## Calculations and deduplication
-
-Tests cover 20- and 24-hour schedules, decimal rates, kg/g dosing weight,
-missing/invalid weight, absent duration, failed I imports, zero rates, held and
-future orders, bolus schedules and conflicting listed totals. Measured weight
-is not substituted. An hourly rate is never derived from an intake volume.
-
-Oral, enteral and parenteral orders can coexist. Product identity keeps a PN
-medication from duplicating its dietary counterpart while preserving distinct
-PN formulations and lipid products. Matching hidden and Ignore medication
-choices remain effective. Decimal and ratio punctuation in formula names is
-preserved. A known recorded formula is not lost when the ordered formula is
-missing. Unmatched formula-only device records do not imply an extra feeding
-route alongside an explicit dietary tube order.
-
-## Editing, recall and exports
-
-Callbacks, pending edits, inclusion settings, invalid hour edits and multiline
-feeding instructions are exercised. Nutrition data survives encrypted save and
-reload. Old archives open without migration. Schema stays 34. Structured diet
-snapshots and AB diagnostic flags require v6.70 or later after saving.
-
-Text, HTML, single PDF and Print All PDF use the same calculated figures.
-Batch checks keep each room's amounts separate. Nutrition-only handoffs are
-eligible for Print All. Rendering and export do not mutate source records.
-Rich output escapes formulas, fortifiers, instructions and editable text.
-
-The earlier full SmartPhrase supplied during QTc troubleshooting was also
-imported with the new code. The dated QTc remained visible, and its detailed
-feeding order used the recorded dosing weight correctly.
-
-A synthetic combined oral, tube-feed, PN and dated-QTc PDF was rendered with
-Poppler and visually inspected. Feeding instructions, daily calculations and
-one PN entry fit within FEN/GI without clipping or overlap. The old ECG remained
-visible in Cardiac with its requested flag and problem entry.
-
-## Package and verification limits
+A two-page synthetic PDF was rendered and visually inspected. Its first room
+shows a 20-hour GT feed, oral diet and one PN medication. Its second room shows
+a 24-hour NJ feed with the duration omitted and the recorded formula duplicate
+suppressed. Both fit the existing one-page-per-room seven-column layout
+without clipping or overlap. A dated red QTc and Long QTc problem remain
+visible in the synthetic preview.
 
 All 173 Python files parse with ast and all three TOML files with tomllib.
-The release ZIP has CRC verification and regenerated SHA256SUMS.txt. Cache
-files and the supplied clinical source examples are excluded.
-
-UI checks use Streamlit widget stubs. No live browser or hosted Streamlit app
-was exercised. External repository services are mocked in tests. Encryption,
-GitHub storage, Mapping Sync, Secrets, archive paths and dependencies are
-unchanged. The new application module is nutrition_display.py.
+ZIP CRC and all regenerated SHA256SUMS entries are verified before delivery.
+No supplied clinical source or screenshot is included. Packaged examples are
+synthetic. Existing dependencies, Secrets and encrypted data repositories
+remain compatible. No hosted Streamlit session was exercised or deployed.

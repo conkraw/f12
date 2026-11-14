@@ -267,12 +267,12 @@ def test_io_then_feeds_then_medication_groups_in_all_exports():
     s['medications']=[med('pantoprazole','5 mg','Oral','Daily','', 'Other Medications')]
     s['fields']['FEN / GI']='Separate note'
     plain=fields_with_medications(s)['FEN / GI']
-    assert plain.index('Intake:') < plain.index('Feeds:') < plain.index('GI prophylaxis') < plain.index('Separate note')
-    html=handoff_html(s);assert '<b>Feeds:</b>' in html
-    assert 'Feeding Method: NJ' in handoff_text(s)
+    assert plain.index('Intake:') < plain.index('Tube feed:') < plain.index('GI prophylaxis') < plain.index('Separate note')
+    html=handoff_html(s);assert '<b>Tube feed:</b>' in html
+    assert 'NJ: Synthetic formula @ 24 mL/hr' in handoff_text(s)
     pdf=PdfReader(BytesIO(handoff_pdf(s)))
     assert len(pdf.pages)==1
-    t=pdf.pages[0].extract_text();assert 'Feeding Method: NJ' in t and '24 mL/hr' in t
+    t=pdf.pages[0].extract_text();assert 'NJ: Synthetic formula' in t and '24 mL/hr' in t
 
 
 def test_feeds_only_room_in_print_all_and_exclusion_removes_it():

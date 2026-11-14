@@ -267,3 +267,105 @@ def test_failed_legacy_or_new_section_hides_retained_diet(section):
     sheet = {"diet": data, "import_warnings": {section: [{"action": "diet_hidden"}]}}
     assert diet_failed(sheet) and diet_for_output(sheet) is None
     assert sheet["diet"] == data
+
+
+def compact_density_source(density_line="", *, hours=None, formula="Synthetic Standard 1.0", comments=""):
+    lines = ["Dietary Orders:", "Infant tube feeding Infant Tube Feeding",
+             "Question\tAnswer\tComment", "Formula:\t" + formula,
+             "Type:\tContinuous Feeds", "Route:\tGastrostomy tube",
+             "Tube feeding continuous rate (mL/hr):\t30"]
+    if hours is not None:
+        lines.append("Infusion time (hours):\t" + hours)
+    if density_line:
+        lines.append(density_line)
+    if comments:
+        lines.append("Comments: " + comments)
+    return "\n".join(lines)
+
+
+@pytest.mark.parametrize("label,value,expected", [
+    ("Caloric density (kcal/mL):", "1.2", "1.2 kcal/mL"),
+    ("Caloric density (kcal per mL):", "1.50", "1.5 kcal/mL"),
+    ("Caloric density (kcal per milliliter):", "0.8", "0.8 kcal/mL"),
+    ("Caloric density(kcal / mL):", "1", "1 kcal/mL"),
+    ("Caloric density (kcal/L):", "1,000", "1000 kcal/L"),
+    ("Caloric density (kcal per L):", "900", "900 kcal/L"),
+    ("Caloric density (kcal per liter):", "1200", "1200 kcal/L"),
+    ("Caloric density (kcal/oz):", "24", "24 kcal/oz"),
+    ("Caloric density (kcal per ounce):", "25", "25 kcal/oz"),
+    ("Caloric density:", "1.2 kcal/mL", "1.2 kcal/mL"),
+    ("Caloric density:", "900 kcal per liter", "900 kcal/L"),
+    ("Caloric density:", "24 kcal/ounce", "24 kcal/oz"),
+])
+def test_explicit_density_label_and_value_units_are_preserved(label, value, expected):
+    result = parsed(compact_density_source(label + "\t" + value))
+    assert not result.diagnostics
+    assert result.data["enteral"][0]["caloric_density"] == expected
+
+
+@pytest.mark.parametrize("line", [
+    "Question: Caloric density (kcal/mL): Answer: 1.25",
+    "Caloric density(kcal / mL):1.25",
+    "Caloric density (kcal/mL) 1.25",
+])
+def test_density_qa_layout_variants_keep_units(line):
+    result = parsed(compact_density_source(line))
+    assert not result.diagnostics
+    assert result.data["enteral"][0]["caloric_density"] == "1.25 kcal/mL"
+
+
+@pytest.mark.parametrize("density,expected", [("1.2 kcal/mL", "1.2 kcal/mL"),
+                                              ("900 kcal/L", "900 kcal/L"),
+                                              ("24 kcal/oz", "24 kcal/oz")])
+def test_explicit_density_units_in_semicolon_order_are_preserved(density, expected):
+    result = parsed("Dietary Orders:\n" + tube(tail=density))
+    assert not result.diagnostics
+    assert result.data["enteral"][0]["caloric_density"] == expected
+
+
+@pytest.mark.parametrize("line", [
+    "Caloric density (kcal/mL):\t24 kcal/oz",
+    "Caloric density (kcal per ounce):\t1 kcal/mL",
+    "Caloric density (kcal/L):\t1 kcal/mL",
+    "Caloric density:\t24",
+    "Caloric density (kcal/mL):\t" + "9" * 21,
+])
+def test_conflicting_missing_or_unbounded_density_units_are_not_inferred(line):
+    result = parsed(compact_density_source(line))
+    assert result.data["enteral"][0]["caloric_density"] == ""
+    assert any(item["code"] == "nutrition_conflict" and item["field"] == "caloric_density" for item in result.diagnostics)
+
+
+def test_missing_continuous_hours_are_blank_without_incomplete_warning():
+    result = parsed(compact_density_source())
+    assert result.data["enteral"][0]["hours"] == ""
+    assert not result.diagnostics
+
+
+@pytest.mark.parametrize("hours", ["unknown", "not-a-duration", "25 hours", "0 hours"])
+def test_explicit_invalid_hours_retain_diagnostic_for_default_blocking(hours):
+    result = parsed(compact_density_source(hours=hours))
+    assert result.data["enteral"][0]["hours"] == ""
+    assert any(item["code"] == "nutrition_conflict" and item["field"] == "hours" for item in result.diagnostics)
+
+
+@pytest.mark.parametrize("formula", ["Synthetic Standard 1.0", "Synthetic Ratio 4:1"])
+def test_formula_brand_numbers_do_not_supply_density(formula):
+    result = parsed(compact_density_source(formula=formula))
+    assert result.data["enteral"][0]["caloric_density"] == ""
+    assert not result.diagnostics
+
+
+def test_recipe_comment_without_explicit_final_density_stays_uncalculated():
+    comment = "Mix 200mL of a 1.0 kcal/mL product with 400mL water. Follow the mixture instructions."
+    result = parsed(compact_density_source(comments=comment))
+    row = result.data["enteral"][0]
+    assert row["caloric_density"] == "" and row["comments"] == comment
+    assert not result.diagnostics
+
+
+def test_documented_final_density_is_retained_with_recipe_comments():
+    comment = "The recipe contains 200mL product and 400mL water."
+    result = parsed(compact_density_source("Caloric density (kcal/mL):\t0.7", comments=comment))
+    assert result.data["enteral"][0]["caloric_density"] == "0.7 kcal/mL"
+    assert not result.diagnostics

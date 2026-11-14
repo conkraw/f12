@@ -16,7 +16,7 @@ CODES = {
     'diet_multiple': 'Multiple distinct diet orders are listed. All are retained; verify which apply.',
     'diet_unrecognized': 'A diet line was not recognized and was omitted. Review the dietary summary.',
     'nutrition_conflict': 'Nutrition fields disagree or could not be read. The affected field is omitted pending review.',
-    'nutrition_incomplete': 'A tube feeding order has incomplete formula, route, rate or feeding hours. Missing values are not inferred.',
+    'nutrition_incomplete': 'A tube feeding order has incomplete formula, route, rate or required schedule. Review the incomplete fields.',
 
     'pacemaker_incomplete': 'A pacemaker mode or matching rate was not supplied. Missing values are shown as UNK.',
     'section_parse_failed': 'This section was not updated. Previous values are retained for review.',

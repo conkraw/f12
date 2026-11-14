@@ -1,22 +1,16 @@
-PICU Handoff v6.70 archive compatibility
+PICU Handoff v6.71 archive compatibility
 
-Schema remains 34. Existing archives open without migration.
-The existing diet field accepts its legacy rows-only structure or a structured
-snapshot with rows, enteral and parenteral lists. It can also carry validated
-recorded_feed_ids that link feeding rows from the same dietary import.
+Schema remains 34. Existing archives open without migration. No saved field
+is removed. The diet rows, enteral and parenteral lists, recorded_feed_ids,
+comments, additives and original source remain stored as in v6.70.
+Calculated display amounts are not saved as source data.
 
-Oral rows retain their previous source/text/include format. Enteral records
-store explicit route, method, formula, feeding type, hourly rate, feeding hours,
-listed daily volume, caloric density, additives, comments, order status and
-inclusion. PN records store source, name, rate, status and inclusion.
-Calculated amounts are produced for display rather than saved as source facts.
-
-Stored snapshots using these new fields or AB diagnostic flags require v6.70
-or later. Older versions reject the extra structured diet keys. Install the
-complete application code as a set. Existing manual medication mappings and
-visibility choices remain in place.
+Existing v6.70 records display in the compact format after installing v6.71.
+Structured nutrition records and AB diagnostics still require v6.70 or later.
+Use v6.71 to retain the new presentation, calorie calculations and duration
+rules. Older releases do not reproduce these display choices.
 
 security.py, github_store.py, mapping_sync.py, mapping_sync_ui.py,
-sync_diagnostics.py, models.py, exports.py and requirements.txt match v6.69.
+sync_diagnostics.py, models.py, exports.py and requirements.txt match v6.70.
 No encryption key, repository path or Secrets field changes. Each app retains
-its existing separate encrypted data repository.
+its separate encrypted data repository and current medication mappings.

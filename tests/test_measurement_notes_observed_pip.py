@@ -275,7 +275,7 @@ def test_encrypted_roundtrip_and_render_do_not_change_saved_source_values():
 def test_current_version_is_used_for_new_technical_reports():
     from error_store import new_error_event
     report = new_error_event([diagnostic('i', 'section_parse_failed')])
-    assert report['app_version'] == '6.70'
+    assert report['app_version'] == '6.71'
 
 
 def test_very_long_primary_height_is_not_accepted_as_a_charting_note():

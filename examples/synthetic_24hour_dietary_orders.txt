@@ -1,0 +1,54 @@
+aaaaaaaaaaaaaaaa
+Diagnoses:
+1. Synthetic nutrition preview
+Age:
+8 y.o.
+Sex:
+female
+aaaaaaaaaaaaaaaa
+
+bbbbbbbbbbbbbbbb
+Medications:
+Medication	Dose	Route	Frequency	Provider	Last Rate	Last Admin
+• Pediatric 2-in-1 PN (Continuous)	9 mL/hr	Intravenous	Continuous	Synthetic Provider	9 mL/hr at 01/05/26 2100	9 mL/hr at 01/05/26 2100
+bbbbbbbbbbbbbbbb
+
+iiiiiiiiiiiiiiii
+NUTRITION:
+Weight: 12 kg
+Dosing Weight: 6 kg
+iiiiiiiiiiiiiiii
+
+tttttttttttttttt
+Gastric Tube Nasojejunal-Tube Feeding: Synthetic Recorded Formula B
+Gastric Tube Nasojejunal-Continuous Tube Feeding Ordered Rate mL/hr (not calculated): 15 mL
+tttttttttttttttt
+
+zzzzzzzzzzzzzzzz
+ECG 12 lead 01/02/2020
+QTC Calculation(Bazett): 475 ms
+zzzzzzzzzzzzzzzz
+
+ababababababababababababababababa
+Dietary Orders:
+Dietary Orders (From admission, onward)
+Start Ordered
+01/05/26 0800
+Infant tube feeding Pediatric Tube Feeding; Synthetic Formula A; Continuous Feeds; Nasoenteric (post-pyloric) tube; 24 hours; 15; 360; No Additives; 24 Diet effective now
+Comments: Synthetic source instructions retained only for editing.
+Question	Answer	Comment
+Diet:	Pediatric Tube Feeding
+Formula:	Synthetic Formula A
+Type:	Continuous Feeds
+Route:	Nasoenteric (post-pyloric) tube
+Infusion time (hours)	24 hours
+Tube feeding continuous rate (mL/hr):	15
+Total Volume (mL/day):	360
+Additives?	No Additives
+Caloric density (kcal per ounce):	24
+01/05/26 0801
+Diet Orders
+Infant tube feeding Pediatric Tube Feeding; Synthetic Formula A; Continuous Feeds; Nasoenteric (post-pyloric) tube; 24 hours; 15; 360; No Additives; 24: Tube Feeding starting at 01/05 0800
+Pediatric diet Regular: General starting at 01/05 0800
+Pediatric 2-in-1 PN (Continuous) at 9 mL/hr starting at 01/05 2100
+ababababababababababababababababa

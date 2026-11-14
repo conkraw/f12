@@ -44,9 +44,29 @@ _QA_LABELS = {
     'additives?': 'additives_flag', 'select additive': 'additives',
     'caloric density (kcal per ounce)': 'caloric_density',
     'caloric density (kcal/oz)': 'caloric_density',
+    'caloric density (kcal per ml)': 'caloric_density',
+    'caloric density (kcal/ml)': 'caloric_density',
+    'caloric density (kcal per milliliter)': 'caloric_density',
+    'caloric density (kcal per l)': 'caloric_density',
+    'caloric density (kcal/l)': 'caloric_density',
+    'caloric density (kcal per liter)': 'caloric_density',
+    'caloric density': 'caloric_density',
     'diet type': 'oral_type', 'npo except': 'npo_except',
     'explanatory comment': 'npo_comment',
 }
+_DENSITY_LABEL_UNITS = {
+    'caloric density (kcal per ounce)': 'kcal/oz',
+    'caloric density (kcal/oz)': 'kcal/oz',
+    'caloric density (kcal per ml)': 'kcal/mL',
+    'caloric density (kcal/ml)': 'kcal/mL',
+    'caloric density (kcal per milliliter)': 'kcal/mL',
+    'caloric density (kcal per l)': 'kcal/L',
+    'caloric density (kcal/l)': 'kcal/L',
+    'caloric density (kcal per liter)': 'kcal/L',
+}
+_DENSITY_VALUE = re.compile(
+    rf'(?P<number>{_NUTRITION_NUMBER})\s*kcal\s*(?:/\s*|per\s+)'
+    r'(?P<unit>mL|millilit(?:er|re)s?|L|lit(?:er|re)s?|oz|ounces?)', re.I)
 _QA_START = re.compile(r'^(' + '|'.join(re.escape(k) for k in sorted(_QA_LABELS, key=len, reverse=True)) + r')\s*(?::\s*|\s+|$)(.*)$', re.I)
 
 
@@ -267,22 +287,54 @@ def _order_kind(value: str) -> str:
     return ''
 
 
+def _qa_label(value: str) -> str:
+    value = _compact(value).rstrip(':').casefold()
+    value = re.sub(r'\s*\(\s*', ' (', value)
+    value = re.sub(r'\s*\)', ')', value)
+    return re.sub(r'kcal\s*/\s*', 'kcal/', value)
+
+
+def _qa_density_value(label: str, value: str) -> str:
+    """Carry a density label's units into its answer, without guessing units."""
+    value = _compact(value)
+    if _QA_LABELS.get(label) != 'caloric_density' or not value:
+        return value
+    unit = _DENSITY_LABEL_UNITS.get(label)
+    if _numeric(value) is not None:
+        return value + (' ' + unit if unit else ' (density unit unavailable)')
+    explicit = _density_value(value)
+    if explicit is not None and unit and not explicit.endswith(' ' + unit):
+        # Preserve this conflict in the retained source. A syntactically invalid
+        # internal value prevents selection from silently favoring either unit.
+        return value + ' (source density unit ' + unit + ')'
+    return value
+
+
 def _qa_pair(raw: str) -> tuple[str, str, str] | None:
     line = raw.replace('\u00a0', ' ').replace('：', ':').strip()
     inline = re.match(r'^Question\s*:\s*(.*?)\s*Answer\s*:\s*(.*)$', line, re.I)
     if inline:
         label, value = inline.groups()
         value, *comment = re.split(r'\s+Comment\s*:\s*', value, maxsplit=1, flags=re.I)
-        key = _QA_LABELS.get(_compact(label).rstrip(':').casefold())
-        return (key, _compact(value), _compact(comment[0]) if comment else '') if key else None
+        label = _qa_label(label)
+        key = _QA_LABELS.get(label)
+        return (key, _qa_density_value(label, value), _compact(comment[0]) if comment else '') if key else None
     if '\t' in line:
         cells = line.split('\t')
-        key = _QA_LABELS.get(_compact(cells[0]).rstrip(':').casefold())
+        label = _qa_label(cells[0])
+        key = _QA_LABELS.get(label)
         if key:
-            return key, _compact(cells[1]) if len(cells) > 1 else '', _compact(' '.join(cells[2:]))
+            return key, _qa_density_value(label, cells[1]) if len(cells) > 1 else '', _compact(' '.join(cells[2:]))
+    if ':' in line:
+        label, value = line.split(':', 1)
+        label = _qa_label(label)
+        key = _QA_LABELS.get(label)
+        if key:
+            return key, _qa_density_value(label, value), ''
     match = _QA_START.match(line)
     if match:
-        return _QA_LABELS[match[1].casefold()], _compact(match[2]), ''
+        label = _qa_label(match[1])
+        return _QA_LABELS[label], _qa_density_value(label, match[2]), ''
     return None
 
 
@@ -300,10 +352,24 @@ def _numeric(value: str, unit_pattern: str = '') -> str | None:
     return format(number, 'f').rstrip('0').rstrip('.') if '.' in format(number, 'f') else format(number, 'f')
 
 
+def _density_value(value: str, *, default_unit: str = '') -> str | None:
+    """Normalize only an explicit density or the known ounce-based order slot."""
+    match = _DENSITY_VALUE.fullmatch(_compact(value))
+    if match:
+        number = _numeric(match['number'])
+        if number is None:
+            return None
+        source_unit = match['unit'].casefold()
+        unit = 'kcal/mL' if source_unit.startswith('ml') or source_unit.startswith('millilit') else 'kcal/L' if source_unit.startswith('l') else 'kcal/oz'
+        return number + ' ' + unit
+    number = _numeric(value)
+    return number + ' ' + default_unit if number is not None and default_unit else None
+
+
 def _normalize_nutrition_value(field: str, value: str) -> str | None:
     value = _compact(value)
     if value.casefold().rstrip('.') in ('', '--', '-', 'n/a', 'na', 'unk', 'unknown', 'not documented', 'not available'):
-        return ''
+        return None if field == 'hours' and value.casefold().rstrip('.') in ('unk', 'unknown') else ''
     if field == 'rate':
         number = _numeric(value, r'mL(?:\s*(?:/\s*(?:h|hr|hrs|hours?)|per\s+hour))?')
         return None if number is None else number + ' mL/hr'
@@ -313,8 +379,7 @@ def _normalize_nutrition_value(field: str, value: str) -> str | None:
     if field == 'daily_volume':
         return _numeric(value, r'mL(?:\s*(?:/\s*day|per\s+day))?')
     if field == 'caloric_density':
-        number = _numeric(value, r'kcal\s*(?:/\s*(?:oz|ounce)|per\s+(?:oz|ounce))')
-        return None if number is None else number + ' kcal/oz'
+        return _density_value(value, default_unit='kcal/oz')
     if field == 'feeding_type':
         if re.fullmatch(r'continuous(?:\s+feeds?)?', value, re.I):
             return 'Continuous Feeds'
@@ -455,7 +520,8 @@ def _enteral_row(record: dict, out: DietResult) -> dict:
         _nutrition_conflict(out, 'additives', record['number'])
     row['method'] = feeding_method(row['route'])
     row['comments'] = ' '.join(dict.fromkeys(record['comments']))
-    if not row['formula'] or row['method'] == 'UNK' or not row['rate'] or not row['hours']:
+    continuous = re.fullmatch(r'continuous(?:\s+(?:feeds?|feeding))?', row['feeding_type'], re.I) is not None
+    if not row['formula'] or row['method'] == 'UNK' or not row['rate'] or (not row['hours'] and not continuous):
         out.diagnostics.append(diagnostic('x', 'nutrition_incomplete', line=record['number'], action='field_unknown'))
     return row
 
@@ -598,7 +664,7 @@ def parse_diet(block: str, *, detailed: bool = False) -> DietResult:
         if any(item['code'] == 'nutrition_conflict' for item in out.diagnostics):
             out.issues.append('Nutrition order fields disagree or could not be read. The affected values were left blank and the source was retained for review.')
         if any(item['code'] == 'nutrition_incomplete' for item in out.diagnostics):
-            out.issues.append('A tube feeding order lacks a documented formula, route, rate or infusion time. Missing values were not inferred.')
+            out.issues.append('A tube feeding order lacks a documented formula, route, rate or required schedule. Review the incomplete fields.')
         if any(item['code'] == 'diet_unrecognized' for item in out.diagnostics):
             out.issues.append('Unrecognized dietary-order content was omitted. Review the retained orders against the source.')
         out.diagnostics = out.diagnostics[:100]

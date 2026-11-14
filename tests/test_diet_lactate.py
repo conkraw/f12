@@ -152,7 +152,7 @@ def test_io_diet_feeds_meds_order_in_all_exports():
     s['medications']=parse_medications('Medications:\nMedication\tDose\tRoute\tFrequency\tProvider\tLast Rate\tLast Admin\n• pantoprazole injection\t10 mg\tIntravenous\tDaily\tSynthetic\t\t',[]).rows
     validate_sheet(s)
     for text in (handoff_text(s),handoff_html(s),PdfReader(BytesIO(handoff_pdf(s))).pages[0].extract_text()):
-        assert text.index('Intake:')<text.index('Diet:')<text.index('Feeds:')<text.index('GI prophylaxis')
+        assert text.index('Intake:')<text.index('Diet:')<text.index('Tube feed:')<text.index('GI prophylaxis')
         assert 'Adult Regular' in text
 
 

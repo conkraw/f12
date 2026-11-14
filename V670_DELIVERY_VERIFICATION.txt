@@ -1,0 +1,32 @@
+PICU Handoff v6.70 delivery verification
+
+Source: PICU669.zip, version 6.69.
+Full run: 6013 passed, 14 subtests passed in 109.41 seconds. One obsolete
+technical-report version expectation was updated from 6.48 to 6.70.
+Final focused run: 554 passed in 2.60 seconds, including that corrected check
+and multiline instruction editing. The full suite was not repeated afterward.
+
+All 17 supplied dietary examples imported separately without errors, skipped
+sections or warnings. Repeated table/summary copies deduplicated correctly.
+Oral intake, tube feeds and PN remain distinct and can coexist. Rate times
+recorded feeding hours produces daily volume. Only documented dosing weight
+supports mL/kg/day. No 24-hour duration or weight is guessed.
+
+Matching diet and medication PN displays once. Different PN/lipid products
+remain separate. Existing hidden/Ignore choices remain effective. Tube routes,
+formula fortification, mixture instructions and advancement plans are retained.
+
+Synthetic text, HTML, individual PDF and combined PDF checks pass. A rendered
+synthetic PDF was inspected for clipping and overlap. The prior QTc sample
+also passes with QTc retained. Supplied clinical text is not in the package.
+
+All 173 Python and three TOML files parse. ZIP CRC and all SHA256SUMS entries
+are verified before delivery. Caches are excluded.
+
+Schema remains 34. Old archives open without migration. Structured diet fields
+and AB flags require v6.70 or later. Include nutrition_display.py and replace
+the complete app-code file set in each repository. Keep existing Secrets and
+encrypted data repositories. Restart and confirm Version 6.70, then re-paste
+the SmartPhrase containing the new AB dietary orders.
+
+No live deployment or external repository write was performed.

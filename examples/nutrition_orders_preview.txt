@@ -1,9 +1,9 @@
-Print prepared: 11/14/2026 09:00:00 AM EST
+Print prepared: 01/05/2026 09:00:00 AM EST
 PICU HANDOFF
 Room: P4102
 Age: 8 y.o.
 Sex: Female
-Handoff reference: a9e91e4f
+Handoff reference: 4a839796
 Last saved: Not saved yet
 Confirm patient identity in Epic. A room is not a patient identifier.
 
@@ -24,11 +24,60 @@ CARDIOVASCULAR
 QTc: 475 msec [01/02/2020] (!)
 
 FEN / GI
-Oral: Peds Regular
+Diet: Peds Regular
 -----
-Tube feeds (ordered, GT): Synthetic Formula 1.0 (24 kcal/oz) @ 30 mL/hr x 20 hr/day = 600 mL/day (60 mL/kg/day)
-Instructions: Pause feeds for the recorded four-hour daily break. Mix 250 mL of Synthetic Formula A, 150 mL of Synthetic Formula B, and 200 mL water for the ordered 600 mL daily mixture. Start at 10 mL/hr and advance by 5 mL/hr every four hours to the ordered 30 mL/hr as instructed.
-Using dosing weight: 10 kg
+Tube feed:
+GT: Synthetic Formula A (24 kcal/oz) @ 30 mL/hr (20 hr/day) | 480 kcal/day | 60 mL/kg/day
+-----
+TPN
+Pediatric 2-in-1 PN (Continuous)
+Last Admin rate: 9 mL/hr [01/05/26 2100]
+Intravenous | Continuous
+-----
+GI Prophylaxis: None
+-----
+Bowel Regimen: None
+-----
+Diuretics: None
+
+HEMATOLOGY
+DVT Prophylaxis: None
+
+INFECTIOUS DISEASE
+------
+Cultures: None
+
+
+Print prepared: 01/05/2026 09:00:00 AM EST
+PICU HANDOFF
+Room: P4104
+Age: 8 y.o.
+Sex: Female
+Handoff reference: 3f2d3ad3
+Last saved: Not saved yet
+Confirm patient identity in Epic. A room is not a patient identifier.
+
+Problems: Long QTc
+
+DIAGNOSES
+Synthetic nutrition preview
+----
+Weight: 12 kg
+Dosing weight: 6 kg
+
+NEUROLOGIC
+CAPD: None
+-----
+Fever Control: None
+
+CARDIOVASCULAR
+QTc: 475 msec [01/02/2020] (!)
+
+FEN / GI
+Diet: Peds Regular
+-----
+Tube feed:
+NJ: Synthetic Formula A (24 kcal/oz) @ 15 mL/hr | 288 kcal/day | 60 mL/kg/day
 -----
 TPN
 Pediatric 2-in-1 PN (Continuous)

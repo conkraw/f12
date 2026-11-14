@@ -1,4 +1,4 @@
-"""PICU SmartPhrase v6.70: oral, enteral and parenteral nutrition with documented feeding schedules."""
+"""PICU SmartPhrase v6.71: compact diet and tube feeding summaries."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,
@@ -66,7 +66,7 @@ from pacemaker import (validate_pacemaker, format_pacemaker, pacemaker_text,
 from devices import validate_devices, EDIT_FIELDS as DEVICE_EDIT_FIELDS, device_line, devices_markup, evd_text
 from diet import validate_diet, diet_text, diet_for_output, diet_failed
 from nutrition_display import has_detailed_nutrition, nutrition_text
-from feeds import METHODS as FEED_METHODS, validate_feeds, feeds_text, feeds_for_output
+from feeds import METHODS as FEED_METHODS, validate_feeds, feeds_for_output
 from fluid_balance import balance_heading, FIELDS as IO_FIELDS, META_FIELDS as IO_META_FIELDS, validate_balance, balance_text, empty_balance
 from fen_gi import (MODES as GI_MODES, MODE_LABELS as GI_MODE_LABELS, GROUP_NAMES,
                     automatic_group, group_for, effective_section, fen_gi_body,
@@ -84,10 +84,10 @@ st.set_page_config(page_title="PICU Handoff", layout="wide", initial_sidebar_sta
 DIET_ORDER_FIELDS = {
     "enteral": (("method", "Feeding method"), ("route", "Recorded route"),
                 ("formula", "Formula"), ("feeding_type", "Feeding type"),
-                ("rate", "Rate (mL/hr)"), ("hours", "Feeding hours per day"),
+                ("rate", "Rate (mL/hr)"), ("hours", "Feeding hours per day (blank uses 24)"),
                 ("daily_volume", "Listed daily volume (mL)"),
-                ("caloric_density", "Caloric density"), ("additives", "Fortifier / additives"),
-                ("comments", "Feeding instructions"), ("status", "Order status"),
+                ("caloric_density", "Caloric density (kcal/oz, kcal/mL or kcal/L)"), ("additives", "Fortifier / additives (source only)"),
+                ("comments", "Feeding instructions (source only)"), ("status", "Order status"),
                 ("include", "Include this tube feeding order")),
     "parenteral": (("name", "PN order"), ("rate", "Rate (mL/hr)"),
                    ("status", "Order status"), ("include", "Include this PN order")),
@@ -1774,7 +1774,7 @@ def main() -> None:
         return
     with st.sidebar:
         st.header("PICU Handoff")
-        st.caption("Version 6.70 | Oral, tube feeds and TPN")
+        st.caption("Version 6.71 | Compact diet and tube feeds")
         # Retire the old instructions workspace without discarding room drafts.
         if st.session_state.get("page") == "Instructions / SmartPhrase":
             st.session_state["page"] = "Handoff"
@@ -2080,7 +2080,7 @@ def handoff_notes(sheet: dict) -> None:
                 st.caption("Edit imported specimens and results in Cultures. Temperature stays first in the printed ID column.")
             if section == "FEN / GI":
                 st.markdown('<div style="white-space:pre-wrap">' + fen_gi_body("", sheet["medications"], None, True, sheet=sheet) + "</div>", unsafe_allow_html=True)
-                st.caption("Printed order: Intake/Output/Net, oral intake, tube feeds, TPN, GI prophylaxis, Bowel Regimen, Diuretics, Antiemetics, Endocrine Medications, then separate notes and remaining FEN/GI medications.")
+                st.caption("Printed order: Intake/Output/Net, Diet, Tube feed, TPN, GI prophylaxis, Bowel Regimen, Diuretics, Antiemetics, Endocrine Medications, then separate notes and remaining FEN/GI medications.")
             elif section in INFUSION_SECTIONS:
                 render_body = {"Neurologic": neuro_body, "Cardiovascular": cardiovascular_body, "Hematology": hematology_body, "Respiratory": respiratory_body}[section]
                 st.markdown('<div style="white-space:pre-wrap">' + render_body("", sheet["medications"], True, sheet=sheet) + '</div>', unsafe_allow_html=True)
@@ -2774,7 +2774,7 @@ def diet_editor(sheet: dict) -> None:
         st.text(diet_text(data))
     with st.expander("Edit diet / review source", expanded=False):
         if has_detailed_nutrition(data):
-            st.caption("Oral intake, tube feeding and PN orders are separate. Tube-feed totals use the ordered rate and feeding hours. mL/kg/day uses the documented dosing weight. Review feeding instructions and any advancement plan.")
+            st.caption("Tube feeds appear once with formula, route and rate. Daily totals use the feeding hours, or 24 when no duration is supplied. kcal/day uses the documented caloric density (30 mL per oz). mL/kg/day uses dosing weight. Instructions and additives stay here for source review.")
         else:
             st.caption("X supplies diet type. Detailed dietary orders can be added in the paired AB section. Review multiple listed diets against Epic.")
         if not data["rows"]:
@@ -2981,8 +2981,11 @@ def feeds_editor(sheet: dict) -> None:
         return
     if any(i["action"] == "feeds_hidden" for i in sheet["import_warnings"].get("t", [])):
         st.warning("The T section was not updated. The retained feeding entries below are hidden from the handoff until reviewed.")
+    elif has_detailed_nutrition(sheet.get("diet")):
+        st.caption("Tube feeds are summarized with dietary orders above.")
     else:
-        st.text(feeds_text(data))
+        st.text(nutrition_text({"rows": [], "enteral": [], "parenteral": []}, data,
+                               dosing_weight=sheet["dosing_weight"], sheet=sheet))
     with st.expander("Edit feeds / review source", expanded=False):
         st.caption("Each entry belongs to one tube. Blank formula or rate prints UNK. A volume in mL is not an hourly rate.")
         for number, row in enumerate(data["rows"], 1):

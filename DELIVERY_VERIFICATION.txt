@@ -1,32 +1,26 @@
-PICU Handoff v6.70 delivery verification
+PICU Handoff v6.71 delivery verification
 
-Source: PICU669.zip, version 6.69.
-Full run: 6013 passed, 14 subtests passed in 109.41 seconds. One obsolete
-technical-report version expectation was updated from 6.48 to 6.70.
-Final focused run: 554 passed in 2.60 seconds, including that corrected check
-and multiline instruction editing. The full suite was not repeated afterward.
+Source: PICU670.zip, version 6.70.
+The final full regression run passed: 6101 tests and 14 subtests in 108.96 seconds. The only warning is the existing third-party anyio pytest deprecation warning.
 
-All 17 supplied dietary examples imported separately without errors, skipped
-sections or warnings. Repeated table/summary copies deduplicated correctly.
-Oral intake, tube feeds and PN remain distinct and can coexist. Rate times
-recorded feeding hours produces daily volume. Only documented dosing weight
-supports mL/kg/day. No 24-hour duration or weight is guessed.
+Tube feeding appears once in one Tube feed section. Diet labels oral intake.
+Formula, route and hourly rate remain visible. Only a non-24-hour schedule
+prints. Daily kcal requires an explicit density, and mL/kg/day requires DCW.
+Missing continuous duration uses 24 hours. Conflicting duration does not,
+including after warning acknowledgment or encrypted save/recall.
 
-Matching diet and medication PN displays once. Different PN/lipid products
-remain separate. Existing hidden/Ignore choices remain effective. Tube routes,
-formula fortification, mixture instructions and advancement plans are retained.
+Instructions, additives, the daily-volume equation and dosing-weight basis
+line do not print. Source fields remain stored and editable. Separate devices,
+existing inclusion choices and PN deduplication remain supported.
 
-Synthetic text, HTML, individual PDF and combined PDF checks pass. A rendered
-synthetic PDF was inspected for clipping and overlap. The prior QTc sample
-also passes with QTc retained. Supplied clinical text is not in the package.
+Text, HTML, individual PDF and Print All PDF checks pass. The two-room
+synthetic PDF was visually inspected and fits the existing landscape layout.
+All 173 Python and three TOML files parse. ZIP CRC and SHA256SUMS are verified.
 
-All 173 Python and three TOML files parse. ZIP CRC and all SHA256SUMS entries
-are verified before delivery. Caches are excluded.
+Schema remains 34. Fifteen core files, including encryption, storage, export,
+QTc, NIRS, ventilation and medication code, are identical to v6.70. Existing
+Secrets and encrypted data repositories require no changes.
 
-Schema remains 34. Old archives open without migration. Structured diet fields
-and AB flags require v6.70 or later. Include nutrition_display.py and replace
-the complete app-code file set in each repository. Keep existing Secrets and
-encrypted data repositories. Restart and confirm Version 6.70, then re-paste
-the SmartPhrase containing the new AB dietary orders.
-
+Replace the complete application code set and restart. Confirm Version 6.71.
+Saved nutrition records use the compact display without reimport.
 No live deployment or external repository write was performed.

@@ -1,39 +1,31 @@
-PICU Handoff v6.70 update from v6.69
+PICU Handoff v6.71 update from v6.70
 
 Complete application package. Replace the application files together.
 
 Changed application files:
   app.py
-  batching.py
   diet.py
-  error_store.py  [diagnostic version updated to 6.70]
-  feeds.py
+  error_store.py
   fen_gi.py
   import_review.py
   importing.py
-  parser.py
-
-New application module:
   nutrition_display.py
 
-New synthetic tests:
-  tests/test_dietary_boundaries.py
-  tests/test_dietary_orders.py
-  tests/test_nutrition_display.py
-  tests/test_nutrition_integration.py
+The nutrition renderer shows one Tube feed heading, Diet for oral intake,
+explicit daily calories and dosing-weight-normalized volume. It omits feeding
+instructions, additives, the daily-volume equation and weight-basis line.
+A blank continuous duration defaults to 24 hours, and 24 is not printed.
+Other explicit durations remain visible. Conflicted duration is not defaulted.
 
-Updated existing tests:
-  tests/test_diet_lactate.py
-  One detailed tube-order case now checks structured feeding fields instead
-  of the former generic Infant Tube Feeding label.
-  tests/test_measurement_notes_observed_pip.py
-  The technical-report version expectation now matches release 6.70.
+Detailed and recorded feeds share a reconciliation rule, keeping dietary
+formula/rate authoritative. Calories require an explicit density. Existing
+structured snapshots and T-only records both use the compact handoff display.
 
-SMARTPHRASE_TEMPLATE.txt adds the AB dietary-orders section.
-Documentation, synthetic previews and SHA256SUMS.txt are updated.
-Previous root release documentation is retained with a V669_ prefix.
+Synthetic nutrition tests and legacy display/version expectations are updated.
+Documentation and synthetic PDF, HTML and text previews are updated.
+The previous root release documentation is retained with a V670_ prefix.
 
-Keep app.py at its deployed location in each app-code repository. Include all
-application files when updating from an earlier release. Keep existing Secrets
-and encrypted data repositories. Restart and confirm Version 6.70. Re-paste
-with the detailed AB dietary section to populate the new nutrition fields.
+Keep app.py at its deployed location. Include all application files when
+updating from an earlier release. Keep existing Secrets and encrypted data
+repositories. Restart and confirm Version 6.71. No reimport is needed merely
+to display saved nutrition records in the compact format.

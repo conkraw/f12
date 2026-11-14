@@ -12,7 +12,6 @@ from medications import ignored, is_bupivacaine, match_name, normalized, visible
 from output_text import medication_output
 from clinical_style import clinical_markup
 from fluid_balance import balance_text, balance_heading
-from feeds import feeds_text
 from diet import diet_text
 from nutrition_display import has_detailed_nutrition, nutrition_sections, parenteral_kind
 from medication_groups import group_for as special_group, GROUP_SECTIONS
@@ -152,9 +151,11 @@ def fen_gi_body(notes: str, rows: list[dict], intake_output: dict | None, rich: 
             diet_summary = ("<b>Diet:</b>" if rich else "Diet:") + " Not updated. Review needed."
         if diet_summary:
             sections.append(diet_summary)
-        feeding = feeds_text(feeds, rich, esc)
+        feeding = "\n-----\n".join(nutrition_sections(
+            {"rows": [], "enteral": [], "parenteral": []}, feeds, rows,
+            dosing_weight=dosing_weight, sheet=sheet, rich=rich, esc=esc))
         if feeds_failed:
-            feeding = ("<b>Feeds:</b>" if rich else "Feeds:") + "\nNot updated. Review needed."
+            feeding = ("<b>Tube feed:</b>" if rich else "Tube feed:") + "\nNot updated. Review needed."
         if feeding:
             sections.append(feeding)
     from categories import medication_blocks

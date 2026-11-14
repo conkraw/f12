@@ -46,23 +46,21 @@ def _attach_current_feeds(diet: dict, feeds: dict | None, *, refine_routes: bool
     """Link only the feeding rows supplied with this dietary snapshot.
 
     A post-pyloric order can be labelled NJ/ND only when the same paste has
-    exactly one corroborating tube and the same explicitly recorded formula.
+    an unambiguous corroborating tube. Match formulas first, then a unique
+    compatible route. The dietary formula and rate remain authoritative.
     Previously retained feeding data must not establish a new route.
     """
     rows = feeds['rows'] if feeds else []
     diet['recorded_feed_ids'] = [row['id'] for row in rows]
     if not refine_routes:
         return
-    def formula_key(value: str) -> str:
-        return re.sub(r'\s+', ' ', value.strip()).casefold()
-    for order in diet['enteral']:
-        formula = formula_key(order['formula'])
-        if order['method'] != 'Post-pyloric' or not formula:
-            continue
-        matches = [row for row in rows if row['include'] and row['method'] in ('NJ', 'ND')
-                   and formula_key(row['formula']) == formula]
-        if len(matches) == 1:
-            order['method'] = matches[0]['method']
+    from nutrition_display import recorded_feed_matches
+    current = [row for row in rows if row['include']]
+    matches = recorded_feed_matches(diet['enteral'], current)
+    for order_index, feed_index in matches.items():
+        order, recorded = diet['enteral'][order_index], current[feed_index]
+        if order['method'] == 'Post-pyloric' and recorded['method'] in ('NJ', 'ND'):
+            order['method'] = recorded['method']
 
 
 def import_sections(sheet: dict, text: str, settings: dict) -> ImportResult:

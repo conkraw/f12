@@ -1,12 +1,13 @@
 """Display explicit dietary orders beside recorded feeds and medication PN.
 
-Dietary rates and schedules describe ordered nutrition. Only a documented
-continuous rate and daily infusion duration are multiplied. A dosing weight
-is required for mL/kg/day. Stored source rows are never changed by rendering.
+Dietary rates and schedules describe ordered nutrition. A missing continuous
+schedule defaults to 24 hours unless the supplied duration was invalid or
+conflicting. Daily kcal needs an explicit calorie density. A dosing weight is
+required for mL/kg/day. Stored source rows are never changed by rendering.
 """
 from __future__ import annotations
 
-from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP, localcontext
 from html import escape
 import re
 
@@ -26,6 +27,8 @@ def has_detailed_nutrition(diet: dict | None) -> bool:
 def _number(value: str) -> Decimal | None:
     if not isinstance(value, str) or not _NUMBER.fullmatch(value.strip()):
         return None
+    if len(value.replace(",", "").strip()) > 20:
+        return None
     try:
         result = Decimal(value.replace(",", "").strip())
     except InvalidOperation:
@@ -35,7 +38,9 @@ def _number(value: str) -> Decimal | None:
 
 def _display_number(value: Decimal, places: int | None = None) -> str:
     if places is not None:
-        value = value.quantize(Decimal(1).scaleb(-places), rounding=ROUND_HALF_UP)
+        with localcontext() as context:
+            context.prec = 80
+            value = value.quantize(Decimal(1).scaleb(-places), rounding=ROUND_HALF_UP)
     text = format(value, "f")
     return text.rstrip("0").rstrip(".") if "." in text else text
 
@@ -51,7 +56,9 @@ def dosing_weight_for_feeds(dosing_weight: str = "", sheet: dict | None = None) 
     match = re.fullmatch(r"\s*(\d+(?:\.\d+)?)\s*(kg|g)\s*", dosing_weight, re.I)
     if match is None:
         return None, ""
-    amount = Decimal(match[1])
+    amount = _number(match[1])
+    if amount is None:
+        return None, ""
     kg = amount / (1000 if match[2].casefold() == "g" else 1)
     if kg <= 0:
         return None, ""
@@ -140,27 +147,44 @@ def _pn_duplicate_indexes(orders: list[dict], medications) -> set[int]:
 def _compatible_route(ordered: str, recorded: str) -> bool:
     if ordered == recorded and ordered != "UNK":
         return True
-    return ordered == "Post-pyloric" and recorded in _POST_PYLORIC
+    return (ordered == "Post-pyloric" and recorded in _POST_PYLORIC
+            or recorded == "Post-pyloric" and ordered in _POST_PYLORIC)
 
 
-def _feed_matches(ordered: dict, recorded: dict) -> bool:
-    if not _compatible_route(ordered.get("method", "UNK"), recorded.get("method", "UNK")):
-        return False
-    left, right = _formula_key(ordered.get("formula", "")), _formula_key(recorded.get("formula", ""))
-    # Missing formula may be corroborated only through an otherwise unique
-    # compatible tube. Different supplied formulas are not declared equivalent.
-    return not left or not right or left == right
+def recorded_feed_matches(ordered: list[dict], recorded: list[dict]) -> dict[int, int]:
+    """Pair unique exact formulas first, then unique compatible tube routes.
 
-
-def _recorded_matches(ordered: list[dict], recorded: list[dict]) -> dict[int, int]:
-    candidates = {index: [j for j, row in enumerate(recorded) if _feed_matches(order, row)]
-                  for index, order in enumerate(ordered)}
-    counts = {}
-    for matches in candidates.values():
-        for index in matches:
-            counts[index] = counts.get(index, 0) + 1
-    return {index: matches[0] for index, matches in candidates.items()
-            if len(matches) == 1 and counts[matches[0]] == 1}
+    A detailed order is authoritative for its paired tube even if the recorded
+    formula differs. Pairing does not equate those formulas or copy any value.
+    Multiple possible tubes remain separate rather than guessed.
+    """
+    matched = {}
+    consumed = set()
+    for exact_formula in (True, False):
+        candidates = {}
+        for index, order in enumerate(ordered):
+            if index in matched:
+                continue
+            choices = []
+            for j, row in enumerate(recorded):
+                if j in consumed or not _compatible_route(order.get("method", "UNK"), row.get("method", "UNK")):
+                    continue
+                if exact_formula:
+                    left = _formula_key(order.get("formula", ""))
+                    right = _formula_key(row.get("formula", ""))
+                    if not left or not right or left != right:
+                        continue
+                choices.append(j)
+            candidates[index] = choices
+        counts = {}
+        for choices in candidates.values():
+            for index in choices:
+                counts[index] = counts.get(index, 0) + 1
+        for index, choices in candidates.items():
+            if len(choices) == 1 and counts[choices[0]] == 1:
+                matched[index] = choices[0]
+                consumed.add(choices[0])
+    return matched
 
 
 def _rate_number(rate: str) -> Decimal | None:
@@ -172,58 +196,114 @@ def _continuous(row: dict) -> bool:
     return re.fullmatch(r"continuous(?:\s+(?:feeds?|feeding))?", row.get("feeding_type", "").strip(), re.I) is not None
 
 
-def _feeding_lines(row: dict, recorded: dict | None, kg: Decimal | None) -> tuple[list[str], bool]:
+def _conflicted_fields(sheet: dict | None) -> set[str]:
+    if sheet is None:
+        return set()
+    return {item.get("field", "") for section in ("x", "ab")
+            for item in sheet.get("import_warnings", {}).get(section, [])
+            if item.get("code") == "nutrition_conflict"}
+
+
+def _source_hours_conflict(row: dict) -> bool:
+    """Retain duration safety after a warning has been acknowledged.
+
+    Stored sources join an order header and its scoped fields with `` | ``.
+    Reparse the header and duration answers alone so intervening comments do
+    not hide a retained answer. A valid manual duration bypasses this check.
+    """
+    source = row.get("source", "")
+    if not source:
+        return False
+    from diet import parse_diet
+    parts = source.split(" | ")
+    duration_answers = [part for part in parts[1:]
+                        if re.match(r"^(?:Question\s*:\s*)?Infusion\s+time\s*\(hours\)", part, re.I)]
+    parsed = parse_diet("\n".join([parts[0], *duration_answers]), detailed=True)
+    return any(item.get("code") == "nutrition_conflict" and item.get("field") == "hours"
+               for item in parsed.diagnostics)
+
+
+_DENSITY = re.compile(r"(?<![\w.+\-/:])(?P<number>(?:\d+(?:\.\d+)?|\.\d+))\s*kcal\s*(?:/|per\s+)\s*(?P<unit>mL|L|oz|ounces?)\b", re.I)
+
+
+def _density_per_ml(value: str) -> Decimal | None:
+    match = _DENSITY.fullmatch(value.strip())
+    if match is None:
+        return None
+    amount = _number(match["number"])
+    if amount is None or amount <= 0:
+        return None
+    unit = match["unit"].casefold()
+    return amount / (Decimal("30") if unit in ("oz", "ounce", "ounces") else Decimal("1000") if unit == "l" else Decimal("1"))
+
+
+def _recorded_density(formula: str) -> str:
+    # Only an unambiguous ending density can describe the whole recorded
+    # formula. A brand number or recipe component does not establish it.
+    if re.search(r"[+]|\b(?:water|dilut\w*|mix(?:ed|ture)?|plus|blend(?:ed|ing)?|with)\b", formula, re.I):
+        return ""
+    if len(re.findall(r"\bkcal\s*(?:/|per\s+)\s*(?:mL|L|oz|ounces?)\b", formula, re.I)) != 1:
+        return ""
+    matches = list(_DENSITY.finditer(formula))
+    if len(matches) != 1:
+        return ""
+    if re.fullmatch(r"\s*\)?\s*", formula[matches[0].end():]) is None:
+        return ""
+    before = formula[:matches[0].start()].rstrip()
+    if re.search(r"(?:[-+–—−/:<>≤≥~≈]|\b(?:to|and))$", before, re.I):
+        return ""
+    return matches[0].group()
+
+
+def _compact_feed_line(row: dict, kg: Decimal | None, conflicts: set[str]) -> str:
     method = row.get("method", "UNK")
     status = row.get("status", "active")
     prefix = _STATUS_LABELS.get(status, "")
-    label = "Oral feed" if method == "PO" else "Tube feeds"
-    label += " (ordered, " + method + "): "
     formula = row.get("formula", "") or "UNK formula"
     density = row.get("caloric_density", "").strip()
     if density and density.casefold() not in formula.casefold():
         formula += " (" + density + ")"
     rate = row.get("rate", "").strip()
-    hours = _number(row.get("hours", ""))
+    hours_text = row.get("hours", "").strip()
+    hours = _number(hours_text)
+    continuous = _continuous(row)
+    invalid_hours = bool(hours_text) and (hours is None or not 0 < hours <= 24)
+    blocked_default = not hours_text and ("hours" in conflicts or _source_hours_conflict(row))
+    if not hours_text and continuous and not blocked_default:
+        hours = Decimal("24")
     rate_number = _rate_number(rate)
     daily = _number(row.get("daily_volume", ""))
-    line = prefix + label + formula + " @ " + (rate or "UNK rate")
-    if hours is not None and 0 < hours <= 24:
-        line += " x " + _display_number(hours) + " hr/day"
-    elif row.get("hours", "").strip():
-        line += " | Infusion time: " + row["hours"] + " hr/day"
-    lines = []
-    calculated = False
-    can_calculate = (status == "active" and _continuous(row) and rate_number is not None
-                     and hours is not None and 0 < hours <= 24)
-    if can_calculate:
-        total = rate_number * hours
-        line += " = " + _display_number(total) + " mL/day"
-        if daily is not None and daily != total:
-            lines.append("Listed total: " + _display_number(daily) + " mL/day. Review rate/hours.")
-        elif kg is not None:
-            line += " (" + _display_number(total / kg, 1) + " mL/kg/day)"
-            calculated = True
-    elif daily is not None:
-        lines.append("Listed total: " + _display_number(daily) + " mL/day")
-    feeding_type = row.get("feeding_type", "").strip()
-    if feeding_type and not _continuous(row):
-        lines.insert(0, "Schedule: " + feeding_type)
-    if recorded is not None and recorded.get("include", False):
-        if not row.get("formula", "").strip() and recorded.get("formula", "").strip():
-            lines.append("Recorded formula: " + recorded["formula"])
-        other_rate = recorded.get("rate", "")
-        other_number = _rate_number(other_rate)
-        if other_number is not None and other_number != rate_number:
-            # An older/other recorded rate is never used with the new order's
-            # duration to manufacture a hybrid calculated volume.
-            lines.append("Recorded rate: " + other_rate)
-    additive = row.get("additives", "").strip()
-    if additive and not re.fullmatch(r"(?:no\s+)?additives|other\s*[-:]?\s*note\s+in\s+comments?", additive, re.I):
-        lines.append("Additives: " + additive)
-    comments = row.get("comments", "").strip()
-    if comments:
-        lines.append("Instructions: " + comments)
-    return [line] + lines, calculated
+    line = prefix + method + ": " + formula + " @ " + (rate or "UNK rate")
+    if hours is not None and 0 < hours < 24:
+        line += " (" + _display_number(hours) + " hr/day)"
+    elif not continuous and row.get("feeding_type", "").strip():
+        line += " (" + row["feeding_type"].strip() + ")"
+    schedule_issue = invalid_hours or blocked_default or (not rate and "rate" in conflicts)
+    schedule_issue |= not row.get("daily_volume", "").strip() and "daily_volume" in conflicts
+    with localcontext() as context:
+        # Numeric inputs are capped at 20 characters. This precision also
+        # covers their products and a very small, explicitly supplied DCW.
+        context.prec = 80
+        total = None
+        if (status == "active" and continuous and rate_number is not None
+                and hours is not None and 0 < hours <= 24):
+            total = rate_number * hours
+            schedule_issue |= daily is not None and daily != total
+        if total is not None and not schedule_issue:
+            density_number = _density_per_ml(density)
+            if density_number is not None:
+                line += " | " + _display_number(total * density_number, 1) + " kcal/day"
+            if kg is not None:
+                line += " | " + _display_number(total / kg, 1) + " mL/kg/day"
+    if schedule_issue and status == "active":
+        line += " | Review rate/hours"
+    return line
+
+
+def _recorded_feed_line(row: dict, kg: Decimal | None, conflicts: set[str]) -> str:
+    return _compact_feed_line(dict(row, feeding_type="Continuous Feeds", hours="",
+                                  daily_volume="", caloric_density=_recorded_density(row["formula"]),
+                                  status="active"), kg, conflicts)
 
 
 def nutrition_sections(diet: dict | None, feeds: dict | None = None, medications=(), *,
@@ -245,8 +325,6 @@ def nutrition_sections(diet: dict | None, feeds: dict | None = None, medications
         return "<b>" + encode(text) + "</b>" if rich else text
     parts = []
     oral = [row["text"] for row in diet["rows"] if row["include"]]
-    if oral:
-        parts.append(label("Oral:") + " " + " | ".join(encode(value) for value in oral))
     ordered = diet["enteral"]
     recorded = feeds["rows"] if feeds else []
     if "recorded_feed_ids" in diet:
@@ -254,32 +332,30 @@ def nutrition_sections(diet: dict | None, feeds: dict | None = None, medications
         # A new empty/NPO order must not resurrect an older T snapshot.
         current_ids = set(diet["recorded_feed_ids"])
         recorded = [row for row in recorded if row["id"] in current_ids]
-    matches = _recorded_matches(ordered, recorded)
+    recorded = [row for row in recorded if row["include"]]
+    matches = recorded_feed_matches(ordered, recorded)
     consumed = set(matches.values())
-    kg, basis = dosing_weight_for_feeds(dosing_weight, sheet)
-    lines, calculated = [], False
-    for index, row in enumerate(ordered):
+    kg, _basis = dosing_weight_for_feeds(dosing_weight, sheet)
+    conflicts = _conflicted_fields(sheet)
+    lines, oral_feeds = [], []
+    for row in ordered:
         if not row["include"]:
             continue
-        linked = recorded[matches[index]] if index in matches else None
-        result, uses_weight = _feeding_lines(row, linked, kg)
-        lines.extend(encode(value) for value in result)
-        calculated |= uses_weight
-    if calculated:
-        lines.append(encode("Using dosing weight: " + basis))
-    if lines:
-        parts.append("\n".join(lines))
+        target = oral_feeds if row["method"] == "PO" else lines
+        target.append(_compact_feed_line(row, kg, conflicts))
     for index, row in enumerate(recorded):
         if index in consumed or not row["include"]:
             continue
         if ordered and _rate_number(row["rate"]) is None:
-            # A device may retain a formula label while used for venting or
-            # medication. A current detailed feed order is stronger evidence
-            # than an unmatched label with no documented feeding rate.
+            # A formula-only device may be used for venting or medication.
             continue
-        method = row["method"]
-        heading = "Oral feed (recorded):" if method == "PO" else "Tube feeds (recorded, " + method + "):"
-        parts.append(label(heading) + " " + encode(row["formula"] or "UNK formula") + " @ " + encode(row["rate"] or "UNK rate"))
+        target = oral_feeds if row["method"] == "PO" else lines
+        target.append(_recorded_feed_line(row, kg, conflicts))
+    if oral or oral_feeds:
+        content = ([" | ".join(oral)] if oral else []) + oral_feeds
+        parts.append(label("Diet:") + " " + "\n".join(encode(value) for value in content))
+    if lines:
+        parts.append(label("Tube feed:") + "\n" + "\n".join(encode(value) for value in lines))
     duplicated_pn = _pn_duplicate_indexes(diet["parenteral"], medications)
     for index, row in enumerate(diet["parenteral"]):
         if not row["include"]:

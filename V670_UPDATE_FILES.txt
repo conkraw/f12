@@ -1,0 +1,39 @@
+PICU Handoff v6.70 update from v6.69
+
+Complete application package. Replace the application files together.
+
+Changed application files:
+  app.py
+  batching.py
+  diet.py
+  error_store.py  [diagnostic version updated to 6.70]
+  feeds.py
+  fen_gi.py
+  import_review.py
+  importing.py
+  parser.py
+
+New application module:
+  nutrition_display.py
+
+New synthetic tests:
+  tests/test_dietary_boundaries.py
+  tests/test_dietary_orders.py
+  tests/test_nutrition_display.py
+  tests/test_nutrition_integration.py
+
+Updated existing tests:
+  tests/test_diet_lactate.py
+  One detailed tube-order case now checks structured feeding fields instead
+  of the former generic Infant Tube Feeding label.
+  tests/test_measurement_notes_observed_pip.py
+  The technical-report version expectation now matches release 6.70.
+
+SMARTPHRASE_TEMPLATE.txt adds the AB dietary-orders section.
+Documentation, synthetic previews and SHA256SUMS.txt are updated.
+Previous root release documentation is retained with a V669_ prefix.
+
+Keep app.py at its deployed location in each app-code repository. Include all
+application files when updating from an earlier release. Keep existing Secrets
+and encrypted data repositories. Restart and confirm Version 6.70. Re-paste
+with the detailed AB dietary section to populate the new nutrition fields.
