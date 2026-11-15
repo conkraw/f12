@@ -1,24 +1,38 @@
-PICU Handoff 6.76
+PICU Handoff 6.77
 
-Required changed application modules relative to 6.75:
+Required changed application module relative to 6.76:
+app.py
+
+Required application modules when updating from 6.75:
 app.py
 daily_start.py
 
-Replace both files together, or replace the complete application file set.
-Use the full application file set when updating from an earlier version.
+Replace both files together when updating from 6.75.
+For earlier versions, replace the complete application file set.
+The complete application file set can also be used for any update.
 No new module or dependency is required.
 
 Preserve Streamlit Secrets, the encryption key, and separate encrypted
 patient-data and mapping repositories.
 
-Restart and verify: Version 6.76 | Clear start options
+Restart and verify: Version 6.77 | Start here + confirmation
 
-After login:
-Create New Handoff for Rounds/Signout clears all current handoffs and opens
-an empty list. It works at any time, including another login on the same day.
-Print, Update, or Add to Current List keeps all current patients.
+START HERE: Create an Updated Handoff opens a warning for a new rounds or
+evening handoff. This first click does not delete anything.
 
-Reusable settings, custom room definitions, medication mappings, and the
-existing clinical parsing and display behavior are preserved.
+The warning explains that ALL previous handoffs will be deleted from the
+current list. Move Forward and Delete Previous Handoffs confirms removal of
+all saved handoffs and this session's drafts, leaving a blank list.
 
+Add a Patient or Print Current List appears on both screens. It keeps all
+current handoffs and is the choice for users who only want to add or print.
+
+If the saved list changes while the warning is open, confirmation reloads the
+list and shows the warning again without deleting. Another explicit
+confirmation click is required.
+
+There is no time window or once-per-day restriction. Reusable settings,
+custom room definitions, medication mappings, and clinical parsing are preserved.
+
+See TEST_REPORT.md for verification.
 No live app or repository was modified when this package was prepared.

@@ -1,43 +1,47 @@
-# PICU Handoff 6.76 verification
+# PICU Handoff 6.77 verification
 
 ## Results
 
-332 automated tests passed using synthetic records.
+162 automated tests passed using synthetic records.
 
-106 startup and reset tests passed in 0.86 seconds:
+50 startup and confirmation tests passed in 0.89 seconds:
 
-    python -m pytest -q tests/test_daily_start.py tests/test_patient_list_startup.py
+    python -m pytest -q tests/test_patient_list_startup.py
 
-226 existing compatibility tests passed in 21.20 seconds:
+112 reset, deletion, and download-guard tests passed in 0.89 seconds:
 
-    python -m pytest -q tests/test_clear_all_no_admin.py tests/test_print_fit_reset.py tests/test_census_download_guard.py tests/test_callbacks.py tests/test_workflow_print.py tests/test_save_status.py
+    python -m pytest -q tests/test_daily_start.py tests/test_clear_all_no_admin.py tests/test_census_download_guard.py
 
-An unrelated AnyIO/Pytest deprecation warning was emitted. There were no test failures.
+The existing AnyIO/Pytest deprecation warning was emitted. There were no test failures.
 
-## Behavior verified
+## Confirmation behavior
 
-- Every saved handoff is cleared regardless of save date or time, including missing or invalid save timestamps.
-- A new list can start at every hour and can be started again on the same day after another login.
-- Settings, medication mappings, custom room definitions, and the source archive remain intact when building a reset candidate.
-- Ordinary continuation preserves saved handoffs and open drafts without a storage read or write.
-- Starting fresh clears drafts, editor values, pasted text, old print selections, and prepared download references after a successful save.
-- Load failures, write failures, and concurrent updates do not trigger an automatic deletion retry.
-- An unconfirmed reset is reconciled by generation before retrying, preserving patients added after a completed reset.
-- Expired and logged-out sessions cannot perform either action.
-- Existing reset reconciliation, stale-download checks, save behavior, and printing remain covered.
+- START HERE loads the list and opens a warning without writing or deleting handoffs.
+- Rendering or rerendering the warning leaves saved handoffs and open drafts intact.
+- Move Forward requires a prepared confirmation snapshot before it can reset the list.
+- The warning states that ALL previous handoffs will be deleted from the current list.
+- The add-or-print option preserves current handoffs from the initial screen or the warning screen.
+- If a handoff is added or changed while the warning is open, the source or SHA check refreshes the warning and makes no deletion. A later explicit confirmation is required.
+- A failed reload invalidates an older confirmation rather than leaving it usable.
+- A successful reset clears all saved handoffs and local drafts while preserving reusable settings and custom room definitions.
+- Load failures, save conflicts, lost acknowledgements, and expired sessions retain their existing protections.
+- Retrying an unconfirmed reset cannot clear patients added after an earlier completed reset.
+- Starts remain available at any hour and can be repeated after a new login on the same day.
 
 ## Real Streamlit interaction check
 
-Both actions were also exercised using Streamlit 1.67.0 AppTest, with two synthetic handoffs.
-The keep-current-list click preserved both handoffs exactly.
-The create-new click opened a blank list and selected the Handoff workspace.
-The main screen contained exactly the two requested action buttons, with Log out in the sidebar.
-Neither action raised a Streamlit exception.
+The initial and warning screens were exercised using Streamlit 1.67.0 AppTest with two synthetic handoffs and open drafts.
 
-## Package checks and scope
+START HERE and a warning rerender preserved every handoff and draft.
+The add-or-print button preserved the list from both screens.
+Move Forward cleared the prior list and opened the Handoff workspace.
+Each screen had two main action buttons, with Log out in the sidebar.
+No Streamlit exception occurred.
 
-app.py and daily_start.py pass Python syntax parsing.
-Comparison with PICU675.zip confirms that these are the only changed application modules.
-The two startup test files and the current installation and verification documents were updated.
-Clinical parser, nutrition, I/O, medication mapping, encryption, storage, and dependency files are unchanged.
-The complete test suite was not rerun, and no live deployment or patient-data archive was accessed.
+## Scope
+
+Python syntax parsing passed for app.py.
+Comparison with PICU676.zip confirms that app.py is the only changed runtime module.
+The startup test file and the current installation and verification documents were also updated.
+The unrestricted reset helper, clinical parsers, nutrition, I/O, mappings, encryption, storage, and dependencies are unchanged from 6.76.
+The complete test suite was not rerun. No live deployment or patient-data archive was accessed.

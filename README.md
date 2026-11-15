@@ -1,48 +1,56 @@
-# PICU Handoff 6.76
+# PICU Handoff 6.77
 
-Built from version 6.75. This package has not been deployed to your live app.
+This package has not been deployed to your live app.
 
-## Two choices after login
+## Start an updated handoff
 
-### Create New Handoff for Rounds/Signout
+Choose START HERE: Create an Updated Handoff when preparing a new patient list
+for rounds or evening handoff. This first button opens a warning. It does not
+delete anything.
 
-Clears all saved handoffs and this session's open drafts, then opens a blank
-patient list. Add the patients you want for rounds or signout.
+The warning states that ALL previous handoffs will be deleted from the current
+list. All saved handoffs and this session's open drafts will be removed, leaving
+a blank patient list.
 
-The screen states that all current handoffs will be cleared before you click.
-The button applies immediately, without a separate review or confirmation screen.
+Choose Move Forward and Delete Previous Handoffs to confirm and start the blank
+list. You can then add patients for rounds or evening handoff.
 
-### Print, Update, or Add to Current List
+If the saved list changes while the warning is open, confirmation reloads the
+current list and shows the warning again without deleting anything. Review the
+warning and click the confirmation button again to proceed.
 
-Keeps all current patients. Print the list, update existing handoffs, or add new
-patients without starting over.
+## Add or print without clearing
 
-Both choices are available at any time. There is no morning window or
-once-per-day restriction. Each new login presents these choices, so you can
-start another blank list later the same day.
+Choose Add a Patient or Print Current List if you only want to add a patient or
+print the existing list. This option appears on both the opening screen and the
+warning screen. It keeps all current handoffs.
+
+Both workflows are available at any time. There is no morning window or
+once-per-day restriction. You can start another updated handoff when you log in
+later the same day.
 
 ## Existing app behavior
 
 Reusable settings, medication mappings, room choices, and custom room definitions
 are preserved. The clinical parsers, nutrition display, 24-hour I/O, 7am/7pm
-current shifts, and compact BM label remain as they were in version 6.75.
+current shifts, and compact BM label retain their existing behavior.
 
-The new-list action clears local drafts only after the shared save succeeds.
-If a save response is lost, retrying checks the saved list before proceeding so
-patients added after a completed reset are kept.
+Local drafts are cleared only after the shared save is confirmed. A retry checks
+the saved list so it does not repeat a completed reset over newly added patients.
 
 ## Install
 
-If you are running version 6.75, extract the ZIP and replace both app.py and
-daily_start.py in your existing app-code repository. Replace both files together.
-You can also replace the complete application file set. Use the full set when
-updating from an earlier version.
+Extract the ZIP and replace the matching files in your existing app-code
+repository. From version 6.76, replace app.py. If you are updating from version
+6.75, replace both app.py and daily_start.py together.
 
+For an earlier version, replace the complete application file set. You can also
+use the complete file set for any of these updates.
 Keep your existing Streamlit Secrets, encryption key, and separate encrypted
 patient-data and mapping repositories. No new dependency is required.
 
 Restart the app and confirm the sidebar reads:
 
-Version 6.76 | Clear start options
+Version 6.77 | Start here + confirmation
 
 See UPDATE_FILES.txt for the file list and TEST_REPORT.md for verification.

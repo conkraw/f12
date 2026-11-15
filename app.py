@@ -1,4 +1,4 @@
-"""PICU SmartPhrase v6.76: clear startup choices with a blank list at any time."""
+"""PICU SmartPhrase v6.77: clear start guidance and confirmation before clearing."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,
@@ -1635,15 +1635,35 @@ def continue_patient_list(store: GitHubVault | None = None) -> None:
     ss["patient_list_ready"] = True
     ss.pop("daily_start_preview", None)
     ss.pop("patient_list_start_attempt", None)
+    ss.pop("patient_list_start_confirmation", None)
     ss.setdefault("page", "Handoff")
 
 
-def create_rounds_handoff(store: GitHubVault | None = None) -> None:
-    """Start a blank list on an explicit click, with no time or daily limit."""
+def prepare_rounds_handoff(store: GitHubVault | None = None) -> None:
+    """Open the warning for the current list without deleting any handoff."""
     if not require_session():
         return
     ss = st.session_state
     if ss.get("patient_list_ready"):
+        return
+    ss.pop("patient_list_start_confirmation", None)
+    try:
+        if store is not None and not reload_archive(store):
+            return
+        ss["patient_list_start_confirmation"] = {
+            "source": deepcopy(ss["vault"]), "sha": ss.get("vault_sha"),
+        }
+    except Exception:
+        note("The current list could not be loaded. No new handoff was started. Please try again.", "error")
+
+
+def create_rounds_handoff(store: GitHubVault | None = None) -> None:
+    """Clear the reviewed list only after the user chooses Move Forward."""
+    if not require_session():
+        return
+    ss = st.session_state
+    confirmation = ss.get("patient_list_start_confirmation")
+    if ss.get("patient_list_ready") or not confirmation:
         return
     attempt = ss.get("patient_list_start_attempt")
     try:
@@ -1660,6 +1680,16 @@ def create_rounds_handoff(store: GitHubVault | None = None) -> None:
                  if completed else
                  "The list was already restarted. The current patients were kept.")
             return
+        if (ss["vault"] != confirmation["source"]
+                or ss.get("vault_sha") != confirmation["sha"]):
+            # A newly added or edited handoff must be covered by a fresh warning.
+            # A normal patient save changes the SHA without changing generation.
+            ss["patient_list_start_confirmation"] = {
+                "source": deepcopy(ss["vault"]), "sha": ss.get("vault_sha"),
+            }
+            note("The current list changed while this warning was open. "
+                 "Review the warning again before moving forward. No new deletion was made.", "warning")
+            return
         candidate = start_daily_list(ss["vault"], patient_list_now())
         ss["patient_list_start_attempt"] = {
             "source_generation": ss["vault"]["reset_generation"],
@@ -1674,11 +1704,11 @@ def create_rounds_handoff(store: GitHubVault | None = None) -> None:
     ss.pop("patient_list_start_attempt", None)
     continue_patient_list()
     ss["page"] = "Handoff"
-    note("Blank handoff list created. Add patients for rounds or signout.")
+    note("Blank handoff list created. Enter updated patients for rounds or evening handoff.")
 
 
 def patient_list_startup(store: GitHubVault | None) -> bool:
-    """Two clear choices after sign-in. Rendering never changes stored data."""
+    """Show the two choices, then a warning before a new list can be created."""
     ss = st.session_state
     if ss.get("patient_list_ready"):
         return True
@@ -1686,20 +1716,37 @@ def patient_list_startup(store: GitHubVault | None) -> bool:
     if "notice" in ss:
         kind, message = ss.pop("notice")
         getattr(st, kind)(message)
-    st.subheader("What would you like to do?")
     count = len(ss["vault"]["rooms"])
     st.caption("Current list: " + str(count) + (" saved handoff" if count == 1 else " saved handoffs"))
-    fresh, existing = st.columns(2, gap="large")
-    with fresh:
-        st.subheader("Start with a blank list")
-        st.markdown("Clears all current handoffs and starts an empty patient list for rounds or signout.")
-        st.button("Create New Handoff for Rounds/Signout", key="patient_list_create",
-                  on_click=create_rounds_handoff, args=(store,), type="primary", use_container_width=True)
-    with existing:
-        st.subheader("Keep the current list")
-        st.markdown("Keeps all current patients. Print the list, update handoffs, or add new patients.")
-        st.button("Print, Update, or Add to Current List", key="patient_list_continue",
-                  on_click=continue_patient_list, args=(store,), use_container_width=True)
+    if ss.get("patient_list_start_confirmation"):
+        st.subheader("Start an updated handoff?")
+        st.warning("ALL previous handoffs will be deleted from the current list.")
+        st.markdown("Moving forward clears every saved handoff and this session's open drafts. "
+                    "You will start with a blank list and enter all patients again for rounds or evening handoff.")
+        st.info("Only need to add a patient or print? Choose Add a Patient or Print Current List below. "
+                "Your current handoffs will be kept.")
+        proceed, keep = st.columns(2, gap="large")
+        with proceed:
+            st.button("Move Forward and Delete Previous Handoffs", key="patient_list_confirm",
+                      on_click=create_rounds_handoff, args=(store,), type="primary", use_container_width=True)
+        with keep:
+            st.button("Add a Patient or Print Current List", key="patient_list_continue",
+                      on_click=continue_patient_list, args=(store,), use_container_width=True)
+    else:
+        st.subheader("What would you like to do?")
+        fresh, existing = st.columns(2, gap="large")
+        with fresh:
+            st.subheader("For rounds or evening handoff")
+            st.markdown("Start here to create a fresh, updated handoff. "
+                        "You will start with a blank list and enter all patients again.")
+            st.button("START HERE: Create an Updated Handoff", key="patient_list_create",
+                      on_click=prepare_rounds_handoff, args=(store,), type="primary", use_container_width=True)
+        with existing:
+            st.subheader("Keep the current list")
+            st.markdown("Use this option if you only need to add a patient or print. "
+                        "All current handoffs stay available.")
+            st.button("Add a Patient or Print Current List", key="patient_list_continue",
+                      on_click=continue_patient_list, args=(store,), use_container_width=True)
     with st.sidebar:
         st.button("Log out", key="patient_list_logout", on_click=clear_session)
     return False
@@ -1735,7 +1782,7 @@ def main() -> None:
         return
     with st.sidebar:
         st.header("PICU Handoff")
-        st.caption("Version 6.76 | Clear start options")
+        st.caption("Version 6.77 | Start here + confirmation")
         # Retire the old instructions workspace without discarding room drafts.
         if st.session_state.get("page") == "Instructions / SmartPhrase":
             st.session_state["page"] = "Handoff"
