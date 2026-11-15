@@ -43,7 +43,7 @@ CODES = {
     'document_rejected': 'The paste could not be assigned safely to one handoff. Nothing was changed.',
 }
 FIELDS = {'', 'WBC', 'HGB', 'HGB_ISTAT', 'HCT', 'HCT_ISTAT', 'MCV', 'PLT', 'ANC', 'ALC', 'method', 'formula', 'rate', 'hours', 'daily_volume', 'caloric_density', 'additives', 'route', 'feeding_type', 'device_date', 'device_size', 'device_secured', 'device_status'}
-ACTIONS = {'not_updated', 'orders_hidden', 'cell_omitted', 'row_omitted', 'nothing_changed', 'field_unknown', 'feeds_hidden', 'devices_hidden', 'neuro_devices_hidden', 'pacemaker_hidden', 'diet_hidden', 'ecg_hidden', 'current_shift_hidden', 'bowel_movement_hidden'}
+ACTIONS = {'not_imported', 'not_updated', 'orders_hidden', 'cell_omitted', 'row_omitted', 'nothing_changed', 'field_unknown', 'feeds_hidden', 'devices_hidden', 'neuro_devices_hidden', 'pacemaker_hidden', 'diet_hidden', 'ecg_hidden', 'current_shift_hidden', 'bowel_movement_hidden'}
 
 
 def diagnostic(section: str, code: str, *, line: int = 0, column: int = 0,
@@ -81,13 +81,19 @@ def diagnostic_text(item: dict) -> str:
     position = (' | line ' + str(item['line']) if item['line'] else '')
     position += (' | column ' + str(item['column']) if item['column'] else '')
     field = (' | ' + item['field']) if item['field'] else ''
+    if item['action'] == 'not_imported':
+        return (SECTIONS[item['section']] + field + position +
+                ': This section could not be imported from the new SmartPhrase. '
+                'No previous patient information was carried over.')
     return SECTIONS[item['section']] + field + position + ': ' + CODES[item['code']] + (' Previous automatic orders are hidden from print.' if item['action'] == 'orders_hidden' and item['code'] != 'orders_skipped' else '') + (' Previous automatic feeds are hidden from print.' if item['action'] == 'feeds_hidden' else '') + (' Previous automatic device details are hidden from print.' if item['action'] in ('devices_hidden', 'neuro_devices_hidden') else '') + (' Previous automatic pacemaker settings are hidden from print.' if item['action'] == 'pacemaker_hidden' else '') + (' Previous automatic diet details are hidden from print.' if item['action'] == 'diet_hidden' else '') + (' Previous QTc and its automatic problem are hidden from print.' if item['action'] == 'ecg_hidden' else '') + (' Prior BM status was cleared. No Yes/No is printed until a valid AC block is supplied.' if item['action'] == 'bowel_movement_hidden' else '')
 
 
 def review_summary(sheet: dict) -> str:
     parts = []
     for section, items in sheet.get('import_warnings', {}).items():
-        if section in ('x', 'ab'):
+        if any(item['action'] == 'not_imported' for item in items):
+            note = 'not imported; no prior data retained'
+        elif section in ('x', 'ab'):
             note = 'not updated; prior diet hidden' if any(i['action'] == 'diet_hidden' for i in items) else 'review diet orders'
         elif section == 'ac':
             note = 'not updated; prior BM status cleared'

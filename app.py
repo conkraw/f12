@@ -1,4 +1,4 @@
-"""PICU SmartPhrase v6.77: clear start guidance and confirmation before clearing."""
+"""PICU SmartPhrase v6.78: every new SmartPhrase replaces its room handoff."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,
@@ -27,7 +27,7 @@ from medications import (DESTINATIONS, format_medication, suggested_key, upsert_
                          remap, rule_for_inline_mapping, validate_medication, visible, hidden_for, set_visibility_rule, ignored, explicit_ignore_mapping)
 from ventilation import LABELS, format_ventilation, validate_ventilation
 from noninvasive import DEVICE_FIELDS, format_noninvasive, validate_noninvasive
-from importing import import_sections, SUPPORTED_SECTIONS
+from importing import import_replacement, SUPPORTED_SECTIONS
 from batching import available_handoffs
 from handoff_reset import cleared_vault, census_was_reset
 from daily_start import start_daily_list
@@ -1222,7 +1222,7 @@ def clear_paste() -> None:
 
 
 def _finish_handoff_import(room: str, result, store: GitHubVault | None) -> None:
-    """Apply the normal section update and its import diagnostics."""
+    """Display a confirmed replacement or record an unsuccessful import."""
     ss = st.session_state
     ss.pop("airway_update_pending", None)
     ss.pop("last_error_reference", None)
@@ -1240,22 +1240,69 @@ def _finish_handoff_import(room: str, result, store: GitHubVault | None) -> None
 
 
 def create_handoff(store: GitHubVault | None = None) -> None:
+    """Validate a fresh record, save it, then discard the prior room draft.
+
+    Never snapshot old editor values or pass an old handoff into the parser.
+    Build first and replace in one confirmed write, not delete-then-parse.
+    A failed parse/write leaves the old local handoff and pasted text visible
+    with an explicit failure, never a partially merged record.
+    """
     if not require_session():
         return
     ss = st.session_state
     room = ss.get("current_room")
-    if not room:
+    if not room or room not in ss.get("drafts", {}):
         note("Select a room first.", "error")
         return
-    # Capture just-blurred editor values before applying supplied sections.
-    # Manual fields absent from the SmartPhrase keep their normal sheet values.
-    try:
-        before = editor_snapshot(room)
-        result = import_sections(before, ss.get("paste", ""), ss["vault"]["settings"])
-    except (ValueError, ValidationError) as exc:
-        note("The handoff was not updated. " + str(exc), "error")
+    if ss.get("base_sheets", {}).get(room) != ss["vault"]["rooms"].get(room):
+        note("Handoff NOT replaced. The saved room changed. Reload the saved handoff before importing again. Your pasted text is kept.", "error")
         return
+    try:
+        result = import_replacement(room, ss.get("paste", ""), ss["vault"]["settings"])
+    except (ValueError, ValidationError):
+        note("Handoff NOT replaced. Check the SmartPhrase and try again. The previous handoff and pasted text are unchanged.", "error")
+        return
+    except Exception:
+        # Never expose pasted clinical text or parser exception details.
+        note("Handoff NOT replaced. The new SmartPhrase could not be processed. The previous handoff and pasted text are unchanged.", "error")
+        return
+    if result.sheet is None:
+        _finish_handoff_import(room, result, store)
+        note("Handoff NOT replaced. Check Alerts and paste a complete SmartPhrase. The previous handoff is unchanged.", "error")
+        return
+    try:
+        candidate = save_sheet_in(ss["vault"], result.sheet)
+        commit(candidate, store)
+    except Exception:
+        # A write may have reached shared storage even if its acknowledgement
+        # was lost. Do not claim it was saved or that shared storage is unchanged.
+        result.sheet = None
+        result.imported = []
+        result.notices = []
+        message = ("Replacement was NOT confirmed. The previous local handoff is still displayed. "
+                   "Your pasted text is kept. Reload the saved archive before retrying.")
+        result.errors.append(message)
+        _finish_handoff_import(room, result, store)
+        note(message, "error")
+        return
+    previous_id = ss["drafts"][room]["id"]
+    for key in ("workspace_notices", "workspace_imports"):
+        ss.get(key, {}).pop(previous_id, None)
+    # Retire previously prepared downloads from this session. Other sessions'
+    # downloads recheck the room identity against shared storage before release.
+    download_revocation().set()
+    ss["download_revocation"] = Event()
+    if ss.get("removed_room", {}).get("room") == room:
+        ss.pop("removed_room", None)
+    result.sheet = deepcopy(candidate["rooms"][room])
+    ss.setdefault("base_sheets", {})[room] = deepcopy(result.sheet)
     _finish_handoff_import(room, result, store)
+    message = ("Room " + room + " handoff replaced and saved to shared storage. " if store else
+               "Room " + room + " handoff replaced in this session only. Shared storage is not enabled. ")
+    message += "Previous patient information and manual notes were cleared."
+    if result.errors:
+        message += " Some sections could not be imported. Review Alerts before use."
+    note(message, "warning" if result.errors else "info")
 
 
 def start_new_patient() -> None:
@@ -1782,7 +1829,7 @@ def main() -> None:
         return
     with st.sidebar:
         st.header("PICU Handoff")
-        st.caption("Version 6.77 | Start here + confirmation")
+        st.caption("Version 6.78 | Replace, never merge")
         # Retire the old instructions workspace without discarding room drafts.
         if st.session_state.get("page") == "Instructions / SmartPhrase":
             st.session_state["page"] = "Handoff"
@@ -2166,7 +2213,8 @@ def handoff_page(store: GitHubVault | None) -> None:
             st.text_area("SmartPhrase text", key="paste", height=68, max_chars=MAX_PASTE,
                          label_visibility="collapsed", placeholder="Paste Epic SmartPhrase here")
         with submit:
-            st.form_submit_button("Create / update handoff", on_click=create_handoff, args=(store,), type="primary")
+            st.form_submit_button("Replace room handoff", on_click=create_handoff, args=(store,), type="primary")
+    st.caption("Every import replaces and saves this room only. Previous information and manual notes are cleared. Paste the complete SmartPhrase.")
     if ss.get("handoff_tab") not in WORKSPACE_TABS:
         ss["handoff_tab"] = "Preview / print"
     tabs = st.tabs(list(WORKSPACE_TABS), key="handoff_tab", on_change=handoff_tab_changed)
@@ -2215,8 +2263,18 @@ def handoff_download(sheets: list[dict], store: GitHubVault | None, *,
     deadline, cancelled = download_deadline(), download_revocation()
     generate = download_payload(sheets, "pdf", deadline, target_pages=target_pages,
                                 cancelled=cancelled, save_statuses=save_statuses)
-    return guard_download(generate, store, st.session_state["vault"]["reset_generation"],
-                          cancelled=cancelled, expires_at=deadline)
+    ss = st.session_state
+    expected_rooms = {}
+    for sheet in sheets:
+        room = sheet["room"]
+        saved = ss["vault"]["rooms"].get(room)
+        if (room in ss.get("drafts", {}) and
+                ss.get("base_sheets", {}).get(room) != saved):
+            raise ValueError("The saved room changed. Load its saved handoff before printing.")
+        expected_rooms[room] = saved["id"] if saved else None
+    return guard_download(generate, store, ss["vault"]["reset_generation"],
+                          cancelled=cancelled, expires_at=deadline,
+                          expected_rooms=expected_rooms)
 
 
 def print_target_control(key: str) -> int:

@@ -294,10 +294,11 @@ def test_nc_page_render_and_sample_callback(app,monkeypatch):
     from test_ui_smoke import equip
     open_room(app)
     app.load_niv_sample()
+    assert not app.st.session_state['vault']['rooms']
     app.create_handoff()
     ss=app.st.session_state
     assert [x['device'] for x in ss['drafts']['P4102']['noninvasive']]==['BiPAP','Nasal cannula']
     downloads=equip(app,monkeypatch)
     app.handoff_page(None)
     assert any(isinstance(data,bytes) and data.startswith(b'%PDF') for _,data in downloads)
-    assert not ss['vault']['rooms']
+    assert ss['vault']['rooms']['P4102'] == ss['drafts']['P4102']

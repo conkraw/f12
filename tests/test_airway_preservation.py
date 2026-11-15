@@ -1,4 +1,4 @@
-"""6.62 removes special airway retention. All records and imports are synthetic."""
+"""6.78: whole-room imports also clear manual airway data. Synthetic only."""
 from copy import deepcopy
 import json
 
@@ -36,54 +36,56 @@ def with_airway(app, data):
                                   dict(empty_airway(), enabled=True),
                                   dict(empty_airway(), mask_ventilation='No'),
                                   dict(empty_airway(), tube_passage='Unable to pass')])
-def test_import_updates_directly_and_preserves_current_manual_airway(app, data):
+def test_import_replaces_directly_and_clears_current_manual_airway(app, data):
     ss = with_airway(app, data)
     before = deepcopy(ss['drafts']['P4102'])
     app.create_handoff()
     result = ss['drafts']['P4102']
     assert result['fields']['Diagnoses'] == 'SYNTHETIC NEW DIAGNOSIS'
-    assert result.get('difficult_airway') == before.get('difficult_airway')
+    assert result.get('difficult_airway') is None
+    assert result['id'] != before['id']
     assert 'airway_update_pending' not in ss and ss['paste'] == ''
-    assert not ss['import_result']['errors'] and not ss['vault']['rooms']
+    assert not ss['import_result']['errors']
+    assert ss['vault']['rooms']['P4102'] == result
 
 
 @pytest.mark.parametrize('enabled', [True, False])
-def test_direct_update_does_not_change_saved_record_until_normal_save(app, enabled):
+def test_direct_replacement_immediately_replaces_saved_record(app, enabled):
     ss = with_airway(app, airway(enabled))
     app.save_room(None)
     saved = deepcopy(ss['vault'])
     ss['paste'] = SOURCE
     app.create_handoff()
-    assert ss['vault'] == saved
+    assert ss['vault'] != saved
+    assert ss['vault']['rooms']['P4102'] == ss['drafts']['P4102']
     assert ss['drafts']['P4102']['fields']['Diagnoses'] == 'SYNTHETIC NEW DIAGNOSIS'
     app.save_room(None)
     assert ss['vault']['rooms']['P4102']['fields']['Diagnoses'] == 'SYNTHETIC NEW DIAGNOSIS'
-    assert ss['vault']['rooms']['P4102']['difficult_airway'] == airway(enabled)
+    assert ss['vault']['rooms']['P4102'].get('difficult_airway') is None
 
 
 @pytest.mark.parametrize('enabled', [True, False])
-def test_current_airway_widgets_are_captured_before_direct_import(app, enabled):
+def test_previous_airway_widgets_are_discarded_on_replacement(app, enabled):
     ss = with_airway(app, airway(not enabled))
     prefix = 'dairway_' + ss['drafts']['P4102']['id'] + '_'
     ss[prefix + 'enabled'] = enabled
     ss[prefix + 'issue'] = 'Synthetic most recent widget edit'
     app.create_handoff()
-    result = ss['drafts']['P4102']['difficult_airway']
-    assert result['enabled'] is enabled
-    assert result['issue'] == 'Synthetic most recent widget edit'
+    result = ss['drafts']['P4102'].get('difficult_airway')
+    assert result is None
     assert ss['drafts']['P4102']['fields']['Diagnoses'] == 'SYNTHETIC NEW DIAGNOSIS'
     assert not any(key.startswith('dairway_') for key in ss)
     app.save_room(None)
-    assert ss['vault']['rooms']['P4102']['difficult_airway'] == result
+    assert ss['vault']['rooms']['P4102'].get('difficult_airway') is None
 
 
-def test_repeated_imports_remain_direct_and_preserve_manual_airway(app):
+def test_repeated_replacements_remain_direct_and_clear_manual_airway(app):
     ss = with_airway(app, airway())
     for diagnosis in ('SYNTHETIC FIRST UPDATE', 'SYNTHETIC SECOND UPDATE'):
         ss['paste'] = SOURCE.replace('SYNTHETIC NEW DIAGNOSIS', diagnosis)
         app.create_handoff()
         assert ss['drafts']['P4102']['fields']['Diagnoses'] == diagnosis
-        assert ss['drafts']['P4102']['difficult_airway'] == airway()
+        assert ss['drafts']['P4102'].get('difficult_airway') is None
         assert 'airway_update_pending' not in ss
 
 

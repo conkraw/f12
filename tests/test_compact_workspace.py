@@ -234,7 +234,7 @@ def test_failed_import_is_not_reported_as_success():
 def test_partial_import_keeps_details_without_falsely_claiming_total_failure():
     sheet=new_sheet('P4102')
     ss={'import_result':{'room':'P4102','errors':['Skipped'],'notices':[],'imported':['Diagnoses']}}
-    assert workspace_attention(sheet,ss)==''
+    assert workspace_attention(sheet,ss)=='Handoff has import warnings. Review Alerts before use.'
     assert ('warning','Skipped') in alert_rows(sheet,ss)
 
 

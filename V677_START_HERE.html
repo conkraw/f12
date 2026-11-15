@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PICU Handoff 6.77</title>
+<style>
+body {font: 17px/1.5 Arial, sans-serif}
+body {max-width: 850px}
+body {margin: 40px auto}
+body {padding: 0 20px}
+code {background: #f0f0f0}
+code {padding: 2px 5px}
+</style>
+</head>
+<body>
+<h1>PICU Handoff 6.77</h1>
+<h2>START HERE: Create an Updated Handoff</h2>
+<p>Choose this when preparing a new patient list for rounds or evening handoff. The button opens a warning and does not delete anything.</p>
+<p>The warning states that ALL previous handoffs will be deleted from the current list. All saved handoffs and this session's open drafts will be removed, leaving a blank patient list.</p>
+<p>Choose <b>Move Forward and Delete Previous Handoffs</b> to confirm. You can then add the patients for your new handoff.</p>
+<p>If the saved list changes while the warning is open, confirmation reloads the current list and shows the warning again without deleting anything. Review it and click the confirmation button again to proceed.</p>
+<h2>Add a Patient or Print Current List</h2>
+<p>Choose this if you only want to add a patient or print the existing list. This option appears on both the opening screen and the warning screen. It keeps all current handoffs.</p>
+<p>Both workflows work at any time. There is no morning window or once-per-day restriction. You can start another updated handoff when you log in later the same day.</p>
+<h2>Install</h2>
+<p>Use your existing app-code repository. From version 6.76, replace <code>app.py</code>. If updating from version 6.75, replace both <code>app.py</code> and <code>daily_start.py</code> together.</p>
+<p>For an earlier version, replace the complete application file set. The complete file set can also be used for any update.</p>
+<p>Keep Streamlit Secrets, your encryption key, and separate encrypted patient-data and mapping repositories. No new dependency is required.</p>
+<p>Restart the app and verify <code>Version 6.77 | Start here + confirmation</code> in the sidebar.</p>
+<h2>Existing settings and clinical features</h2>
+<p>Reusable settings, medication mappings, and custom room definitions are preserved. Nutrition, 24-hour I/O, 7am/7pm current shifts, the compact BM label, and other clinical parsing retain their existing behavior.</p>
+<p>See <code>TEST_REPORT.md</code> for verification. This package has not been deployed to your live app.</p>
+</body>
+</html>

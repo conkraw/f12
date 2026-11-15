@@ -380,9 +380,10 @@ def test_render_niv_editor_with_downloads(app,monkeypatch):
     assert any(key.startswith('niv_') for key in app.st.session_state)
 
 
-def test_load_respiratory_example_does_not_save_it(app):
+def test_load_respiratory_example_waits_for_import_to_save(app):
     open_room(app)
     app.load_niv_sample()
+    assert not app.st.session_state['vault']['rooms']
     app.create_handoff()
     assert len(app.st.session_state['drafts']['P4102']['noninvasive'])==2
-    assert not app.st.session_state['vault']['rooms']
+    assert app.st.session_state['vault']['rooms']['P4102'] == app.st.session_state['drafts']['P4102']

@@ -1,16 +1,13 @@
-PICU Handoff 6.75 archive compatibility
+PICU Handoff 6.78 archive compatibility
 
-Schema remains 34. There is no data-structure migration or new field.
-Existing 6.74 archives load without changing keys, Secrets or passwords.
+Archive schema remains 34. Encryption and storage format are unchanged.
+No key rotation, storage reset, or data migration is performed automatically.
+The update adds the import-diagnostic action not_imported. Install all six
+changed runtime modules together so the new action can be validated and shown.
+A successful import creates a new random handoff ID for the selected room and
+replaces that room's complete record. Other rooms and reusable settings remain.
+Existing records are not retroactively cleaned or reinterpreted as new patients.
+Old encrypted Git history and previously exported files are not erased.
 
-Existing current_shift snapshots are rendered using the corrected 7am/7pm
-schedule. They contain raw normalized volumes, source weight and source time,
-not a stored hourly rate. The correction does not require re-pasting.
-The bowel_movement boolean is unchanged. Only its rendered label changes.
-
-intake_output, medication mappings and all other stored objects are unchanged.
-No values or timestamps are rewritten as part of this presentation/calculation
-change. Older downloaded handoff files remain unchanged. Download fresh copies.
-
-Every running deployment that should use the corrected schedule must be updated.
-Older applications will continue using their own old calculation code.
+The clinical parsers remain unchanged. Their internal section-composition
+helper is no longer the application's user-facing import entry point.

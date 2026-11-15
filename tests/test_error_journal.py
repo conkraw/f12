@@ -179,7 +179,10 @@ def test_app_queues_errors_and_applies_other_sections_when_log_fails(app, monkey
         def __init__(self, store): pass
         def save_new(self, record): raise StorageError('PRIVATE_EXCEPTION')
     monkeypatch.setattr(app, 'ErrorJournal', FailingJournal)
-    app.create_handoff(object())
+    class SavingStore:
+        def save(self, candidate, sha):
+            return 'confirmed-room-save'
+    app.create_handoff(SavingStore())
     assert ss['drafts']['P4102']['fields']['Diagnoses'] == 'PRIVATE_DIAGNOSIS'
     assert ss['paste'] == '' and ss['pending_error_events']
     assert 'PRIVATE_DIAGNOSIS' not in json.dumps(ss['pending_error_events'])

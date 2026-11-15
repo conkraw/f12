@@ -1,38 +1,24 @@
-PICU Handoff 6.77
+PICU Handoff 6.78
 
-Required changed application module relative to 6.76:
+Required changed application modules relative to 6.77:
 app.py
+importing.py
+import_review.py
+census_guard.py
+user_guide.py
+workspace_ui.py
 
-Required application modules when updating from 6.75:
-app.py
-daily_start.py
+Replace all six together, or upload the complete application file set.
+For earlier versions, use the complete application file set.
+Do not change Streamlit Secrets, the encryption key, or separate storage repos.
+No new dependency or archive schema is required.
 
-Replace both files together when updating from 6.75.
-For earlier versions, replace the complete application file set.
-The complete application file set can also be used for any update.
-No new module or dependency is required.
+Restart and verify: Version 6.78 | Replace, never merge
 
-Preserve Streamlit Secrets, the encryption key, and separate encrypted
-patient-data and mapping repositories.
+Every successful SmartPhrase import replaces and saves the selected room's
+whole handoff, including clearing omitted fields and previous manual notes.
+Other rooms and reusable mappings/settings are unchanged.
+The 6.77 START HERE warning and clear-all confirmation remain unchanged.
 
-Restart and verify: Version 6.77 | Start here + confirmation
-
-START HERE: Create an Updated Handoff opens a warning for a new rounds or
-evening handoff. This first click does not delete anything.
-
-The warning explains that ALL previous handoffs will be deleted from the
-current list. Move Forward and Delete Previous Handoffs confirms removal of
-all saved handoffs and this session's drafts, leaving a blank list.
-
-Add a Patient or Print Current List appears on both screens. It keeps all
-current handoffs and is the choice for users who only want to add or print.
-
-If the saved list changes while the warning is open, confirmation reloads the
-list and shows the warning again without deleting. Another explicit
-confirmation click is required.
-
-There is no time window or once-per-day restriction. Reusable settings,
-custom room definitions, medication mappings, and clinical parsing are preserved.
-
-See TEST_REPORT.md for verification.
-No live app or repository was modified when this package was prepared.
+The live application and shared data have not been modified by this package.
+See README.md for installation and safety checks, TEST_REPORT.md for verification.

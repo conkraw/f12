@@ -58,7 +58,7 @@ def test_one_click_create_does_not_save_raw_paste(app):
     app.create_handoff()
     assert ss['drafts']['P4102']['fields']['Diagnoses']=='Example'
     assert ss['paste']==''
-    assert ss['vault']['rooms']=={}
+    assert ss['vault']['rooms']['P4102'] == ss['drafts']['P4102']
     app.save_room(None)
     assert 'RAW_NOT_SAVED' not in str(ss['vault'])
 

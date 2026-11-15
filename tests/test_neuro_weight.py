@@ -411,10 +411,12 @@ def test_nutrition_without_diagnosis_does_not_fabricate_diagnosis_heading():
     assert 'Weight: 15.3 kg' in column and 'Diagnoses:' not in column
 
 
-def test_loader_for_observed_example_sets_current_paste_without_saving(app):
+def test_loader_only_sets_paste_then_import_saves_replacement(app):
     open_room(app)
-    app.load_observed_sample();app.create_handoff()
+    app.load_observed_sample()
+    assert not app.st.session_state['vault']['rooms']
+    app.create_handoff()
     ss=app.st.session_state
     assert not ss['import_result']['errors']
     assert ss['drafts']['P4102']['ventilation']['values']['Vt (observed, mL)']=='162 mL'
-    assert ss['vault']['rooms']=={}
+    assert ss['vault']['rooms']['P4102'] == ss['drafts']['P4102']

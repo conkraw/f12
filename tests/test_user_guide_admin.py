@@ -176,12 +176,13 @@ def test_default_is_patient_free_and_does_not_invent_smartlinks():
     doc=default_guide()
     validate_guide(doc)
     assert doc['smartphrase_name']==doc['smartphrase_text']==''
-    assert 'Create / update handoff' in doc['instructions']
+    assert 'Replace room handoff' in doc['instructions']
     assert 'Save handoff' in doc['instructions']
     assert 'Print all' in doc['instructions']
     assert 'Streamlit' in doc['instructions']
     assert 'PICUHANDOFFSMARTPHRASE' in doc['instructions']
-    assert 'next room to save automatically' in doc['instructions']
+    assert 'After additional manual edits' in doc['instructions']
+    assert 'change rooms' in doc['instructions']
     assert len(doc['instructions'].split()) < 120
     assert 'Instructions / SmartPhrase' not in doc['instructions']
 

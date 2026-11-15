@@ -4,7 +4,7 @@ from categories import apply_category_rules
 from copy import deepcopy
 import re
 from dataclasses import dataclass, field
-from models import validate_sheet, apply_diagnoses, apply_medications, apply_respiratory, ValidationError
+from models import new_sheet, validate_sheet, apply_diagnoses, apply_medications, apply_respiratory, ValidationError
 from parser import parse_smartphrase, SECTION_NAMES, MAX_PASTE
 from medications import parse_medications
 from infusions import apply_infusion_rules
@@ -396,3 +396,40 @@ def import_sections(sheet: dict, text: str, settings: dict) -> ImportResult:
     validate_sheet(candidate)
     out.sheet = candidate
     return out
+
+
+def import_replacement(room: str, text: str, settings: dict) -> ImportResult:
+    """Build a whole-room replacement using only the new source and settings.
+
+    The application must use this entry point, not import_sections(existing,
+    ...). It deliberately accepts no previous patient record. The low-level
+    section parser remains available for parser tests and internal composition.
+    A fresh sheet identity also prevents prior editor widgets and problem-review
+    decisions from being applied to the newly imported record.
+    """
+    result = import_sections(new_sheet(room), text, settings)
+    if result.sheet is None:
+        return result
+    if not result.imported:
+        result.sheet = None
+        result.errors.append(
+            "No supported section could be imported. The previous handoff was not replaced.")
+        return result
+    # Recovery is limited to the NEW paste. No prior patient values exist in
+    # this record, so do not describe failed sections as retained/hidden data.
+    omitted_actions = {"not_updated", "orders_hidden", "feeds_hidden",
+                       "devices_hidden", "neuro_devices_hidden", "pacemaker_hidden",
+                       "diet_hidden", "ecg_hidden", "current_shift_hidden",
+                       "bowel_movement_hidden"}
+    for entries in result.sheet.get("import_warnings", {}).values():
+        for item in entries:
+            if item["section"] in result.skipped and item["action"] in omitted_actions:
+                item["action"] = "not_imported"
+    for item in result.diagnostics:
+        if item["section"] in result.skipped and item["action"] in omitted_actions:
+            item["action"] = "not_imported"
+    result.notices.insert(0,
+        "This handoff uses only the newly pasted SmartPhrase. Previous patient "
+        "information, manual notes and missing sections were not carried forward.")
+    validate_sheet(result.sheet)
+    return result

@@ -11,10 +11,13 @@ import re
 MAX_TEMPLATE = 80000
 MAX_INSTRUCTIONS = 32000
 MAX_NOTES = 8000
-DEFAULT_INSTRUCTIONS = """First use: In Epic, find SmartPhrase author Streamlit and subscribe to PICUHANDOFFSMARTPHRASE.
+LEGACY_DEFAULT_INSTRUCTIONS = """First use: In Epic, find SmartPhrase author Streamlit and subscribe to PICUHANDOFFSMARTPHRASE.
 
 For each patient, select the correct room here. Open that patient's Epic note and enter .PICUHANDOFFSMARTPHRASE. Copy the populated text, including section dividers, into SmartPhrase text. Click Create / update handoff, then review the preview. Move to the next room to save automatically, or press Save handoff. Check the saved time before closing. Use Print all for the team's PDF."""
 
+DEFAULT_INSTRUCTIONS = """First use: In Epic, find SmartPhrase author Streamlit and subscribe to PICUHANDOFFSMARTPHRASE.
+
+For each patient, select the correct room. In that patient's Epic note, enter .PICUHANDOFFSMARTPHRASE and copy the complete result, including dividers. Paste it here and click Replace room handoff. Each import replaces and saves this room only. Previous information, missing sections, manual notes, and airway details are cleared, even for the same patient. Review the preview and Alerts. After additional manual edits, use Save handoff, change rooms, or open Print all to save. Check the saved time before closing."""
 
 def handoff_instructions(value: dict) -> str:
     """Show the short workflow without silently rewriting a published guide.
@@ -24,7 +27,7 @@ def handoff_instructions(value: dict) -> str:
     intact until the administrator chooses to save a new publication.
     """
     text = value.get("instructions", "").strip()
-    if not text or text.startswith("# Create a handoff you can check and trust"):
+    if not text or text == LEGACY_DEFAULT_INSTRUCTIONS or text.startswith("# Create a handoff you can check and trust"):
         return DEFAULT_INSTRUCTIONS
     return text
 

@@ -1,24 +1,17 @@
-PICU Handoff 6.75 delivery verification
+PICU Handoff 6.78 delivery verification
 
-Built from the supplied PICU674.zip. Five application modules changed:
-app.py
-bowel_movements.py
-current_shift.py
-error_store.py
-infusions.py
+Built from PICU677.zip, Library version 2.
+Exactly six runtime modules changed. See UPDATE_FILES.txt.
+Final full suite: 6483 tests passed and 14 subtests passed.
+82 new replacement tests are included in that full suite.
+182 Python files and 3 TOML files parsed successfully.
+No live Streamlit browser test or clinical validation was performed.
 
-597 selected tests passed in completed runs: 238 focused + 359 compatibility.
-181 Python files parse successfully. 3 TOML files parse successfully.
-A broader test run did not complete. No full-suite pass is claimed.
+Clinical section parser behavior and calculations, existing startup helper,
+encryption, storage implementation, dependencies, and archive schema are preserved.
+New SmartPhrase imports replace and immediately save only the selected room.
+Previous patient data and manual notes are not carried forward.
 
-Synthetic individual and two-room PDF/HTML/text previews were generated.
-The updated one-room PDF and BM close-up were visually inspected.
-PDF text/font/spacing checks passed for label-only bolding and no added gap.
-
-24-hour I/O calculation, format, source selection and source timestamps are
-unchanged. Saved current-shift snapshots use corrected 7am/7pm rates on reprint.
-Schema, encryption, storage and dependencies are unchanged.
-
-SHA256SUMS.txt covers all packaged files except itself. ZIP CRC is verified.
-No clinical paste, runtime log, font file, Secrets, encryption key or patient-data
-archive was added. No live application or repository was changed.
+SHA256SUMS.txt covers packaged files except itself. ZIP CRC was verified.
+No patient paste, runtime log, font file, Secrets, encryption key, or production
+patient-data archive was added. No live application or repository was changed.

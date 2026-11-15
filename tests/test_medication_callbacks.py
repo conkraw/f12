@@ -27,19 +27,21 @@ def test_one_click_import_all_three_sections(app):
     assert sheet['ventilation']['mode']=='Volume Targeted Pressure Control - PS'
 
 
-def test_inline_mapping_immediately_saved_to_admin_without_saving_handoff(app):
+def test_inline_mapping_immediately_saved_without_rewriting_saved_handoff(app):
     read(app)
+    saved_before = deepcopy(app.st.session_state['vault']['rooms'])
     map_first(app)
     ss=app.st.session_state
     assert ss['vault']['settings']['medication_mappings']==[{'name':'acetaminophen','match':'prefix','destination':'Neurologic'}]
     assert ss['drafts']['P4102']['medications'][0]['section']=='Neurologic'
-    assert ss['vault']['rooms']=={}
+    assert ss['vault']['rooms'] == saved_before
 
 
 def test_inline_mapping_persists_with_expected_sha(app):
     read(app)
     ss=app.st.session_state
     ss['vault_sha']='before'
+    saved_before = deepcopy(ss['vault']['rooms'])
     class Store:
         saved=None
         def save(self, candidate, sha):
@@ -49,7 +51,7 @@ def test_inline_mapping_persists_with_expected_sha(app):
     store=Store()
     map_first(app,store=store)
     assert store.saved['settings']['medication_mappings'][0]['name']=='acetaminophen'
-    assert store.saved['rooms']=={}
+    assert store.saved['rooms'] == saved_before
     assert ss['vault_sha']=='after'
 
 
@@ -136,7 +138,8 @@ def test_bad_medication_block_cannot_partially_apply(app):
     before=deepcopy(ss['drafts']['P4102'])
     ss['paste']='aaaaaaaa\nDiagnoses:\n1. Changed diagnosis\naaaaaaaa\nbbbbbbbb\nMedications:\n• med\t1 mg\tIV\tq4h\n• no tabs here\nbbbbbbbb'
     app.create_handoff()
-    assert ss['drafts']['P4102']['medications']==before['medications']
+    assert ss['drafts']['P4102']['medications'] == []
+    assert ss['drafts']['P4102']['id'] != before['id']
     assert ss['drafts']['P4102']['fields']['Diagnoses']=='Changed diagnosis'
     assert 'b' in ss['drafts']['P4102']['import_warnings']
     assert ss['import_result']['errors']
@@ -159,4 +162,4 @@ def test_reimport_replaces_without_duplication_or_confirmations(app):
     ss['paste']=SAMPLE.read_text()
     app.create_handoff()
     assert len(ss['drafts']['P4102']['medications'])==9
-    assert ss['drafts']['P4102']['fields']['Respiratory']=='Keep note'
+    assert ss['drafts']['P4102']['fields']['Respiratory'] == ''

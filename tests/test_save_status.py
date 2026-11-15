@@ -375,12 +375,17 @@ def test_session_testing_screen_never_claims_github_save(app, monkeypatch):
     assert any('Most recent session-only handoff save' in text for kind, text in events)
 
 
-def test_create_and_edit_do_not_change_last_confirmed_time(app):
+def test_replacement_updates_save_time_and_subsequent_edits_do_not(app, monkeypatch):
+    import models
     seed(app)
+    monkeypatch.setattr(models, 'utc_now', lambda: LATER)
     app.st.session_state['paste'] = 'aaaaaaaa\nDiagnoses:\n1. Synthetic new value\naaaaaaaa'
     app.create_handoff()
     state = app.display_room_save_status('P4102', object())
-    assert state.last_saved == DISPLAY and state.unsaved
+    assert state.last_saved == LATER_DISPLAY and not state.unsaved
+    app.st.session_state['drafts']['P4102']['fields']['Neurologic'] = 'Unsaved manual note'
+    edited = app.display_room_save_status('P4102', object())
+    assert edited.last_saved == LATER_DISPLAY and edited.unsaved
 
 
 def test_export_never_advances_save_timestamp_or_storage(app):

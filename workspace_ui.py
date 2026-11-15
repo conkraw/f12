@@ -37,7 +37,7 @@ def compact_help(guide: dict) -> str:
     if text == DEFAULT_INSTRUCTIONS:
         return ("Epic: SmartPhrase author Streamlit, subscribe to PICUHANDOFFSMARTPHRASE. "
                 "Open the patient note, enter .PICUHANDOFFSMARTPHRASE, then copy the result. "
-                "Select room, paste, create, review. Change rooms to save, or press Save handoff.")
+                "Select room, paste the complete SmartPhrase, replace, review. Each import replaces and saves this room only.")
     return text
 
 
@@ -148,6 +148,8 @@ def workspace_attention(sheet: dict | None, session) -> str:
         if session.get("base_sheets", {}).get(room) != session.get("vault", {}).get("rooms", {}).get(room):
             return "Saved record changed. Reload before saving. See Alerts."
         imported = current_import(sheet, session)
-        if imported.get("room") == room and imported.get("errors") and not imported.get("imported"):
-            return "Import not completed. See Alerts."
+        if imported.get("room") == room and imported.get("errors"):
+            if not imported.get("imported"):
+                return "Import not completed. See Alerts."
+            return "Handoff has import warnings. Review Alerts before use."
     return ""

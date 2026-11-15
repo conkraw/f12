@@ -1,47 +1,79 @@
-# PICU Handoff 6.77 verification
+# PICU Handoff 6.78 verification
 
-## Results
+## Final result
 
-162 automated tests passed using synthetic records.
+6483 automated tests passed, plus 14 subtests, in the final full-suite run.
+The completed run reported 159.08s (0:02:39).
 
-50 startup and confirmation tests passed in 0.89 seconds:
+    python -m pytest -q --tb=short
 
-    python -m pytest -q tests/test_patient_list_startup.py
+The unchanged 6.77 baseline also passed its full suite: 6401 tests and 14 subtests.
+The new test_room_replacement.py adds 82 tests and is included in the final suite.
+Older tests that required section merging, retained manual notes, delayed import
+saving, or the former button label were updated to the new explicit contract.
+No test was skipped or marked as an expected failure for this change.
 
-112 reset, deletion, and download-guard tests passed in 0.89 seconds:
+## Replacement behavior tested
 
-    python -m pytest -q tests/test_daily_start.py tests/test_clear_all_no_admin.py tests/test_census_download_guard.py
+New source text is parsed into a fresh record with a fresh random handoff ID.
+The application does not pass the old patient record or old editor values to
+its import entry point. Old fields, manual notes, airway details, omitted
+sections, widget state, and old import messages do not enter the new handoff.
 
-The existing AnyIO/Pytest deprecation warning was emitted. There were no test failures.
+A successful replacement updates the draft, saved room, saved timestamp, and
+base snapshot together. The other room and reusable settings/mappings remain
+unchanged. Repeating the same phrase still clears any intervening manual notes.
 
-## Confirmation behavior
+The tests exercise saved-data reload, encrypted round-trip, text/HTML output,
+and the Print all record selection. They also cover invalid/empty/repeated
+pastes, partial imports with failed sections, storage failures, write conflicts,
+lost write acknowledgements, stale local bases, obsolete widget callbacks,
+previously prepared downloads, and replacement in another session before or
+during download generation.
 
-- START HERE loads the list and opens a warning without writing or deleting handoffs.
-- Rendering or rerendering the warning leaves saved handoffs and open drafts intact.
-- Move Forward requires a prepared confirmation snapshot before it can reset the list.
-- The warning states that ALL previous handoffs will be deleted from the current list.
-- The add-or-print option preserves current handoffs from the initial screen or the warning screen.
-- If a handoff is added or changed while the warning is open, the source or SHA check refreshes the warning and makes no deletion. A later explicit confirmation is required.
-- A failed reload invalidates an older confirmation rather than leaving it usable.
-- A successful reset clears all saved handoffs and local drafts while preserving reusable settings and custom room definitions.
-- Load failures, save conflicts, lost acknowledgements, and expired sessions retain their existing protections.
-- Retrying an unconfirmed reset cannot clear patients added after an earlier completed reset.
-- Starts remain available at any hour and can be repeated after a new login on the same day.
+Incomplete sections in a partly successful replacement contain only new data
+and have explicit not_imported warnings. They never use the prior patient's
+values as a fallback. An entirely failed import leaves the old record unchanged
+with an explicit failure. Unconfirmed writes never claim a successful save.
 
-## Real Streamlit interaction check
+The broader suite covers existing startup confirmation, clear-all behavior,
+clinical parsers and calculations, save/print workflows, mappings, encryption,
+and room isolation. Synthetic source examples were used throughout.
 
-The initial and warning screens were exercised using Streamlit 1.67.0 AppTest with two synthetic handoffs and open drafts.
+## Source and compatibility checks
 
-START HERE and a warning rerender preserved every handoff and draft.
-The add-or-print button preserved the list from both screens.
-Move Forward cleared the prior list and opened the Handoff workspace.
-Each screen had two main action buttons, with Log out in the sidebar.
-No Streamlit exception occurred.
+The source package was PICU677.zip, Library version 2.
+Source ZIP SHA-256: ad6d330607a6f74e850c7f706564c7760a32a0b8e8d42e6ea2410a2ec1e2df8f
 
-## Scope
+Exactly six runtime modules changed:
 
-Python syntax parsing passed for app.py.
-Comparison with PICU676.zip confirms that app.py is the only changed runtime module.
-The startup test file and the current installation and verification documents were also updated.
-The unrestricted reset helper, clinical parsers, nutrition, I/O, mappings, encryption, storage, and dependencies are unchanged from 6.76.
-The complete test suite was not rerun. No live deployment or patient-data archive was accessed.
+    app.py
+    importing.py
+    import_review.py
+    census_guard.py
+    user_guide.py
+    workspace_ui.py
+
+The original import_sections function has an identical parsed Python AST.
+Its clinical section calculations were not edited. The new application entry
+point calls it only with a new, blank record.
+
+daily_start.py, models.py, current_shift.py, io_sources.py, bowel_movements.py,
+nutrition_display.py, feeds.py, diet.py, github_store.py, security.py, and
+requirements.txt are byte-identical to the 6.77 package.
+
+All 182 packaged Python files passed syntax parsing.
+All 3 packaged TOML files passed parsing.
+The archive schema remains 34. No new runtime dependency is required.
+
+## Test limitations
+
+The application interaction tests use a Streamlit widget stub, not a live
+browser. A real Streamlit AppTest run was not available in this environment.
+These results are not clinical validation or proof that a deployment is safe.
+Verify with fictional patients in the deployed app before clinical use.
+
+No live application, real patient data, production GitHub repository, or shared
+clinical archive was accessed or modified. Existing mixed handoffs are not
+retroactively repaired. Existing downloaded files, printed pages, encrypted Git
+history, and another user's already-open preview cannot be recalled.

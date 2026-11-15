@@ -241,10 +241,11 @@ def test_visibility_rule_specificity_and_restored_exception():
 
 def test_hide_and_restore_in_ui_persist_rules_only(app):
     open_room(app);ss=app.st.session_state;ss['paste']=SAMPLE;app.create_handoff()
+    saved_before = deepcopy(ss['vault']['rooms'])
     row=ss['drafts']['P4102']['medications'][0]
     app.hide_medication('P4102',row['id'],True,None)
     assert ss['drafts']['P4102']['medications'][0]['hidden']
-    assert not ss['vault']['rooms']
+    assert ss['vault']['rooms'] == saved_before
     assert ss['vault']['settings']['medication_visibility'][0]['hidden']
     app.change_visibility_rule(row['name'],False,'exact',None)
     assert not ss['drafts']['P4102']['medications'][0]['hidden']

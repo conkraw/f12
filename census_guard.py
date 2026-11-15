@@ -2,7 +2,9 @@
 
 Only reads shared storage. Worker closures use captured values and never
 access Streamlit session state. A normal save may change the archive SHA
-without invalidating a prepared download from the same patient list.
+without invalidating a prepared download from the same patient list. A new
+SmartPhrase creates a new handoff identity, which invalidates downloads that
+include the replaced room, even when the list generation itself is unchanged.
 """
 from __future__ import annotations
 
@@ -13,12 +15,15 @@ _CHANGED = "The patient list changed. Reload the patient list and prepare a new 
 _UNVERIFIED = "The current patient list could not be verified. Reload the patient list and prepare a new download."
 
 
-def guard_download(generate, store, generation, *, cancelled=None, expires_at=None):
+def guard_download(generate, store, generation, *, cancelled=None, expires_at=None,
+                   expected_rooms=None):
     """Return a worker-safe generator guarded by the captured reset generation.
 
     ``expires_at`` uses the same monotonic deadline as existing downloads.
     ``store.load()`` follows GitHubVault's ``(vault, sha)`` return contract.
     """
+    expected_rooms = dict(expected_rooms) if expected_rooms is not None else None
+
     def check_local():
         if cancelled is not None and cancelled.is_set():
             raise ValueError("This download was cleared. Reload the patient list and prepare a new download.")
@@ -34,11 +39,21 @@ def guard_download(generate, store, generation, *, cancelled=None, expires_at=No
             current_generation = fresh["reset_generation"]
             if not isinstance(current_generation, str):
                 raise ValueError
+            current_rooms = fresh.get("rooms") if expected_rooms is not None else None
+            if expected_rooms is not None and not isinstance(current_rooms, dict):
+                raise ValueError
+            room_changed = False
+            for room, expected_id in (expected_rooms or {}).items():
+                current = current_rooms.get(room)
+                if current is not None and (not isinstance(current, dict) or not isinstance(current.get("id"), str)):
+                    raise ValueError
+                current_id = current["id"] if current is not None else None
+                room_changed = room_changed or current_id != expected_id
         except Exception:
             raise ValueError(_UNVERIFIED) from None
         # Cancellation or expiry can occur during a slow shared-storage read.
         check_local()
-        if current_generation != generation:
+        if current_generation != generation or room_changed:
             if cancelled is not None:
                 cancelled.set()
             raise ValueError(_CHANGED)
