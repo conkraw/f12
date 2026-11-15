@@ -1,53 +1,43 @@
-# PICU Handoff 6.75 validation
+# PICU Handoff 6.76 verification
 
-Source: the supplied PICU674.zip. No live deployment or repository was changed.
+## Results
 
-## Completed test runs
+332 automated tests passed using synthetic records.
 
-238 focused tests passed in 1.81 seconds:
+106 startup and reset tests passed in 0.86 seconds:
 
-```text
-python -m pytest -q --disable-warnings tests/test_current_shift.py tests/test_current_shift_integration.py tests/test_bowel_movements.py tests/test_io_sources.py tests/test_12h_shift_bm_layout.py
-```
+    python -m pytest -q tests/test_daily_start.py tests/test_patient_list_startup.py
 
-359 compatibility tests passed in 3.37 seconds:
+226 existing compatibility tests passed in 21.20 seconds:
 
-```text
-python -m pytest -q --disable-warnings tests/test_fen_gi.py tests/test_empty_groups_icp_cpp.py tests/test_dynamic_categories.py tests/test_arterial_pressure.py tests/test_security_models.py tests/test_parser.py
-```
+    python -m pytest -q tests/test_clear_all_no_admin.py tests/test_print_fit_reset.py tests/test_census_download_guard.py tests/test_callbacks.py tests/test_workflow_print.py tests/test_save_status.py
 
-Total: 597 selected tests passed in completed runs. A broader selected run
-was stopped by the 200-second execution limit before completion. It is not
-counted and no full-suite pass is claimed. Existing test expectations for the
-old shift schedule, regular BM label and version string were updated to the
-new requirements. Detection, source-selection and error-handling assertions
-were retained.
+An unrelated AnyIO/Pytest deprecation warning was emitted. There were no test failures.
 
-## New regression coverage
+## Behavior verified
 
-The 28 new tests include an independent minute-by-minute oracle across a whole
-ordinary day. They cover 7am and 7pm starts, no reset at 3pm or 11pm, actual elapsed
-time rather than a fixed denominator, midnight, year/month/leap-day boundaries,
-rate examples for all requested output categories, legacy encrypted snapshot
-recalculation without re-paste, and later print time not changing the endpoint.
-Existing tests retain the spring/fall daylight-saving and ambiguous-time checks.
+- Every saved handoff is cleared regardless of save date or time, including missing or invalid save timestamps.
+- A new list can start at every hour and can be started again on the same day after another login.
+- Settings, medication mappings, custom room definitions, and the source archive remain intact when building a reset candidate.
+- Ordinary continuation preserves saved handoffs and open drafts without a storage read or write.
+- Starting fresh clears drafts, editor values, pasted text, old print selections, and prepared download references after a successful save.
+- Load failures, write failures, and concurrent updates do not trigger an automatic deletion retry.
+- An unconfirmed reset is reconciled by generation before retrying, preserving patients added after a completed reset.
+- Expired and logged-out sessions cannot perform either action.
+- Existing reset reconciliation, stale-download checks, save behavior, and printing remain covered.
 
-Label/spacing tests inspect plain text, escaped HTML, individual PDFs and Print
-All PDFs. They verify the exact capitalized label, bold label-only PDF spans,
-regular-weight Yes/No spans, position beneath medications or an empty Bowel
-Regimen, and one normal line of vertical spacing without a blank line.
+## Real Streamlit interaction check
 
-## Visual and compatibility checks
+Both actions were also exercised using Streamlit 1.67.0 AppTest, with two synthetic handoffs.
+The keep-current-list click preserved both handoffs exactly.
+The create-new click opened a blank list and selected the Handoff workspace.
+The main screen contained exactly the two requested action buttons, with Log out in the sidebar.
+Neither action raised a Streamlit exception.
 
-Synthetic before/after one-room and two-room PDFs were generated. The updated
-one-room PDF and BM close-up were visually reviewed. The BM label is bold and
-Yes is regular on the next line after the medication. Current Shift shows
-7pm-6:30am and the recalculated rates. These checks use local software, not a
-live browser or hosted application.
+## Package checks and scope
 
-No schema or dependency changed. The core 24-hour balance parser/formatter,
-H/S source selector, importing/model logic, nutrition, encryption, storage and
-PDF export engine are byte-for-byte unchanged from 6.74. A shared medication
-block renderer has a narrow generated-BM observation formatting branch.
-
-Clinical source examples are not packaged. Included previews are synthetic.
+app.py and daily_start.py pass Python syntax parsing.
+Comparison with PICU675.zip confirms that these are the only changed application modules.
+The two startup test files and the current installation and verification documents were updated.
+Clinical parser, nutrition, I/O, medication mapping, encryption, storage, and dependency files are unchanged.
+The complete test suite was not rerun, and no live deployment or patient-data archive was accessed.

@@ -1,60 +1,48 @@
-# PICU Handoff 6.75
+# PICU Handoff 6.76
 
-Built from the supplied PICU674.zip. No live application or repository was changed.
+Built from version 6.75. This package has not been deployed to your live app.
 
-## What changed
+## Two choices after login
 
-Current Shift now uses 7am-7pm and 7pm-7am shifts instead of the previous
-7am/3pm/11pm schedule. Every output rate uses the actual elapsed time from
-7am or 7pm to the source I/O summary timestamp, not a fixed 12-hour denominator.
-At 6:30am the interval is 7pm-6:30am, or 11.5 hours on an ordinary day.
-At 5:12pm the interval is 7am-5:12pm, or 10.2 hours.
+### Create New Handoff for Rounds/Signout
 
-UOP, Drains, Chest Tube and Other remain separate, all in mL/kg/hr.
-The current-shift Weight remains the denominator. Last data filed and later
-print time are never substituted for the source summary timestamp.
-Missing/invalid source time or weight and zero elapsed time still withhold rates.
-Eastern daylight-saving changes use actual elapsed time. Ambiguous local times
-remain withheld rather than guessed.
+Clears all saved handoffs and this session's open drafts, then opens a blank
+patient list. Add the patients you want for rounds or signout.
 
-Only the label "Last BM (24 Hours):" is bold. Yes/No is regular weight.
-The line sits directly beneath the Bowel Regimen medications, or the empty
-Bowel Regimen line, without a blank line, added gap or separator above it.
-AC stool detection and the stored boolean are unchanged. No still means no
-positive documented signal, not proof that a bowel movement did not occur.
-The undated AC data must already represent the intended past-24-hour window.
+The screen states that all current handoffs will be cleared before you click.
+The button applies immediately, without a separate review or confirmation screen.
 
-## What did not change
+### Print, Update, or Add to Current List
 
-The 24-hour I/O values, source timestamps, calculations, labels and H/S source
-selection are unchanged from 6.74. Nutrition, medication mappings, other clinical
-parsers, encryption, storage and dependencies are also unchanged.
+Keeps all current patients. Print the list, update existing handoffs, or add new
+patients without starting over.
+
+Both choices are available at any time. There is no morning window or
+once-per-day restriction. Each new login presents these choices, so you can
+start another blank list later the same day.
+
+## Existing app behavior
+
+Reusable settings, medication mappings, room choices, and custom room definitions
+are preserved. The clinical parsers, nutrition display, 24-hour I/O, 7am/7pm
+current shifts, and compact BM label remain as they were in version 6.75.
+
+The new-list action clears local drafts only after the shared save succeeds.
+If a save response is lost, retrying checks the saved list before proceeding so
+patients added after a completed reset are kept.
 
 ## Install
 
-Extract the ZIP and replace matching application files in the app-code repository.
-The five required changed modules are listed in UPDATE_FILES.txt. No new module
-or dependency is needed relative to 6.74. Do not replace Streamlit Secrets,
-encryption keys or separate encrypted data/mapping repositories.
+If you are running version 6.75, extract the ZIP and replace both app.py and
+daily_start.py in your existing app-code repository. Replace both files together.
+You can also replace the complete application file set. Use the full set when
+updating from an earlier version.
 
-Restart the deployment and confirm:
-Version 6.75 | 12-hour shifts + BM label
+Keep your existing Streamlit Secrets, encryption key, and separate encrypted
+patient-data and mapping repositories. No new dependency is required.
 
-Existing 6.73/6.74 current-shift snapshots store volumes, weight and source time,
-not precomputed rates. Opening or reprinting them in 6.75 automatically uses the
-corrected schedule. Re-pasting is not required solely for this correction.
-Old downloaded PDFs/HTML/text files will not change. Download fresh copies.
-Re-paste only to refresh clinical data or to recover data never imported.
+Restart the app and confirm the sidebar reads:
 
-Update every deployment that should use the corrected schedule. An older
-running build will still calculate using its old schedule even with the same data.
+Version 6.76 | Clear start options
 
-## Verification
-
-597 selected tests passed in completed runs: 238 focused and 359 compatibility.
-Tests cover 7am/7pm boundaries, every minute of an ordinary day, overnight and
-calendar crossings, daylight-saving behavior, all requested output categories,
-legacy encrypted snapshots, unchanged 24-hour I/O, UI callbacks, label-only
-bolding, and no added vertical gap in individual/Print All PDFs.
-Synthetic one-room and two-room PDFs were generated and the one-room layout
-was visually checked. See TEST_REPORT.md for commands and limits.
+See UPDATE_FILES.txt for the file list and TEST_REPORT.md for verification.

@@ -1,1 +1,33 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><title>PICU Handoff 6.75</title><style>body{font:17px/1.5 Arial,sans-serif;max-width:850px;margin:40px auto;padding:0 20px}code{background:#eee;padding:2px 5px}</style></head><body><h1>PICU Handoff 6.75</h1><h2>12-hour shifts and compact BM label</h2><p>Current Shift now runs 7am-7pm and 7pm-7am. Rates use elapsed hours from the applicable start to the source I/O timestamp. Your 24-hour I/O remains unchanged.</p><p>Only <b>Last BM (24 Hours):</b> is bold. Yes/No remains regular and follows Bowel Regimen without an added blank line.</p><h2>Install</h2><p>Replace the application files in your app-code repository. The five changed modules are app.py, bowel_movements.py, current_shift.py, error_store.py and infusions.py. Keep Streamlit Secrets and separate encrypted data repositories unchanged.</p><p>Restart and verify <code>Version 6.75 | 12-hour shifts + BM label</code>.</p><p>Saved current-shift snapshots recalculate when reopened or reprinted. Download fresh handoffs. Old downloaded files do not change. Re-paste only to refresh the underlying clinical data.</p><p>597 selected tests passed. See TEST_REPORT.md for checks and limits. Your live deployment has not been modified.</p></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PICU Handoff 6.76</title>
+<style>
+body {font: 17px/1.5 Arial, sans-serif}
+body {max-width: 850px}
+body {margin: 40px auto}
+body {padding: 0 20px}
+code {background: #f0f0f0}
+code {padding: 2px 5px}
+</style>
+</head>
+<body>
+<h1>PICU Handoff 6.76</h1>
+<h2>Two clear choices after login</h2>
+<h3>Create New Handoff for Rounds/Signout</h3>
+<p>Clears all saved handoffs and this session's open drafts, then opens an empty patient list. Add your patients for rounds or signout.</p>
+<p>The clearing message appears before you click. The button applies immediately, without another review or confirmation screen.</p>
+<h3>Print, Update, or Add to Current List</h3>
+<p>Keeps all current patients. Print the list, update existing handoffs, or add new patients.</p>
+<p>Both choices work at any time. There is no morning window or once-per-day restriction. You can start another blank list when you log in later the same day.</p>
+<h2>Install</h2>
+<p>For an update from version 6.75, replace both <code>app.py</code> and <code>daily_start.py</code> in your existing app-code repository. Replace both files together, or replace the complete application file set. Use the full set when updating from an earlier version.</p>
+<p>Keep Streamlit Secrets, your encryption key, and separate encrypted patient-data and mapping repositories. No new dependency is required.</p>
+<p>Restart the app and verify <code>Version 6.76 | Clear start options</code> in the sidebar.</p>
+<h2>Existing settings and clinical features</h2>
+<p>Reusable settings, medication mappings, and custom room definitions are preserved. Nutrition, 24-hour I/O, 7am/7pm current shifts, the compact BM label, and other clinical parsing remain as they were in version 6.75.</p>
+<p>See <code>TEST_REPORT.md</code> for verification. This package has not been deployed to your live app.</p>
+</body>
+</html>

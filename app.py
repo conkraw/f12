@@ -1,4 +1,4 @@
-"""PICU SmartPhrase v6.75: 12-hour current shifts and compact BM labeling."""
+"""PICU SmartPhrase v6.76: clear startup choices with a blank list at any time."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,
@@ -30,7 +30,7 @@ from noninvasive import DEVICE_FIELDS, format_noninvasive, validate_noninvasive
 from importing import import_sections, SUPPORTED_SECTIONS
 from batching import available_handoffs
 from handoff_reset import cleared_vault, census_was_reset
-from daily_start import daily_reset_plan, start_daily_list, START_MARKER
+from daily_start import start_daily_list
 from census_guard import guard_download
 from save_status import (room_save_status, saved_time_text, latest_saved_time,
                          most_recent_save_caption, save_status_table)
@@ -1618,86 +1618,67 @@ def patient_list_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def continue_patient_list() -> None:
-    """Enter the workspace without writing or deleting any handoff."""
+def continue_patient_list(store: GitHubVault | None = None) -> None:
+    """Keep the list intact, reconciling an unconfirmed start before opening it."""
     if not require_session():
         return
     ss = st.session_state
+    if ss.get("patient_list_start_attempt") and store is not None:
+        # A reset may have reached shared storage even if its reply was lost.
+        # Reload without writing so Continue cannot reopen obsolete handoffs.
+        try:
+            if not reload_archive(store):
+                return
+        except Exception:
+            note("The current list could not be loaded. Please try again.", "error")
+            return
     ss["patient_list_ready"] = True
     ss.pop("daily_start_preview", None)
+    ss.pop("patient_list_start_attempt", None)
     ss.setdefault("page", "Handoff")
 
 
-def prepare_daily_start(store: GitHubVault | None = None) -> None:
-    """Read the current archive and freeze exactly what the user will review."""
+def create_rounds_handoff(store: GitHubVault | None = None) -> None:
+    """Start a blank list on an explicit click, with no time or daily limit."""
     if not require_session():
         return
     ss = st.session_state
     if ss.get("patient_list_ready"):
         return
-    ss.pop("daily_start_preview", None)
-    if store is not None:
-        try:
-            if not reload_archive(store):
-                return
-        except Exception:
-            note("The saved patient list could not be loaded. No handoffs were changed. Try loading it again.", "error")
+    attempt = ss.get("patient_list_start_attempt")
+    try:
+        if store is not None and not reload_archive(store):
             return
-    try:
-        plan = daily_reset_plan(ss["vault"], patient_list_now())
-        ss["daily_start_preview"] = {"source": deepcopy(ss["vault"]),
-                                     "sha": ss.get("vault_sha"), "plan": plan}
-    except (ValueError, TypeError, KeyError):
-        note("The patient list could not be reviewed. No handoffs were changed. Reload the saved archive.", "error")
-
-
-def confirm_daily_start(store: GitHubVault | None = None) -> None:
-    """Commit only the reviewed snapshot, with no automatic deletion retry."""
-    if not require_session():
-        return
-    ss = st.session_state
-    preview = ss.get("daily_start_preview")
-    if ss.get("patient_list_ready") or not preview or preview.get("failed"):
-        return
-    try:
-        if ss["vault"] != preview["source"] or ss.get("vault_sha") != preview["sha"]:
-            raise ValueError("The saved list changed after this review.")
-        now = patient_list_now()
-        if daily_reset_plan(preview["source"], now)["date"] != preview["plan"]["date"]:
-            raise ValueError("The date changed after this review.")
-        if preview["plan"]["already_started"]:
+        if attempt and ss["vault"]["reset_generation"] != attempt["source_generation"]:
+            # This request, or another user's reset, already changed the list.
+            # Never repeat an unconfirmed deletion over newly entered patients.
+            completed = ss["vault"]["reset_generation"] == attempt["target_generation"]
+            ss.pop("patient_list_start_attempt", None)
             continue_patient_list()
-            note("Today's patient list is already started. All saved handoffs were kept.")
+            ss["page"] = "Handoff"
+            note("The new list was already created. Any patients added since then were kept."
+                 if completed else
+                 "The list was already restarted. The current patients were kept.")
             return
-        candidate = start_daily_list(preview["source"], datetime.fromisoformat(preview["plan"]["as_of"]))
-        # The selection stays frozen at review time. The shared start time
-        # records confirmation, so later logins recognize the completed start.
-        candidate["settings"][START_MARKER] = now.isoformat()
-        validate_vault(candidate)
-        retained = _retained_reset_state(ss["vault"], candidate)
+        candidate = start_daily_list(ss["vault"], patient_list_now())
+        ss["patient_list_start_attempt"] = {
+            "source_generation": ss["vault"]["reset_generation"],
+            "target_generation": candidate["reset_generation"],
+        }
         commit(candidate, store)
     except Exception:
-        preview["failed"] = True
-        note("Starting the new list was not confirmed. Your open handoffs were kept. Reload the saved list before trying again.", "error")
+        note("Starting a new list was not confirmed. Your open handoffs were kept. "
+             "Choose either option to reload the current list.", "error")
         return
-    removed, kept = len(preview["plan"]["remove"]), len(preview["plan"]["keep"])
-    _apply_reset_state(retained)
+    discard_all_handoff_state()
+    ss.pop("patient_list_start_attempt", None)
     continue_patient_list()
-    note(("Today's patient list started. " if store else "Session-only patient list started. ") +
-         str(removed) + " handoff(s) removed. " + str(kept) + " handoff(s) kept.",
-         "success" if store else "info")
-
-
-def _daily_room_table(rows: list[dict]) -> str:
-    cells = "".join("<tr>" + "".join("<td style='padding:6px 10px;border-bottom:1px solid #ddd'>" +
-        escape(row[key]) + "</td>" for key in ("room", "last_saved", "reason")) + "</tr>" for row in rows)
-    return ("<div style='max-height:330px;overflow:auto'><table style='width:100%;text-align:left;border-collapse:collapse'>"
-            "<thead><tr><th>Room</th><th>Last saved (Eastern)</th><th>Reason</th></tr></thead><tbody>" +
-            cells + "</tbody></table></div>")
+    ss["page"] = "Handoff"
+    note("Blank handoff list created. Add patients for rounds or signout.")
 
 
 def patient_list_startup(store: GitHubVault | None) -> bool:
-    """Two choices after every sign-in. Rendering never changes stored data."""
+    """Two clear choices after sign-in. Rendering never changes stored data."""
     ss = st.session_state
     if ss.get("patient_list_ready"):
         return True
@@ -1705,43 +1686,22 @@ def patient_list_startup(store: GitHubVault | None) -> bool:
     if "notice" in ss:
         kind, message = ss.pop("notice")
         getattr(st, kind)(message)
-    preview = ss.get("daily_start_preview")
-    if preview:
-        plan = preview["plan"]
-        st.subheader("Start a new patient list")
-        if preview.get("failed"):
-            st.warning("Reload the saved list to check its current status before trying again.")
-            st.button("Reload saved list", key="daily_start_reload", on_click=prepare_daily_start, args=(store,))
-        elif plan["already_started"]:
-            st.info("Today's list was already started at " + saved_time_text(plan["started_at"]) + ". All saved handoffs will be kept.")
-            st.button("Open today's patient list", key="daily_start_existing", on_click=continue_patient_list, type="primary")
-        else:
-            st.caption("Remove handoffs saved before today and today's saves from 5:00 AM through 8:30 AM Eastern. Other handoffs stay.")
-            st.text("To remove: " + str(len(plan["remove"])) + ". To keep: " + str(len(plan["keep"])) + ".")
-            if plan["remove"]:
-                st.markdown(_daily_room_table(plan["remove"]), unsafe_allow_html=True)
-                st.caption("Each selected handoff is removed in full, including its difficult-airway details.")
-            if plan["keep"]:
-                with st.expander("Handoffs that will stay", expanded=False):
-                    st.markdown(_daily_room_table(plan["keep"]), unsafe_allow_html=True)
-            st.caption("This starts the list once for today. Later sign-ins will keep the handoffs entered for that list.")
-            label = ("Start new list and remove " + str(len(plan["remove"])) + " handoff(s)"
-                     if plan["remove"] else "Start today's list")
-            st.button(label, key="daily_start_confirm", on_click=confirm_daily_start, args=(store,), type="primary")
-        st.button("Continue without deleting", key="daily_start_cancel", on_click=continue_patient_list)
-    else:
-        st.subheader("How would you like to start?")
-        st.caption(str(len(ss["vault"]["rooms"])) + " saved handoff(s)")
-        fresh, existing = st.columns(2)
-        with fresh:
-            st.subheader("Start a new patient list")
-            st.caption("Review older handoffs and today's 5:00–8:30 AM saves for removal, then enter your patients.")
-            st.button("Start new patient list", key="daily_start_review", on_click=prepare_daily_start, args=(store,), type="primary")
-        with existing:
-            st.subheader("Continue saved handoffs")
-            st.caption("Print processed handoffs, update existing patients, or add patients. Nothing is deleted.")
-            st.button("Continue saved handoffs", key="daily_start_continue", on_click=continue_patient_list)
-    st.button("Log out", key="daily_start_logout", on_click=clear_session)
+    st.subheader("What would you like to do?")
+    count = len(ss["vault"]["rooms"])
+    st.caption("Current list: " + str(count) + (" saved handoff" if count == 1 else " saved handoffs"))
+    fresh, existing = st.columns(2, gap="large")
+    with fresh:
+        st.subheader("Start with a blank list")
+        st.markdown("Clears all current handoffs and starts an empty patient list for rounds or signout.")
+        st.button("Create New Handoff for Rounds/Signout", key="patient_list_create",
+                  on_click=create_rounds_handoff, args=(store,), type="primary", use_container_width=True)
+    with existing:
+        st.subheader("Keep the current list")
+        st.markdown("Keeps all current patients. Print the list, update handoffs, or add new patients.")
+        st.button("Print, Update, or Add to Current List", key="patient_list_continue",
+                  on_click=continue_patient_list, args=(store,), use_container_width=True)
+    with st.sidebar:
+        st.button("Log out", key="patient_list_logout", on_click=clear_session)
     return False
 
 
@@ -1775,7 +1735,7 @@ def main() -> None:
         return
     with st.sidebar:
         st.header("PICU Handoff")
-        st.caption("Version 6.75 | 12-hour shifts + BM label")
+        st.caption("Version 6.76 | Clear start options")
         # Retire the old instructions workspace without discarding room drafts.
         if st.session_state.get("page") == "Instructions / SmartPhrase":
             st.session_state["page"] = "Handoff"

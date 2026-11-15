@@ -1,18 +1,24 @@
-PICU Handoff 6.75
+PICU Handoff 6.76
 
-Required changed application modules relative to 6.74:
+Required changed application modules relative to 6.75:
 app.py
-bowel_movements.py
-current_shift.py
-error_store.py
-infusions.py
+daily_start.py
 
-Replace all five together, or replace the complete application file set.
-No new module or dependency is required. Keep all other existing modules,
-including io_sources.py. Preserve Streamlit Secrets and separate encrypted
+Replace both files together, or replace the complete application file set.
+Use the full application file set when updating from an earlier version.
+No new module or dependency is required.
+
+Preserve Streamlit Secrets, the encryption key, and separate encrypted
 patient-data and mapping repositories.
 
-Restart and verify: Version 6.75 | 12-hour shifts + BM label
-Existing stored current-shift snapshots recalculate on opening/reprinting.
-Download fresh handoffs. Previously downloaded files cannot update themselves.
+Restart and verify: Version 6.76 | Clear start options
+
+After login:
+Create New Handoff for Rounds/Signout clears all current handoffs and opens
+an empty list. It works at any time, including another login on the same day.
+Print, Update, or Add to Current List keeps all current patients.
+
+Reusable settings, custom room definitions, medication mappings, and the
+existing clinical parsing and display behavior are preserved.
+
 No live app or repository was modified when this package was prepared.
