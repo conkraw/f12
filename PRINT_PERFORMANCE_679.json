@@ -1,0 +1,58 @@
+{
+  "source": "Exact exports.py extracted from PICU678.zip",
+  "method": "Synthetic 18-room packets, fixed display clock, median of three runs after imports. Includes signature checks, page assembly and fresh metadata. Excludes shared-storage network, browser, printer and client download latency.",
+  "cases": [
+    {
+      "kind": "simple",
+      "rooms": 18,
+      "pages": 18,
+      "v678_render_seconds": 0.1221,
+      "v679_warm_assemble_seconds": 0.093,
+      "reduction_percent": 23.9,
+      "prepare_all_once_seconds": 0.2561,
+      "prepare_mean_per_room_seconds": 0.0142,
+      "one_changed_room_seconds": 0.1,
+      "unchanged_body_regenerations": 0,
+      "body_regenerations_after_one_edit": 1,
+      "pixel_identical": true,
+      "baseline_bytes": 30040,
+      "cached_packet_bytes": 29251,
+      "baseline_runs": [
+        0.19200218900004984,
+        0.1220355689997632,
+        0.12213044100008119
+      ],
+      "warm_runs": [
+        0.09312395200004175,
+        0.09297282299985454,
+        0.09079828899984932
+      ]
+    },
+    {
+      "kind": "mixed",
+      "rooms": 18,
+      "pages": 18,
+      "v678_render_seconds": 2.229,
+      "v679_warm_assemble_seconds": 1.5365,
+      "reduction_percent": 31.1,
+      "prepare_all_once_seconds": 3.8162,
+      "prepare_mean_per_room_seconds": 0.212,
+      "one_changed_room_seconds": 1.5423,
+      "unchanged_body_regenerations": 0,
+      "body_regenerations_after_one_edit": 1,
+      "pixel_identical": true,
+      "baseline_bytes": 50740,
+      "cached_packet_bytes": 45831,
+      "baseline_runs": [
+        2.200099646000126,
+        2.4441426630000933,
+        2.228982956999971
+      ],
+      "warm_runs": [
+        1.605243442000301,
+        1.507386882999981,
+        1.5364990940001917
+      ]
+    }
+  ]
+}

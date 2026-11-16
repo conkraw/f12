@@ -5,3 +5,6 @@ requests>=2.32,<3
 reportlab>=4.2,<5
 
 tzdata>=2025.2
+
+# In-memory assembly of already-rendered patient PDFs.
+pypdf>=5.9,<7

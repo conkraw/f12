@@ -511,7 +511,25 @@ def print_fit_report(sheet: dict, target_pages: int = 1) -> dict:
             'tight_spacing': plan['tight'], 'balanced_columns': plan['balanced']}
 
 
-def _draw_sheet(c, sheet: dict, width: float, height: float, position: int = 1, count: int = 1, print_stamp: str | None = None, *, target_pages: int = 1, plan: dict | None = None, save_status=None) -> int:
+def draw_pdf_metadata(c, sheet: dict, width: float, height: float, position: int,
+                      count: int, print_stamp: str, page: int, save_status=None) -> None:
+    """Stamp only the existing metadata gutter, never the clinical body."""
+    margin = PRINT_MARGIN
+    c.setFont('Helvetica', 7)
+    c.drawString(margin, height-margin-5, 'Print prepared: ' + print_stamp + ' | Room ' + sheet['room'] + (' | Continued' if page > 1 else ''))
+    c.drawRightString(width-margin, height-margin-5,
+                     'Sheet ' + str(position) + '/' + str(count) + ' | Reference ' + sheet['id'][:8] + ' | Page ' + str(page))
+    # The existing metadata gutter has room for this second line. Keep
+    # body geometry unchanged so it does not reduce the clinical area.
+    saved_label, _, saved_value = handoff_save_caption(sheet, save_status).partition(":")
+    c.setFont('Helvetica-Bold', 7)
+    c.drawString(margin, height-margin-15, saved_label + ':')
+    label_width = c.stringWidth(saved_label + ':', 'Helvetica-Bold', 7)
+    c.setFont('Helvetica', 7)
+    c.drawString(margin+label_width, height-margin-15, saved_value)
+
+
+def _draw_sheet(c, sheet: dict, width: float, height: float, position: int = 1, count: int = 1, print_stamp: str | None = None, *, target_pages: int = 1, plan: dict | None = None, save_status=None, include_metadata: bool = True) -> int:
     print_stamp = print_stamp or eastern_print_time()
     if plan is None:
         plan, _ = _select_pdf_plan(sheet, width, height, target_pages)
@@ -575,18 +593,9 @@ def _draw_sheet(c, sheet: dict, width: float, height: float, position: int = 1, 
         page += 1
         if page > 150:
             raise ValueError('The handoff is too long to export safely. Shorten it or export text.')
-        c.setFont('Helvetica', 7)
-        c.drawString(margin, height-margin-5, 'Print prepared: ' + print_stamp + ' | Room ' + sheet['room'] + (' | Continued' if page > 1 else ''))
-        c.drawRightString(width-margin, height-margin-5,
-                         'Sheet ' + str(position) + '/' + str(count) + ' | Reference ' + sheet['id'][:8] + ' | Page ' + str(page))
-        # The existing metadata gutter has room for this second line. Keep
-        # body geometry unchanged so it does not reduce the clinical area.
-        saved_label, _, saved_value = handoff_save_caption(sheet, save_status).partition(":")
-        c.setFont('Helvetica-Bold', 7)
-        c.drawString(margin, height-margin-15, saved_label + ':')
-        label_width = c.stringWidth(saved_label + ':', 'Helvetica-Bold', 7)
-        c.setFont('Helvetica', 7)
-        c.drawString(margin+label_width, height-margin-15, saved_value)
+        if include_metadata:
+            draw_pdf_metadata(c, sheet, width, height, position, count, print_stamp,
+                              page, save_status)
         if plan['review_banner'] is not None:
             banner = plan['review_banner']
             _, bh = banner.wrap(total_width, 10000)
@@ -671,6 +680,69 @@ def _draw_sheet(c, sheet: dict, width: float, height: float, position: int = 1, 
 
 
 @stable_window_clock
+def handoff_pdf_body(sheet: dict, printed_at: datetime | None = None, *,
+                     target_pages: int = 1) -> tuple[bytes, dict]:
+    """Render clinical pages once with the unchanged layout and blank metadata.
+
+    The private session cache reuses these bytes. Download-time metadata is
+    applied separately, preserving current print/save times and packet order.
+    """
+    from reportlab.pdfgen import canvas
+    validate_sheet(sheet)
+    output = BytesIO()
+    width, height = 792, 612
+    c = canvas.Canvas(output, pagesize=(width, height), pageCompression=1)
+    c.setTitle("PICU handoff body")
+    c.setAuthor("")
+    plan, _ = _select_pdf_plan(sheet, width, height, target_pages)
+    report = {'font_size': plan['font_size'], 'target_pages': target_pages,
+              'tight_spacing': plan['tight'], 'balanced_columns': plan['balanced']}
+    pages = _draw_sheet(c, sheet, width, height, plan=plan, include_metadata=False)
+    report.update(page_count=pages, fits_one_page=pages == 1, target_met=pages <= target_pages)
+    c.save()
+    return output.getvalue(), report
+
+
+@stable_window_clock
+def pdf_content_signature(sheet: dict, printed_at: datetime | None = None, *,
+                          target_pages: int = 1) -> str:
+    """Hash the complete source plus the exact time-sensitive output inputs.
+
+    No time buckets or guessed expiry windows: recompute the inexpensive text
+    and lab selections at the same clock as rendering. This covers rolling lab
+    windows, SBS/MRSA/problem displays, line days, and external BMI reference
+    output. Only metadata timestamps are excluded from the clinical body key.
+    Keep this in sync with _make_pdf_plan when adding a new dynamic display.
+    """
+    import hashlib
+    import json
+    if type(target_pages) is not int or target_pages not in (1, 2):
+        raise ValueError('Choose a one-page or two-page print target.')
+    validate_sheet(sheet)
+    fields = display_fields(sheet, include_lab_text=False)
+    payload = {
+        'renderer': '6.79-body-v1', 'target_pages': target_pages,
+        'sheet': {key: value for key, value in sheet.items()
+                  if key not in ('created_at', 'updated_at')},
+        'fields': fields,
+        'columns': [patient_markup(sheet, fields, _clinical_markup) if section is None
+                    else field_markup(sheet, fields, section, _clinical_markup)
+                    for _, section in COLUMNS],
+        'infusion_prefixes': {section: infusion_section_prefix(sheet, section,
+                             bool(system_body_blocks(section, sheet['fields'][section],
+                                                     sheet['medications'], sheet)))
+                             for section in INFUSION_SECTIONS},
+        'labs': laboratory_data(sheet),
+        'problems': problem_text(sheet, rich=True, esc=_clinical_markup),
+        'devices': devices_markup(sheet, _clinical_markup),
+        'airway': airway_summary(sheet, True, _clinical_markup),
+    }
+    raw = json.dumps(payload, sort_keys=True, ensure_ascii=False,
+                     separators=(',', ':'), allow_nan=False).encode('utf-8')
+    return hashlib.sha256(raw).hexdigest()
+
+
+@stable_window_clock
 def handoffs_html(sheets: list[dict], printed_at: datetime | None = None, *, save_statuses: dict | None = None) -> str:
     if not sheets or len(sheets) > 100:
         raise ValueError("Select between 1 and 100 handoffs to print.")
@@ -689,11 +761,11 @@ main{margin-bottom:24px}.printbar{font:15px Arial,sans-serif;max-width:11in;marg
     return head + '<body><div class="printbar"><button onclick="window.print()">Print all handoffs</button> Landscape Letter. Each room starts on a new page.</div>' + "".join(pages) + PRINT_TIME_SCRIPT + "</body></html>"
 
 
-def download_payload(sheets: list[dict], kind: str, expires_at: float | None = None, *, target_pages: int = 1, cancelled=None, save_statuses: dict | None = None):
+def download_payload(sheets: list[dict], kind: str, expires_at: float | None = None, *, target_pages: int = 1, cancelled=None, save_statuses: dict | None = None, pdf_cache=None):
     """Return a zero-argument generator for Streamlit >=1.52 downloads.
 
-    A private snapshot is captured on render, not a shared cache. The timestamp
-    is generated on the click, not when the UI was last opened. No Streamlit
+    A private snapshot is captured on render. Optional PDF reuse is confined to
+    the caller's session cache. The timestamp is generated on the click. No Streamlit
     session data is accessed from the download worker thread.
     """
     if kind not in ("pdf", "html", "text"):
@@ -712,6 +784,10 @@ def download_payload(sheets: list[dict], kind: str, expires_at: float | None = N
             raise ValueError("The session expired. Sign in and prepare a new download.")
         try:
             if kind == "pdf":
+                if pdf_cache is not None:
+                    from pdf_cache import cached_handoffs_pdf
+                    return cached_handoffs_pdf(snapshot, pdf_cache, target_pages=target_pages,
+                                               save_statuses=status_snapshot)
                 return handoffs_pdf(snapshot, target_pages=target_pages, save_statuses=status_snapshot)
             if kind == "html":
                 return handoffs_html(snapshot, save_statuses=status_snapshot).encode("utf-8")

@@ -1,100 +1,62 @@
-# PICU Handoff 6.78
+# PICU Handoff 6.79
 
-Every new SmartPhrase replaces the entire handoff for the selected room.
-The app no longer imports new source text into an existing patient record.
-This package has not been deployed to the live app.
+Print all now reuses current, already-rendered patient PDFs instead of repeating
+all clinical layout and page fitting on every download.
 
-## Room replacement
+After import/save, each room's PDF is prepared once. Single-patient printing and
+Print all share a private in-memory cache. Changed or missing patient PDFs are
+rebuilt automatically. Print times, saved times and page numbering stay current.
+The complete-room replacement rules from 6.78 are preserved.
 
-Select the correct room, paste the complete new SmartPhrase, and click
-Replace room handoff. A successful import builds a blank record, adds only
-information from that new phrase, and saves the whole replacement in one write.
-It then clears the previous local draft and editor values.
-
-The replacement clears all previous patient-specific information, including
-omitted sections, medications, diagnoses, labs, vitals, nutrition, I/O, devices,
-manual notes, difficult-airway details, and prior problem-review decisions.
-This happens on every new import, including an update to the same patient.
-Manual notes must be re-entered after importing when they are still needed.
-Opening a room, printing a list, or editing a field without importing another
-SmartPhrase does not trigger this replacement.
-
-Other rooms, custom room definitions, reusable settings, and medication mappings
-are preserved. Shared storage is updated immediately on successful import.
-With shared storage disabled, replacement is saved only within that session.
-Additional manual edits retain the existing Save, room-change autosave, and
-Print all autosave workflow.
-
-## Failed or incomplete imports
-
-The app builds and validates the new record before replacing anything.
-Empty, unsupported, repeated-patient, or entirely failed imports do not replace
-the previous handoff. The app reports Handoff NOT replaced and keeps the pasted
-text for correction. It must not be mistaken for an updated handoff.
-
-When at least one section imports successfully but another fails, the replacement
-contains only successfully parsed NEW information. Failed sections remain absent
-and are flagged in Alerts and the printed import-review summary. No previous
-patient values are used as a fallback. Review the complete source and output.
-
-A save conflict or unconfirmed write does not claim success. The old local record
-and pasted text are kept with an explicit warning. Reload the saved archive before
-retrying because an unacknowledged write may have reached shared storage.
-
-Previously prepared downloads in the current session are revoked on successful
-replacement. Shared downloads also check selected room identities before and
-after generation, rejecting a download when one of those rooms was replaced.
-Already downloaded files, printed pages, and other open browser previews cannot
-be recalled. Other users must reload to see the new handoff.
-
-## Your two startup choices remain
-
-START HERE: Create an Updated Handoff still opens the clear-all warning for a
-new rounds or evening list. Only Move Forward and Delete Previous Handoffs
-confirms the deletion. All rooms are cleared only through this deliberate reset.
-
-Add a Patient or Print Current List preserves the list. Importing a new phrase
-inside that workflow now replaces only the selected room, never merges it.
-There is no time window or once-per-day restriction.
+This package has not been deployed to the live application.
 
 ## Install
 
-Extract PICU678.zip and replace the matching application-code files in the
-existing app-code repository. The complete application file set is included.
-From 6.77, the changed runtime modules are:
+Extract PICU679.zip. Replace the matching application-code files at your
+existing app repository root, not inside an extra nested directory.
+
+From version 6.78, the required update is:
 
     app.py
-    importing.py
-    import_review.py
+    exports.py
     census_guard.py
-    user_guide.py
-    workspace_ui.py
+    pdf_cache.py
+    requirements.txt
 
-Replace all six together. For an earlier version, use the complete file set.
-Keep Streamlit Secrets, the encryption key, and separate encrypted patient-data
-and mapping repositories. No new dependency or archive schema is required.
+Upload all five together. pdf_cache.py is new. requirements.txt adds pypdf for
+in-memory PDF assembly. Reboot/redeploy to install it. For an older version,
+replace the complete application code set from this package.
 
-Restart the app and verify:
+Keep your existing Streamlit Secrets, encryption key, encrypted patient archive,
+medication mappings and separate data repositories. Do not replace your secrets
+with the example files. No archive migration is needed.
 
-    Version 6.78 | Replace, never merge
+Confirm the sidebar reads:
 
-Use two fictional patient examples in the same room to verify the deployment
-before clinical use. Give the first example a manual note and fields omitted
-from the second. After importing the second, confirm the first example is gone
-from the preview, saved handoff, reload, and Print all, while another room remains
-unchanged. Check shared storage and the saved timestamp.
+    Version 6.79 | Faster Print all
 
-Existing saved handoffs are not retroactively corrected. Use START HERE once to
-rebuild any list that might already contain mixed records. Replacement removes
-old information from the active handoff, not from encrypted Git history or files
-already downloaded or printed.
+## What to expect
 
-## Scope
+PDF preparation moves to import/save for the affected room. Unchanged Print all
+requests then reuse those pages. Missing or time-sensitive changed displays are
+regenerated. After a new login or app restart, the first print may still require
+initial generation because PDF bytes are not persisted in shared storage.
 
-The low-level section parsers and clinical calculations are unchanged. The app
-now calls a new whole-room replacement entry point that never accepts the old
-patient record. Existing 24-hour I/O, 7am/7pm current-shift, BM, nutrition, and
-medication-classification rules are preserved.
+The app still saves edits before Print all and checks the current shared records
+before and after assembly. Network checks, browser downloads and the printer are
+not bypassed. Room order, landscape layout and overflow pages are retained.
 
-See TEST_REPORT.md for test results and limitations. No live repository,
-clinical patient record, or production storage was accessed for this update.
+Test with fictional patients before clinical use. Confirm a manual edit appears,
+a same-room SmartPhrase replacement removes the old patient's information, and
+a reset removes the previous list. Compare one-patient and Print all output.
+
+## Documentation
+
+FASTER_PRINT_ALL.md explains the code path, cache safety and limitations.
+TEST_REPORT.md documents synthetic tests and environment limitations.
+PRINT_PERFORMANCE_679.json contains measured local timings.
+REPLACE_NEVER_MERGE_678.md preserves the prior room-replacement release notes.
+UPDATE_FILES.txt lists required files.
+
+Use only within your institution's approved workflow. Confirm the current
+patient and source information in Epic. Downloaded PDFs are unencrypted.

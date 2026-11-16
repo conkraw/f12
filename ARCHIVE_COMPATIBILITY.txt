@@ -1,13 +1,16 @@
-PICU Handoff 6.78 archive compatibility
+PICU Handoff 6.79 archive compatibility
 
 Archive schema remains 34. Encryption and storage format are unchanged.
 No key rotation, storage reset, or data migration is performed automatically.
-The update adds the import-diagnostic action not_imported. Install all six
-changed runtime modules together so the new action can be validated and shown.
-A successful import creates a new random handoff ID for the selected room and
-replaces that room's complete record. Other rooms and reusable settings remain.
-Existing records are not retroactively cleaned or reinterpreted as new patients.
-Old encrypted Git history and previously exported files are not erased.
+The PDF cache is session-private memory only, not a new archive field or a file
+stored in GitHub. Old cache entries disappear on reset/logout or app restart.
 
-The clinical parsers remain unchanged. Their internal section-composition
-helper is no longer the application's user-facing import entry point.
+Install app.py, exports.py, census_guard.py, pdf_cache.py and requirements.txt
+together. Reboot/redeploy to install pypdf. Keep existing Streamlit Secrets and
+encrypted patient/mapping storage. Do not upload example Secrets over real ones.
+
+The complete-room replacement behavior from 6.78 is retained. A new SmartPhrase
+creates a new handoff identity and clears the selected room's previous patient
+information. Other rooms and reusable settings are unchanged. Existing saved
+records are not retroactively cleaned. Old downloads and printed pages cannot
+be recalled. Existing encrypted Git history is not erased.

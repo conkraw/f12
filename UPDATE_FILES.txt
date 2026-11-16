@@ -1,24 +1,21 @@
-PICU Handoff 6.78
+PICU Handoff 6.79
 
-Required changed application modules relative to 6.77:
+Required runtime update from 6.78 (replace all five together):
 app.py
-importing.py
-import_review.py
+exports.py
 census_guard.py
-user_guide.py
-workspace_ui.py
+pdf_cache.py
+requirements.txt
 
-Replace all six together, or upload the complete application file set.
-For earlier versions, use the complete application file set.
-Do not change Streamlit Secrets, the encryption key, or separate storage repos.
-No new dependency or archive schema is required.
+pdf_cache.py is a new file. requirements.txt adds pypdf>=5.9,<7.
+Reboot/redeploy to install dependencies and load the updated modules.
+For an older app version, use the complete application-code file set.
+Keep existing Streamlit Secrets, the encryption key, encrypted archives,
+separate mapping repositories and saved configuration. No schema migration.
+Do not upload the outer ZIP folder as an extra level above app.py.
 
-Restart and verify: Version 6.78 | Replace, never merge
+Verify: Version 6.79 | Faster Print all
+This package has not been deployed to the live application.
 
-Every successful SmartPhrase import replaces and saves the selected room's
-whole handoff, including clearing omitted fields and previous manual notes.
-Other rooms and reusable mappings/settings are unchanged.
-The 6.77 START HERE warning and clear-all confirmation remain unchanged.
-
-The live application and shared data have not been modified by this package.
-See README.md for installation and safety checks, TEST_REPORT.md for verification.
+Also added: tests/test_pdf_cache.py and FASTER_PRINT_ALL.md.
+See TEST_REPORT.md for test results and limitations.

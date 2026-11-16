@@ -254,7 +254,10 @@ def test_print_all_has_pdf_only(app,monkeypatch):
 
 def test_overflow_alert_remains_without_diagnostics(app,monkeypatch):
     equip(app,monkeypatch);calls=[]
-    monkeypatch.setattr(app,'print_fit_report',lambda *a:dict(page_count=2,target_met=False,font_size=6.5,tight_spacing=True,balanced_columns=True))
+    from types import SimpleNamespace
+    report = dict(page_count=2,target_met=False,font_size=6.5,tight_spacing=True,balanced_columns=True)
+    cache = SimpleNamespace(prepare=lambda *a, **kw: SimpleNamespace(report=report))
+    monkeypatch.setattr(app,'session_pdf_cache',lambda:cache)
     monkeypatch.setattr(app.st,'warning',lambda t:calls.append(t))
     app.render_print_fit([new_sheet('P4102')],1)
     assert len(calls)==1 and '2 pages' in calls[0]

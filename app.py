@@ -1,4 +1,4 @@
-"""PICU SmartPhrase v6.78: every new SmartPhrase replaces its room handoff."""
+"""PICU SmartPhrase v6.79: reuse current patient PDFs for faster Print all."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,
@@ -31,7 +31,8 @@ from importing import import_replacement, SUPPORTED_SECTIONS
 from batching import available_handoffs
 from handoff_reset import cleared_vault, census_was_reset
 from daily_start import start_daily_list
-from census_guard import guard_download
+from census_guard import guard_download, saved_room_version
+from pdf_cache import SessionPdfCache
 from save_status import (room_save_status, saved_time_text, latest_saved_time,
                          most_recent_save_caption, save_status_table)
 from parser import MAX_PASTE, SECTION_NAMES
@@ -108,6 +109,9 @@ def clear_session() -> None:
     old = st.session_state.get("download_revocation")
     if old is not None:
         old.set()
+    cache = st.session_state.get("handoff_pdf_cache")
+    if cache is not None:
+        cache.close()
     st.session_state.clear()
 
 
@@ -446,6 +450,7 @@ def autosave_before_room_change(store: GitHubVault | None, *, for_print: bool = 
     ss.setdefault("base_sheets", {})[room] = deepcopy(saved)
     if changed_rules:
         reapply_open_mappings()
+    warm_handoff_pdf(ss["drafts"][room])
     message = (("Handoff automatically saved before Print all." if for_print else "Previous room automatically saved to shared storage.") if store else
                "Handoff saved in this session only. Shared storage is not enabled.")
     note(message + " Last saved: " + saved_time_text(saved["updated_at"]),
@@ -1297,9 +1302,12 @@ def create_handoff(store: GitHubVault | None = None) -> None:
     result.sheet = deepcopy(candidate["rooms"][room])
     ss.setdefault("base_sheets", {})[room] = deepcopy(result.sheet)
     _finish_handoff_import(room, result, store)
+    pdf_ready = warm_handoff_pdf(ss["drafts"][room])
     message = ("Room " + room + " handoff replaced and saved to shared storage. " if store else
                "Room " + room + " handoff replaced in this session only. Shared storage is not enabled. ")
     message += "Previous patient information and manual notes were cleared."
+    if not pdf_ready:
+        message += " PDF preparation will retry when downloaded."
     if result.errors:
         message += " Some sections could not be imported. Review Alerts before use."
     note(message, "warning" if result.errors else "info")
@@ -1326,11 +1334,57 @@ def load_saved_into_editor() -> None:
     note("Saved handoff loaded.")
 
 
+def session_pdf_cache() -> SessionPdfCache:
+    cache = st.session_state.get("handoff_pdf_cache")
+    if not isinstance(cache, SessionPdfCache) or cache.closed:
+        cache = SessionPdfCache()
+        st.session_state["handoff_pdf_cache"] = cache
+    return cache
+
+
+def warm_handoff_pdf(sheet: dict) -> bool:
+    """Prepare only this room after an import/save, never fail a confirmed save.
+
+    A preparation failure is retried on download, which fails closed rather
+    than using an older patient PDF. No raw error or patient text is logged.
+    """
+    ss = st.session_state
+    target = ss.get("workspace_all_print_target", ss.get("workspace_room_print_target", 1))
+    if target not in (1, 2):
+        target = 1
+    try:
+        session_pdf_cache().prepare(sheet, target_pages=target)
+        return True
+    except Exception:
+        return False
+
+
+def retire_changed_downloads(before: dict, after: dict, *, revoke: bool = True) -> None:
+    """Evict changed room PDFs and revoke snapshots after confirmed local writes."""
+    old_rooms, new_rooms = before.get("rooms", {}), after.get("rooms", {})
+    changed = [room for room in set(old_rooms) | set(new_rooms)
+               if old_rooms.get(room) != new_rooms.get(room)]
+    if revoke and (changed or before.get("reset_generation") != after.get("reset_generation")):
+        old = st.session_state.get("download_revocation")
+        if old is not None:
+            old.set()
+        st.session_state["download_revocation"] = Event()
+    cache = st.session_state.get("handoff_pdf_cache")
+    if cache is not None:
+        for room in changed:
+            # Metadata-only saves need a new header, not a new clinical body.
+            clinical = lambda value: {key: item for key, item in (value or {}).items()
+                                      if key not in ("created_at", "updated_at")}
+            if clinical(old_rooms.get(room)) != clinical(new_rooms.get(room)):
+                cache.invalidate_room(room)
+
+
 def commit(candidate: dict, store: GitHubVault | None) -> None:
     validate_vault(candidate)
     if store is not None:
         new_sha = store.save(candidate, st.session_state.get("vault_sha"))
         st.session_state["vault_sha"] = new_sha
+    retire_changed_downloads(st.session_state.get("vault", {}), candidate)
     st.session_state["vault"] = candidate
 
 
@@ -1362,6 +1416,7 @@ def save_rooms(store: GitHubVault | None, rooms: list[str]) -> bool:
         saved = deepcopy(candidate["rooms"][room])
         ss["drafts"][room] = saved
         ss.setdefault("base_sheets", {})[room] = deepcopy(saved)
+        warm_handoff_pdf(saved)
     message = ("Handoffs saved to shared storage." if store else
                "Saved in this session only. Shared storage is not enabled.")
     stamp = latest_saved_time({room: candidate["rooms"][room] for room in rooms})
@@ -1648,6 +1703,10 @@ def reload_archive(store: GitHubVault | None) -> bool:
             # prevents this reload from replacing the current local state.
             download_revocation().set()
             retained = _retained_reset_state(st.session_state["vault"], fresh)
+        # A read-only refresh must not cancel downloads for unchanged rooms.
+        # Selected-room fingerprints are checked against shared storage by each
+        # download worker. Real resets are revoked above and cleared below.
+        retire_changed_downloads(st.session_state["vault"], fresh, revoke=False)
         st.session_state.update(vault=fresh, vault_sha=sha)
         st.session_state.pop("daily_start_preview", None)
         if was_reset:
@@ -1829,7 +1888,7 @@ def main() -> None:
         return
     with st.sidebar:
         st.header("PICU Handoff")
-        st.caption("Version 6.78 | Replace, never merge")
+        st.caption("Version 6.79 | Faster Print all")
         # Retire the old instructions workspace without discarding room drafts.
         if st.session_state.get("page") == "Instructions / SmartPhrase":
             st.session_state["page"] = "Handoff"
@@ -2070,8 +2129,8 @@ def room_preview(sheet: dict, store: GitHubVault | None = None) -> None:
     with right:
         with st.popover("Print options"):
             target = print_target_control("room_print_target")
-            # Page fitting still runs on every actual PDF download. This
-            # optional check avoids doing the same PDF work on each edit.
+            # Reuse the prepared patient's fit report. A changed body/page
+            # target is fitted once, not again for each print download.
             if st.button("Check page count", key="check_room_page_fit"):
                 render_print_fit([sheet], target)
     with left:
@@ -2262,9 +2321,11 @@ def handoff_download(sheets: list[dict], store: GitHubVault | None, *,
     """Check the shared list at download time without accessing UI in its worker."""
     deadline, cancelled = download_deadline(), download_revocation()
     generate = download_payload(sheets, "pdf", deadline, target_pages=target_pages,
-                                cancelled=cancelled, save_statuses=save_statuses)
+                                cancelled=cancelled, save_statuses=save_statuses,
+                                pdf_cache=session_pdf_cache())
     ss = st.session_state
     expected_rooms = {}
+    expected_versions = {}
     for sheet in sheets:
         room = sheet["room"]
         saved = ss["vault"]["rooms"].get(room)
@@ -2272,9 +2333,10 @@ def handoff_download(sheets: list[dict], store: GitHubVault | None, *,
                 ss.get("base_sheets", {}).get(room) != saved):
             raise ValueError("The saved room changed. Load its saved handoff before printing.")
         expected_rooms[room] = saved["id"] if saved else None
+        expected_versions[room] = saved_room_version(saved)
     return guard_download(generate, store, ss["vault"]["reset_generation"],
                           cancelled=cancelled, expires_at=deadline,
-                          expected_rooms=expected_rooms)
+                          expected_rooms=expected_rooms, expected_versions=expected_versions)
 
 
 def print_target_control(key: str) -> int:
@@ -2294,7 +2356,7 @@ def print_target_control(key: str) -> int:
 def render_print_fit(sheets: list[dict], target: int) -> None:
     """Keep actual overflow alerts, without the routine layout diagnostics table."""
     for sheet in sheets:
-        report = print_fit_report(sheet, target)
+        report = session_pdf_cache().prepare(sheet, target_pages=target).report
         if not report["target_met"]:
             st.warning("Room " + sheet["room"] + " needs " + str(report["page_count"]) +
                        " pages. All content is retained rather than cropped.")
@@ -2314,7 +2376,7 @@ def print_all_page(store: GitHubVault | None) -> None:
     if not ready:
         st.info("Create a handoff first. Saved handoffs will also appear here after sign-in.")
         return
-    st.caption("Open handoffs are saved before printing. Blank sheets are omitted.")
+    st.caption("Open handoffs are saved before printing. Current prepared PDFs are reused. Blank sheets are omitted.")
     st.button("Save all open handoffs", on_click=save_all_rooms, args=(store,))
     st.caption(most_recent_save_caption(ss["vault"]["rooms"], session_only=store is None))
     options = list(ready)
@@ -2429,6 +2491,9 @@ def discard_all_handoff_state() -> None:
     if guard is not None:
         guard.set()
     ss["download_revocation"] = Event()
+    cache = ss.pop("handoff_pdf_cache", None)
+    if cache is not None:
+        cache.close()
     discard_editor_widget_values()
     for key in ("current_room", "other_room", "import_result", "pending", "diagnosis_preview",
                 "medication_pending", "removed_room", "print_rooms", "print_room_options",

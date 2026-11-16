@@ -1,79 +1,116 @@
-# PICU Handoff 6.78 verification
+# PICU Handoff 6.79 verification
 
-## Final result
+Verified November 16, 2026. Built from the saved PICU678.zip package.
+This release has not been deployed to the live application.
 
-6483 automated tests passed, plus 14 subtests, in the final full-suite run.
-The completed run reported 159.08s (0:02:39).
+## Automated results
 
-    python -m pytest -q --tb=short
+Final full suite: 6551 passed, 14 subtests passed in 143.51s (0:02:23)
 
-The unchanged 6.77 baseline also passed its full suite: 6401 tests and 14 subtests.
-The new test_room_replacement.py adds 82 tests and is included in the final suite.
-Older tests that required section merging, retained manual notes, delayed import
-saving, or the former button label were updated to the new explicit contract.
-No test was skipped or marked as an expected failure for this change.
+    PYTHONPATH=.:tests pytest -q
 
-## Replacement behavior tested
+The suite includes 68 new PDF reuse tests. No test was skipped or marked as an
+expected failure for this change. One existing overflow-warning test was updated
+to mock the new cached fit-report dependency instead of the retired direct
+print_fit_report call. Its original warning assertion is unchanged.
 
-New source text is parsed into a fresh record with a fresh random handoff ID.
-The application does not pass the old patient record or old editor values to
-its import entry point. Old fields, manual notes, airway details, omitted
-sections, widget state, and old import messages do not enter the new handoff.
+The first full run found a read-only startup refresh cancelling prepared
+unchanged downloads. That regression was corrected without changing the startup
+tests. Selected-room content checks still run before and after download assembly.
+The final full run above is the completed run after that correction and PDF
+stream compression/deduplication.
 
-A successful replacement updates the draft, saved room, saved timestamp, and
-base snapshot together. The other room and reusable settings/mappings remain
-unchanged. Repeating the same phrase still clears any intervening manual notes.
+## Behavior tested
 
-The tests exercise saved-data reload, encrypted round-trip, text/HTML output,
-and the Print all record selection. They also cover invalid/empty/repeated
-pastes, partial imports with failed sections, storage failures, write conflicts,
-lost write acknowledgements, stale local bases, obsolete widget callbacks,
-previously prepared downloads, and replacement in another session before or
-during download generation.
+The new tests verify initial preparation and reuse across single-patient and
+Print all downloads. Repeating an unchanged download does not invoke the clinical
+PDF renderer. A changed clinical field rebuilds only that room. Both page targets,
+room ordering, metadata-only changes, continued pages and fit reports are covered.
 
-Incomplete sections in a partly successful replacement contain only new data
-and have explicit not_imported warnings. They never use the prior patient's
-values as a fallback. An entirely failed import leaves the old record unchanged
-with an explicit failure. Unconfirmed writes never claim a successful save.
+Safety cases cover full-room replacement, removed old content, current saved and
+print timestamps, exact rolling laboratory-window boundaries, midnight line-day
+changes, HEPLMW day placement, newly eligible MRSA and cardiac laboratory displays,
+renderer-version changes, independent sessions, bounded memory, concurrent clicks,
+failed rendering, logout/reset, expired downloads, and remote same-ID edits even
+when timestamps match. A confirmed import remains saved if PDF preparation fails.
+No older PDF is substituted for a failed new render.
 
-The broader suite covers existing startup confirmation, clear-all behavior,
-clinical parsers and calculations, save/print workflows, mappings, encryption,
-and room isolation. Synthetic source examples were used throughout.
+The original regression suite still covers clinical parsers, I/O and nutrition
+calculations, medication mappings, encryption, room isolation, autosave, storage
+conflicts, startup confirmation and the complete-room replacement rules.
 
-## Source and compatibility checks
+## Measured local performance
 
-The source package was PICU677.zip, Library version 2.
-Source ZIP SHA-256: ad6d330607a6f74e850c7f706564c7760a32a0b8e8d42e6ea2410a2ec1e2df8f
+| Synthetic packet | Rooms | 6.78 rebuild | 6.79 prepared-page assembly | Reduction |
+| --- | ---: | ---: | ---: | ---: |
+| Simple | 18 | 0.122 s | 0.093 s | 23.9% |
+| Mixed | 18 | 2.229 s | 1.536 s | 31.1% |
 
-Exactly six runtime modules changed:
+Each timing is the median of three runs against the exact original exports.py
+extracted from PICU678.zip. The mixed case cycles through a simple handoff, the
+synthetic compact-PN example, and a longer neurological handoff. Both packets
+contain 18 pages. The fixed display clock is November 16, 2026 at 12:00 UTC.
+
+Measured cached assembly includes current display/signature checks, merging,
+fresh metadata and compression. It excludes shared-storage network reads,
+browser transfers and physical printer time. It is not an end-to-end production
+benchmark or a prediction for every patient list.
+
+All three repeated prepared-page runs rebuilt zero clinical PDFs. Editing one
+room rebuilt exactly one body. The mixed packet's one-time preparation of all
+18 bodies took 3.816 seconds locally,
+or 0.212 seconds per room on average.
+This initial work moves to the relevant import/save. A fresh session or missing
+cache still performs it once. Preparation time is not eliminated.
+
+The mixed final packet was 45,831 bytes compared
+with 50,740 bytes from the original exporter.
+Full raw timing results and counters are in PRINT_PERFORMANCE_679.json.
+
+## Output comparison
+
+All 18 pages of the mixed packet were pixel-identical to the original v6.78
+export at 200 dpi using pdftoppm: zero changed pages and zero changed pixels.
+PyMuPDF comparisons also passed for both benchmark packets and representative
+one-page, two-page and overflow fixtures in the new tests. A rendered example
+was visually inspected for clipping and layout changes.
+
+Cached clinical pages do not contain an old print/save header. The current
+header and packet numbering are applied at download time into the same gutter.
+The pages remain vector PDF content, not screenshots.
+
+## Source and compatibility
+
+Source ZIP SHA-256: 31e3261de66ed6a7f4ed63b5a5f79ca4822bcbe6d8bbfd27daf1913d71459eff
+
+Five runtime files must be installed together:
 
     app.py
-    importing.py
-    import_review.py
+    exports.py
     census_guard.py
-    user_guide.py
-    workspace_ui.py
+    pdf_cache.py        (new)
+    requirements.txt   (adds pypdf>=5.9,<7)
 
-The original import_sections function has an identical parsed Python AST.
-Its clinical section calculations were not edited. The new application entry
-point calls it only with a new, blank record.
+All other existing runtime Python modules are byte-identical to v6.78. Clinical
+parsers and calculations, encrypted storage, archive schema 34, room settings,
+and mappings are unchanged. No migration, key rotation, or data reset is needed.
+All 184 packaged Python files and all 3 TOML files passed syntax parsing.
 
-daily_start.py, models.py, current_shift.py, io_sources.py, bowel_movements.py,
-nutrition_display.py, feeds.py, diet.py, github_store.py, security.py, and
-requirements.txt are byte-identical to the 6.77 package.
+## Environment and limits
 
-All 182 packaged Python files passed syntax parsing.
-All 3 packaged TOML files passed parsing.
-The archive schema remains 34. No new runtime dependency is required.
+Python 3.13.5, ReportLab 4.4.9,
+pypdf 5.9.0, pytest 9.0.2,
+and PyMuPDF 1.26.7 were used locally.
+The requirements allow pypdf 5.9 through 6.x. Only installed pypdf 5.9.0 was tested.
 
-## Test limitations
+Application interaction tests use the existing instrumented Streamlit widget
+stub, not a live browser. Live Streamlit installation, production shared-storage
+latency, deployed multi-user behavior and physical printing were not tested.
+No production repository, encrypted clinical archive or real patient data was
+accessed or modified. These tests are not clinical validation or a guarantee of
+safety. Verify with fictional records in the deployed application before use.
 
-The application interaction tests use a Streamlit widget stub, not a live
-browser. A real Streamlit AppTest run was not available in this environment.
-These results are not clinical validation or proof that a deployment is safe.
-Verify with fictional patients in the deployed app before clinical use.
-
-No live application, real patient data, production GitHub repository, or shared
-clinical archive was accessed or modified. Existing mixed handoffs are not
-retroactively repaired. Existing downloaded files, printed pages, encrypted Git
-history, and another user's already-open preview cannot be recalled.
+The cache is private to the active server session, held only in memory and
+cleared on reset/logout. Previously downloaded PDFs, already printed pages and
+another user's previously downloaded files cannot be recalled. The unchanged
+institutional-workflow and current-patient verification requirements still apply.
