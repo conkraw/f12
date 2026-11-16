@@ -1,21 +1,23 @@
-PICU Handoff 6.79
+PICU Handoff 6.80
 
-Required runtime update from 6.78 (replace all five together):
+Required runtime update from 6.79, install all nine together:
 app.py
+medications.py
+medication_groups.py
+categories.py
+fen_gi.py
+models.py
 exports.py
-census_guard.py
-pdf_cache.py
-requirements.txt
+airway_clearance.py
+medication_doses.py
 
-pdf_cache.py is a new file. requirements.txt adds pypdf>=5.9,<7.
-Reboot/redeploy to install dependencies and load the updated modules.
-For an older app version, use the complete application-code file set.
-Keep existing Streamlit Secrets, the encryption key, encrypted archives,
-separate mapping repositories and saved configuration. No schema migration.
-Do not upload the outer ZIP folder as an extra level above app.py.
+airway_clearance.py and medication_doses.py are new files.
+For an older version, replace the complete application code set, including
+pdf_cache.py and requirements.txt. Install at the existing repository root,
+without an extra nested folder. Restart Streamlit after the upload.
 
-Verify: Version 6.79 | Faster Print all
+Keep current Streamlit Secrets, encryption keys, archives and saved settings.
+No new dependency or archive migration is required from 6.79.
+
+Verify: Version 6.80 | Airway clearance and weight-based doses
 This package has not been deployed to the live application.
-
-Also added: tests/test_pdf_cache.py and FASTER_PRINT_ALL.md.
-See TEST_REPORT.md for test results and limitations.

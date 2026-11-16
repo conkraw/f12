@@ -1,0 +1,304 @@
+[
+  {
+    "id": "904ffcb3cdaa41fba8e3adf760194264",
+    "room": "P4102",
+    "created_at": "2026-11-16T13:31:05+00:00",
+    "updated_at": null,
+    "fields": {
+      "Diagnoses": "SYNTHETIC DISPLAY EXAMPLE\nNot a patient record",
+      "Demographics / Weight": "",
+      "Neurologic": "",
+      "Respiratory": "",
+      "Cardiovascular": "",
+      "FEN / GI": "",
+      "Hematology": "",
+      "Infectious Disease": "",
+      "Labs": "",
+      "Skin / Wounds": "",
+      "Tasks": "",
+      "Other": "",
+      "Other Medications": "",
+      "Lab Results / Trends": "",
+      "Goals / Follow-up": "Medication formatting demonstration. Amounts are example data.",
+      "Airway": "",
+      "Last Intubation": "",
+      "Access": "",
+      "Drains / Tubes": ""
+    },
+    "medications": [
+      {
+        "id": "976089c82a104980ae57a96a9873f928",
+        "name": "fentanyl injection 15 mcg",
+        "dose": "15 mcg",
+        "route": "Intravenous",
+        "frequency": "q1h PRN",
+        "last_rate": "",
+        "rate_time": "",
+        "section": "Other Medications",
+        "custom_text": "",
+        "include": true,
+        "warnings": [],
+        "hidden": false
+      },
+      {
+        "id": "fce695ffca5b4569ab23f314ff79720c",
+        "name": "midazolam injection 0.5 mg",
+        "dose": "0.5 mg",
+        "route": "Intravenous",
+        "frequency": "q2h PRN",
+        "last_rate": "",
+        "rate_time": "",
+        "section": "Other Medications",
+        "custom_text": "",
+        "include": true,
+        "warnings": [],
+        "hidden": false
+      },
+      {
+        "id": "1c1ccfae574b49778c69869226f9a358",
+        "name": "sodium chloride 3 % nebulizer solution 3 mL",
+        "dose": "3 mL",
+        "route": "Nebulization",
+        "frequency": "q12h",
+        "last_rate": "",
+        "rate_time": "",
+        "section": "Respiratory",
+        "custom_text": "",
+        "include": true,
+        "warnings": [],
+        "hidden": false,
+        "category_path": {
+          "id": "group:airway_clearance",
+          "name": "Airway Clearance",
+          "section": "Respiratory",
+          "parent_id": "",
+          "parent_name": "",
+          "order": 100,
+          "parent_order": 100
+        }
+      },
+      {
+        "id": "f7c9e610ba81472b91bd948115e966f0",
+        "name": "sodium chloride enteral solution 6 mEq",
+        "dose": "6 mEq",
+        "route": "Per G Tube",
+        "frequency": "q12h",
+        "last_rate": "",
+        "rate_time": "",
+        "section": "FEN / GI",
+        "custom_text": "",
+        "include": true,
+        "warnings": [],
+        "hidden": false
+      },
+      {
+        "id": "7822e8bc2b174c2aad9df330048042b2",
+        "name": "furosemide injection 12 mg",
+        "dose": "12 mg",
+        "route": "Intravenous",
+        "frequency": "q6h",
+        "last_rate": "",
+        "rate_time": "",
+        "section": "Other Medications",
+        "custom_text": "",
+        "include": true,
+        "warnings": [],
+        "hidden": false
+      },
+      {
+        "id": "4b51de2021ff4dc8b34e6a6bc12bf87f",
+        "name": "chlorothiazide injection 95 mg",
+        "dose": "10 mg/kg (Dosing Weight)",
+        "route": "Intravenous",
+        "frequency": "q12h",
+        "last_rate": "",
+        "rate_time": "",
+        "section": "Other Medications",
+        "custom_text": "",
+        "include": true,
+        "warnings": [],
+        "hidden": false
+      }
+    ],
+    "ventilation": null,
+    "noninvasive": [],
+    "vitals": [],
+    "labs": {
+      "rows": [],
+      "notes": []
+    },
+    "neuro_vitals": {
+      "k": [],
+      "l": [],
+      "m": []
+    },
+    "nutrition": {
+      "weight": "12 kg",
+      "z_score": "",
+      "include": true
+    },
+    "cultures": {
+      "rows": [],
+      "notes": []
+    },
+    "dosing_weight": "10 kg",
+    "admission_date": "",
+    "viral_panel": {
+      "rows": []
+    },
+    "blood_gas": null,
+    "cbc": null,
+    "recurring_orders": null,
+    "intake_output": null,
+    "feeds": null,
+    "devices": null,
+    "neuro_devices": null,
+    "pacemaker": null,
+    "diet": null,
+    "import_warnings": {}
+  },
+  {
+    "id": "24be3294025d421baec2b88f05c472c1",
+    "room": "P4104",
+    "created_at": "2026-11-16T13:31:05+00:00",
+    "updated_at": null,
+    "fields": {
+      "Diagnoses": "SYNTHETIC DISPLAY EXAMPLE\nNot a patient record",
+      "Demographics / Weight": "",
+      "Neurologic": "",
+      "Respiratory": "",
+      "Cardiovascular": "",
+      "FEN / GI": "",
+      "Hematology": "",
+      "Infectious Disease": "",
+      "Labs": "",
+      "Skin / Wounds": "",
+      "Tasks": "",
+      "Other": "",
+      "Other Medications": "",
+      "Lab Results / Trends": "",
+      "Goals / Follow-up": "Medication formatting demonstration. Amounts are example data.",
+      "Airway": "",
+      "Last Intubation": "",
+      "Access": "",
+      "Drains / Tubes": ""
+    },
+    "medications": [
+      {
+        "id": "6e8c028b4ada4717a5c1abe6714f9877",
+        "name": "fentanyl injection 20 mcg",
+        "dose": "20 mcg",
+        "route": "Intravenous",
+        "frequency": "q2h PRN",
+        "last_rate": "",
+        "rate_time": "",
+        "section": "Other Medications",
+        "custom_text": "",
+        "include": true,
+        "warnings": [],
+        "hidden": false
+      },
+      {
+        "id": "d3113ad1ae57405796985bd4085df925",
+        "name": "morphine injection 1 mg",
+        "dose": "1 mg",
+        "route": "Intravenous",
+        "frequency": "q4h PRN",
+        "last_rate": "",
+        "rate_time": "",
+        "section": "Other Medications",
+        "custom_text": "",
+        "include": true,
+        "warnings": [],
+        "hidden": false
+      },
+      {
+        "id": "0e627c0ddc534ef993769ccdcf047a5e",
+        "name": "sodium chloride 3 % nebulizer solution 4 mL",
+        "dose": "4 mL",
+        "route": "Nebulization",
+        "frequency": "q8h",
+        "last_rate": "",
+        "rate_time": "",
+        "section": "Respiratory",
+        "custom_text": "",
+        "include": true,
+        "warnings": [],
+        "hidden": false,
+        "category_path": {
+          "id": "group:airway_clearance",
+          "name": "Airway Clearance",
+          "section": "Respiratory",
+          "parent_id": "",
+          "parent_name": "",
+          "order": 100,
+          "parent_order": 100
+        }
+      },
+      {
+        "id": "7ff96f43819146c3adcce00a0fdc7bcd",
+        "name": "furosemide injection 10 mg",
+        "dose": "10 mg",
+        "route": "Intravenous",
+        "frequency": "q12h",
+        "last_rate": "",
+        "rate_time": "",
+        "section": "Other Medications",
+        "custom_text": "",
+        "include": true,
+        "warnings": [],
+        "hidden": false
+      },
+      {
+        "id": "d2937a2eca79423eb5721411e3ad3ee9",
+        "name": "chlorothiazide injection 100 mg",
+        "dose": "100 mg",
+        "route": "Intravenous",
+        "frequency": "q12h",
+        "last_rate": "",
+        "rate_time": "",
+        "section": "Other Medications",
+        "custom_text": "",
+        "include": true,
+        "warnings": [],
+        "hidden": false
+      }
+    ],
+    "ventilation": null,
+    "noninvasive": [],
+    "vitals": [],
+    "labs": {
+      "rows": [],
+      "notes": []
+    },
+    "neuro_vitals": {
+      "k": [],
+      "l": [],
+      "m": []
+    },
+    "nutrition": {
+      "weight": "20 kg",
+      "z_score": "",
+      "include": true
+    },
+    "cultures": {
+      "rows": [],
+      "notes": []
+    },
+    "dosing_weight": "",
+    "admission_date": "",
+    "viral_panel": {
+      "rows": []
+    },
+    "blood_gas": null,
+    "cbc": null,
+    "recurring_orders": null,
+    "intake_output": null,
+    "feeds": null,
+    "devices": null,
+    "neuro_devices": null,
+    "pacemaker": null,
+    "diet": null,
+    "import_warnings": {}
+  }
+]

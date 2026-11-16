@@ -1,19 +1,13 @@
-PICU Handoff 6.79 delivery verification
+PICU Handoff 6.80 delivery verification
 
-Built from PICU678.zip.
-Source ZIP SHA-256: 31e3261de66ed6a7f4ed63b5a5f79ca4822bcbe6d8bbfd27daf1913d71459eff
-Five runtime files changed/added. See UPDATE_FILES.txt.
-Final full suite: 6551 passed, 14 subtests passed in 143.51s (0:02:23)
-68 new PDF reuse tests are included in that suite.
-184 Python files and 3 TOML files parsed successfully.
-18-page original/new PDF comparison at 200 dpi: zero changed pixels.
-No live Streamlit browser test or clinical validation was performed.
+Built from PICU679.zip.
+Source ZIP SHA-256: 5a857f84cf391991ca3ceb107ce98eb42889d6e5c9b32413e1aa10142891ef91
+Final complete suite: 6729 passed, 213 warnings, 14 subtests passed in 202.94s (0:03:22)
+190 Python files and 3 TOML files parsed.
+Nine runtime files changed or added. See UPDATE_FILES.txt.
+Both synthetic PDF preview pages were visually reviewed.
+Archive schema 34, encrypted storage and PDF reuse are retained.
+No patient paste, runtime logs, real secrets or production archive were added.
+No live application was deployed.
 
-Clinical parsers/calculations, encryption, storage implementation and archive
-schema are preserved. Initial/saved PDFs are reused within the private session.
-Changed patients, changed time-dependent output, resets and stale shared-record
-snapshots do not reuse obsolete PDF content. Fresh metadata is stamped at print.
-
-SHA256SUMS.txt covers packaged files except itself. ZIP CRC was verified.
-No real patient paste, runtime log, font file, real Secrets, encryption key or
-production patient-data archive was added. No live application was deployed.
+SHA256SUMS.txt covers packaged files except itself. ZIP CRC verified.

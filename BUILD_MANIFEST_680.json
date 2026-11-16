@@ -1,0 +1,42 @@
+{
+  "version": "6.80",
+  "baseline": "6.79",
+  "source_zip_sha256": "5a857f84cf391991ca3ceb107ce98eb42889d6e5c9b32413e1aa10142891ef91",
+  "runtime_files": [
+    "airway_clearance.py",
+    "app.py",
+    "categories.py",
+    "exports.py",
+    "fen_gi.py",
+    "medication_doses.py",
+    "medication_groups.py",
+    "medications.py",
+    "models.py"
+  ],
+  "final_test_summary": "6729 passed, 213 warnings, 14 subtests passed in 202.94s (0:03:22)",
+  "python_files_parsed": 190,
+  "toml_files_parsed": 3,
+  "unchanged_verified_files": [
+    "pdf_cache.py",
+    "census_guard.py",
+    "importing.py",
+    "import_review.py",
+    "current_shift.py",
+    "fluid_balance.py",
+    "nutrition_display.py",
+    "github_store.py",
+    "security.py",
+    "requirements.txt"
+  ],
+  "environment": {
+    "pytest": "9.2.0",
+    "reportlab": "4.4.9",
+    "pypdf": "6.21.4",
+    "pymupdf": "1.26.6",
+    "cryptography": "50.0.0",
+    "requests": "2.34.2",
+    "python": "3.12.14"
+  },
+  "deployed": false,
+  "schema": 34
+}

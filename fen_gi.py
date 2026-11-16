@@ -16,6 +16,7 @@ from current_shift import current_shift_text
 from diet import diet_text
 from nutrition_display import has_detailed_nutrition, nutrition_sections, parenteral_kind
 from medication_groups import group_for as special_group, GROUP_SECTIONS
+from airway_clearance import is_sodium_chloride_3_percent_nebulizer
 
 MODES = ("auto", "prophylaxis", "bowel", "diuretic", "antiemetic", "endocrine", "prokinetic", "tpn", "hypoglycemia", "probiotic", "other")
 MODE_LABELS = {"auto": "Automatic", "prophylaxis": "GI prophylaxis", "bowel": "Bowel Regimen", "diuretic": "Diuretics", "antiemetic": "Antiemetics", "endocrine": "Endocrine Medications", "prokinetic": "Prokinetic Agents", "tpn": "TPN", "hypoglycemia": "Hypoglycemia:", "probiotic": "Probiotic", "other": "No GI grouping"}
@@ -75,6 +76,8 @@ def effective_section(row: dict) -> str:
         return "Ignore"
     if is_bupivacaine(row.get("name", "")):
         return "Neurologic"
+    if is_sodium_chloride_3_percent_nebulizer(row):
+        return "Respiratory"
     if row.get("category_path") is not None:
         return row["category_path"]["section"]
     special = special_group(row)

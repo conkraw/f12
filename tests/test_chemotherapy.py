@@ -6,7 +6,7 @@ import pytest
 from cryptography.fernet import Fernet
 from pypdf import PdfReader
 
-from categories import (apply_category_rules, catalog, default_categories,
+from categories import (BACKFILLED_BUILTIN_IDS, apply_category_rules, catalog, default_categories,
                         medication_blocks, placement, save_category,
                         set_category_rule, target_snapshot, validate_settings)
 from chemotherapy import is_chemotherapy
@@ -204,9 +204,9 @@ def test_existing_saved_order_is_grouped_once_in_all_exports_without_mutation():
 
 def legacy_settings(*, before_epidural=False, full=False):
     settings = new_vault()["settings"]
-    omitted = {"group:chemotherapy", "group:leukotriene_receptor_antagonist", "gi:probiotic", "group:adh_analog"}
-    if before_epidural:
-        omitted.add("group:epidural")
+    omitted = set(BACKFILLED_BUILTIN_IDS)
+    if not before_epidural:
+        omitted.remove("group:epidural")
     items = [item for item in default_categories() if item["id"] not in omitted]
     if full:
         limit = 250 if before_epidural else 251
@@ -246,12 +246,12 @@ def test_full_historical_catalog_preserves_every_slot_and_still_enforces_limit(b
     settings = legacy_settings(before_epidural=before_epidural, full=True)
     before = deepcopy(settings)
     expanded = catalog(settings)
-    assert len(expanded) == 255
+    assert len(expanded) == 250 + len(BACKFILLED_BUILTIN_IDS)
     validate_settings(settings)
     assert expanded[:len(before["medication_categories"])] == before["medication_categories"]
     edited = save_category(settings, "Retained renamed", "Other Medications",
                            ident="custom:kept_0")
-    assert len(edited["medication_categories"]) == 255
+    assert len(edited["medication_categories"]) == 250 + len(BACKFILLED_BUILTIN_IDS)
     with pytest.raises(ValueError, match="at most 250"):
         save_category(edited, "No remaining original slot", "Other Medications")
     assert settings == before

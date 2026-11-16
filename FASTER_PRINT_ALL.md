@@ -70,7 +70,7 @@ An evicted or oversized PDF can still print, but may need regeneration later.
 
 Network verification, PDF assembly, browser transfer and printer processing still
 take time. No claim of an instantaneous end-to-end print is made. Local synthetic
-benchmark results are in PRINT_PERFORMANCE_679.json and TEST_REPORT.md.
+benchmark results are in PRINT_PERFORMANCE_679.json and TEST_REPORT_679.md.
 
 The update is packaged for deployment. It has not been installed into the live
 Streamlit app and has not been validated with a live shared archive or printer.

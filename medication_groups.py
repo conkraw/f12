@@ -8,11 +8,12 @@ from copy import deepcopy
 import re
 from medications import is_bupivacaine, match_name, normalized
 from chemotherapy import is_chemotherapy
+from airway_clearance import is_sodium_chloride_3_percent_nebulizer
 
 ID_GROUPS = ("antibiotic", "antifungal", "antiviral")
 HEME_GROUPS = ("dvt", "antiplatelet", "gcsf", "chemotherapy")
 CV_GROUPS = ("antiarrhythmic", "antihypertensive", "inotrope", "vasopressor", "adrenocortical", "vasodilator")
-RESP_GROUPS = ("airway_cerebral_steroid", "airway_tone", "antisialorrhea", "beta_agonist",
+RESP_GROUPS = ("airway_clearance", "airway_cerebral_steroid", "airway_tone", "antisialorrhea", "beta_agonist",
                "anticholinergic", "methylxanthine", "corticosteroid", "inhaled_corticosteroid",
                "pulmonary_hypertension", "allergy_immunology", "airway_vasoconstrictor",
                "leukotriene_receptor_antagonist")
@@ -30,6 +31,7 @@ MODE_LABELS = {
     "sedative_prn": "PRN", "paralytic_prn": "Paralytic PRN", "antiepileptic": "Antiepileptic",
     "paralytic_infusion": "Paralytic Infusions",
     "airway_cerebral_steroid": "Airway/Cerebral Steroids",
+    "airway_clearance": "Airway Clearance",
     "insomnia": "Insomnia", "antispasmodic": "Antispasmodic",
     "neuromodulation": "Neuromodulation",
     "epidural": "Epidural",
@@ -104,6 +106,8 @@ def automatic_system_group(row: dict) -> str:
     name = match_name(row.get("name", ""))
     if is_bupivacaine(name):
         return "epidural"
+    if is_sodium_chloride_3_percent_nebulizer(row):
+        return "airway_clearance"
     # User-requested display placement, regardless of indication.
     if _starts(name, ("desmopressin", "ddavp")):
         return "adh_analog"
@@ -236,6 +240,8 @@ def group_for(row: dict) -> str:
     # older group choices. Leave those source choices untouched in storage.
     if is_bupivacaine(row.get("name", "")):
         return "epidural"
+    if is_sodium_chloride_3_percent_nebulizer(row):
+        return "airway_clearance"
     mode = row.get("group_mode", "auto")
     # An explicit GI override wins over automatic defaults, not over an explicit
     # special-group choice. UI callbacks clear the competing explicit choice.

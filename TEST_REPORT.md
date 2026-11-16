@@ -1,116 +1,91 @@
-# PICU Handoff 6.79 verification
+# PICU Handoff 6.80 verification
 
-Verified November 16, 2026. Built from the saved PICU678.zip package.
-This release has not been deployed to the live application.
+Verified November 16, 2026. Built from PICU679.zip.
+This package has not been deployed to the live application.
 
-## Automated results
+## Final result
 
-Final full suite: 6551 passed, 14 subtests passed in 143.51s (0:02:23)
+    6729 passed, 213 warnings, 14 subtests passed in 202.94s (0:03:22)
 
-    PYTHONPATH=.:tests pytest -q
+The final complete suite was run with:
 
-The suite includes 68 new PDF reuse tests. No test was skipped or marked as an
-expected failure for this change. One existing overflow-warning test was updated
-to mock the new cached fit-report dependency instead of the retired direct
-print_fit_report call. Its original warning assertion is unchanged.
+    PYTHONPATH=.:tests python3 -m pytest -q --tb=short
 
-The first full run found a read-only startup refresh cancelling prepared
-unchanged downloads. That regression was corrected without changing the startup
-tests. Selected-room content checks still run before and after download assembly.
-The final full run above is the completed run after that correction and PDF
-stream compression/deduplication.
+No test was skipped or marked as an expected failure for this release.
+The first full run found two historical category-capacity fixtures that still
+assumed five backfilled built-ins. Their historical input catalogs and expected
+capacity were updated to account for the new Airway Clearance built-in. The
+existing requirement to retain all original slots and reject an extra slot is
+still asserted. No runtime code changed after that first full run.
 
-## Behavior tested
+## New coverage
 
-The new tests verify initial preparation and reuse across single-patient and
-Print all downloads. Repeating an unchanged download does not invoke the clinical
-PDF renderer. A changed clinical field rebuilds only that room. Both page targets,
-room ordering, metadata-only changes, continued pages and fit reports are covered.
+tests/test_airway_clearance_680.py verifies both supplied nebulizer volumes,
+NaCl spellings, concentration and route exclusions, mixtures, contrary saved
+categories, generic rule correction, specific exceptions, hidden/ignored rows,
+explicit restoration, old catalog capacity and existing custom headings.
 
-Safety cases cover full-room replacement, removed old content, current saved and
-print timestamps, exact rolling laboratory-window boundaries, midnight line-day
-changes, HEPLMW day placement, newly eligible MRSA and cardiac laboratory displays,
-renderer-version changes, independent sessions, bounded memory, concurrent clicks,
-failed rendering, logout/reset, expired downloads, and remote same-ID edits even
-when timestamps match. A confirmed import remains saved if PDF preparation fails.
-No older PDF is substituted for a failed new render.
+tests/test_medication_doses_680.py covers source dose authority, mg/mcg units,
+dosing weight precedence, labeled measured-weight fallback, grams, precision,
+missing/invalid/failed weights, custom wording, concentrations, ranges, infusion
+rates, daily totals and immutable records.
 
-The original regression suite still covers clinical parsers, I/O and nutrition
-calculations, medication mappings, encryption, room isolation, autosave, storage
-conflicts, startup confirmation and the complete-room replacement rules.
+tests/test_medication_integration_680.py checks actual text/HTML/PDF rendering,
+encrypted round trips, preserved source fields and safe mapping suggestions.
+It also verifies unchanged prepared PDF reuse and regeneration for dose,
+dosing-weight and warning changes in the affected room.
 
-## Measured local performance
+The broader suite covers the existing SmartPhrase replacement, room isolation,
+autosave, shared-record guards, parsers, nutrition, I/O, encryption and Print all.
 
-| Synthetic packet | Rooms | 6.78 rebuild | 6.79 prepared-page assembly | Reduction |
-| --- | ---: | ---: | ---: | ---: |
-| Simple | 18 | 0.122 s | 0.093 s | 23.9% |
-| Mixed | 18 | 2.229 s | 1.536 s | 31.1% |
+## Supplied EPIC examples
 
-Each timing is the median of three runs against the exact original exports.py
-extracted from PICU678.zip. The mixed case cycles through a simple handoff, the
-synthetic compact-PN example, and a longer neurological handoff. Both packets
-contain 18 pages. The fixed display clock is November 16, 2026 at 12:00 UTC.
+Both complete user examples imported successfully in memory with no import
+errors. The qualifying 3 mL and 4 mL nebulizer products appeared under
+Respiratory / Airway Clearance. Explicit source chlorothiazide mg/kg was
+preserved, and the furosemide absolute dose produced the expected per-kg
+calculation using the documented dosing weight. Simulated broad old saline
+rules did not sweep the enteral sodium order into Respiratory.
 
-Measured cached assembly includes current display/signature checks, merging,
-fresh metadata and compression. It excludes shared-storage network reads,
-browser transfers and physical printer time. It is not an end-to-end production
-benchmark or a prediction for every patient list.
+The original examples and their patient content are not in this package.
+All new packaged test data and preview data are synthetic.
 
-All three repeated prepared-page runs rebuilt zero clinical PDFs. Editing one
-room rebuilt exactly one body. The mixed packet's one-time preparation of all
-18 bodies took 3.816 seconds locally,
-or 0.212 seconds per room on average.
-This initial work moves to the relevant import/save. A fresh session or missing
-cache still performs it once. Preparation time is not eliminated.
+## PDF review
 
-The mixed final packet was 45,831 bytes compared
-with 50,740 bytes from the original exporter.
-Full raw timing results and counters are in PRINT_PERFORMANCE_679.json.
+examples/medication_doses_680_preview.pdf contains two synthetic rooms. Both
+pages were rendered and visually inspected with PyMuPDF. The additional dose
+annotations and their weight basis are readable within the existing columns.
+Source dose text, grouping and per-kg output are also asserted through PDF text
+extraction. The original layout and pagination code were not changed.
 
-## Output comparison
+## Compatibility
 
-All 18 pages of the mixed packet were pixel-identical to the original v6.78
-export at 200 dpi using pdftoppm: zero changed pages and zero changed pixels.
-PyMuPDF comparisons also passed for both benchmark packets and representative
-one-page, two-page and overflow fixtures in the new tests. A rendered example
-was visually inspected for clipping and layout changes.
+Exactly nine runtime modules changed or were added. UPDATE_FILES.txt identifies
+them. Archive schema remains 34. New dose annotations are transient display
+data and do not add saved medication fields.
 
-Cached clinical pages do not contain an old print/save header. The current
-header and packet numbering are applied at download time into the same gutter.
-The pages remain vector PDF content, not screenshots.
+pdf_cache.py, census_guard.py, importing.py, import_review.py, current_shift.py,
+fluid_balance.py, nutrition_display.py, github_store.py, security.py and
+requirements.txt are byte-identical to the 6.79 baseline. exports.py changes
+only the Labs display context and renderer content-signature version.
 
-## Source and compatibility
+190 Python files and 3 TOML files passed syntax parsing.
+The ZIP CRC and the packaged SHA256SUMS manifest were verified.
 
-Source ZIP SHA-256: 31e3261de66ed6a7f4ed63b5a5f79ca4822bcbe6d8bbfd27daf1913d71459eff
-
-Five runtime files must be installed together:
-
-    app.py
-    exports.py
-    census_guard.py
-    pdf_cache.py        (new)
-    requirements.txt   (adds pypdf>=5.9,<7)
-
-All other existing runtime Python modules are byte-identical to v6.78. Clinical
-parsers and calculations, encrypted storage, archive schema 34, room settings,
-and mappings are unchanged. No migration, key rotation, or data reset is needed.
-All 184 packaged Python files and all 3 TOML files passed syntax parsing.
+Source ZIP SHA-256: 5a857f84cf391991ca3ceb107ce98eb42889d6e5c9b32413e1aa10142891ef91
 
 ## Environment and limits
 
-Python 3.13.5, ReportLab 4.4.9,
-pypdf 5.9.0, pytest 9.0.2,
-and PyMuPDF 1.26.7 were used locally.
-The requirements allow pypdf 5.9 through 6.x. Only installed pypdf 5.9.0 was tested.
+Python 3.12.14, pytest 9.2.0,
+ReportLab 4.4.9, pypdf 6.21.4,
+PyMuPDF 1.26.6, cryptography 50.0.0,
+requests 2.34.2.
 
-Application interaction tests use the existing instrumented Streamlit widget
-stub, not a live browser. Live Streamlit installation, production shared-storage
-latency, deployed multi-user behavior and physical printing were not tested.
-No production repository, encrypted clinical archive or real patient data was
-accessed or modified. These tests are not clinical validation or a guarantee of
-safety. Verify with fictional records in the deployed application before use.
+The warnings were library deprecations in the existing PDF compression API and
+pytest plugin. Requirements keep pypdf below version 7, where the deprecated
+compression arguments are scheduled for removal.
 
-The cache is private to the active server session, held only in memory and
-cleared on reset/logout. Previously downloaded PDFs, already printed pages and
-another user's previously downloaded files cannot be recalled. The unchanged
-institutional-workflow and current-patient verification requirements still apply.
+Tests use local synthetic data and storage/widget stubs. There was no live
+Streamlit browser, production archive, clinical administration history or
+physical-printer validation. No new speed claim is made. Prior 6.79 benchmark
+results remain in TEST_REPORT_679.md and PRINT_PERFORMANCE_679.json.

@@ -497,7 +497,7 @@ def fields_with_medications(sheet: dict, include_lab_text: bool = True) -> dict[
         if not visible(row):
             continue
         section = effective_section(row)
-        content = medication_output(format_medication(row))
+        content = medication_output(format_medication(row, sheet))
         result[section] = (result[section].rstrip() + "\n" if result[section].strip() else "") + content
     result["FEN / GI"] = fen_gi_body(sheet["fields"]["FEN / GI"], sheet["medications"], sheet["intake_output"], feeds=feeds_for_output(sheet), feeds_failed=any(i["action"] == "feeds_hidden" for i in sheet["import_warnings"].get("t", [])), diet=diet_for_output(sheet), diet_failed=diet_failed(sheet), dosing_weight=sheet["dosing_weight"] if "i" not in sheet["import_warnings"] else "", sheet=sheet)
     scheduled = orders_text(orders_for_output(sheet))

@@ -1,62 +1,42 @@
-# PICU Handoff 6.79
+# PICU Handoff 6.80
 
-Print all now reuses current, already-rendered patient PDFs instead of repeating
-all clinical layout and page fitting on every download.
-
-After import/save, each room's PDF is prepared once. Single-patient printing and
-Print all share a private in-memory cache. Changed or missing patient PDFs are
-rebuilt automatically. Print times, saved times and page numbering stay current.
-The complete-room replacement rules from 6.78 are preserved.
+This release adds specific 3% saline nebulizer placement and per-dose weight calculations for Sedative PRNs, chlorothiazide and furosemide. It builds on PICU679.zip and retains faster Print all and complete-room SmartPhrase replacement.
 
 This package has not been deployed to the live application.
 
 ## Install
 
-Extract PICU679.zip. Replace the matching application-code files at your
-existing app repository root, not inside an extra nested directory.
+Extract PICU680.zip. Replace matching code files at your existing app repository root, beside the current app.py. Do not add another folder level.
 
-From version 6.78, the required update is:
+From 6.79, install all nine runtime files listed in UPDATE_FILES.txt together. airway_clearance.py and medication_doses.py are new. Restart Streamlit after uploading them.
 
-    app.py
-    exports.py
-    census_guard.py
-    pdf_cache.py
-    requirements.txt
-
-Upload all five together. pdf_cache.py is new. requirements.txt adds pypdf for
-in-memory PDF assembly. Reboot/redeploy to install it. For an older version,
-replace the complete application code set from this package.
-
-Keep your existing Streamlit Secrets, encryption key, encrypted patient archive,
-medication mappings and separate data repositories. Do not replace your secrets
-with the example files. No archive migration is needed.
+For an older installed version, use the complete code set, including pdf_cache.py and requirements.txt. Keep your existing Streamlit Secrets, encryption key, encrypted archives and saved settings. No new dependency or archive migration is required from 6.79.
 
 Confirm the sidebar reads:
 
-    Version 6.79 | Faster Print all
+    Version 6.80 | Airway clearance and weight-based doses
 
-## What to expect
+## What changed
 
-PDF preparation moves to import/save for the affected room. Unchanged Print all
-requests then reuse those pages. Missing or time-sensitive changed displays are
-regenerated. After a new login or app restart, the first print may still require
-initial generation because PDF bytes are not persisted in shared storage.
+Sodium chloride or NaCl 3% nebulized/inhaled products appear under Respiratory / Airway Clearance. Both 3 mL and 4 mL are covered. Other concentrations, IV and enteral products, flushes and recognized mixtures do not receive that automatic placement.
 
-The app still saves edits before Print all and checks the current shared records
-before and after assembly. Network checks, browser downloads and the printer are
-not bypassed. Room order, landscape layout and overflow pages are retained.
+Old generic sodium chloride or NaCl prefix rules targeting Respiratory are narrowed to the qualifying product. Exact or formulation-specific assignments remain available. Saved settings are not deleted.
 
-Test with fictional patients before clinical use. Confirm a manual edit appears,
-a same-room SmartPhrase replacement removes the old patient's information, and
-a reset removes the previous list. Compare one-patient and Print all output.
+Sedative PRNs and intermittent chlorothiazide/furosemide keep their original absolute dose and gain mg/kg/dose or mcg/kg/dose when one unambiguous amount and a usable weight are available.
 
-## Documentation
+For a synthetic 10 kg dosing weight:
 
-FASTER_PRINT_ALL.md explains the code path, cache safety and limitations.
-TEST_REPORT.md documents synthetic tests and environment limitations.
-PRINT_PERFORMANCE_679.json contains measured local timings.
-REPLACE_NEVER_MERGE_678.md preserves the prior room-replacement release notes.
-UPDATE_FILES.txt lists required files.
+    fentanyl injection 15 mcg | Calc: 1.5 mcg/kg/dose (DCW 10 kg)
 
-Use only within your institution's approved workflow. Confirm the current
-patient and source information in Epic. Downloaded PDFs are unencrypted.
+An explicit weight-based dose from EPIC remains authoritative. Calculations use dosing weight first, then an included measured weight if dosing weight is blank. The annotation identifies the weight used. Missing or invalid weights, failed weight imports, dose ranges, concentrations, daily totals and infusion rates do not produce derived doses.
+
+These are ordered amounts per dose. They do not represent a total PRN amount administered.
+
+## Verification and preview
+
+MEDICATION_UPDATE_680.md describes the exact matching and calculation boundaries.
+TEST_REPORT.md records completed verification and its limits.
+examples/medication_doses_680_preview.pdf contains two synthetic handoffs.
+validation/build_medication_preview_680.py rebuilds that preview.
+
+TEST_REPORT_679.md and FASTER_PRINT_ALL.md retain the prior printing release details.

@@ -10,12 +10,14 @@ from copy import deepcopy
 import re
 import uuid
 from medications import DESTINATIONS, OR_PREFIX, _apply_override_default, ignored, is_override_pull, is_bupivacaine, match_name, normalized, visible
+from airway_clearance import (broad_sodium_chloride_rule_applies,
+                             is_sodium_chloride_3_percent_nebulizer)
 
 SETTINGS_KEYS = {"medication_categories", "medication_category_rules"}
 CATEGORY_SYSTEMS = tuple(x for x in DESTINATIONS if x not in ("Labs", "Ignore"))
 # These built-ins were introduced without changing the saved archive schema.
 BACKFILLED_BUILTIN_IDS = ("group:epidural", "group:chemotherapy", "group:leukotriene_receptor_antagonist",
-                          "gi:probiotic", "group:adh_analog")
+                          "gi:probiotic", "group:adh_analog", "group:airway_clearance")
 
 
 def default_categories() -> list[dict]:
@@ -215,10 +217,24 @@ def set_category_rule(settings: dict, name: str, target: str, match: str = "pref
     return result
 
 
+def _broad_airway_category_rules(row: dict, settings: dict, items: list[dict]) -> list[dict]:
+    """Identify the old generic-to-Respiratory mistake, without editing rules."""
+    if is_sodium_chloride_3_percent_nebulizer(row):
+        return []
+    sections = {item["id"]: item["section"] for item in items}
+    sections.update(system_targets())
+    return [rule for rule in settings.get("medication_category_rules", [])
+            if broad_sodium_chloride_rule_applies(row, rule)
+            and sections.get(rule["target"]) == "Respiratory"]
+
+
 def matching_target(row: dict, settings: dict) -> str:
     name, route, frequency = match_name(row.get("name", "")), normalized(row.get("route", "")), normalized(row.get("frequency", ""))
     matches = []
+    blocked = {rule_key(rule) for rule in _broad_airway_category_rules(row, settings, catalog(settings))}
     for rule in settings.get("medication_category_rules", []):
+        if rule_key(rule) in blocked:
+            continue
         # A broad drug-family assignment cannot turn a default-ignored
         # override pull into an active handoff order.
         if is_override_pull(row.get("name", "")) and rule["match"] != "exact":
@@ -257,6 +273,13 @@ def apply_category_rules(rows: list[dict], settings: dict) -> list[dict]:
     definitions = {c["id"]: c for c in items}
     result = deepcopy(rows)
     for row in result:
+        was_ignored = ignored(row)
+        old_path = row.get("category_path")
+        rejected_categories = _broad_airway_category_rules(row, settings, items)
+        rejected_system_rule = (not is_sodium_chloride_3_percent_nebulizer(row) and any(
+            broad_sodium_chloride_rule_applies(row, rule) and rule.get("destination") == "Respiratory"
+            for rule in settings.get("medication_mappings", [])))
+        rejected_broad_rule = bool(rejected_categories or rejected_system_rule)
         row.pop("category_path", None)
         if is_override_pull(row.get("name", "")):
             _apply_override_default(row, settings.get("medication_mappings", []),
@@ -268,7 +291,15 @@ def apply_category_rules(rows: list[dict], settings: dict) -> list[dict]:
             row["section"] = target_snapshot(target, items)["section"]
             row["category_path"] = target_snapshot(target, items)
             continue
-        if target == "system:Ignore" or (not target and ignored(row)):
+        saline_nebulizer = is_sodium_chloride_3_percent_nebulizer(row)
+        exact_restore = bool(target and target != "system:Ignore" and any(
+            rule["match"] == "exact" and rule["target"] == target
+            and rule["name"] == match_name(row.get("name", ""))
+            and (not rule["route"] or rule["route"] == normalized(row.get("route", "")))
+            and (not rule["frequency"] or rule["frequency"] == normalized(row.get("frequency", "")))
+            for rule in settings.get("medication_category_rules", [])))
+        if (target == "system:Ignore" or (not target and (ignored(row) or (rejected_broad_rule and was_ignored)))
+                or (saline_nebulizer and was_ignored and not override and not exact_restore)):
             row["section"] = "Ignore"
             row["category_path"] = target_snapshot("system:Ignore", items)
             continue
@@ -278,6 +309,21 @@ def apply_category_rules(rows: list[dict], settings: dict) -> list[dict]:
             # name, group, and category assignments. No source amount changes.
             row["category_path"] = target_snapshot("group:epidural", default_categories())
             continue
+        if saline_nebulizer:
+            # Route and concentration qualify this one order. Older broad
+            # sodium-chloride mappings must not place it with enteral/IV salts.
+            row["section"] = "Respiratory"
+            row["category_path"] = target_snapshot("group:airway_clearance", default_categories())
+            continue
+        if (not target and rejected_broad_rule and row.get("section") == "Respiratory"
+                and (old_path is None or old_path["id"] == "system:Respiratory"
+                     or old_path["id"] in {rule["target"] for rule in rejected_categories})):
+            # Saved rows may retain the destination from the old generic rule.
+            # Recompute only when current settings identify that exact mistake.
+            # More specific legacy rules remain available, and group modes are
+            # left intact. Without settings evidence, old sections are retained.
+            from medications import destination_for
+            row["section"] = destination_for(row["name"], settings.get("medication_mappings", []), row.get("route", ""))
         if target:
             row["category_path"] = target_snapshot(target, items)
         else:
@@ -293,6 +339,8 @@ def placement(row: dict) -> dict:
         return target_snapshot("system:Ignore", default_categories())
     if is_bupivacaine(row.get("name", "")):
         return target_snapshot("group:epidural", default_categories())
+    if is_sodium_chloride_3_percent_nebulizer(row):
+        return target_snapshot("group:airway_clearance", default_categories())
     if row.get("category_path") is not None:
         return row["category_path"]
     target = legacy_target(row)
@@ -329,7 +377,7 @@ def delete_category(settings: dict, ident: str) -> dict:
 
 
 def _display_root_key(path: dict):
-    """Keep the fixed Epidural heading separate from a renamed saved category.
+    """Keep fixed display headings separate from renamed saved categories.
 
     A bupivacaine order always uses the canonical snapshot. Other drugs may
     intentionally use a renamed group:epidural category or its children. Their
@@ -337,8 +385,13 @@ def _display_root_key(path: dict):
     because their IDs match. Matching default Epidural snapshots still merge.
     """
     ident = path["parent_id"] or path["id"]
-    if ident == "group:epidural":
-        return ident, path["parent_name"] or path["name"]
+    root_name = path["parent_name"] or path["name"]
+    # An existing custom Airway Clearance heading can already contain other
+    # orders. Share its visible root without rewriting either category ID.
+    if path["section"] == "Respiratory" and normalized(root_name) == "airway clearance":
+        return "fixed:airway_clearance"
+    if ident in {"group:epidural", "group:airway_clearance"}:
+        return ident, root_name
     return ident
 
 
@@ -449,6 +502,11 @@ def medication_blocks(section: str, notes: str, rows: list[dict], sheet: dict | 
             # helpers still receive the original name, and nothing is stored.
             rendered = (dict(row, _display_name=display_names[row["id"]])
                         if row["id"] in display_names else row)
+            if sheet is not None and not emphasize:
+                from medication_doses import dose_per_kg_annotation
+                annotation = dose_per_kg_annotation(row, sheet, paths[row["id"]])
+                if annotation:
+                    rendered = dict(rendered, _dose_per_kg=annotation)
             blocks.append(("infusion" if emphasize else "medication", rendered))
             if row["id"] == anchor:
                 from lab_windows import theophylline_summary

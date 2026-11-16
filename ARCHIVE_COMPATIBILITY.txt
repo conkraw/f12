@@ -1,16 +1,22 @@
-PICU Handoff 6.79 archive compatibility
+PICU Handoff 6.80 archive compatibility
 
-Archive schema remains 34. Encryption and storage format are unchanged.
-No key rotation, storage reset, or data migration is performed automatically.
-The PDF cache is session-private memory only, not a new archive field or a file
-stored in GitHub. Old cache entries disappear on reset/logout or app restart.
+Archive schema remains 34. Encryption and the patient-data storage format
+are unchanged. No key rotation, storage reset or data migration is required.
 
-Install app.py, exports.py, census_guard.py, pdf_cache.py and requirements.txt
-together. Reboot/redeploy to install pypdf. Keep existing Streamlit Secrets and
-encrypted patient/mapping storage. Do not upload example Secrets over real ones.
+The new Airway Clearance category is backfilled for older category catalogs.
+Existing category definitions and their original capacity remain available.
+Source names, doses, routes and frequencies are preserved.
 
-The complete-room replacement behavior from 6.78 is retained. A new SmartPhrase
-creates a new handoff identity and clears the selected room's previous patient
-information. Other rooms and reusable settings are unchanged. Existing saved
-records are not retroactively cleaned. Old downloads and printed pages cannot
-be recalled. Existing encrypted Git history is not erased.
+Calculated per-dose annotations exist only on display copies. They are not
+written into medication records or saved mapping rules.
+
+Generic sodium chloride/NaCl rules targeting Respiratory no longer sweep
+nonqualifying sodium orders into that section. More specific assignments
+remain available. The saved settings list itself is not deleted.
+
+Install the complete runtime update listed in UPDATE_FILES.txt.
+Keep existing Streamlit Secrets and encrypted patient/mapping storage.
+
+The 6.79 session-private PDF cache and 6.78 complete-room replacement
+workflow are retained. Cache signatures include dose, weight and current
+display. Old downloads and printed pages cannot be recalled.

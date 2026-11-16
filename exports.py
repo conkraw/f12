@@ -43,7 +43,7 @@ ACCESS_FIELDS = ("Airway", "Last Intubation", "Access", "Drains / Tubes")
 def display_fields(sheet: dict, include_lab_text: bool = True) -> dict:
     fields = fields_with_medications(sheet, include_lab_text=include_lab_text)
     # Do not lose a medication just because its old mapping used the removed column.
-    extra_meds = render_body_blocks(medication_blocks("Labs", "", sheet["medications"]))
+    extra_meds = render_body_blocks(medication_blocks("Labs", "", sheet["medications"], sheet))
     if extra_meds:
         fields["Other Medications"] = "\n".join(v for v in (fields["Other Medications"], extra_meds) if v)
     fields["FEN / GI"] = fen_gi_body(sheet["fields"]["FEN / GI"], sheet["medications"], sheet["intake_output"],
@@ -721,7 +721,7 @@ def pdf_content_signature(sheet: dict, printed_at: datetime | None = None, *,
     validate_sheet(sheet)
     fields = display_fields(sheet, include_lab_text=False)
     payload = {
-        'renderer': '6.79-body-v1', 'target_pages': target_pages,
+        'renderer': '6.80-body-v1', 'target_pages': target_pages,
         'sheet': {key: value for key, value in sheet.items()
                   if key not in ('created_at', 'updated_at')},
         'fields': fields,

@@ -99,8 +99,13 @@ def _matches(name_key: str, term: str, match: str) -> bool:
         and len(name_key) > len(term) and not name_key[len(term)].isalnum())
 
 
-def _destination_rule_matches(name: str, rule: dict) -> bool:
+def _destination_rule_matches(name: str, rule: dict, route: str = "") -> bool:
     term = normalized(rule["name"])
+    if (term in {"sodium chloride", "nacl"} and rule["match"] == "prefix"
+            and rule["destination"] == "Respiratory"):
+        from airway_clearance import is_sodium_chloride_3_percent_nebulizer
+        if not is_sodium_chloride_3_percent_nebulizer({"name": name, "route": route}):
+            return False
     # Keep explicitly date-qualified legacy rules working without broadening them.
     return any(_matches(key, term, rule["match"])
                for key in (match_name(name), visibility_name(name)))
@@ -108,6 +113,19 @@ def _destination_rule_matches(name: str, rule: dict) -> bool:
 
 def suggested_key(name: str) -> str:
     """A stable name prefix, used only after a user chooses a destination."""
+    # Preserve the concentration and nebulizer formulation. Truncating at the
+    # first digit used to turn this product into a rule for all sodium chloride.
+    from airway_clearance import is_sodium_chloride_3_percent_nebulizer
+    if is_sodium_chloride_3_percent_nebulizer({"name": name, "route": ""}):
+        formulation = re.match(
+            r"^((?:sodium\s+chloride|nacl)\s+3(?:\.0+)?\s*%\s+"
+            r"(?:nebuliz(?:er|ation|ed)|nebulis(?:er|ation|ed)|inhalation)"
+            r"(?:\s+solution)?)\b", match_name(name), re.I)
+        if formulation:
+            return normalized(formulation.group(1))
+        # A product spelling that cannot yield a safe dose-free prefix is kept
+        # complete rather than widened to the generic salt family.
+        return match_name(name)
     head = re.split(r"\(|\d", _without_context(name, strip_schedule=True), maxsplit=1)[0].strip()
     head = re.split(r"\s+(?:in\s+(?:NaCl|sodium chloride)|injection|infusion|syringe|nebulizer|ophthalmic|cream)\b", head, maxsplit=1, flags=re.I)[0]
     head = re.sub(r"\s+(?:NCS|PF|neo/ped)$", "", head, flags=re.I).strip(" ,-:;")
@@ -115,11 +133,11 @@ def suggested_key(name: str) -> str:
     return normalized(head or name)
 
 
-def destination_for(name: str, rules: list[dict]) -> str:
+def destination_for(name: str, rules: list[dict], route: str = "") -> str:
     if is_override_pull(name):
         exact = [r for r in rules if r["match"] == "exact" and _destination_rule_matches(name, r)]
         return max(exact, key=lambda r: len(normalized(r["name"])))["destination"] if exact else "Ignore"
-    return _ordinary_destination(name, rules)
+    return _ordinary_destination(name, rules, route)
 
 
 def explicit_ignore_mapping(name: str, rules: list[dict]) -> bool:
@@ -134,13 +152,13 @@ def explicit_ignore_mapping(name: str, rules: list[dict]) -> bool:
     return bool(choices) and max(choices)[2] == "Ignore"
 
 
-def _ordinary_destination(name: str, rules: list[dict]) -> str:
+def _ordinary_destination(name: str, rules: list[dict], route: str = "") -> str:
     if is_bupivacaine(name):
         return "Neurologic"
     choices = []
     for rule in rules:
         term = normalized(rule["name"])
-        if _destination_rule_matches(name, rule):
+        if _destination_rule_matches(name, rule, route):
             choices.append((rule["match"] == "exact", len(term), rule["destination"]))
     return max(choices)[2] if choices else "Other Medications"
 
@@ -152,10 +170,10 @@ def _apply_override_default(row: dict, rules: list[dict], visibility: list[dict]
     exact_restore = any(r["match"] == "exact" and not r["hidden"]
                         and normalized(r["name"]) == visibility_name(row["name"])
                         for r in visibility)
-    destination = destination_for(row["name"], rules)
+    destination = destination_for(row["name"], rules, row.get("route", ""))
     restored = destination != "Ignore" or exact_restore
     row["override_pull_restored"] = restored
-    row["section"] = (_ordinary_destination(row["name"], rules)
+    row["section"] = (_ordinary_destination(row["name"], rules, row.get("route", ""))
                       if restored and destination == "Ignore" else destination)
 
 
@@ -213,7 +231,7 @@ def validate_medication(row: dict) -> None:
         raise ValueError("Medication review warnings are invalid.")
 
 
-def format_medication(row: dict) -> str:
+def format_medication(row: dict, sheet: dict | None = None) -> str:
     """Use explicit dose column. Keep different formulation/ordered doses visible."""
     if row.get("custom_text", "").strip():
         return row["custom_text"].strip()
@@ -239,6 +257,14 @@ def format_medication(row: dict) -> str:
         primary_rate = admin_view[1] if admin_view else dose
         if normalized(primary_rate) != normalized(row["last_rate"]):
             text += " @ " + row["last_rate"]
+    # An emitted display copy may carry a calculation, but the source Dose and
+    # stored medication schema remain unchanged. Direct editor calls pass sheet.
+    annotation = row.get("_dose_per_kg", "")
+    if sheet is not None:
+        from medication_doses import dose_per_kg_annotation
+        annotation = dose_per_kg_annotation(row, sheet)
+    if annotation:
+        text += " | Calc: " + annotation
     if row["route"].strip():
         text += " | " + row["route"].strip()
     if row["frequency"].strip():
@@ -249,7 +275,7 @@ def format_medication(row: dict) -> str:
 def remap(rows: list[dict], rules: list[dict], visibility: list[dict] | None = None) -> list[dict]:
     result = deepcopy(rows)
     for row in result:
-        row["section"] = destination_for(row["name"], rules)
+        row["section"] = destination_for(row["name"], rules, row.get("route", ""))
         if visibility is not None:
             row["hidden"] = hidden_for(row["name"], visibility)
         _apply_override_default(row, rules, visibility or [])
@@ -423,7 +449,7 @@ def parse_medications(block: str, rules: list[dict] | None = None, visibility: l
                 warnings.append("The last recorded rate is zero. This does not establish that the order was discontinued.")
         row = {"id": uuid.uuid4().hex, "name": name, "dose": dose, "route": route,
                "frequency": frequency, "last_rate": rate, "rate_time": rate_time,
-               "section": destination_for(name, rules), "custom_text": "", "include": True,
+               "section": destination_for(name, rules, route), "custom_text": "", "include": True,
                "warnings": warnings, "hidden": hidden_for(name, visibility or [])}
         _apply_override_default(row, rules, visibility or [])
         if continuous_order(row):

@@ -1,4 +1,4 @@
-"""PICU SmartPhrase v6.79: reuse current patient PDFs for faster Print all."""
+"""PICU SmartPhrase v6.80: specific saline placement and per-dose weight display."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,
@@ -1888,7 +1888,7 @@ def main() -> None:
         return
     with st.sidebar:
         st.header("PICU Handoff")
-        st.caption("Version 6.79 | Faster Print all")
+        st.caption("Version 6.80 | Airway clearance and weight-based doses")
         # Retire the old instructions workspace without discarding room drafts.
         if st.session_state.get("page") == "Instructions / SmartPhrase":
             st.session_state["page"] = "Handoff"
@@ -1917,6 +1917,7 @@ def main() -> None:
 
 
 def medication_editor(rows: list[dict], room: str, store: GitHubVault | None) -> None:
+    sheet = st.session_state.get("drafts", {}).get(room)
     for number, row in enumerate(rows, 1):
         prefix = "med_draft_" + row["id"] + "_"
         summary, destination = st.columns([3, 1])
@@ -1927,7 +1928,7 @@ def medication_editor(rows: list[dict], room: str, store: GitHubVault | None) ->
                             str(number) + '. <b>Infusion</b>' + suffix + '\n' +
                             infusion_entry(row, True) + '</div>', unsafe_allow_html=True)
             else:
-                st.text(f"{number}. " + format_medication(row) + suffix)
+                st.text(f"{number}. " + format_medication(row, sheet) + suffix)
         with destination:
             placement_picker(row, number, room, store, medication_category_change)
         if supports_infusion_display(row):
@@ -1975,8 +1976,11 @@ def medication_editor(rows: list[dict], room: str, store: GitHubVault | None) ->
             widget("custom_text", "Custom handoff wording", "area")
             if row.get("custom_text", "").strip() and continuous_order(row):
                 st.caption("Custom handoff wording overrides the automatic infusion summary, including its Last Admin rate. Recheck or clear custom wording after a rate change.")
-            name, match = rule_for_inline_mapping(row["name"], st.session_state["vault"]["settings"]["medication_mappings"])
-            st.caption("Changing the system remembers this rule: " + name + " [" + match + "].")
+            from airway_clearance import is_sodium_chloride_3_percent_nebulizer
+            if is_sodium_chloride_3_percent_nebulizer(row):
+                st.caption("3% sodium chloride nebulizers automatically use Respiratory / Airway Clearance.")
+            else:
+                st.caption("Category choices are remembered for this exact formulation, route and frequency.")
             for warning in row["warnings"]:
                 st.caption(warning)
 
@@ -2205,7 +2209,7 @@ def handoff_notes(sheet: dict) -> None:
             else:
                 for row in sheet["medications"]:
                     if visible(row) and effective_section(row) == section:
-                        st.text(format_medication(row))
+                        st.text(format_medication(row, sheet))
             if section == "Diagnoses" and demographic_weight_text(sheet["nutrition"], sheet["dosing_weight"]):
                 st.text("----\n" + demographic_weight_text(sheet["nutrition"], sheet["dosing_weight"]))
                 st.caption("Edit measured weight, Z-score, dosing weight and admission date in Labs / Vitals.")
