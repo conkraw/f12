@@ -8,7 +8,7 @@ from __future__ import annotations
 from datetime import datetime
 import re
 
-from labs import date_parts
+from labs import date_parts as _legacy_date_parts
 
 DATE = r"\d{1,2}/\d{1,2}/(?:\d{4}|\d{2})(?!\d)"
 TIME = r"(?:\d{1,2}:\d{2}(?::\d{2})?(?:\s*[APap][Mm])?|\d{4}(?!\d))"
@@ -18,6 +18,45 @@ _BRACKET = re.compile(r"\[" + _STAMP + r"(?:[ \t]*:[ \t]*[^\r\n]*)?\][ \t]*$")
 _PLAIN = re.compile(r"(?:\bat\b|\bon\b)[ \t]+" + _STAMP + r"[ \t]*$", re.I)
 _ERROR = "A score recording date or time could not be read. Check the source entry."
 _ORDER_ERROR = "The latest recorded score could not be established from the supplied dates and times."
+
+# Score imports and saved rows use a small, known date grammar. Trying every
+# strptime format for each validation repeatedly evicts its format cache and
+# also slows unrelated laboratory dates in the same render.
+_DATE_PARTS = re.compile(
+    r"(?P<month>[0-9]{1,2})/(?P<day>[0-9]{1,2})/(?P<year>[0-9]{4}|[0-9]{2})"
+    r"(?:[ \t]+(?:(?P<hour>[0-9]{1,2}):(?P<minute>[0-9]{2})"
+    r"(?::(?P<second>[0-9]{2}))?(?:[ \t]*(?P<period>AM|PM))?"
+    r"|(?P<compact>[0-9]{4})))?", re.I)
+
+
+def date_parts(value: str) -> tuple[datetime, bool]:
+    """Parse ordinary score dates directly, retaining legacy format support.
+
+This performs calendar validation without keeping a global cache of clinical
+data. Unusual formats accepted by older archives use the unchanged parser.
+"""
+    text = value.strip()
+    match = _DATE_PARTS.fullmatch(text)
+    if match is None or (match['period'] and match['second'] is not None):
+        return _legacy_date_parts(value)
+    year = int(match['year'])
+    if len(match['year']) == 2:
+        year += 2000 if year <= 68 else 1900
+    timed = match['hour'] is not None or match['compact'] is not None
+    if match['compact'] is not None:
+        hour, minute = int(match['compact'][:2]), int(match['compact'][2:])
+    else:
+        hour, minute = int(match['hour'] or 0), int(match['minute'] or 0)
+    if match['period']:
+        if not 1 <= hour <= 12:
+            raise ValueError(_ERROR)
+        hour = hour % 12 + (12 if match['period'].upper() == 'PM' else 0)
+    try:
+        when = datetime(year, int(match['month']), int(match['day']),
+                        hour, minute, int(match['second'] or 0))
+    except ValueError:
+        raise ValueError(_ERROR) from None
+    return when, timed
 
 
 def _normalized_stamp(value: str) -> str:

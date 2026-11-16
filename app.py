@@ -1,4 +1,4 @@
-"""PICU SmartPhrase v6.81: latest dated neurologic scores."""
+"""PICU SmartPhrase v6.82: efficient dated scores and unchanged-room navigation."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,
@@ -296,23 +296,24 @@ def editor_snapshot(room: str) -> dict:
                 row[field] = ss[widget]
     for source, rows in sheet["neuro_vitals"].items():
         edited = False
+        displayed = None
+        if source in ("l", "y") and any(
+                "neuro_" + sheet["id"] + "_" + source + "_" + str(index) in ss
+                and ss["neuro_" + sheet["id"] + "_" + source + "_" + str(index)] != row["value"]
+                for index, row in enumerate(rows)):
+            displayed, _ = score_editor_rows(rows, source)
         for index, row in enumerate(rows):
             key = "neuro_" + sheet["id"] + "_" + source + "_" + str(index)
             for field, widget in (("value", key), ("include", key + "_include")):
                 if widget in ss:
+                    if field == "value" and displayed is not None and ss[widget] == displayed[index]["value"]:
+                        # Showing a sanitized legacy value is a read, not an edit.
+                        continue
                     edited = edited or row[field] != ss[widget]
                     row[field] = ss[widget]
-        if source in ("l", "y"):
-            try:
-                sheet["neuro_vitals"][source] = normalize_score_rows(rows, source)
-            except ValueError:
-                if edited:
-                    raise
-                # Older archives can contain unrecognized WAT text. Keep an
-                # unchanged archive loadable while output suppresses that text.
-            else:
-                if edited:
-                    sheet["import_warnings"].pop(source, None)
+        if source in ("l", "y") and edited:
+            sheet["neuro_vitals"][source] = normalize_score_rows(rows, source)
+            sheet["import_warnings"].pop(source, None)
     for index, row in enumerate((sheet.get("sbs_observations") or {}).get("readings", [])):
         for field in ("value", "recorded_at", "include"):
             key = "sbs_" + sheet["id"] + "_" + str(index) + "_" + field
@@ -541,6 +542,14 @@ def load_observed_sample() -> None:
         st.session_state.pop("import_result", None)
 
 
+def score_editor_rows(rows: list[dict], source: str) -> tuple[list[dict], bool]:
+    """Return the safe editor baseline without rewriting an existing record."""
+    try:
+        return normalize_score_rows(rows, source), False
+    except ValueError:
+        return [dict(row, label="CAPD" if source == "y" else "WAT-1", value="") for row in rows], True
+
+
 def neuro_row_change(room: str, source: str, index: int, field: str, key: str) -> None:
     if not require_session() or room != st.session_state.get("current_room"):
         return
@@ -549,6 +558,15 @@ def neuro_row_change(room: str, source: str, index: int, field: str, key: str) -
     if source not in candidate or not 0 <= index < len(candidate[source]) or field not in ("value", "include"):
         return
     old = candidate[source][index][field]
+    previous_display = old
+    if source in ("l", "y") and field == "value":
+        displayed, _ = score_editor_rows(candidate[source], source)
+        previous_display = displayed[index][field]
+    if ss[key] == old or ss[key] == previous_display:
+        # A callback may see the canonical display of an older raw value.
+        # It must not create a save, clear a warning or rewrite that archive.
+        ss[key] = previous_display
+        return
     candidate[source][index][field] = ss[key]
     try:
         if source in ("l", "y"):
@@ -560,7 +578,7 @@ def neuro_row_change(room: str, source: str, index: int, field: str, key: str) -
             value_key = "neuro_" + ss["drafts"][room]["id"] + "_" + source + "_" + str(index)
             ss[value_key] = candidate[source][index]["value"]
     except ValueError as exc:
-        ss[key] = old
+        ss[key] = previous_display
         note(str(exc), "error")
 
 
@@ -835,10 +853,8 @@ def neuro_weight_editor(sheet: dict) -> None:
             st.caption("CAPD: None. Paste a Y section to add the recorded score.")
         rows = sheet["neuro_vitals"].get(source, [])
         if source in ("l", "y"):
-            try:
-                rows = normalize_score_rows(rows, source)
-            except ValueError:
-                rows = [dict(row, label="CAPD" if source == "y" else "WAT-1", value="") for row in rows]
+            rows, needs_review = score_editor_rows(rows, source)
+            if needs_review:
                 st.caption(title + ": the saved value needs a recognizable score before it can be displayed.")
         for index, row in enumerate(rows):
             present = True
@@ -1913,7 +1929,7 @@ def main() -> None:
         return
     with st.sidebar:
         st.header("PICU Handoff")
-        st.caption("Version 6.81 | Dated neurologic scores")
+        st.caption("Version 6.82 | Faster dated scores")
         # Retire the old instructions workspace without discarding room drafts.
         if st.session_state.get("page") == "Instructions / SmartPhrase":
             st.session_state["page"] = "Handoff"

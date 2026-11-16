@@ -1,96 +1,100 @@
-# PICU Handoff 6.81 verification
+# PICU Handoff 6.82 verification
 
-Verified November 16, 2026. Built from PICU680.zip.
+Verified November 16, 2026. Built from the exact PICU681.zip release, with
+direct-upgrade checks against PICU680.zip because the user reverted to 6.80.
 This package has not been deployed to the live application.
 
-## Final result
+## Final regression result
 
-    6879 passed, 231 warnings, 14 subtests passed in 229.44s (0:03:49)
+    6962 passed, 231 warnings, 14 subtests passed in 232.10s (0:03:52)
 
-The final complete suite was run with:
+The complete suite was run after the production files were frozen:
 
     PYTHONPATH=.:tests python3 -m pytest -q --tb=short
 
 No test was skipped or marked as an expected failure for this release.
 
-Existing SBS tests were updated to reflect the requested behavior: every SBS
-display needs invasive-mode evidence, dated output includes its source date,
-and an older dated value remains visible. Fixtures testing visible SBS now
-include an invasive mode. Existing TPN, medication, ventilation, isolation,
-failed-import, encryption and callback assertions remain in place.
+## Confirmed regressions and fixes
 
-An initial complete run exposed additional assertions for the previous SBS
-behavior. Those fixtures were corrected before the final run. A final parser
-review also found that trimming a line with no date suffix could remove an
-empty trailing cell in an old SBS matrix. The shared sanitizer now preserves
-that whitespace, with a regression case included in the final suite.
+The 6.81 dated-score helpers repeatedly used the laboratory parser to try
+multiple date formats during validation, source ordering, display and cached
+PDF content checks. Compact two-digit-year dates caused format-cache churn.
+The 6.82 score parser directly validates ordinary source dates and times with
+calendar checks. Unusual formats from older archives retain the unchanged
+legacy parser. No global cache of patient text was introduced.
 
-## New coverage
+The 6.81 editor snapshot also rewrote some unchanged legacy WAT records to
+their displayed form. Room navigation then treated that rewrite as an edit,
+saved shared storage and warmed a PDF. The 6.82 snapshot compares against the
+sanitized editor baseline and normalizes only actual edits. Read-only viewing
+keeps the archive and existing import warning unchanged.
 
-tests/test_dated_capd_wat_681.py verifies dated CAPD and WAT-1 totals, latest
-timestamp selection, same-day ordering, date-only entries, zero, source
-attribution removal, ambiguity, malformed dates, excluded values and legacy
-saved WAT behavior. It also verifies that the unrelated ICP/CPP and nutrition
-paths retain their existing behavior.
+## New regression coverage
 
-tests/test_dated_sbs_681.py verifies staff-free persistence, date-only output,
-old dated scores, source targets, source order, invasive-mode gating, old
-PS/noninvasive archives, malformed dates and legacy source formats.
+tests/test_score_date_performance_682.py adds 57 cases covering calendar and
+leap-year validity, the 68/69 two-digit-year boundary, midnight/noon, AM/PM,
+compact time, seconds, missing time and legacy formats. Deterministic call
+checks confirm that ordinary score import, full sheet validation, HTML
+preview and unchanged PDF cache hits do not enter the date-format trial loop.
 
-tests/test_dated_score_integration_681.py exercises full imports, actual
-text/HTML/PDF output, encryption, replacement, room isolation and PDF-cache
-refresh after score, date and airway edits. It also runs full app callbacks
-with a Streamlit stub: manual score edits, pending edits captured on room
-switch, warning recovery, invalid-edit rollback, date-only SBS addition and
-preservation of target labels after an observed reading is added.
+tests/test_dated_score_edit_performance_682.py adds 26 cases. Unchanged legacy
+navigation produces zero shared-store saves and zero PDF warming calls.
+Actual score, date and inclusion edits save and warm once. The tests also
+cover warning recovery, invalid-edit rollback, sanitized output and room
+isolation through the actual app callbacks with widget/storage stubs.
 
-The broader suite covers the existing SmartPhrase replacement, medications,
-weight calculations, autosave, shared-record guards, nutrition, I/O and Print all.
+The complete existing suite retains medication mapping and dose calculations,
+dated-score selection, SBS gating, complete-room replacement, storage guards,
+encryption, nutrition, I/O and prepared PDF reuse.
 
-## Supplied EPIC examples
+## Performance evidence
 
-All three supplied complete examples produced the expected score/date output
-in memory. No K, L or Y score warning remained. The ventilated examples
-retained their dated SBS target and CAPD values. The HFNC example retained
-its dated WAT-1 value without SBS. The nasal-cannula, removed-ETT case supplied
-in chat is covered by a synthetic fixture with CAPD present and SBS suppressed.
+PERFORMANCE_682.md explains the fixtures and results. PERFORMANCE_682.json
+retains raw repetitions, profiles, cache counts and environment details.
+Timing runs were completed before the final full suite started.
 
-The first complete example still has its preexisting H/U source notices and
-an unrelated ECG review error because its Bazett QTc field is blank. The same
-unrelated sections were confirmed in the 6.80 baseline. This release changes
-the score sections only and does not fill in an absent QTc value.
+For 30 warmed HTML renders of a simple dated-score fixture, date-format
+compilations fell from 4,680 in 6.81 to zero in 6.82. Profiled score-date
+parsing time fell from about 0.178 seconds to 0.012 seconds.
 
-The original examples and their patient content are not in this package.
-All new packaged tests and preview data are synthetic.
+Median warm Print all time for 18 synthetic rooms with 40 laboratory rows
+each was 324.86 ms in 6.80, 392.45 ms in 6.81 and 314.33 ms in 6.82.
+This local run places the corrected path near the 6.80 baseline. It is not a
+claim that all deployed actions are faster. The larger single-sheet HTML/PDF
+measurements were more variable and showed smaller improvements.
 
-## PDF review
+Each version initially generated 18 clinical PDF bodies and then reused them
+for one warmup plus five measured packets, with zero additional body builds.
+The PDF-cache engine and its freshness checks were not changed.
 
-examples/dated_scores_681_preview.pdf contains two synthetic rooms. Both pages
-were rendered with PyMuPDF and visually inspected. The ventilated example
-shows SBS target, CAPD and WAT-1 with dates. The nasal-cannula example shows
-CAPD and WAT-1 without SBS. The score lines are readable within the existing
-Neurologic column. Staff attribution and source times are absent from those
-score lines. Existing print preparation metadata is retained.
+## Output and compatibility
 
-validation/build_dated_scores_681_preview.py rebuilds the preview. The prior
-synthetic medication preview remains included.
+validation/check_score_output_682.py compared 6.81 and 6.82 in separate
+processes using identical synthetic observed-SBS, explicit-target and
+nasal-cannula records. Generated identifiers and save metadata were fixed.
+Stored-sheet, text and HTML hashes matched exactly. Score dates and values
+were not removed from the comparison. Source attribution stayed absent and
+the nasal-cannula record suppressed SBS.
 
-## Compatibility
+The existing dated-score PDF preview remains included. The rendering and
+layout code is byte-identical to 6.81, and the full PDF regression tests pass.
+No new visual layout or print metadata format was introduced.
 
-Exactly eight runtime modules changed or were added. UPDATE_FILES.txt lists
-them. score_dates.py is new. Archive schema remains 34 and no dependency was
-added. New CAPD and WAT records use the existing score-row fields with a compact
-score/date value. SBS uses its existing source timestamp and target metadata.
+Only app.py, sbs.py and score_dates.py changed relative to 6.81. All eight
+runtime files needed to upgrade directly from 6.80 are listed in UPDATE_FILES.txt.
+The package contains the complete application. The general laboratory parser,
+medication changes, respiratory parser, storage layer and PDF renderer remain
+unchanged. Archive schema remains 34, with no new dependency or migration.
 
-The medication matching and dose modules, respiratory parser, PDF-cache
-engine, encrypted storage, I/O and nutrition modules listed in
-BUILD_MANIFEST_681.json are byte-identical to 6.80. exports.py changes only the
-renderer content-signature version so prepared pages refresh for this release.
+The renderer content-signature version remains at 6.81 because clinical
+output is unchanged. Existing valid prepared bodies do not need a separate
+6.82-only invalidation.
 
-195 Python files and 3 TOML files passed syntax parsing.
-The ZIP CRC and the packaged SHA256SUMS manifest were verified.
+199 Python files and 3 TOML files passed syntax parsing.
+Packaged file checksums and ZIP CRC were verified.
 
-Source ZIP SHA-256: e8f18df55e24d5c6494cf272e01cd93d712346e12ca847e70d6d6c0887adcda2
+Source PICU681.zip SHA-256: 4c1a32be06df11336c7a68e569479369e8db9bfa3f75c2f0af70fd1ad297ab9f
+Rollback PICU680.zip SHA-256: e8f18df55e24d5c6494cf272e01cd93d712346e12ca847e70d6d6c0887adcda2
 
 ## Environment and limits
 
@@ -99,10 +103,8 @@ ReportLab 4.4.9, pypdf 6.21.4,
 PyMuPDF 1.26.6, cryptography 50.0.0,
 requests 2.34.2.
 
-The warnings were existing library deprecations in the PDF compression API
-and pytest plugin. No dependency or deprecation cleanup was part of this change.
-
-Tests use local synthetic data and storage/widget stubs. There was no live
-Streamlit browser, production archive or physical-printer validation. No new
-speed claim is made. Prior release verification remains in TEST_REPORT_680.md
-and TEST_REPORT_679.md.
+The warnings are existing pytest-plugin and PDF compression deprecations.
+Measurements use local synthetic data, with no live Streamlit deployment,
+production archive, network-latency measurement or concurrent-user load.
+Callback tests establish the number of avoided saves without assigning a
+duration to a network request. No patient paste is included in this package.

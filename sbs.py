@@ -13,9 +13,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 import re
-from labs import date_parts
 from lab_windows import clock, EASTERN
-from score_dates import sanitize_score_line, split_score_stamp, date_label, latest_score
+from score_dates import date_parts, sanitize_score_line, split_score_stamp, date_label, latest_score
 
 LABEL = r'(?:SBS(?:\s+(?:total\s+)?score)?|State\s+Behavio(?:u)?r(?:al)?\s+Scale(?:\s*\(SBS\))?(?:\s+score)?)'
 LABEL_ONLY = re.compile(r'^' + LABEL + r'\s*:?$', re.I)

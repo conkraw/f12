@@ -1,0 +1,59 @@
+{
+  "version": "6.82",
+  "baseline": "6.81",
+  "direct_upgrade_from": "6.80",
+  "source_zip_sha256": "4c1a32be06df11336c7a68e569479369e8db9bfa3f75c2f0af70fd1ad297ab9f",
+  "rollback_zip_sha256": "e8f18df55e24d5c6494cf272e01cd93d712346e12ca847e70d6d6c0887adcda2",
+  "runtime_files": [
+    "app.py",
+    "sbs.py",
+    "score_dates.py"
+  ],
+  "runtime_files_from_680": [
+    "app.py",
+    "capd.py",
+    "exports.py",
+    "importing.py",
+    "models.py",
+    "observations.py",
+    "sbs.py",
+    "score_dates.py"
+  ],
+  "final_test_summary": "6962 passed, 231 warnings, 14 subtests passed in 232.10s (0:03:52)",
+  "unchanged_verified_files": [
+    "airway_clearance.py",
+    "medication_doses.py",
+    "medications.py",
+    "medication_groups.py",
+    "categories.py",
+    "fen_gi.py",
+    "capd.py",
+    "observations.py",
+    "models.py",
+    "importing.py",
+    "exports.py",
+    "pdf_cache.py",
+    "census_guard.py",
+    "labs.py",
+    "lab_windows.py",
+    "noninvasive.py",
+    "ventilation.py",
+    "github_store.py",
+    "security.py",
+    "requirements.txt"
+  ],
+  "python_files_parsed": 199,
+  "toml_files_parsed": 3,
+  "benchmark_report": "PERFORMANCE_682.json",
+  "environment": {
+    "pytest": "9.2.0",
+    "reportlab": "4.4.9",
+    "pypdf": "6.21.4",
+    "pymupdf": "1.26.6",
+    "cryptography": "50.0.0",
+    "requests": "2.34.2",
+    "python": "3.12.14"
+  },
+  "deployed": false,
+  "schema": 34
+}

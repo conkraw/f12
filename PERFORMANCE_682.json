@@ -1,0 +1,1275 @@
+{
+  "release": "6.82",
+  "date": "2026-11-16",
+  "method": "Sequential subprocesses, five timed repetitions after warmup, identical synthetic score fixture, optional40 laboratory rows, fixed clinical display clock.",
+  "fixtures": {
+    "rooms": 18,
+    "score_variants": [
+      "legacy CAPD/WAT values supported by6.80",
+      "dated CAPD/WAT values supported by6.81 and6.82"
+    ],
+    "sbs": "same timestamped observed score and invasive-mode evidence in all timing fixtures",
+    "data_origin": "synthetic only"
+  },
+  "source_files_at_benchmark": {
+    "score_dates.py": "1331e50c77280e462f53d6a3a66320b256bd752bac224ef95127029163b06fc2",
+    "sbs.py": "837ab2bc4752e4f171395a5da16a40b02ada28e62c863a3038b80c5a10f0848f",
+    "pdf_cache.py": "7f3e825a14e4ea1bc4c22a5b298d893f3d4bb631877adc7701ab0b3ef5fb6843",
+    "exports.py": "30a885871ce77fd105e7483fbf924882f289d68b9fd6f27b4231ce4be2663249"
+  },
+  "results": [
+    {
+      "app_directory": "PICU_Handoff_v6_80_Medication_Doses",
+      "variant": "legacy",
+      "lab_rows": 0,
+      "census_rooms": 18,
+      "environment": {
+        "python": "3.12.14",
+        "reportlab": "4.4.9",
+        "pypdf": "6.21.4"
+      },
+      "measurements": {
+        "validate_sheet": {
+          "median_ms": 0.051662,
+          "min_ms": 0.044428,
+          "raw_ms_per_operation": [
+            0.06813123000029009,
+            0.04442751998794847,
+            0.052373479993548244,
+            0.05166184999325196,
+            0.0497128899951349
+          ],
+          "loops_per_repetition": 100,
+          "repetitions": 5
+        },
+        "automatic_vitals": {
+          "median_ms": 0.145315,
+          "min_ms": 0.102701,
+          "raw_ms_per_operation": [
+            0.10270053000567714,
+            0.14689245999761624,
+            0.129576220006129,
+            0.1453145199957362,
+            0.2777361000153178
+          ],
+          "loops_per_repetition": 100,
+          "repetitions": 5
+        },
+        "validate_census": {
+          "median_ms": 2.003912,
+          "min_ms": 1.508291,
+          "raw_ms_per_operation": [
+            3.0001268001797143,
+            2.003911599967978,
+            1.508291000209283,
+            2.0605382000212558,
+            1.919077999991714
+          ],
+          "loops_per_repetition": 5,
+          "repetitions": 5
+        },
+        "available_census": {
+          "median_ms": 33.302408,
+          "min_ms": 31.0497,
+          "raw_ms_per_operation": [
+            33.30240760005836,
+            32.62240419971931,
+            34.517934000177775,
+            31.049699999857694,
+            37.51200279984914
+          ],
+          "loops_per_repetition": 5,
+          "repetitions": 5
+        },
+        "pdf_signature_one": {
+          "median_ms": 6.943056,
+          "min_ms": 6.774656,
+          "raw_ms_per_operation": [
+            6.943055549982091,
+            7.349661349962844,
+            6.863775200054079,
+            7.907095900009153,
+            6.7746561499916425
+          ],
+          "loops_per_repetition": 20,
+          "repetitions": 5
+        },
+        "html_one": {
+          "median_ms": 4.713289,
+          "min_ms": 4.472618,
+          "raw_ms_per_operation": [
+            4.472617899955367,
+            5.2919636998922215,
+            4.563901700021233,
+            4.736413399950834,
+            4.713288900165935
+          ],
+          "loops_per_repetition": 10,
+          "repetitions": 5
+        },
+        "pdf_one": {
+          "median_ms": 15.647106,
+          "min_ms": 14.512345,
+          "raw_ms_per_operation": [
+            16.41846100028488,
+            15.723840000039974,
+            14.74161366665309,
+            15.64710566647894,
+            14.512345000184723
+          ],
+          "loops_per_repetition": 3,
+          "repetitions": 5
+        },
+        "encrypt_census": {
+          "median_ms": 2.155621,
+          "min_ms": 2.076568,
+          "raw_ms_per_operation": [
+            2.1053217998996843,
+            2.26737580014742,
+            2.3212970001623034,
+            2.07656800012046,
+            2.1556207997491583
+          ],
+          "loops_per_repetition": 5,
+          "repetitions": 5
+        }
+      },
+      "print_all": null,
+      "profile": {
+        "html_renders": 30,
+        "strptime_cache_capacity": 5,
+        "selected_calls": [
+          {
+            "module": "_strptime.py",
+            "function": "_strptime",
+            "calls": 960,
+            "cumulative_seconds": 0.021067507000000003,
+            "self_seconds": 0.011618123000000001
+          },
+          {
+            "module": "labs.py",
+            "function": "date_parts",
+            "calls": 480,
+            "cumulative_seconds": 0.028803087,
+            "self_seconds": 0.0016712010000000002
+          }
+        ],
+        "top_cumulative": "         540931 function calls (505681 primitive calls) in 0.414 seconds\n\n   Ordered by: cumulative time\n   List reduced from 261 to 20 due to restriction <20>\n\n   ncalls  tottime  percall  cumtime  percall filename:lineno(function)\n       30    0.000    0.000    0.414    0.014 PICU_Handoff_v6_80_Medication_Doses/lab_windows.py:285(wrapped)\n       30    0.003    0.000    0.413    0.014 PICU_Handoff_v6_80_Medication_Doses/exports.py:160(handoff_html)\n      480    0.008    0.000    0.267    0.001 PICU_Handoff_v6_80_Medication_Doses/categories.py:398(medication_blocks)\n      480    0.013    0.000    0.245    0.001 PICU_Handoff_v6_80_Medication_Doses/empty_groups.py:42(empty_group_paths)\n       30    0.000    0.000    0.212    0.007 PICU_Handoff_v6_80_Medication_Doses/exports.py:43(display_fields)\n 2340/930    0.003    0.000    0.189    0.000 {method 'join' of 'str' objects}\n      240    0.000    0.000    0.187    0.001 PICU_Handoff_v6_80_Medication_Doses/exports.py:164(<genexpr>)\n      210    0.001    0.000    0.183    0.001 PICU_Handoff_v6_80_Medication_Doses/exports.py:109(field_markup)\n       30    0.002    0.000    0.177    0.006 PICU_Handoff_v6_80_Medication_Doses/models.py:493(fields_with_medications)\n      240    0.001    0.000    0.134    0.001 PICU_Handoff_v6_80_Medication_Doses/infusions.py:161(system_body_blocks)\n     2400    0.100    0.000    0.124    0.000 PICU_Handoff_v6_80_Medication_Doses/categories.py:23(default_categories)\n      150    0.001    0.000    0.084    0.001 PICU_Handoff_v6_80_Medication_Doses/models.py:588(automatic_vitals)\n36300/2460    0.043    0.000    0.080    0.000 /opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/copy.py:118(deepcopy)\n     2460    0.012    0.000    0.070    0.000 /opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/copy.py:217(_deepcopy_dict)\n      120    0.001    0.000    0.069    0.001 PICU_Handoff_v6_80_Medication_Doses/exports.py:92(infusion_section_prefix)\n       90    0.002    0.000    0.058    0.001 PICU_Handoff_v6_80_Medication_Doses/fen_gi.py:138(fen_gi_body)\n      150    0.001    0.000    0.045    0.000 PICU_Handoff_v6_80_Medication_Doses/sbs.py:372(sbs_display_rows)\n      330    0.003    0.000    0.033    0.000 PICU_Handoff_v6_80_Medication_Doses/sbs.py:53(validate_sbs)\n      480    0.002    0.000    0.029    0.000 PICU_Handoff_v6_80_Medication_Doses/labs.py:76(date_parts)\n     2400    0.010    0.000    0.028    0.000 PICU_Handoff_v6_80_Medication_Doses/categories.py:179(target_snapshot)\n\n\n"
+      },
+      "limitations": "Synthetic local CPU benchmark. No live Streamlit server, network save, production data or concurrent-user load.",
+      "benchmark_case": "680_legacy"
+    },
+    {
+      "app_directory": "PICU_Handoff_v6_80_Medication_Doses",
+      "variant": "legacy",
+      "lab_rows": 40,
+      "census_rooms": 18,
+      "environment": {
+        "python": "3.12.14",
+        "reportlab": "4.4.9",
+        "pypdf": "6.21.4"
+      },
+      "measurements": {
+        "validate_sheet": {
+          "median_ms": 0.324375,
+          "min_ms": 0.298907,
+          "raw_ms_per_operation": [
+            0.29890740999690024,
+            0.31197862001135945,
+            0.40554057999543147,
+            0.32437526000649086,
+            0.3607109899894567
+          ],
+          "loops_per_repetition": 100,
+          "repetitions": 5
+        },
+        "automatic_vitals": {
+          "median_ms": 0.10473,
+          "min_ms": 0.094274,
+          "raw_ms_per_operation": [
+            0.12028824001390603,
+            0.10611284000333399,
+            0.10473042999365134,
+            0.10185567000007723,
+            0.09427365001101862
+          ],
+          "loops_per_repetition": 100,
+          "repetitions": 5
+        },
+        "validate_census": {
+          "median_ms": 6.29445,
+          "min_ms": 5.842967,
+          "raw_ms_per_operation": [
+            5.8429668002645485,
+            6.11957760011137,
+            6.294450000132201,
+            8.90312459996494,
+            6.989248799800407
+          ],
+          "loops_per_repetition": 5,
+          "repetitions": 5
+        },
+        "available_census": {
+          "median_ms": 33.512175,
+          "min_ms": 30.370162,
+          "raw_ms_per_operation": [
+            34.970647400041344,
+            30.370161999962875,
+            33.512174600036815,
+            35.03174500001478,
+            33.36480739999388
+          ],
+          "loops_per_repetition": 5,
+          "repetitions": 5
+        },
+        "pdf_signature_one": {
+          "median_ms": 12.463567,
+          "min_ms": 11.816626,
+          "raw_ms_per_operation": [
+            12.583763699967676,
+            12.711474349998753,
+            11.816625949995796,
+            12.42808930001047,
+            12.46356725005171
+          ],
+          "loops_per_repetition": 20,
+          "repetitions": 5
+        },
+        "html_one": {
+          "median_ms": 11.040635,
+          "min_ms": 10.103878,
+          "raw_ms_per_operation": [
+            11.316669100051513,
+            10.103877899928193,
+            11.425265399884665,
+            11.040634900018631,
+            10.682707900014066
+          ],
+          "loops_per_repetition": 10,
+          "repetitions": 5
+        },
+        "pdf_one": {
+          "median_ms": 23.962442,
+          "min_ms": 22.180873,
+          "raw_ms_per_operation": [
+            22.180873000252177,
+            23.22877566621173,
+            28.019415666373487,
+            27.381942999757786,
+            23.962442333261908
+          ],
+          "loops_per_repetition": 3,
+          "repetitions": 5
+        },
+        "encrypt_census": {
+          "median_ms": 8.194188,
+          "min_ms": 7.800495,
+          "raw_ms_per_operation": [
+            8.712397199997213,
+            8.194188199922792,
+            10.182078999787336,
+            7.800494600087404,
+            8.113167000192334
+          ],
+          "loops_per_repetition": 5,
+          "repetitions": 5
+        }
+      },
+      "print_all": {
+        "rooms": 18,
+        "pages": 18,
+        "initial_prepare_ms": 694.7729340008664,
+        "initial_body_builds": 18,
+        "final_body_builds": 18,
+        "additional_body_builds": 0,
+        "cache_hits_during_warm_and_measured_packets": 108,
+        "warm_packet": {
+          "median_ms": 324.859866,
+          "min_ms": 287.898084,
+          "raw_ms_per_operation": [
+            324.85986599931493,
+            331.8741559996852,
+            300.2875590009353,
+            326.05043100011244,
+            287.8980839996075
+          ],
+          "loops_per_repetition": 1,
+          "repetitions": 5
+        }
+      },
+      "profile": {
+        "html_renders": 30,
+        "strptime_cache_capacity": 5,
+        "selected_calls": [
+          {
+            "module": "_strptime.py",
+            "function": "_strptime",
+            "calls": 12600,
+            "cumulative_seconds": 0.19183362,
+            "self_seconds": 0.100860301
+          },
+          {
+            "module": "labs.py",
+            "function": "date_parts",
+            "calls": 12120,
+            "cumulative_seconds": 0.236848193,
+            "self_seconds": 0.013577013
+          }
+        ],
+        "top_cumulative": "         2289361 function calls (2218111 primitive calls) in 1.333 seconds\n\n   Ordered by: cumulative time\n   List reduced from 300 to 20 due to restriction <20>\n\n   ncalls  tottime  percall  cumtime  percall filename:lineno(function)\n       30    0.000    0.000    1.332    0.044 PICU_Handoff_v6_80_Medication_Doses/lab_windows.py:285(wrapped)\n       30    0.001    0.000    1.329    0.044 PICU_Handoff_v6_80_Medication_Doses/exports.py:160(handoff_html)\n       30    0.000    0.000    0.605    0.020 PICU_Handoff_v6_80_Medication_Doses/exports.py:43(display_fields)\n       30    0.003    0.000    0.547    0.018 PICU_Handoff_v6_80_Medication_Doses/models.py:493(fields_with_medications)\n      480    0.007    0.000    0.510    0.001 PICU_Handoff_v6_80_Medication_Doses/categories.py:398(medication_blocks)\n    44400    0.055    0.000    0.478    0.000 PICU_Handoff_v6_80_Medication_Doses/lab_windows.py:36(analyte)\n     1080    0.018    0.000    0.460    0.000 PICU_Handoff_v6_80_Medication_Doses/lab_windows.py:122(rows_for)\n3870/2460    0.003    0.000    0.362    0.000 {method 'join' of 'str' objects}\n      240    0.000    0.000    0.351    0.001 PICU_Handoff_v6_80_Medication_Doses/exports.py:164(<genexpr>)\n      210    0.001    0.000    0.348    0.002 PICU_Handoff_v6_80_Medication_Doses/exports.py:109(field_markup)\n    96330    0.103    0.000    0.334    0.000 PICU_Handoff_v6_80_Medication_Doses/labs.py:66(canonical)\n      600    0.001    0.000    0.286    0.000 PICU_Handoff_v6_80_Medication_Doses/lab_windows.py:170(theophylline_summary)\n      240    0.001    0.000    0.273    0.001 PICU_Handoff_v6_80_Medication_Doses/infusions.py:161(system_body_blocks)\n      540    0.001    0.000    0.261    0.000 PICU_Handoff_v6_80_Medication_Doses/categories.py:548(theophylline_anchor)\n    44400    0.035    0.000    0.256    0.000 PICU_Handoff_v6_80_Medication_Doses/labs.py:71(is_lactate)\n      480    0.015    0.000    0.240    0.001 PICU_Handoff_v6_80_Medication_Doses/empty_groups.py:42(empty_group_paths)\n    12120    0.014    0.000    0.237    0.000 PICU_Handoff_v6_80_Medication_Doses/labs.py:76(date_parts)\n    12600    0.015    0.000    0.221    0.000 {built-in method strptime}\n    12600    0.014    0.000    0.206    0.000 /opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/_strptime.py:650(_strptime_datetime)\n    12600    0.101    0.000    0.192    0.000 /opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/_strptime.py:392(_strptime)\n\n\n"
+      },
+      "limitations": "Synthetic local CPU benchmark. No live Streamlit server, network save, production data or concurrent-user load.",
+      "benchmark_case": "680_legacy_labs"
+    },
+    {
+      "app_directory": "PICU_Handoff_v6_81_Dated_Scores",
+      "variant": "dated",
+      "lab_rows": 0,
+      "census_rooms": 18,
+      "environment": {
+        "python": "3.12.14",
+        "reportlab": "4.4.9",
+        "pypdf": "6.21.4"
+      },
+      "measurements": {
+        "validate_sheet": {
+          "median_ms": 0.130715,
+          "min_ms": 0.126012,
+          "raw_ms_per_operation": [
+            0.12882805000117514,
+            0.12601182999787852,
+            0.13071473000309197,
+            0.15365039000243996,
+            0.14148570999168442
+          ],
+          "loops_per_repetition": 100,
+          "repetitions": 5
+        },
+        "automatic_vitals": {
+          "median_ms": 0.532894,
+          "min_ms": 0.489035,
+          "raw_ms_per_operation": [
+            0.5417609799951606,
+            0.5328936599835288,
+            0.7290520100104914,
+            0.5323774600037723,
+            0.4890348999833804
+          ],
+          "loops_per_repetition": 100,
+          "repetitions": 5
+        },
+        "validate_census": {
+          "median_ms": 3.459048,
+          "min_ms": 3.015174,
+          "raw_ms_per_operation": [
+            3.6809596000239253,
+            3.8964376002695644,
+            3.459048399963649,
+            3.0151742001180537,
+            3.176182199968025
+          ],
+          "loops_per_repetition": 5,
+          "repetitions": 5
+        },
+        "available_census": {
+          "median_ms": 29.317899,
+          "min_ms": 28.420921,
+          "raw_ms_per_operation": [
+            32.39816860004794,
+            28.471853799783275,
+            28.42092099999718,
+            41.25180700029887,
+            29.31789899994328
+          ],
+          "loops_per_repetition": 5,
+          "repetitions": 5
+        },
+        "pdf_signature_one": {
+          "median_ms": 9.783933,
+          "min_ms": 9.376472,
+          "raw_ms_per_operation": [
+            9.947778250079864,
+            9.783933450034965,
+            9.376472250005463,
+            9.570458149937622,
+            10.524486499980412
+          ],
+          "loops_per_repetition": 20,
+          "repetitions": 5
+        },
+        "html_one": {
+          "median_ms": 6.391495,
+          "min_ms": 5.810305,
+          "raw_ms_per_operation": [
+            7.355034300053376,
+            6.3914954000210855,
+            5.810304599981464,
+            9.030787400115514,
+            5.961966600079904
+          ],
+          "loops_per_repetition": 10,
+          "repetitions": 5
+        },
+        "pdf_one": {
+          "median_ms": 18.960005,
+          "min_ms": 17.380478,
+          "raw_ms_per_operation": [
+            17.44248633319027,
+            18.960004999826197,
+            17.380478000025807,
+            19.441108999671997,
+            27.261992333175538
+          ],
+          "loops_per_repetition": 3,
+          "repetitions": 5
+        },
+        "encrypt_census": {
+          "median_ms": 3.908524,
+          "min_ms": 3.635329,
+          "raw_ms_per_operation": [
+            4.633562799790525,
+            5.20627539990528,
+            3.6353288000100292,
+            3.66561439986981,
+            3.908524399957969
+          ],
+          "loops_per_repetition": 5,
+          "repetitions": 5
+        }
+      },
+      "print_all": null,
+      "profile": {
+        "html_renders": 30,
+        "strptime_cache_capacity": 5,
+        "selected_calls": [
+          {
+            "module": "_strptime.py",
+            "function": "_strptime",
+            "calls": 6750,
+            "cumulative_seconds": 0.15684314900000002,
+            "self_seconds": 0.044445192
+          },
+          {
+            "module": "_strptime.py",
+            "function": "pattern",
+            "calls": 4680,
+            "cumulative_seconds": 0.057361378000000005,
+            "self_seconds": 0.006536135
+          },
+          {
+            "module": "_strptime.py",
+            "function": "compile",
+            "calls": 4680,
+            "cumulative_seconds": 0.072937335,
+            "self_seconds": 0.0047045590000000005
+          },
+          {
+            "module": "labs.py",
+            "function": "date_parts",
+            "calls": 2190,
+            "cumulative_seconds": 0.178229031,
+            "self_seconds": 0.007319733
+          }
+        ],
+        "top_cumulative": "         813271 function calls (778021 primitive calls) in 0.551 seconds\n\n   Ordered by: cumulative time\n   List reduced from 287 to 20 due to restriction <20>\n\n   ncalls  tottime  percall  cumtime  percall filename:lineno(function)\n       30    0.000    0.000    0.551    0.018 PICU_Handoff_v6_81_Dated_Scores/lab_windows.py:285(wrapped)\n       30    0.002    0.000    0.549    0.018 PICU_Handoff_v6_81_Dated_Scores/exports.py:160(handoff_html)\n 2340/930    0.001    0.000    0.311    0.000 {method 'join' of 'str' objects}\n      240    0.001    0.000    0.309    0.001 PICU_Handoff_v6_81_Dated_Scores/exports.py:164(<genexpr>)\n      210    0.001    0.000    0.305    0.001 PICU_Handoff_v6_81_Dated_Scores/exports.py:109(field_markup)\n      150    0.001    0.000    0.251    0.002 PICU_Handoff_v6_81_Dated_Scores/models.py:588(automatic_vitals)\n      480    0.008    0.000    0.239    0.000 PICU_Handoff_v6_81_Dated_Scores/categories.py:398(medication_blocks)\n       30    0.000    0.000    0.230    0.008 PICU_Handoff_v6_81_Dated_Scores/exports.py:43(display_fields)\n      480    0.011    0.000    0.219    0.000 PICU_Handoff_v6_81_Dated_Scores/empty_groups.py:42(empty_group_paths)\n      120    0.001    0.000    0.205    0.002 PICU_Handoff_v6_81_Dated_Scores/exports.py:92(infusion_section_prefix)\n       30    0.001    0.000    0.194    0.006 PICU_Handoff_v6_81_Dated_Scores/models.py:493(fields_with_medications)\n     2190    0.007    0.000    0.178    0.000 PICU_Handoff_v6_81_Dated_Scores/labs.py:76(date_parts)\n     6750    0.008    0.000    0.171    0.000 {built-in method strptime}\n      150    0.001    0.000    0.165    0.001 PICU_Handoff_v6_81_Dated_Scores/observations.py:46(neuro_rows)\n     6750    0.006    0.000    0.163    0.000 /opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/_strptime.py:650(_strptime_datetime)\n     6750    0.044    0.000    0.157    0.000 /opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/_strptime.py:392(_strptime)\n      630    0.003    0.000    0.124    0.000 PICU_Handoff_v6_81_Dated_Scores/score_dates.py:32(split_score_stamp)\n      630    0.001    0.000    0.119    0.000 PICU_Handoff_v6_81_Dated_Scores/score_dates.py:23(_normalized_stamp)\n      240    0.001    0.000    0.118    0.000 PICU_Handoff_v6_81_Dated_Scores/infusions.py:161(system_body_blocks)\n     2400    0.083    0.000    0.106    0.000 PICU_Handoff_v6_81_Dated_Scores/categories.py:23(default_categories)\n\n\n"
+      },
+      "limitations": "Synthetic local CPU benchmark. No live Streamlit server, network save, production data or concurrent-user load.",
+      "benchmark_case": "681_dated"
+    },
+    {
+      "app_directory": "PICU_Handoff_v6_81_Dated_Scores",
+      "variant": "dated",
+      "lab_rows": 40,
+      "census_rooms": 18,
+      "environment": {
+        "python": "3.12.14",
+        "reportlab": "4.4.9",
+        "pypdf": "6.21.4"
+      },
+      "measurements": {
+        "validate_sheet": {
+          "median_ms": 0.460158,
+          "min_ms": 0.43102,
+          "raw_ms_per_operation": [
+            0.4734463299973868,
+            0.4601579399968614,
+            0.43102047999127535,
+            0.44517258000269067,
+            0.5301610400056234
+          ],
+          "loops_per_repetition": 100,
+          "repetitions": 5
+        },
+        "automatic_vitals": {
+          "median_ms": 0.512316,
+          "min_ms": 0.47352,
+          "raw_ms_per_operation": [
+            0.4735200600043754,
+            0.5127826300122251,
+            0.5123155100045551,
+            0.4936454800008505,
+            0.5614478699862957
+          ],
+          "loops_per_repetition": 100,
+          "repetitions": 5
+        },
+        "validate_census": {
+          "median_ms": 8.492272,
+          "min_ms": 7.667294,
+          "raw_ms_per_operation": [
+            9.250801600137493,
+            8.492272200237494,
+            7.667294200291508,
+            7.8269262001413145,
+            10.466732799977763
+          ],
+          "loops_per_repetition": 5,
+          "repetitions": 5
+        },
+        "available_census": {
+          "median_ms": 36.685811,
+          "min_ms": 33.264528,
+          "raw_ms_per_operation": [
+            38.36869279984967,
+            35.96504319975793,
+            37.14130939988536,
+            36.68581120000454,
+            33.26452839974081
+          ],
+          "loops_per_repetition": 5,
+          "repetitions": 5
+        },
+        "pdf_signature_one": {
+          "median_ms": 16.46714,
+          "min_ms": 15.593471,
+          "raw_ms_per_operation": [
+            17.02142485000877,
+            16.363054949943034,
+            15.593470500061812,
+            16.467139549968124,
+            16.59616155002368
+          ],
+          "loops_per_repetition": 20,
+          "repetitions": 5
+        },
+        "html_one": {
+          "median_ms": 13.23081,
+          "min_ms": 13.108955,
+          "raw_ms_per_operation": [
+            13.18719359987881,
+            13.108955000097922,
+            13.230810200002452,
+            14.112609299991163,
+            13.85102320000442
+          ],
+          "loops_per_repetition": 10,
+          "repetitions": 5
+        },
+        "pdf_one": {
+          "median_ms": 28.323626,
+          "min_ms": 26.69505,
+          "raw_ms_per_operation": [
+            26.69504966676565,
+            28.32362633307639,
+            29.766787666327826,
+            27.12914233355453,
+            29.760638000273804
+          ],
+          "loops_per_repetition": 3,
+          "repetitions": 5
+        },
+        "encrypt_census": {
+          "median_ms": 10.342894,
+          "min_ms": 9.347724,
+          "raw_ms_per_operation": [
+            10.495598800116568,
+            9.347723800237873,
+            9.594686200216529,
+            10.34289359995455,
+            11.196215599920833
+          ],
+          "loops_per_repetition": 5,
+          "repetitions": 5
+        }
+      },
+      "print_all": {
+        "rooms": 18,
+        "pages": 18,
+        "initial_prepare_ms": 809.8446270014392,
+        "initial_body_builds": 18,
+        "final_body_builds": 18,
+        "additional_body_builds": 0,
+        "cache_hits_during_warm_and_measured_packets": 108,
+        "warm_packet": {
+          "median_ms": 392.447594,
+          "min_ms": 362.13858,
+          "raw_ms_per_operation": [
+            373.4949579993554,
+            402.6815600009286,
+            392.4475940002594,
+            362.138579999737,
+            397.35823000046366
+          ],
+          "loops_per_repetition": 1,
+          "repetitions": 5
+        }
+      },
+      "profile": {
+        "html_renders": 30,
+        "strptime_cache_capacity": 5,
+        "selected_calls": [
+          {
+            "module": "_strptime.py",
+            "function": "_strptime",
+            "calls": 18390,
+            "cumulative_seconds": 0.30783544300000004,
+            "self_seconds": 0.12434639400000001
+          },
+          {
+            "module": "_strptime.py",
+            "function": "compile",
+            "calls": 4680,
+            "cumulative_seconds": 0.071363018,
+            "self_seconds": 0.004918427
+          },
+          {
+            "module": "_strptime.py",
+            "function": "pattern",
+            "calls": 4680,
+            "cumulative_seconds": 0.056767108000000004,
+            "self_seconds": 0.006252289
+          },
+          {
+            "module": "labs.py",
+            "function": "date_parts",
+            "calls": 13830,
+            "cumulative_seconds": 0.36845667600000004,
+            "self_seconds": 0.019042155
+          }
+        ],
+        "top_cumulative": "         2561701 function calls (2490451 primitive calls) in 1.386 seconds\n\n   Ordered by: cumulative time\n   List reduced from 324 to 20 due to restriction <20>\n\n   ncalls  tottime  percall  cumtime  percall filename:lineno(function)\n       30    0.000    0.000    1.386    0.046 PICU_Handoff_v6_81_Dated_Scores/lab_windows.py:285(wrapped)\n       30    0.001    0.000    1.384    0.046 PICU_Handoff_v6_81_Dated_Scores/exports.py:160(handoff_html)\n       30    0.000    0.000    0.582    0.019 PICU_Handoff_v6_81_Dated_Scores/exports.py:43(display_fields)\n       30    0.002    0.000    0.524    0.017 PICU_Handoff_v6_81_Dated_Scores/models.py:493(fields_with_medications)\n3870/2460    0.003    0.000    0.474    0.000 {method 'join' of 'str' objects}\n      240    0.000    0.000    0.465    0.002 PICU_Handoff_v6_81_Dated_Scores/exports.py:164(<genexpr>)\n      210    0.001    0.000    0.462    0.002 PICU_Handoff_v6_81_Dated_Scores/exports.py:109(field_markup)\n      480    0.008    0.000    0.440    0.001 PICU_Handoff_v6_81_Dated_Scores/categories.py:398(medication_blocks)\n    44400    0.048    0.000    0.423    0.000 PICU_Handoff_v6_81_Dated_Scores/lab_windows.py:36(analyte)\n     1080    0.016    0.000    0.407    0.000 PICU_Handoff_v6_81_Dated_Scores/lab_windows.py:122(rows_for)\n    13830    0.019    0.000    0.368    0.000 PICU_Handoff_v6_81_Dated_Scores/labs.py:76(date_parts)\n    18390    0.020    0.000    0.347    0.000 {built-in method strptime}\n    18390    0.018    0.000    0.326    0.000 /opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/_strptime.py:650(_strptime_datetime)\n    18390    0.124    0.000    0.308    0.000 /opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/_strptime.py:392(_strptime)\n    96330    0.091    0.000    0.295    0.000 PICU_Handoff_v6_81_Dated_Scores/labs.py:66(canonical)\n      120    0.001    0.000    0.277    0.002 PICU_Handoff_v6_81_Dated_Scores/exports.py:92(infusion_section_prefix)\n      150    0.002    0.000    0.253    0.002 PICU_Handoff_v6_81_Dated_Scores/models.py:588(automatic_vitals)\n      600    0.001    0.000    0.246    0.000 PICU_Handoff_v6_81_Dated_Scores/lab_windows.py:170(theophylline_summary)\n      240    0.001    0.000    0.230    0.001 PICU_Handoff_v6_81_Dated_Scores/infusions.py:161(system_body_blocks)\n    44400    0.029    0.000    0.229    0.000 PICU_Handoff_v6_81_Dated_Scores/labs.py:71(is_lactate)\n\n\n"
+      },
+      "limitations": "Synthetic local CPU benchmark. No live Streamlit server, network save, production data or concurrent-user load.",
+      "benchmark_case": "681_dated_labs"
+    },
+    {
+      "app_directory": "PICU_Handoff_v6_81_Dated_Scores",
+      "variant": "legacy",
+      "lab_rows": 0,
+      "census_rooms": 18,
+      "environment": {
+        "python": "3.12.14",
+        "reportlab": "4.4.9",
+        "pypdf": "6.21.4"
+      },
+      "measurements": {
+        "validate_sheet": {
+          "median_ms": 0.048028,
+          "min_ms": 0.043781,
+          "raw_ms_per_operation": [
+            0.04509443000642932,
+            0.04378078998342971,
+            0.06102388999352115,
+            0.05027709999922081,
+            0.04802769000889384
+          ],
+          "loops_per_repetition": 100,
+          "repetitions": 5
+        },
+        "automatic_vitals": {
+          "median_ms": 0.144813,
+          "min_ms": 0.138263,
+          "raw_ms_per_operation": [
+            0.14481345999229234,
+            0.16957024001385435,
+            0.14437211000768002,
+            0.13826251999489614,
+            0.1462230299875955
+          ],
+          "loops_per_repetition": 100,
+          "repetitions": 5
+        },
+        "validate_census": {
+          "median_ms": 1.658753,
+          "min_ms": 1.262754,
+          "raw_ms_per_operation": [
+            1.2627538002561778,
+            1.4247872000851203,
+            1.7179125999973621,
+            1.6587534002610482,
+            1.9736120000743542
+          ],
+          "loops_per_repetition": 5,
+          "repetitions": 5
+        },
+        "available_census": {
+          "median_ms": 26.969306,
+          "min_ms": 25.625514,
+          "raw_ms_per_operation": [
+            26.969305600141524,
+            28.451210999992327,
+            25.625513999693794,
+            28.169003800212522,
+            26.5753912000946
+          ],
+          "loops_per_repetition": 5,
+          "repetitions": 5
+        },
+        "pdf_signature_one": {
+          "median_ms": 6.663393,
+          "min_ms": 6.398065,
+          "raw_ms_per_operation": [
+            6.878103150029347,
+            6.398064599943609,
+            6.431585450081911,
+            6.663393300004827,
+            7.613313000001654
+          ],
+          "loops_per_repetition": 20,
+          "repetitions": 5
+        },
+        "html_one": {
+          "median_ms": 6.165776,
+          "min_ms": 4.796757,
+          "raw_ms_per_operation": [
+            8.258771599867032,
+            6.165776499983622,
+            5.083374300011201,
+            8.526093900036358,
+            4.796756500036281
+          ],
+          "loops_per_repetition": 10,
+          "repetitions": 5
+        },
+        "pdf_one": {
+          "median_ms": 17.901689,
+          "min_ms": 14.941474,
+          "raw_ms_per_operation": [
+            14.941474333681981,
+            15.260409000499445,
+            18.237916666597204,
+            17.92260333362113,
+            17.90168933318152
+          ],
+          "loops_per_repetition": 3,
+          "repetitions": 5
+        },
+        "encrypt_census": {
+          "median_ms": 2.538145,
+          "min_ms": 2.173673,
+          "raw_ms_per_operation": [
+            2.388592599891126,
+            2.173673199649784,
+            2.5381448002008256,
+            2.9866546003177064,
+            3.836643999966327
+          ],
+          "loops_per_repetition": 5,
+          "repetitions": 5
+        }
+      },
+      "print_all": null,
+      "profile": {
+        "html_renders": 30,
+        "strptime_cache_capacity": 5,
+        "selected_calls": [
+          {
+            "module": "_strptime.py",
+            "function": "_strptime",
+            "calls": 1560,
+            "cumulative_seconds": 0.032203624,
+            "self_seconds": 0.017509475
+          },
+          {
+            "module": "labs.py",
+            "function": "date_parts",
+            "calls": 780,
+            "cumulative_seconds": 0.042061480000000005,
+            "self_seconds": 0.004804506
+          }
+        ],
+        "top_cumulative": "         575521 function calls (540271 primitive calls) in 0.493 seconds\n\n   Ordered by: cumulative time\n   List reduced from 280 to 20 due to restriction <20>\n\n   ncalls  tottime  percall  cumtime  percall filename:lineno(function)\n       30    0.000    0.000    0.493    0.016 PICU_Handoff_v6_81_Dated_Scores/lab_windows.py:285(wrapped)\n       30    0.001    0.000    0.492    0.016 PICU_Handoff_v6_81_Dated_Scores/exports.py:160(handoff_html)\n      480    0.009    0.000    0.296    0.001 PICU_Handoff_v6_81_Dated_Scores/categories.py:398(medication_blocks)\n      480    0.016    0.000    0.273    0.001 PICU_Handoff_v6_81_Dated_Scores/empty_groups.py:42(empty_group_paths)\n 2340/930    0.002    0.000    0.253    0.000 {method 'join' of 'str' objects}\n      240    0.000    0.000    0.251    0.001 PICU_Handoff_v6_81_Dated_Scores/exports.py:164(<genexpr>)\n      210    0.002    0.000    0.245    0.001 PICU_Handoff_v6_81_Dated_Scores/exports.py:109(field_markup)\n       30    0.000    0.000    0.230    0.008 PICU_Handoff_v6_81_Dated_Scores/exports.py:43(display_fields)\n       30    0.002    0.000    0.188    0.006 PICU_Handoff_v6_81_Dated_Scores/models.py:493(fields_with_medications)\n      240    0.001    0.000    0.151    0.001 PICU_Handoff_v6_81_Dated_Scores/infusions.py:161(system_body_blocks)\n     2400    0.106    0.000    0.135    0.000 PICU_Handoff_v6_81_Dated_Scores/categories.py:23(default_categories)\n      150    0.002    0.000    0.128    0.001 PICU_Handoff_v6_81_Dated_Scores/models.py:588(automatic_vitals)\n      120    0.001    0.000    0.106    0.001 PICU_Handoff_v6_81_Dated_Scores/exports.py:92(infusion_section_prefix)\n36300/2460    0.049    0.000    0.091    0.000 /opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/copy.py:118(deepcopy)\n     2460    0.014    0.000    0.082    0.000 /opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/copy.py:217(_deepcopy_dict)\n      150    0.001    0.000    0.074    0.000 PICU_Handoff_v6_81_Dated_Scores/sbs.py:407(sbs_display_rows)\n       90    0.002    0.000    0.070    0.001 PICU_Handoff_v6_81_Dated_Scores/fen_gi.py:138(fen_gi_body)\n      780    0.005    0.000    0.042    0.000 PICU_Handoff_v6_81_Dated_Scores/labs.py:76(date_parts)\n      150    0.001    0.000    0.038    0.000 PICU_Handoff_v6_81_Dated_Scores/sbs.py:367(latest_available_sbs)\n     1560    0.002    0.000    0.037    0.000 {built-in method strptime}\n\n\n"
+      },
+      "limitations": "Synthetic local CPU benchmark. No live Streamlit server, network save, production data or concurrent-user load.",
+      "benchmark_case": "681_legacy"
+    },
+    {
+      "app_directory": "PICU_Handoff_v6_82_Score_Performance",
+      "variant": "dated",
+      "lab_rows": 0,
+      "census_rooms": 18,
+      "environment": {
+        "python": "3.12.14",
+        "reportlab": "4.4.9",
+        "pypdf": "6.21.4"
+      },
+      "measurements": {
+        "validate_sheet": {
+          "median_ms": 0.048342,
+          "min_ms": 0.042105,
+          "raw_ms_per_operation": [
+            0.062045610011409735,
+            0.062245260014606174,
+            0.04665577000196208,
+            0.04834213999856729,
+            0.04210498000247753
+          ],
+          "loops_per_repetition": 100,
+          "repetitions": 5
+        },
+        "automatic_vitals": {
+          "median_ms": 0.156332,
+          "min_ms": 0.130523,
+          "raw_ms_per_operation": [
+            0.15731769999547396,
+            0.1305234100072994,
+            0.15633214999979828,
+            0.1509686499957752,
+            0.17495992999101873
+          ],
+          "loops_per_repetition": 100,
+          "repetitions": 5
+        },
+        "validate_census": {
+          "median_ms": 2.072092,
+          "min_ms": 1.433119,
+          "raw_ms_per_operation": [
+            1.7703223998978501,
+            2.25993460007885,
+            3.7347050001699245,
+            2.0720923999761,
+            1.4331187998323003
+          ],
+          "loops_per_repetition": 5,
+          "repetitions": 5
+        },
+        "available_census": {
+          "median_ms": 25.125544,
+          "min_ms": 23.888128,
+          "raw_ms_per_operation": [
+            25.032551000185777,
+            26.11115219988278,
+            23.888127800091752,
+            33.3760114001052,
+            25.125543600006495
+          ],
+          "loops_per_repetition": 5,
+          "repetitions": 5
+        },
+        "pdf_signature_one": {
+          "median_ms": 6.385155,
+          "min_ms": 5.68402,
+          "raw_ms_per_operation": [
+            7.415641599982337,
+            5.684019900036219,
+            6.902542599982553,
+            6.38515525006369,
+            6.340835949959001
+          ],
+          "loops_per_repetition": 20,
+          "repetitions": 5
+        },
+        "html_one": {
+          "median_ms": 4.338629,
+          "min_ms": 3.791107,
+          "raw_ms_per_operation": [
+            4.3386293000367,
+            3.791106800053967,
+            4.544484399957582,
+            4.479776699918148,
+            3.9568104999489155
+          ],
+          "loops_per_repetition": 10,
+          "repetitions": 5
+        },
+        "pdf_one": {
+          "median_ms": 13.396857,
+          "min_ms": 12.990349,
+          "raw_ms_per_operation": [
+            12.990349333752723,
+            13.233998000335609,
+            13.39685733303971,
+            15.630861333193025,
+            14.506212999549462
+          ],
+          "loops_per_repetition": 3,
+          "repetitions": 5
+        },
+        "encrypt_census": {
+          "median_ms": 2.112039,
+          "min_ms": 1.975906,
+          "raw_ms_per_operation": [
+            2.2492809999675956,
+            1.9759057999181096,
+            2.69073199997365,
+            2.1120389999850886,
+            2.024988400080474
+          ],
+          "loops_per_repetition": 5,
+          "repetitions": 5
+        }
+      },
+      "print_all": null,
+      "profile": {
+        "html_renders": 30,
+        "strptime_cache_capacity": 5,
+        "selected_calls": [
+          {
+            "module": "score_dates.py",
+            "function": "date_parts",
+            "calls": 2190,
+            "cumulative_seconds": 0.012313083,
+            "self_seconds": 0.009382324000000001
+          }
+        ],
+        "top_cumulative": "         558901 function calls (523651 primitive calls) in 0.397 seconds\n\n   Ordered by: cumulative time\n   List reduced from 268 to 20 due to restriction <20>\n\n   ncalls  tottime  percall  cumtime  percall filename:lineno(function)\n       30    0.000    0.000    0.397    0.013 PICU_Handoff_v6_82_Score_Performance/lab_windows.py:285(wrapped)\n       30    0.002    0.000    0.396    0.013 PICU_Handoff_v6_82_Score_Performance/exports.py:160(handoff_html)\n      480    0.007    0.000    0.247    0.001 PICU_Handoff_v6_82_Score_Performance/categories.py:398(medication_blocks)\n      480    0.011    0.000    0.230    0.000 PICU_Handoff_v6_82_Score_Performance/empty_groups.py:42(empty_group_paths)\n 2340/930    0.002    0.000    0.203    0.000 {method 'join' of 'str' objects}\n      240    0.000    0.000    0.201    0.001 PICU_Handoff_v6_82_Score_Performance/exports.py:164(<genexpr>)\n      210    0.001    0.000    0.198    0.001 PICU_Handoff_v6_82_Score_Performance/exports.py:109(field_markup)\n       30    0.000    0.000    0.185    0.006 PICU_Handoff_v6_82_Score_Performance/exports.py:43(display_fields)\n       30    0.001    0.000    0.153    0.005 PICU_Handoff_v6_82_Score_Performance/models.py:493(fields_with_medications)\n      240    0.001    0.000    0.128    0.001 PICU_Handoff_v6_82_Score_Performance/infusions.py:161(system_body_blocks)\n     2400    0.091    0.000    0.119    0.000 PICU_Handoff_v6_82_Score_Performance/categories.py:23(default_categories)\n      150    0.002    0.000    0.095    0.001 PICU_Handoff_v6_82_Score_Performance/models.py:588(automatic_vitals)\n      120    0.001    0.000    0.079    0.001 PICU_Handoff_v6_82_Score_Performance/exports.py:92(infusion_section_prefix)\n36300/2460    0.038    0.000    0.075    0.000 /opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/copy.py:118(deepcopy)\n     2460    0.013    0.000    0.066    0.000 /opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/copy.py:217(_deepcopy_dict)\n       90    0.001    0.000    0.054    0.001 PICU_Handoff_v6_82_Score_Performance/fen_gi.py:138(fen_gi_body)\n      150    0.002    0.000    0.040    0.000 PICU_Handoff_v6_82_Score_Performance/observations.py:46(neuro_rows)\n      150    0.001    0.000    0.030    0.000 PICU_Handoff_v6_82_Score_Performance/sbs.py:406(sbs_display_rows)\n     2400    0.007    0.000    0.023    0.000 PICU_Handoff_v6_82_Score_Performance/categories.py:179(target_snapshot)\n      330    0.004    0.000    0.020    0.000 PICU_Handoff_v6_82_Score_Performance/capd.py:47(validate_capd_rows)\n\n\n"
+      },
+      "limitations": "Synthetic local CPU benchmark. No live Streamlit server, network save, production data or concurrent-user load.",
+      "benchmark_case": "682_dated"
+    },
+    {
+      "app_directory": "PICU_Handoff_v6_82_Score_Performance",
+      "variant": "dated",
+      "lab_rows": 40,
+      "census_rooms": 18,
+      "environment": {
+        "python": "3.12.14",
+        "reportlab": "4.4.9",
+        "pypdf": "6.21.4"
+      },
+      "measurements": {
+        "validate_sheet": {
+          "median_ms": 0.419309,
+          "min_ms": 0.36043,
+          "raw_ms_per_operation": [
+            0.4661737900096341,
+            0.38223460998779046,
+            0.4193086799932644,
+            0.5494739899950218,
+            0.3604302799976722
+          ],
+          "loops_per_repetition": 100,
+          "repetitions": 5
+        },
+        "automatic_vitals": {
+          "median_ms": 0.181137,
+          "min_ms": 0.169399,
+          "raw_ms_per_operation": [
+            0.18113709000317613,
+            0.19303068998851813,
+            0.16939899000135483,
+            0.17843973999333684,
+            0.19452832000752096
+          ],
+          "loops_per_repetition": 100,
+          "repetitions": 5
+        },
+        "validate_census": {
+          "median_ms": 8.303763,
+          "min_ms": 7.697868,
+          "raw_ms_per_operation": [
+            8.303763400181197,
+            8.425295399865718,
+            9.127846000046702,
+            7.697868200193625,
+            7.736755400037509
+          ],
+          "loops_per_repetition": 5,
+          "repetitions": 5
+        },
+        "available_census": {
+          "median_ms": 38.720492,
+          "min_ms": 36.096481,
+          "raw_ms_per_operation": [
+            49.28817919972062,
+            38.72049160017923,
+            37.53182420005032,
+            39.04161539976485,
+            36.09648080018815
+          ],
+          "loops_per_repetition": 5,
+          "repetitions": 5
+        },
+        "pdf_signature_one": {
+          "median_ms": 15.101471,
+          "min_ms": 14.638138,
+          "raw_ms_per_operation": [
+            15.655380150019482,
+            14.801911050017225,
+            17.136538849990757,
+            15.101470800073002,
+            14.638137800011464
+          ],
+          "loops_per_repetition": 20,
+          "repetitions": 5
+        },
+        "html_one": {
+          "median_ms": 12.950316,
+          "min_ms": 12.236112,
+          "raw_ms_per_operation": [
+            13.21261789998971,
+            12.950315700072679,
+            12.734178699975018,
+            13.135241300005873,
+            12.236111700076435
+          ],
+          "loops_per_repetition": 10,
+          "repetitions": 5
+        },
+        "pdf_one": {
+          "median_ms": 28.239089,
+          "min_ms": 22.61195,
+          "raw_ms_per_operation": [
+            27.754598666433594,
+            29.351025000020552,
+            28.736140666296706,
+            22.611950333157438,
+            28.2390890000291
+          ],
+          "loops_per_repetition": 3,
+          "repetitions": 5
+        },
+        "encrypt_census": {
+          "median_ms": 9.806706,
+          "min_ms": 7.859372,
+          "raw_ms_per_operation": [
+            8.98640699997486,
+            10.269572600009269,
+            9.806706200106419,
+            10.554175800280063,
+            7.859371999802533
+          ],
+          "loops_per_repetition": 5,
+          "repetitions": 5
+        }
+      },
+      "print_all": {
+        "rooms": 18,
+        "pages": 18,
+        "initial_prepare_ms": 729.440995000914,
+        "initial_body_builds": 18,
+        "final_body_builds": 18,
+        "additional_body_builds": 0,
+        "cache_hits_during_warm_and_measured_packets": 108,
+        "warm_packet": {
+          "median_ms": 314.329421,
+          "min_ms": 302.218163,
+          "raw_ms_per_operation": [
+            314.329421000366,
+            369.13228899902606,
+            302.2181630003615,
+            306.1970559992915,
+            332.9054100013309
+          ],
+          "loops_per_repetition": 1,
+          "repetitions": 5
+        }
+      },
+      "profile": {
+        "html_renders": 30,
+        "strptime_cache_capacity": 5,
+        "selected_calls": [
+          {
+            "module": "score_dates.py",
+            "function": "date_parts",
+            "calls": 2190,
+            "cumulative_seconds": 0.011525703,
+            "self_seconds": 0.007809039
+          },
+          {
+            "module": "_strptime.py",
+            "function": "_strptime",
+            "calls": 11640,
+            "cumulative_seconds": 0.154211396,
+            "self_seconds": 0.081234653
+          },
+          {
+            "module": "labs.py",
+            "function": "date_parts",
+            "calls": 11640,
+            "cumulative_seconds": 0.19227421800000002,
+            "self_seconds": 0.011141863
+          }
+        ],
+        "top_cumulative": "         2307331 function calls (2236081 primitive calls) in 1.235 seconds\n\n   Ordered by: cumulative time\n   List reduced from 320 to 20 due to restriction <20>\n\n   ncalls  tottime  percall  cumtime  percall filename:lineno(function)\n       30    0.000    0.000    1.235    0.041 PICU_Handoff_v6_82_Score_Performance/lab_windows.py:285(wrapped)\n       30    0.003    0.000    1.233    0.041 PICU_Handoff_v6_82_Score_Performance/exports.py:160(handoff_html)\n       30    0.000    0.000    0.545    0.018 PICU_Handoff_v6_82_Score_Performance/exports.py:43(display_fields)\n       30    0.002    0.000    0.487    0.016 PICU_Handoff_v6_82_Score_Performance/models.py:493(fields_with_medications)\n      480    0.008    0.000    0.454    0.001 PICU_Handoff_v6_82_Score_Performance/categories.py:398(medication_blocks)\n    44400    0.045    0.000    0.432    0.000 PICU_Handoff_v6_82_Score_Performance/lab_windows.py:36(analyte)\n     1080    0.014    0.000    0.412    0.000 PICU_Handoff_v6_82_Score_Performance/lab_windows.py:122(rows_for)\n3870/2460    0.003    0.000    0.358    0.000 {method 'join' of 'str' objects}\n      240    0.000    0.000    0.350    0.001 PICU_Handoff_v6_82_Score_Performance/exports.py:164(<genexpr>)\n      210    0.001    0.000    0.347    0.002 PICU_Handoff_v6_82_Score_Performance/exports.py:109(field_markup)\n    96330    0.092    0.000    0.301    0.000 PICU_Handoff_v6_82_Score_Performance/labs.py:66(canonical)\n      600    0.001    0.000    0.249    0.000 PICU_Handoff_v6_82_Score_Performance/lab_windows.py:170(theophylline_summary)\n      240    0.001    0.000    0.241    0.001 PICU_Handoff_v6_82_Score_Performance/infusions.py:161(system_body_blocks)\n    44400    0.032    0.000    0.238    0.000 PICU_Handoff_v6_82_Score_Performance/labs.py:71(is_lactate)\n      540    0.001    0.000    0.224    0.000 PICU_Handoff_v6_82_Score_Performance/categories.py:548(theophylline_anchor)\n      480    0.011    0.000    0.218    0.000 PICU_Handoff_v6_82_Score_Performance/empty_groups.py:42(empty_group_paths)\n    11640    0.011    0.000    0.192    0.000 PICU_Handoff_v6_82_Score_Performance/labs.py:76(date_parts)\n    11640    0.013    0.000    0.179    0.000 {built-in method strptime}\n   104310    0.057    0.000    0.173    0.000 /opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/re/__init__.py:179(sub)\n    11640    0.012    0.000    0.167    0.000 /opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/_strptime.py:650(_strptime_datetime)\n\n\n"
+      },
+      "limitations": "Synthetic local CPU benchmark. No live Streamlit server, network save, production data or concurrent-user load.",
+      "benchmark_case": "682_dated_labs"
+    },
+    {
+      "app_directory": "PICU_Handoff_v6_82_Score_Performance",
+      "variant": "legacy",
+      "lab_rows": 0,
+      "census_rooms": 18,
+      "environment": {
+        "python": "3.12.14",
+        "reportlab": "4.4.9",
+        "pypdf": "6.21.4"
+      },
+      "measurements": {
+        "validate_sheet": {
+          "median_ms": 0.04141,
+          "min_ms": 0.032108,
+          "raw_ms_per_operation": [
+            0.04876188000707771,
+            0.04140968001593137,
+            0.03210841001418885,
+            0.045464859995263396,
+            0.04028883999126265
+          ],
+          "loops_per_repetition": 100,
+          "repetitions": 5
+        },
+        "automatic_vitals": {
+          "median_ms": 0.132149,
+          "min_ms": 0.104983,
+          "raw_ms_per_operation": [
+            0.1321485699918412,
+            0.15062542999658035,
+            0.14453580999543192,
+            0.12382740000248303,
+            0.10498322000785265
+          ],
+          "loops_per_repetition": 100,
+          "repetitions": 5
+        },
+        "validate_census": {
+          "median_ms": 1.509496,
+          "min_ms": 1.239432,
+          "raw_ms_per_operation": [
+            1.239432199872681,
+            1.4008219997776905,
+            1.8288956001924817,
+            1.9291079999675276,
+            1.5094959999260027
+          ],
+          "loops_per_repetition": 5,
+          "repetitions": 5
+        },
+        "available_census": {
+          "median_ms": 29.04892,
+          "min_ms": 27.548671,
+          "raw_ms_per_operation": [
+            27.548671399927116,
+            29.048919799970463,
+            30.487188799816067,
+            28.13028159980604,
+            30.24847699998645
+          ],
+          "loops_per_repetition": 5,
+          "repetitions": 5
+        },
+        "pdf_signature_one": {
+          "median_ms": 6.228838,
+          "min_ms": 6.004769,
+          "raw_ms_per_operation": [
+            6.004768749971845,
+            7.590747099948203,
+            6.228838249990076,
+            6.205654099994717,
+            6.83197830003337
+          ],
+          "loops_per_repetition": 20,
+          "repetitions": 5
+        },
+        "html_one": {
+          "median_ms": 4.588747,
+          "min_ms": 4.361016,
+          "raw_ms_per_operation": [
+            4.361015999893425,
+            5.314530500072578,
+            4.52022700010275,
+            4.624328399950173,
+            4.588746899935359
+          ],
+          "loops_per_repetition": 10,
+          "repetitions": 5
+        },
+        "pdf_one": {
+          "median_ms": 17.66334,
+          "min_ms": 15.625087,
+          "raw_ms_per_operation": [
+            17.0681403336251,
+            22.23043900024398,
+            19.92557833303484,
+            17.663339667099837,
+            15.625087333319243
+          ],
+          "loops_per_repetition": 3,
+          "repetitions": 5
+        },
+        "encrypt_census": {
+          "median_ms": 2.227108,
+          "min_ms": 1.851072,
+          "raw_ms_per_operation": [
+            2.37504880024062,
+            2.095968600042397,
+            2.2271083998930408,
+            2.5210626001353376,
+            1.8510715999582317
+          ],
+          "loops_per_repetition": 5,
+          "repetitions": 5
+        }
+      },
+      "print_all": null,
+      "profile": {
+        "html_renders": 30,
+        "strptime_cache_capacity": 5,
+        "selected_calls": [
+          {
+            "module": "score_dates.py",
+            "function": "date_parts",
+            "calls": 780,
+            "cumulative_seconds": 0.0058928,
+            "self_seconds": 0.0036683
+          }
+        ],
+        "top_cumulative": "         543541 function calls (508291 primitive calls) in 0.416 seconds\n\n   Ordered by: cumulative time\n   List reduced from 266 to 20 due to restriction <20>\n\n   ncalls  tottime  percall  cumtime  percall filename:lineno(function)\n       30    0.000    0.000    0.416    0.014 PICU_Handoff_v6_82_Score_Performance/lab_windows.py:285(wrapped)\n       30    0.001    0.000    0.414    0.014 PICU_Handoff_v6_82_Score_Performance/exports.py:160(handoff_html)\n      480    0.008    0.000    0.265    0.001 PICU_Handoff_v6_82_Score_Performance/categories.py:398(medication_blocks)\n      480    0.013    0.000    0.245    0.001 PICU_Handoff_v6_82_Score_Performance/empty_groups.py:42(empty_group_paths)\n 2340/930    0.002    0.000    0.206    0.000 {method 'join' of 'str' objects}\n      240    0.000    0.000    0.202    0.001 PICU_Handoff_v6_82_Score_Performance/exports.py:164(<genexpr>)\n       30    0.000    0.000    0.201    0.007 PICU_Handoff_v6_82_Score_Performance/exports.py:43(display_fields)\n      210    0.002    0.000    0.197    0.001 PICU_Handoff_v6_82_Score_Performance/exports.py:109(field_markup)\n       30    0.002    0.000    0.165    0.005 PICU_Handoff_v6_82_Score_Performance/models.py:493(fields_with_medications)\n      240    0.001    0.000    0.136    0.001 PICU_Handoff_v6_82_Score_Performance/infusions.py:161(system_body_blocks)\n     2400    0.095    0.000    0.122    0.000 PICU_Handoff_v6_82_Score_Performance/categories.py:23(default_categories)\n      150    0.001    0.000    0.090    0.001 PICU_Handoff_v6_82_Score_Performance/models.py:588(automatic_vitals)\n36300/2460    0.045    0.000    0.084    0.000 /opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/copy.py:118(deepcopy)\n      120    0.001    0.000    0.077    0.001 PICU_Handoff_v6_82_Score_Performance/exports.py:92(infusion_section_prefix)\n     2460    0.014    0.000    0.074    0.000 /opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/copy.py:217(_deepcopy_dict)\n       90    0.002    0.000    0.060    0.001 PICU_Handoff_v6_82_Score_Performance/fen_gi.py:138(fen_gi_body)\n      150    0.002    0.000    0.037    0.000 PICU_Handoff_v6_82_Score_Performance/sbs.py:406(sbs_display_rows)\n     2400    0.009    0.000    0.026    0.000 PICU_Handoff_v6_82_Score_Performance/categories.py:179(target_snapshot)\n      150    0.001    0.000    0.024    0.000 PICU_Handoff_v6_82_Score_Performance/observations.py:46(neuro_rows)\n      150    0.003    0.000    0.024    0.000 PICU_Handoff_v6_82_Score_Performance/vitals.py:284(text_by_system)\n\n\n"
+      },
+      "limitations": "Synthetic local CPU benchmark. No live Streamlit server, network save, production data or concurrent-user load.",
+      "benchmark_case": "682_legacy"
+    }
+  ],
+  "output_equivalence": {
+    "before": "PICU_Handoff_v6_81_Dated_Scores",
+    "after": "PICU_Handoff_v6_82_Score_Performance",
+    "equal": true,
+    "cases": {
+      "invasive_observed": {
+        "html_sha256": "736966cbf5f8d1f69a9d6b6be5e4b022e1e63e2c450287c9afdeae6240296281",
+        "neuro": "SBS: -1 (11/16/26)\nCAPD: 6 (11/16/26)\nWAT-1: 2 (11/16/26)",
+        "sheet_sha256": "4340db08a9bd6e48bec266d2a708e20b7f159ac7bcb17f3806bfe9f15892127d",
+        "text_sha256": "31f50f2712600784292efbba67c8b8b6eeb21238221414b0a035058d4d9f42e4"
+      },
+      "invasive_target": {
+        "html_sha256": "c22aa707b8874052fa6a2bca93f20dff4dbe658e1517b57fc1810a9f48aec028",
+        "neuro": "SBS target: 0 (11/15/26)\nCAPD: 6 (11/16/26)\nWAT-1: 2 (11/16/26)",
+        "sheet_sha256": "50c850654cb8d09b8365d0bd0f529a7349609e19d90d247459c782d9844b8790",
+        "text_sha256": "2e08654bdce13a653db1437a9f28ce008e106dd4a45fe08f8a74febc1e6d0f54"
+      },
+      "nasal_cannula": {
+        "html_sha256": "bf3ef100ba26bb54cfed64f3b0230f1607a6efbd54953c41b32e450ce31e77b4",
+        "neuro": "CAPD: 6 (11/16/26)\nWAT-1: 2 (11/16/26)",
+        "sheet_sha256": "734dd55534226215b68f652c6340cc9648054f9f0fbc1ed707dbfced1d2e640b",
+        "text_sha256": "ea2a90ef1a877199427385ec368ce5e9a1606545d38d07ba5dd91cb7ca7b6c88"
+      }
+    },
+    "checked": [
+      "normalized stored sheet",
+      "text output",
+      "HTML output"
+    ],
+    "metadata_fixed": [
+      "generated identifiers",
+      "creation timestamp",
+      "save timestamp"
+    ]
+  },
+  "limitations": [
+    "Local CPU measurements only, not live Streamlit latency.",
+    "No network archive saves, production data or concurrent-user load were measured.",
+    "Raw timing variation is retained. A timing difference is not a guaranteed deployment speedup.",
+    "The6.80 baseline uses legacy CAPD/WAT values because dated score values were not supported there. The matching legacy fixture is also measured in6.81 and6.82."
+  ]
+}

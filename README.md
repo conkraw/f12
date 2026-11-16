@@ -1,51 +1,45 @@
-# PICU Handoff 6.81
+# PICU Handoff 6.82
 
-This release displays the latest documented SBS, CAPD and WAT-1 score with its recorded date. Staff names and recording times are omitted from the handoff. SBS displays only when the current respiratory record contains a recognized invasive ventilator mode.
+This release fixes the performance regression introduced by dated neurologic scores in 6.81. It retains the latest dated SBS, CAPD and WAT-1 display, the SBS invasive-ventilation condition and the medication changes from 6.80.
 
-Built from PICU680.zip. The 3% saline mapping, weight-based medication display, faster Print all and complete-room SmartPhrase replacement are retained.
+Install this package directly over 6.80. The complete application code is included.
 
 This package has not been deployed to the live application.
 
+## What changed
+
+Ordinary score dates now use a direct, calendar-validated parser. They no longer walk through multiple date formats during each validation, preview or cached PDF check. Unusual formats accepted by older archives retain their existing support.
+
+Opening or leaving an unchanged older handoff no longer rewrites its WAT value merely to remove attribution from the displayed text. That prevents an unnecessary shared-storage save and PDF preparation during navigation. Actual edits still save, normalize the score and clear the affected import warning when valid.
+
+The performance fix uses no global cache of patient text. Score validation, source-date ordering, metadata removal, room isolation and PDF freshness checks remain enabled.
+
 ## Install
 
-Extract PICU681.zip. Replace matching code files at your existing app repository root, beside the current app.py. Do not add another folder level.
+Extract PICU682.zip. Replace matching code files at your existing app repository root, beside the current app.py. Do not add another folder level.
 
-From 6.80, install all eight runtime files in UPDATE_FILES.txt together. score_dates.py is new. Restart Streamlit after uploading the files.
+From 6.80, install all eight files in UPDATE_FILES.txt together. score_dates.py is new to 6.80. From 6.81, the changed runtime files are app.py, sbs.py and score_dates.py. Restart Streamlit after replacing the files.
 
-For an older installed version, use the complete application code set, including pdf_cache.py and requirements.txt. Keep your existing Streamlit Secrets, encryption key, encrypted archives and saved settings. No new dependency or archive migration is required from 6.80.
+Keep your existing Streamlit Secrets, encryption key, encrypted archives and saved settings. No new dependency or archive migration is required.
 
 Confirm the sidebar reads:
 
-    Version 6.81 | Dated neurologic scores
+    Version 6.82 | Faster dated scores
 
-## Score display
+## Score behavior retained
 
-Examples below are synthetic.
+The latest documented SBS, CAPD and WAT-1 score appears with its recorded date only. A supplied time determines ordering but does not print. Staff names are omitted. Older dated scores remain visible with their source date.
 
-| Source field | Handoff output | Condition |
-| --- | --- | --- |
-| Observed SBS | SBS: -1 (11/15/26) | Recognized invasive ventilator mode |
-| Explicit SBS target | SBS target: -1 (11/15/26) | Recognized invasive ventilator mode |
-| CAPD | CAPD: 6 (11/15/26) | Independent of ventilation |
-| WAT-1 | WAT-1: 2 (11/16/26) | Independent of ventilation |
+SBS requires a recognized invasive ventilator mode. An explicit target retains the SBS target label. CAPD and WAT-1 do not depend on respiratory support. The latest source date is never replaced with the upload date or report date.
 
-The full source timestamp selects the latest entry. Only the date appears in text, HTML and PDF output. Older dated scores remain visible with their actual date. The upload date and report date are never substituted for the score's recording date.
+DATED_SCORES_681.md describes the score behavior and accepted source examples.
+MEDICATION_UPDATE_680.md describes the retained saline mapping and dose calculations.
 
-An explicit SBS target retains its target label. SBS is hidden for nasal cannula, high-flow nasal cannula, noninvasive ventilator modes, an explicit ventilator-off record or failed respiratory import. A removed ETT record does not enable SBS.
+## Verification
 
-CAPD keeps its existing high-score display flag and CAPD: None behavior when no included score is available. Blank WAT fields remain omitted. Existing undated values remain usable, but no date is invented.
+PERFORMANCE_682.md describes the measured regression and correction.
+PERFORMANCE_682.json records reproducible local benchmark results and limits.
+TEST_REPORT.md records the completed regression checks.
 
-## Editing and saved handoffs
-
-You can paste the EPIC score together with its dated attribution into the CAPD or WAT value field. A valid edit retains only the score and date. SBS also accepts a recording date without a time. A supplied time is used for source ordering.
-
-If conflicting entries do not establish which score is latest, the affected section needs review. No score is selected by its numerical value or position in the paste. Other sections continue to import independently.
-
-## Verification and preview
-
-DATED_SCORES_681.md describes parsing, source dates and the SBS condition.
-TEST_REPORT.md records the completed checks and their limits.
-examples/dated_scores_681_preview.pdf contains two synthetic handoffs.
-validation/build_dated_scores_681_preview.py rebuilds that preview.
-
-MEDICATION_UPDATE_680.md and TEST_REPORT_680.md retain the medication release details. TEST_REPORT_679.md and FASTER_PRINT_ALL.md retain the prior printing release details.
+examples/dated_scores_681_preview.pdf shows the retained score formatting.
+The prior test reports and medication preview remain included.
