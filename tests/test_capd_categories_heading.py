@@ -62,7 +62,7 @@ def test_empty_or_unassessed_is_none_not_zero(source):
 
 @pytest.mark.parametrize('source',['CAPD: -1','CAPD: 33','CAPD: 2.5','CAPD: 9 to 12',
     'CAPD: 24\nCAPD: 20','CAPD: score not readable','CAPD: 4/24',
-    'Pain: 4','CAPD: 24 at 11/08/26 1200','CAPD: <script>24</script>'])
+    'Pain: 4','CAPD: 24 at 11/08/26 2500','CAPD: <script>24</script>'])
 def test_unreadable_or_conflicting_y_does_not_represent_stale_score(source):
     old=imported(block('y','CAPD: 8'));before=deepcopy(old)
     out=import_sections(old,block('y',source)+'\n'+block('k','Target Arousal Level:\nTarget Arousal Level (SBS): SBS 0'),new_vault()['settings'])

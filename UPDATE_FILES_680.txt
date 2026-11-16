@@ -1,0 +1,23 @@
+PICU Handoff 6.80
+
+Required runtime update from 6.79, install all nine together:
+app.py
+medications.py
+medication_groups.py
+categories.py
+fen_gi.py
+models.py
+exports.py
+airway_clearance.py
+medication_doses.py
+
+airway_clearance.py and medication_doses.py are new files.
+For an older version, replace the complete application code set, including
+pdf_cache.py and requirements.txt. Install at the existing repository root,
+without an extra nested folder. Restart Streamlit after the upload.
+
+Keep current Streamlit Secrets, encryption keys, archives and saved settings.
+No new dependency or archive migration is required from 6.79.
+
+Verify: Version 6.80 | Airway clearance and weight-based doses
+This package has not been deployed to the live application.

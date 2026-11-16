@@ -1,0 +1,219 @@
+[
+  {
+    "id": "c8c27eef07404fa5a02944a8580e8208",
+    "room": "P4102",
+    "created_at": "2026-11-16T15:07:47+00:00",
+    "updated_at": null,
+    "fields": {
+      "Diagnoses": "SYNTHETIC DISPLAY EXAMPLE\nNot a patient record",
+      "Demographics / Weight": "",
+      "Neurologic": "",
+      "Respiratory": "",
+      "Cardiovascular": "",
+      "FEN / GI": "",
+      "Hematology": "",
+      "Infectious Disease": "",
+      "Labs": "",
+      "Skin / Wounds": "",
+      "Tasks": "",
+      "Other": "",
+      "Other Medications": "",
+      "Lab Results / Trends": "",
+      "Goals / Follow-up": "Synthetic score formatting example. Source times select the latest entry. Only the score and date appear above.",
+      "Airway": "",
+      "Last Intubation": "",
+      "Access": "",
+      "Drains / Tubes": ""
+    },
+    "medications": [],
+    "ventilation": {
+      "mode": "Pressure Control - Intermittent Mandatory Ventilation",
+      "values": {
+        "Resp Rate (Set)": "20",
+        "PEEP (cm H2O)": "5",
+        "FiO2 (%)": "30 %",
+        "PIP Set (cm H2O)": "18 cm H2O"
+      }
+    },
+    "noninvasive": [],
+    "vitals": [],
+    "labs": {
+      "rows": [],
+      "notes": []
+    },
+    "neuro_vitals": {
+      "k": [],
+      "l": [
+        {
+          "label": "WAT-1",
+          "value": "2 (11/16/26)",
+          "section": "Neurologic",
+          "include": true
+        }
+      ],
+      "m": [],
+      "y": [
+        {
+          "label": "CAPD",
+          "value": "6 (11/15/26)",
+          "section": "Neurologic",
+          "include": true
+        }
+      ]
+    },
+    "nutrition": null,
+    "cultures": {
+      "rows": [],
+      "notes": []
+    },
+    "dosing_weight": "",
+    "admission_date": "",
+    "viral_panel": {
+      "rows": []
+    },
+    "blood_gas": null,
+    "cbc": null,
+    "recurring_orders": null,
+    "intake_output": null,
+    "feeds": null,
+    "devices": null,
+    "neuro_devices": null,
+    "pacemaker": null,
+    "diet": null,
+    "import_warnings": {},
+    "sbs_vent_mode": "Pressure Control - Intermittent Mandatory Ventilation",
+    "sbs_observations": {
+      "readings": [
+        {
+          "value": "-1",
+          "recorded_at": "11/15/2026 06:30",
+          "include": true
+        }
+      ],
+      "notes": [],
+      "source_window": {
+        "value": "",
+        "reported_as_of": "2026-11-16T17:00:00+00:00",
+        "reference": "import",
+        "kind": "target",
+        "include": true
+      }
+    }
+  },
+  {
+    "id": "11559ef7ed0a4c42bae392164b2166b6",
+    "room": "P4104",
+    "created_at": "2026-11-16T15:07:47+00:00",
+    "updated_at": null,
+    "fields": {
+      "Diagnoses": "SYNTHETIC DISPLAY EXAMPLE\nNot a patient record",
+      "Demographics / Weight": "",
+      "Neurologic": "",
+      "Respiratory": "",
+      "Cardiovascular": "",
+      "FEN / GI": "",
+      "Hematology": "",
+      "Infectious Disease": "",
+      "Labs": "",
+      "Skin / Wounds": "",
+      "Tasks": "",
+      "Other": "",
+      "Other Medications": "",
+      "Lab Results / Trends": "",
+      "Goals / Follow-up": "Synthetic score formatting example. Source times select the latest entry. Only the score and date appear above.",
+      "Airway": "",
+      "Last Intubation": "",
+      "Access": "",
+      "Drains / Tubes": ""
+    },
+    "medications": [],
+    "ventilation": null,
+    "noninvasive": [
+      {
+        "device": "Nasal cannula",
+        "values": {
+          "Flow": "1 L/min"
+        },
+        "flow_inferred": false,
+        "pressure_inferred": false
+      }
+    ],
+    "vitals": [],
+    "labs": {
+      "rows": [],
+      "notes": []
+    },
+    "neuro_vitals": {
+      "k": [],
+      "l": [
+        {
+          "label": "WAT-1",
+          "value": "1 (11/16/26)",
+          "section": "Neurologic",
+          "include": true
+        }
+      ],
+      "m": [],
+      "y": [
+        {
+          "label": "CAPD",
+          "value": "4 (11/16/26)",
+          "section": "Neurologic",
+          "include": true
+        }
+      ]
+    },
+    "nutrition": null,
+    "cultures": {
+      "rows": [],
+      "notes": []
+    },
+    "dosing_weight": "",
+    "admission_date": "",
+    "viral_panel": {
+      "rows": []
+    },
+    "blood_gas": null,
+    "cbc": null,
+    "recurring_orders": null,
+    "intake_output": null,
+    "feeds": null,
+    "devices": {
+      "rows": [
+        {
+          "id": "0640c36b61d64b5aba0f8003cf27ab34",
+          "kind": "ETT",
+          "label": "ETT 5 mm",
+          "date": "",
+          "size": "5 mm",
+          "secured": "15 cm",
+          "status": "",
+          "removed": true,
+          "include": true
+        }
+      ]
+    },
+    "neuro_devices": null,
+    "pacemaker": null,
+    "diet": null,
+    "import_warnings": {},
+    "sbs_vent_mode": "",
+    "sbs_observations": {
+      "readings": [
+        {
+          "value": "0",
+          "recorded_at": "11/15/2026 07:30",
+          "include": true
+        }
+      ],
+      "notes": [],
+      "source_window": {
+        "value": "",
+        "reported_as_of": "2026-11-16T17:00:00+00:00",
+        "reference": "import",
+        "kind": "target",
+        "include": true
+      }
+    }
+  }
+]

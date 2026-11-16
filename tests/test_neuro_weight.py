@@ -258,10 +258,11 @@ def test_hidden_new_observations_and_weight_not_printed():
     assert sheet['nutrition']['weight']=='15.3 kg'
 
 
-def test_text_in_neuro_value_is_html_escaped():
+def test_unrecognized_legacy_wat_text_is_omitted():
     sheet=populated();sheet['neuro_vitals']['l'][0]['value']='<script>example</script>'
     html=handoff_html(sheet)
-    assert '<script>example</script>' not in html and '&lt;script&gt;' in html
+    assert '<script>example</script>' not in html and '&lt;script&gt;' not in html
+    assert '<script>example</script>' not in handoff_text(sheet)
 
 
 def test_observed_tidal_volume_separate_from_set_and_target():
