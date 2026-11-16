@@ -10,7 +10,6 @@ from decimal import Decimal
 import re
 from vitals import validate_vitals
 from demographics import separate_dosing_weight
-from score_dates import split_score_stamp, score_with_date, latest_score
 
 NEURO_SECTIONS = {'k': 'Target Arousal Level', 'y': 'CAPD', 'l': 'WAT Score', 'm': 'ICP Trends'}
 MISSING = {'', '-', '--', '---', 'n/a', 'na', 'none', 'not documented', 'not recorded',
@@ -54,8 +53,6 @@ def neuro_rows(data: dict) -> list[dict]:
         elif key == "m":
             from icp_cpp import display_icp_cpp_rows
             result.extend(display_icp_cpp_rows(data[key]))
-        elif key == "l":
-            result.extend(wat_display_rows(data[key]))
         else:
             result.extend(data[key])
     return result
@@ -68,122 +65,11 @@ class ObservationResult:
     error: str = ''
 
 
-_WAT_LABEL = r"(?:WAT(?:[- ]?1)?(?:\s+(?:total\s+)?score)?)"
-_WAT_ONLY = re.compile(r"^" + _WAT_LABEL + r"\s*(?:\(\s*0\s*[-–]\s*12\s*\))?\s*:?\s*$", re.I)
-_WAT_PREFIX = re.compile(r"^" + _WAT_LABEL + r"\s*(?:\(\s*0\s*[-–]\s*12\s*\))?\s*:\s*", re.I)
-_WAT_ERROR = 'A WAT-1 total could not be read. This section was not updated.'
-
-
-def _wat_number(text: str) -> tuple[str, str]:
-    """Return the recorded final score and an undated legacy display value."""
-    value = text.strip().replace('\u2212', '-').replace('\u2013', '-')
-    plain = re.fullmatch(r'(\d{1,2})(?:\s*/\s*12)?', value)
-    if plain and 0 <= int(plain[1]) <= 12:
-        return str(int(plain[1])), value
-    summary = re.fullmatch(r'\[\s*(\d{1,2})\s*-\s*(\d{1,2})\s*\]\s*(\d{1,2})', value)
-    if summary and 0 <= int(summary[1]) <= int(summary[2]) <= 12 and int(summary[1]) <= int(summary[3]) <= int(summary[2]):
-        return str(int(summary[3])), value
-    raise ValueError(_WAT_ERROR)
-
-
-def _wat_candidate(value: str, label: str = 'WAT-1 total score (0-12)') -> dict:
-    if not isinstance(value, str) or not isinstance(label, str):
-        raise ValueError(_WAT_ERROR)
-    text = value.strip()
-    for _ in range(4):
-        stripped, count = _WAT_PREFIX.subn('', text, count=1)
-        if not count:
-            break
-        text = stripped.strip()
-    body, stamp = split_score_stamp(text)
-    score, legacy_value = _wat_number(body)
-    # Recognized legacy labels stay compatible. Unknown saved label suffixes
-    # cannot leak staff text into the handoff.
-    safe_label = label.strip() if _WAT_ONLY.fullmatch(label.strip()) else 'WAT-1'
-    return {'score': score, 'value': legacy_value, 'recorded_at': stamp,
-            'label': 'WAT-1' if stamp else safe_label, 'include': True}
-
-
-def _wat_row(candidate: dict, include: bool = True) -> dict:
-    value = (score_with_date(candidate['score'], candidate['recorded_at'])
-             if candidate['recorded_at'] else candidate['value'])
-    return {'label': candidate['label'], 'value': value, 'section': 'Neurologic', 'include': include}
-
-
-def parse_wat(block: str) -> ObservationResult:
-    """Read one latest documented WAT-1 total and retain only its source date."""
-    out = ObservationResult()
-    candidates = []
-    try:
-        for raw in block.replace('\r\n', '\n').replace('\r', '\n').splitlines():
-            text = raw.replace('\u00a0', ' ').strip()
-            if not text or _WAT_ONLY.fullmatch(text) or normalized(text).rstrip('.') in MISSING:
-                continue
-            label = 'WAT-1 total score (0-12)'
-            prefix = _WAT_PREFIX.match(text)
-            if prefix:
-                label = text[:prefix.end()].rstrip(': ')
-                value = text[prefix.end():].strip()
-            elif '\t' in raw:
-                cells = [cell.strip() for cell in raw.split('\t') if cell.strip()]
-                if len(cells) != 2 or not _WAT_ONLY.fullmatch(cells[0]):
-                    raise ValueError(_WAT_ERROR)
-                label, value = cells
-            else:
-                value = text
-            body, _ = split_score_stamp(value)
-            if normalized(body).rstrip('.') in MISSING:
-                continue
-            candidates.append(_wat_candidate(value, label))
-        selected = latest_score(candidates, value_key='score')
-        if selected:
-            out.rows = [_wat_row(selected)]
-    except (ValueError, TypeError, IndexError):
-        out.error = _WAT_ERROR
-        out.rows = []
-    return out
-
-
-def normalize_score_rows(rows: list[dict], source: str) -> list[dict]:
-    """Sanitize edited score rows without changing row count or inclusion state."""
-    from copy import deepcopy
-    result = deepcopy(rows)
-    if source not in {'l', 'y'}:
-        return result
-    for row in result:
-        if source == 'y':
-            from capd import canonical_capd_value
-            row['label'] = 'CAPD'
-            row['value'] = canonical_capd_value(row['value'])
-        else:
-            candidate = _wat_candidate(row['value'], row.get('label', 'WAT-1'))
-            row.update(_wat_row(candidate, row['include']))
-    return result
-
-
-def wat_display_rows(rows: list[dict]) -> list[dict]:
-    """Sanitize old saved values and display one latest included WAT-1 total."""
-    candidates = []
-    try:
-        for row in rows:
-            if not row['include']:
-                continue
-            candidates.append(_wat_candidate(row['value'], row.get('label', 'WAT-1')))
-        selected = latest_score(candidates, value_key='score')
-        return [_wat_row(selected)] if selected else []
-    except (ValueError, TypeError, IndexError):
-        # Old archives allowed arbitrary text in WAT fields. Keep them loadable,
-        # but never print an unrecognized value or its attribution as a score.
-        return []
-
-
 def parse_neuro(block: str, source: str) -> ObservationResult:
     out = ObservationResult()
     if source == "y":
         from capd import parse_capd
         return parse_capd(block)
-    if source == "l":
-        return parse_wat(block)
     if source == "m":
         from icp_cpp import is_range_format, parse_icp_cpp
         if is_range_format(block):

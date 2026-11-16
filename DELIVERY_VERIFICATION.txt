@@ -1,13 +1,13 @@
-PICU Handoff 6.82 delivery verification
+PICU Handoff 6.80 delivery verification
 
-Direct upgrade from 6.80 is supported.
-Final complete suite: 6962 passed, 231 warnings, 14 subtests passed in 232.10s (0:03:52)
-Three runtime files changed from 6.81. Eight from 6.80.
-Canonical score dates avoid the general format-trial parser.
-Unchanged legacy room navigation makes zero unnecessary saves or PDF warms.
-Measured local Print all performance is near the 6.80 baseline.
-Dated stored-sheet, text and HTML output matches 6.81.
-No patient paste, production archive, real secrets or runtime logs added.
-No live app was deployed. See TEST_REPORT.md for limits.
+Built from PICU679.zip.
+Source ZIP SHA-256: 5a857f84cf391991ca3ceb107ce98eb42889d6e5c9b32413e1aa10142891ef91
+Final complete suite: 6729 passed, 213 warnings, 14 subtests passed in 202.94s (0:03:22)
+190 Python files and 3 TOML files parsed.
+Nine runtime files changed or added. See UPDATE_FILES.txt.
+Both synthetic PDF preview pages were visually reviewed.
+Archive schema 34, encrypted storage and PDF reuse are retained.
+No patient paste, runtime logs, real secrets or production archive were added.
+No live application was deployed.
 
 SHA256SUMS.txt covers packaged files except itself. ZIP CRC verified.

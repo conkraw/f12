@@ -1,45 +1,42 @@
-# PICU Handoff 6.82
+# PICU Handoff 6.80
 
-This release fixes the performance regression introduced by dated neurologic scores in 6.81. It retains the latest dated SBS, CAPD and WAT-1 display, the SBS invasive-ventilation condition and the medication changes from 6.80.
-
-Install this package directly over 6.80. The complete application code is included.
+This release adds specific 3% saline nebulizer placement and per-dose weight calculations for Sedative PRNs, chlorothiazide and furosemide. It builds on PICU679.zip and retains faster Print all and complete-room SmartPhrase replacement.
 
 This package has not been deployed to the live application.
 
-## What changed
-
-Ordinary score dates now use a direct, calendar-validated parser. They no longer walk through multiple date formats during each validation, preview or cached PDF check. Unusual formats accepted by older archives retain their existing support.
-
-Opening or leaving an unchanged older handoff no longer rewrites its WAT value merely to remove attribution from the displayed text. That prevents an unnecessary shared-storage save and PDF preparation during navigation. Actual edits still save, normalize the score and clear the affected import warning when valid.
-
-The performance fix uses no global cache of patient text. Score validation, source-date ordering, metadata removal, room isolation and PDF freshness checks remain enabled.
-
 ## Install
 
-Extract PICU682.zip. Replace matching code files at your existing app repository root, beside the current app.py. Do not add another folder level.
+Extract PICU680.zip. Replace matching code files at your existing app repository root, beside the current app.py. Do not add another folder level.
 
-From 6.80, install all eight files in UPDATE_FILES.txt together. score_dates.py is new to 6.80. From 6.81, the changed runtime files are app.py, sbs.py and score_dates.py. Restart Streamlit after replacing the files.
+From 6.79, install all nine runtime files listed in UPDATE_FILES.txt together. airway_clearance.py and medication_doses.py are new. Restart Streamlit after uploading them.
 
-Keep your existing Streamlit Secrets, encryption key, encrypted archives and saved settings. No new dependency or archive migration is required.
+For an older installed version, use the complete code set, including pdf_cache.py and requirements.txt. Keep your existing Streamlit Secrets, encryption key, encrypted archives and saved settings. No new dependency or archive migration is required from 6.79.
 
 Confirm the sidebar reads:
 
-    Version 6.82 | Faster dated scores
+    Version 6.80 | Airway clearance and weight-based doses
 
-## Score behavior retained
+## What changed
 
-The latest documented SBS, CAPD and WAT-1 score appears with its recorded date only. A supplied time determines ordering but does not print. Staff names are omitted. Older dated scores remain visible with their source date.
+Sodium chloride or NaCl 3% nebulized/inhaled products appear under Respiratory / Airway Clearance. Both 3 mL and 4 mL are covered. Other concentrations, IV and enteral products, flushes and recognized mixtures do not receive that automatic placement.
 
-SBS requires a recognized invasive ventilator mode. An explicit target retains the SBS target label. CAPD and WAT-1 do not depend on respiratory support. The latest source date is never replaced with the upload date or report date.
+Old generic sodium chloride or NaCl prefix rules targeting Respiratory are narrowed to the qualifying product. Exact or formulation-specific assignments remain available. Saved settings are not deleted.
 
-DATED_SCORES_681.md describes the score behavior and accepted source examples.
-MEDICATION_UPDATE_680.md describes the retained saline mapping and dose calculations.
+Sedative PRNs and intermittent chlorothiazide/furosemide keep their original absolute dose and gain mg/kg/dose or mcg/kg/dose when one unambiguous amount and a usable weight are available.
 
-## Verification
+For a synthetic 10 kg dosing weight:
 
-PERFORMANCE_682.md describes the measured regression and correction.
-PERFORMANCE_682.json records reproducible local benchmark results and limits.
-TEST_REPORT.md records the completed regression checks.
+    fentanyl injection 15 mcg | Calc: 1.5 mcg/kg/dose (DCW 10 kg)
 
-examples/dated_scores_681_preview.pdf shows the retained score formatting.
-The prior test reports and medication preview remain included.
+An explicit weight-based dose from EPIC remains authoritative. Calculations use dosing weight first, then an included measured weight if dosing weight is blank. The annotation identifies the weight used. Missing or invalid weights, failed weight imports, dose ranges, concentrations, daily totals and infusion rates do not produce derived doses.
+
+These are ordered amounts per dose. They do not represent a total PRN amount administered.
+
+## Verification and preview
+
+MEDICATION_UPDATE_680.md describes the exact matching and calculation boundaries.
+TEST_REPORT.md records completed verification and its limits.
+examples/medication_doses_680_preview.pdf contains two synthetic handoffs.
+validation/build_medication_preview_680.py rebuilds that preview.
+
+TEST_REPORT_679.md and FASTER_PRINT_ALL.md retain the prior printing release details.

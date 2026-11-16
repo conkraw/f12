@@ -1,28 +1,23 @@
-PICU Handoff 6.82
+PICU Handoff 6.80
 
-Required runtime update directly from 6.80, install all eight together:
+Required runtime update from 6.79, install all nine together:
 app.py
-capd.py
-exports.py
-importing.py
+medications.py
+medication_groups.py
+categories.py
+fen_gi.py
 models.py
-observations.py
-sbs.py
-score_dates.py
+exports.py
+airway_clearance.py
+medication_doses.py
 
-score_dates.py is a new file when upgrading from 6.80.
-
-If already running 6.81, the runtime changes are:
-app.py
-sbs.py
-score_dates.py
-
-The complete application code is included for upgrades from older releases.
-Install at the existing repository root without an extra nested folder.
-Restart Streamlit after the upload.
+airway_clearance.py and medication_doses.py are new files.
+For an older version, replace the complete application code set, including
+pdf_cache.py and requirements.txt. Install at the existing repository root,
+without an extra nested folder. Restart Streamlit after the upload.
 
 Keep current Streamlit Secrets, encryption keys, archives and saved settings.
-No new dependency or archive migration is required.
+No new dependency or archive migration is required from 6.79.
 
-Verify: Version 6.82 | Faster dated scores
+Verify: Version 6.80 | Airway clearance and weight-based doses
 This package has not been deployed to the live application.
