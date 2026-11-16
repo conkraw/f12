@@ -206,6 +206,7 @@ def test_pdf_vector_labels_bold_and_values_color_separate():
 
 def test_complete_output_labels_intake_heading_pdf_and_source_unchanged():
     source='\n'.join([
+        block('c','Invasive Ventilation:\nMode: Pressure Control - Intermittent Mandatory Ventilation\nRespiratory Rate: Resp Rate (Set): 20\nSet PEEP: PEEP (cm H2O): 5'),
         block('e','VITALS:\nTemp: 37 C\nHeart Rate: 99\nResp: 20\nBP: 100/60\nFiO2 (%): 30 %\nSpO2 Avg: 98 % Min: 95 % Max: 100 %\nLast SPO2: SpO2: 99 %'),
         block('k','SBS Last 24 Hours: SBS -1\nLast SBS Ever: SBS -2'),
         block('l','WAT Score:\nWAT-1 total score (0-12): 0'),block('y','CAPD: 2'),

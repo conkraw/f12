@@ -1,12 +1,12 @@
-PICU Handoff 6.80 delivery verification
+PICU Handoff 6.81 delivery verification
 
-Built from PICU679.zip.
-Source ZIP SHA-256: 5a857f84cf391991ca3ceb107ce98eb42889d6e5c9b32413e1aa10142891ef91
-Final complete suite: 6729 passed, 213 warnings, 14 subtests passed in 202.94s (0:03:22)
-190 Python files and 3 TOML files parsed.
-Nine runtime files changed or added. See UPDATE_FILES.txt.
-Both synthetic PDF preview pages were visually reviewed.
-Archive schema 34, encrypted storage and PDF reuse are retained.
+Built from PICU680.zip.
+Source ZIP SHA-256: e8f18df55e24d5c6494cf272e01cd93d712346e12ca847e70d6d6c0887adcda2
+Final complete suite: 6879 passed, 231 warnings, 14 subtests passed in 229.44s (0:03:49)
+195 Python files and 3 TOML files parsed.
+Eight runtime files changed or added. See UPDATE_FILES.txt.
+Both synthetic dated-score PDF pages were visually reviewed.
+Archive schema 34, medication changes, encrypted storage and PDF reuse are retained.
 No patient paste, runtime logs, real secrets or production archive were added.
 No live application was deployed.
 
