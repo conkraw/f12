@@ -177,21 +177,19 @@ def test_noninvasive_unchanged_with_marked_mode_and_values():
     assert r.devices[0]['values']=={'IPAP':'12 cmH20','EPAP':'6 cmH20','FiO2':'35 %'}
 
 
-def test_marked_invasive_mode_authorizes_dated_sbs():
-    s=imported(extra=block('k','SBS Last 24 Hours:\nLast SBS Ever: SBS -1 (11/08/26 0800 : Synthetic Staff, RN)'))
+def test_marked_mode_still_authorizes_existing_sbs_fallback():
+    s=imported(extra=block('k','SBS Last 24 Hours:\nLast SBS Ever: SBS -1'))
     with display_clock(NOW):
-        assert 'SBS: -1 (11/08/26)' in automatic_vitals(s)['Neurologic']
+        assert 'SBS: -1 (last available)' in automatic_vitals(s)['Neurologic']
     assert s['sbs_vent_mode']==MODE
 
 
-def test_failed_conflicting_import_keeps_original_and_blocks_sbs():
-    old=imported(extra=block('k','SBS Last 24 Hours:\nLast SBS Ever: SBS -1 (11/08/26 0800 : Synthetic Staff, RN)'))
-    with display_clock(NOW):
-        assert 'SBS: -1 (11/08/26)' in automatic_vitals(old)['Neurologic']
+def test_failed_conflicting_import_keeps_original_and_blocks_sbs_fallback():
+    old=imported(extra=block('k','SBS Last 24 Hours:\nLast SBS Ever: SBS -1'))
     r=import_sections(old,block('c',C+'\nResp Rate (Set): (S) 99'),new_vault()['settings'])
     assert r.errors and r.sheet['ventilation']==old['ventilation']
     with display_clock(NOW):
-        assert 'SBS' not in automatic_vitals(r.sheet)['Neurologic']
+        assert '(last available)' not in automatic_vitals(r.sheet)['Neurologic']
 
 
 def test_saved_marker_survives_encrypted_roundtrip_without_data_rewrite():

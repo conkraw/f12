@@ -591,9 +591,6 @@ def automatic_vitals(sheet: dict) -> dict[str, str]:
     if "y" in sheet.get("import_warnings", {}):
         # Do not print a retained old score as though a failed Y import refreshed it.
         neuro = dict(neuro, y=[])
-    if "l" in sheet.get("import_warnings", {}):
-        # A failed WAT import cannot refresh a retained score.
-        neuro = dict(neuro, l=[])
     if "m" in sheet.get("import_warnings", {}):
         # A failed M paste cannot refresh the retained last pressures.
         neuro = dict(neuro, m=[])

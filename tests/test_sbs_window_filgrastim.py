@@ -1,5 +1,5 @@
 from style_assert_helpers import without_style_tags
-"""6.81: source-dated SBS boundaries and filgrastim placement. Synthetic data only."""
+"""6.46: source-scoped SBS boundaries and filgrastim placement. Synthetic data only."""
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 from io import BytesIO
@@ -19,7 +19,6 @@ from test_rooms_infusions import med
 from test_callbacks import app, open_room
 
 NOW = datetime(2026, 11, 9, 12, 14, tzinfo=EASTERN)
-PC = 'Pressure Control - Intermittent Mandatory Ventilation'
 SOURCE = '''Target Arousal Level:
 SBS Last 24 Hours:  
 Last SBS Ever: Target Arousal Level (SBS): SBS -1'''
@@ -27,10 +26,9 @@ Last SBS Ever: Target Arousal Level (SBS): SBS -1'''
 def block(letter, text):
     return letter * 24 + '\n' + text + '\n' + letter * 24
 
-def imported(body, old=None, extra='', mode=PC):
-    respiratory = '' if mode is None else '\n' + block('c', 'Invasive Ventilation:\nMode: ' + mode)
+def imported(body, old=None, extra=''):
     with display_clock(NOW):
-        result = import_sections(old or new_sheet('P4102'), block('k', body) + respiratory + extra, new_vault()['settings'])
+        result = import_sections(old or new_sheet('P4102'), block('k', body) + extra, new_vault()['settings'])
     assert not result.errors, result.errors
     return result.sheet
 
@@ -39,18 +37,17 @@ def text_at(sheet, now=NOW):
         return automatic_vitals(sheet)['Neurologic']
 
 
-def test_empty_recent_cannot_show_historical_target_without_invasive_mode():
-    sheet = imported(SOURCE, mode='')
-    assert text_at(sheet).startswith('CAPD: None')
-    assert 'SBS' not in text_at(sheet)
+def test_exact_user_k_structure_empty_recent_never_uses_historical_target():
+    sheet = imported(SOURCE)
+    assert text_at(sheet).startswith('SBS: None\nCAPD: None')
     assert sheet['neuro_vitals']['k'] == []
     assert sheet['sbs_observations']['readings'] == []
     assert 'SBS -1' not in json.dumps(sheet['sbs_observations'])
 
 @pytest.mark.parametrize('old', ['-3', '-1', '0', '2', '0 [11/09/2026 12:00]', '<script>1</script>'])
-def test_history_with_or_without_a_date_still_requires_invasive_mode(old):
+def test_historical_values_are_never_read_even_when_current_date_is_attached(old):
     body = 'SBS Last 24 Hours:\nLast SBS Ever: SBS ' + old
-    assert 'SBS' not in text_at(imported(body, mode=''))
+    assert 'SBS: None' in text_at(imported(body))
 
 @pytest.mark.parametrize('value', [-3, -2, -1, 0, 1, 2])
 @pytest.mark.parametrize('wrapper', ['', 'SBS: ', 'State Behavioral Scale (SBS): '])
@@ -68,7 +65,7 @@ def test_missing_current_value_clears_old_snapshot(missing):
     old = imported('SBS: 0 [11/09/26 11:00]')
     before = deepcopy(old)
     s = imported('SBS Last 24 Hours: ' + missing + '\nLast SBS Ever: SBS -1', old)
-    assert text_at(s).startswith('SBS: -1\n')
+    assert 'SBS: None' in text_at(s)
     assert old == before
     assert not s['sbs_observations']['readings']
 
@@ -83,11 +80,10 @@ def test_same_line_historical_boundary():
     assert text_at(s).startswith('SBS: 0\n')
 
 
-def test_historical_only_keeps_its_original_recording_date():
+def test_ever_only_does_not_refresh_timed_old_reading():
     old = imported('SBS: 1 [11/09/26 10:00]')
     s = imported('Last SBS Ever: SBS 1 [11/09/26 10:00]', old)
-    assert text_at(s).startswith('SBS: 1 (11/09/26)\n')
-    assert s['sbs_observations']['last_available']['recorded_at'] == '11/09/2026 10:00'
+    assert text_at(s).startswith('SBS: None\n')
 
 @pytest.mark.parametrize('label', ['Target Arousal Level (SBS): ', 'Target SBS: ', 'Goal SBS: '])
 def test_explicit_target_in_current_window_keeps_target_label(label):
@@ -96,23 +92,22 @@ def test_explicit_target_in_current_window_keeps_target_label(label):
     assert 'SBS: -1' not in text_at(s)
 
 
-def test_timed_readings_choose_latest_across_both_source_fields():
+def test_scoped_timed_readings_choose_latest_not_first_and_ignore_ever():
     body = ('SBS Last 24 Hours:\nSBS: -2 [11/09/26 1200]\nSBS: 0 [11/09/26 1000]\n'
             'SBS: 1 [11/08/26 0800]\nLast SBS Ever: SBS 2 [11/09/26 1210]')
     s = imported(body)
-    assert text_at(s).startswith('SBS: 2 (11/09/26)\n')
+    assert text_at(s).startswith('SBS: -2\n')
     assert len(s['sbs_observations']['readings']) == 3
 
-@pytest.mark.parametrize('hours', [-24, -24.02, -2, 0, .02])
-def test_dated_observations_do_not_expire_but_future_times_are_not_selected(hours):
+@pytest.mark.parametrize('hours, result', [(-24, '0'), (-24.02, 'None'), (-2, '0'), (0, '0'), (.02, 'None')])
+def test_timed_source_scoped_observations_still_enforce_actual_24h(hours, result):
     when = (NOW + timedelta(hours=hours)).strftime('%m/%d/%Y %H:%M')
     s = imported('SBS Last 24 Hours: SBS 0 [' + when + ']\nLast SBS Ever: SBS -1')
-    result = 'None' if hours > 0 else '0 (' + (NOW + timedelta(hours=hours)).strftime('%m/%d/%y') + ')'
     assert text_at(s).startswith('SBS: ' + result + '\n')
 
-@pytest.mark.parametrize('hours, result', [(0, '0'), (23.99, '0'), (24, '0'), (24.01, '0'), (-1, 'None')])
-def test_legacy_snapshot_retains_no_inferred_observation_date(hours, result):
-    s = imported('SBS Last 24 Hours: 0')
+@pytest.mark.parametrize('hours, result', [(0, '0'), (23.99, '0'), (24, '0'), (24.01, 'None'), (-1, 'None')])
+def test_report_snapshot_expiry_is_separate_from_observation_time(hours, result):
+    s = imported('SBS Last 24 Hours: 0\nLast SBS Ever: SBS -1')
     before = deepcopy(s)
     assert text_at(s, NOW + timedelta(hours=hours)).startswith('SBS: ' + result + '\n')
     assert s == before
@@ -164,25 +159,23 @@ def test_multiple_identical_untimed_values_are_one_score():
     assert text_at(s).count('SBS: 0') == 1
 
 
-def test_recorded_date_only_is_sufficient_for_a_dated_score():
+def test_date_only_scoped_reading_does_not_bypass_timestamp_requirement():
     s = imported('SBS Last 24 Hours: SBS -1 [11/08/26]\nLast SBS Ever: SBS 0')
-    assert text_at(s).startswith('SBS: -1 (11/08/26)\n')
-    assert s['sbs_observations']['readings'][0]['recorded_at'] == '11/08/2026'
+    assert text_at(s).startswith('SBS: None\n')
+    assert s['sbs_observations']['readings'][0]['recorded_at'] == '11/08/26'
 
 @pytest.mark.parametrize('value', ['', '0', '-1'])
-def test_output_paths_use_available_legacy_score_and_keep_order(value):
+def test_output_paths_have_no_historical_fallback_and_keep_order(value):
     s = imported('SBS Last 24 Hours: ' + value + '\nLast SBS Ever: SBS 2', extra='\n' + block('y', 'CAPD: 9') + '\n' + block('l', 'WAT Score:\nWAT-1 total score (0-12): 1'))
     before = deepcopy(s)
-    expected = 'SBS: ' + (value or '2')
+    expected = 'SBS: ' + (value or 'None')
     outputs = [handoff_text(s, NOW), without_style_tags(handoff_html(s, NOW))]
     outputs += ['\n'.join(pg.extract_text() for pg in PdfReader(BytesIO(pdf)).pages)
                 for pdf in [handoff_pdf(s, NOW), handoffs_pdf([s], NOW)]]
     for output in outputs:
         assert expected in output
         assert output.index(expected) < output.index('CAPD: 9') < output.index('WAT-1')
-        assert 'Last SBS Ever' not in output
-        if value:
-            assert 'SBS: 2' not in output
+        assert 'Last SBS Ever' not in output and 'SBS: 2' not in output
     assert s == before
 
 @pytest.mark.parametrize('name', ['filgrastim injection 33 mcg', 'filgrastim-aafi (Nivestym) injection 33 mcg',
@@ -236,11 +229,11 @@ def test_migration_adds_group_without_overwriting_custom_settings_or_rooms():
     assert open_vault(seal_vault(restored, key), key) == restored
 
 
-def test_scoped_snapshot_encrypted_roundtrip_retains_undated_value():
+def test_scoped_snapshot_encrypted_roundtrip_does_not_reset_age():
     v = new_vault(); v['rooms']['P4102'] = imported('SBS Last 24 Hours: 0\nLast SBS Ever: SBS -1')
     key = generate_key(); restored = open_vault(seal_vault(v, key), key)
     assert restored == v
-    assert text_at(restored['rooms']['P4102'], NOW + timedelta(hours=25)).startswith('SBS: 0\n')
+    assert text_at(restored['rooms']['P4102'], NOW + timedelta(hours=25)).startswith('SBS: None\n')
 
 
 def test_window_edit_callback_preserves_report_time_and_guards_rooms(app):
@@ -266,4 +259,4 @@ def test_manual_timed_observation_replaces_source_window_provenance(app):
     app.sbs_add_reading('P4102', 'score_key', 'time_key')
     s = ss['drafts']['P4102']
     assert 'source_window' not in s['sbs_observations']
-    assert text_at(s).startswith('SBS: 0 (11/09/26)\n')
+    assert text_at(s).startswith('SBS: 0\n')

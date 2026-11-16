@@ -1,4 +1,4 @@
-"""PICU SmartPhrase v6.81: latest dated neurologic scores."""
+"""PICU SmartPhrase v6.80: specific saline placement and per-dose weight display."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,
@@ -53,7 +53,7 @@ from recurring_orders import validate_orders, selected_orders, orders_text, orde
 from blood_gases import FIELDS as GAS_FIELDS, validate_gases, latest_sample, gas_summary, legacy_gases
 from vitals import validate_vitals, text_by_system
 from lab_layout import laboratory_html
-from observations import NEURO_SECTIONS, validate_neuro, validate_nutrition, format_nutrition, normalize_score_rows
+from observations import NEURO_SECTIONS, validate_neuro, validate_nutrition, format_nutrition
 from demographics import validate_dosing_weight, validate_admission_date, demographic_weight_text
 from mrsa import mrsa_screen_text
 from clinical_style import clinical_markup
@@ -295,24 +295,11 @@ def editor_snapshot(room: str) -> dict:
             if widget in ss:
                 row[field] = ss[widget]
     for source, rows in sheet["neuro_vitals"].items():
-        edited = False
         for index, row in enumerate(rows):
             key = "neuro_" + sheet["id"] + "_" + source + "_" + str(index)
             for field, widget in (("value", key), ("include", key + "_include")):
                 if widget in ss:
-                    edited = edited or row[field] != ss[widget]
                     row[field] = ss[widget]
-        if source in ("l", "y"):
-            try:
-                sheet["neuro_vitals"][source] = normalize_score_rows(rows, source)
-            except ValueError:
-                if edited:
-                    raise
-                # Older archives can contain unrecognized WAT text. Keep an
-                # unchanged archive loadable while output suppresses that text.
-            else:
-                if edited:
-                    sheet["import_warnings"].pop(source, None)
     for index, row in enumerate((sheet.get("sbs_observations") or {}).get("readings", [])):
         for field in ("value", "recorded_at", "include"):
             key = "sbs_" + sheet["id"] + "_" + str(index) + "_" + field
@@ -551,14 +538,10 @@ def neuro_row_change(room: str, source: str, index: int, field: str, key: str) -
     old = candidate[source][index][field]
     candidate[source][index][field] = ss[key]
     try:
-        if source in ("l", "y"):
-            candidate[source] = normalize_score_rows(candidate[source], source)
         validate_neuro(candidate)
         ss["drafts"][room]["neuro_vitals"] = candidate
-        if source in ("l", "y"):
-            ss["drafts"][room]["import_warnings"].pop(source, None)
-            value_key = "neuro_" + ss["drafts"][room]["id"] + "_" + source + "_" + str(index)
-            ss[value_key] = candidate[source][index]["value"]
+        if source == "y":
+            ss["drafts"][room]["import_warnings"].pop("y", None)
     except ValueError as exc:
         ss[key] = old
         note(str(exc), "error")
@@ -697,25 +680,19 @@ def sbs_row_change(room: str, index: int, field: str, key: str) -> None:
 def sbs_add_reading(room: str, score_key: str, time_key: str) -> None:
     if not require_session() or room != st.session_state.get("current_room"):
         return
-    from sbs import score, validate_sbs, latest_available_sbs
+    from sbs import score, validate_sbs
     from labs import date_parts
     ss = st.session_state
     try:
         value = score(str(ss.get(score_key, "")))
         recorded_at = str(ss.get(time_key, "")).strip()
-        try:
-            date_parts(recorded_at)
-        except ValueError:
-            raise ValueError("Enter the score's recording date from Epic, with an optional time.") from None
+        _, has_time = date_parts(recorded_at)
+        if not has_time:
+            raise ValueError("Enter the recording date AND time from Epic, not the time of this upload.")
         candidate = deepcopy(ss["drafts"][room].get("sbs_observations") or {"readings": [], "notes": []})
-        if candidate.get("source_window", {}).get("kind") == "target":
-            previous = latest_available_sbs(ss["drafts"][room])
-            candidate["readings"] = []
-            if previous is not None:
-                candidate["last_available"] = previous
         candidate["readings"].append({"value": value, "recorded_at": recorded_at, "include": True})
         # An explicitly entered measured observation supersedes a prefiltered
-        # snapshot. Its source timestamp selects the latest recorded value.
+        # snapshot. Its actual source time, not a report time, controls expiry.
         candidate.pop("source_window", None)
         validate_sbs(candidate)
         ss["drafts"][room]["sbs_observations"] = candidate
@@ -773,17 +750,22 @@ def sbs_history_change(room: str, field: str, key: str) -> None:
 
 
 def sbs_editor(sheet: dict) -> None:
-    from sbs import sbs_display_rows, recognized_vent_mode
+    from sbs import latest_sbs, sbs_display_rows, recognized_vent_mode
     data = sheet.get("sbs_observations")
+    latest = latest_sbs(data) if "k" not in sheet["import_warnings"] else None
     window = (data or {}).get("source_window")
     rendered = sbs_display_rows(sheet)
     st.caption((rendered[0]["label"] + ": " + rendered[0]["value"]) if rendered else "No eligible SBS is displayed, or its import needs review.")
-    with st.expander("SBS score / source date"):
-        st.caption("The latest documented SBS prints with its source date only. A supplied time helps choose the latest entry. SBS requires a recognized invasive ventilator mode. Explicit targets keep the SBS target label.")
+    if window is not None:
+        st.caption("24-hour snapshot time: " + window["reported_as_of"] + ". This is not an individual observation's recording time.")
+    elif latest:
+        st.caption("Recorded at: " + latest["recorded_at"])
+    with st.expander("Observed SBS / recording time"):
+        st.caption("Recent SBS takes priority. When no recent value is available, Last SBS Ever can display only with a recognized documented ventilator mode. It is labelled last available. Explicit targets keep a target label.")
         mode = recognized_vent_mode(sheet)
-        st.caption("SBS enabled by invasive mode: " + mode if mode else "SBS is hidden because no qualifying invasive ventilator mode is documented.")
+        st.caption("Fallback mode: " + mode if mode else "No qualifying ventilator mode for historical SBS fallback.")
         if window is not None:
-            for field, label in (("value", "Imported SBS value"), ("include", "Include the imported SBS field")):
+            for field, label in (("value", "SBS Last 24 Hours value (blank allows mode-gated fallback)"), ("include", "Include the imported 24-hour SBS field")):
                 key = "sbs_window_" + sheet["id"] + "_" + field
                 if key not in st.session_state:
                     st.session_state[key] = window[field]
@@ -793,11 +775,11 @@ def sbs_editor(sheet: dict) -> None:
                 elif not data.get("readings"):
                     st.text_input(label, max_chars=10, **opts)
             if window["kind"] == "target":
-                st.caption("Epic labelled this value as a target. It prints as SBS target.")
+                st.caption("Epic labelled this value as a target. It prints as SBS target, not as an observed score.")
         historical = (data or {}).get("last_available")
         if historical is not None:
             st.caption("Last SBS Ever is a target." if historical["kind"] == "target" else "Last SBS Ever is a recorded score.")
-            for field, label in (("value", "Last SBS Ever value"), ("recorded_at", "Source date and optional time"), ("include", "Include this documented SBS")):
+            for field, label in (("value", "Last SBS Ever value"), ("recorded_at", "Historical recording date / time (if supplied)"), ("include", "Allow this last-available value when ventilator mode qualifies")):
                 key = "sbs_history_" + sheet["id"] + "_" + field
                 if key not in st.session_state:
                     st.session_state[key] = historical[field]
@@ -809,7 +791,7 @@ def sbs_editor(sheet: dict) -> None:
         for message in (data or {}).get("notes", []):
             st.caption(message)
         for index, row in enumerate((data or {}).get("readings", [])):
-            for field, label in (("value", "Recorded SBS"), ("recorded_at", "Source date and optional time"), ("include", "Include this observed SBS")):
+            for field, label in (("value", "Recorded SBS"), ("recorded_at", "Recorded date / time"), ("include", "Include this observed SBS")):
                 key = "sbs_" + sheet["id"] + "_" + str(index) + "_" + field
                 if key not in st.session_state:
                     st.session_state[key] = row[field]
@@ -820,27 +802,20 @@ def sbs_editor(sheet: dict) -> None:
                     st.text_input(label, max_chars=80, **opts)
         score_key, time_key = "sbs_add_score_" + sheet["id"], "sbs_add_time_" + sheet["id"]
         st.text_input("Add observed SBS", key=score_key, max_chars=10)
-        st.text_input("Source date, with optional time (MM/DD/YYYY HH:MM)", key=time_key, max_chars=80)
+        st.text_input("Source date and time (MM/DD/YYYY HH:MM)", key=time_key, max_chars=80)
         st.button("Add SBS reading", key="sbs_add_" + sheet["id"], on_click=sbs_add_reading,
                   args=(sheet["room"], score_key, time_key))
 
 
 def neuro_weight_editor(sheet: dict) -> None:
     st.subheader("Neurologic observations")
-    st.caption("K: latest SBS, shown only with a recognized invasive ventilator mode. Y: CAPD, L: WAT-1. Scores show their recorded date without staff names or times. CAPD and WAT-1 do not depend on ventilation. SBS targets keep their target label. CAPD: None means no available score. M: ICP/CPP show the documented range and Last reading in brackets, with separate editing for each field.")
+    st.caption("K: recent SBS first, last available only with a recognized ventilator mode. Y: CAPD, L: WAT-1, M: ICP/CPP. Targets remain editable but do not print as observed scores. CAPD always prints between SBS and WAT-1. None means no available score, not a zero score. ICP/CPP show the documented range and Last reading in brackets. Range and Last fields can be edited separately.")
     sbs_editor(sheet)
     present = False
     for source, title in NEURO_SECTIONS.items():
         if source == "y" and not sheet["neuro_vitals"].get("y"):
             st.caption("CAPD: None. Paste a Y section to add the recorded score.")
-        rows = sheet["neuro_vitals"].get(source, [])
-        if source in ("l", "y"):
-            try:
-                rows = normalize_score_rows(rows, source)
-            except ValueError:
-                rows = [dict(row, label="CAPD" if source == "y" else "WAT-1", value="") for row in rows]
-                st.caption(title + ": the saved value needs a recognizable score before it can be displayed.")
-        for index, row in enumerate(rows):
+        for index, row in enumerate(sheet["neuro_vitals"].get(source, [])):
             present = True
             key = "neuro_" + sheet["id"] + "_" + source + "_" + str(index)
             if key not in st.session_state:
@@ -1913,7 +1888,7 @@ def main() -> None:
         return
     with st.sidebar:
         st.header("PICU Handoff")
-        st.caption("Version 6.81 | Dated neurologic scores")
+        st.caption("Version 6.80 | Airway clearance and weight-based doses")
         # Retire the old instructions workspace without discarding room drafts.
         if st.session_state.get("page") == "Instructions / SmartPhrase":
             st.session_state["page"] = "Handoff"

@@ -166,13 +166,6 @@ def import_sections(sheet: dict, text: str, settings: dict) -> ImportResult:
                 source_fields = read_fields(parsed.blocks.get('c'), 'C')
                 candidate['sbs_vent_mode'] = ('' if source_fields.get('on', '').casefold() in ('no', 'off', 'false')
                                               else source_fields.get('mode', ''))
-                from ventilator_modes import spec
-                mode_spec = spec(candidate['sbs_vent_mode'])
-                delivery = read_fields(parsed.blocks.get('d'), 'D').get('delivery', '')
-                if mode_spec and mode_spec[1] == 'PS' and re.search(r'high[ -]?flow|nasal cannula|mask', delivery, re.I):
-                    # Match the respiratory parser when a PS-family label is
-                    # accompanied by explicitly noninvasive delivery.
-                    candidate['sbs_vent_mode'] = ''
                 out.notices.extend(vent.issues)
                 out.imported.append("respiratory support" if vent.invasive or vent.devices else "respiratory display cleared")
             elif letter == "e":

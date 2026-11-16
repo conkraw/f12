@@ -1,51 +1,42 @@
-# PICU Handoff 6.81
+# PICU Handoff 6.80
 
-This release displays the latest documented SBS, CAPD and WAT-1 score with its recorded date. Staff names and recording times are omitted from the handoff. SBS displays only when the current respiratory record contains a recognized invasive ventilator mode.
-
-Built from PICU680.zip. The 3% saline mapping, weight-based medication display, faster Print all and complete-room SmartPhrase replacement are retained.
+This release adds specific 3% saline nebulizer placement and per-dose weight calculations for Sedative PRNs, chlorothiazide and furosemide. It builds on PICU679.zip and retains faster Print all and complete-room SmartPhrase replacement.
 
 This package has not been deployed to the live application.
 
 ## Install
 
-Extract PICU681.zip. Replace matching code files at your existing app repository root, beside the current app.py. Do not add another folder level.
+Extract PICU680.zip. Replace matching code files at your existing app repository root, beside the current app.py. Do not add another folder level.
 
-From 6.80, install all eight runtime files in UPDATE_FILES.txt together. score_dates.py is new. Restart Streamlit after uploading the files.
+From 6.79, install all nine runtime files listed in UPDATE_FILES.txt together. airway_clearance.py and medication_doses.py are new. Restart Streamlit after uploading them.
 
-For an older installed version, use the complete application code set, including pdf_cache.py and requirements.txt. Keep your existing Streamlit Secrets, encryption key, encrypted archives and saved settings. No new dependency or archive migration is required from 6.80.
+For an older installed version, use the complete code set, including pdf_cache.py and requirements.txt. Keep your existing Streamlit Secrets, encryption key, encrypted archives and saved settings. No new dependency or archive migration is required from 6.79.
 
 Confirm the sidebar reads:
 
-    Version 6.81 | Dated neurologic scores
+    Version 6.80 | Airway clearance and weight-based doses
 
-## Score display
+## What changed
 
-Examples below are synthetic.
+Sodium chloride or NaCl 3% nebulized/inhaled products appear under Respiratory / Airway Clearance. Both 3 mL and 4 mL are covered. Other concentrations, IV and enteral products, flushes and recognized mixtures do not receive that automatic placement.
 
-| Source field | Handoff output | Condition |
-| --- | --- | --- |
-| Observed SBS | SBS: -1 (11/15/26) | Recognized invasive ventilator mode |
-| Explicit SBS target | SBS target: -1 (11/15/26) | Recognized invasive ventilator mode |
-| CAPD | CAPD: 6 (11/15/26) | Independent of ventilation |
-| WAT-1 | WAT-1: 2 (11/16/26) | Independent of ventilation |
+Old generic sodium chloride or NaCl prefix rules targeting Respiratory are narrowed to the qualifying product. Exact or formulation-specific assignments remain available. Saved settings are not deleted.
 
-The full source timestamp selects the latest entry. Only the date appears in text, HTML and PDF output. Older dated scores remain visible with their actual date. The upload date and report date are never substituted for the score's recording date.
+Sedative PRNs and intermittent chlorothiazide/furosemide keep their original absolute dose and gain mg/kg/dose or mcg/kg/dose when one unambiguous amount and a usable weight are available.
 
-An explicit SBS target retains its target label. SBS is hidden for nasal cannula, high-flow nasal cannula, noninvasive ventilator modes, an explicit ventilator-off record or failed respiratory import. A removed ETT record does not enable SBS.
+For a synthetic 10 kg dosing weight:
 
-CAPD keeps its existing high-score display flag and CAPD: None behavior when no included score is available. Blank WAT fields remain omitted. Existing undated values remain usable, but no date is invented.
+    fentanyl injection 15 mcg | Calc: 1.5 mcg/kg/dose (DCW 10 kg)
 
-## Editing and saved handoffs
+An explicit weight-based dose from EPIC remains authoritative. Calculations use dosing weight first, then an included measured weight if dosing weight is blank. The annotation identifies the weight used. Missing or invalid weights, failed weight imports, dose ranges, concentrations, daily totals and infusion rates do not produce derived doses.
 
-You can paste the EPIC score together with its dated attribution into the CAPD or WAT value field. A valid edit retains only the score and date. SBS also accepts a recording date without a time. A supplied time is used for source ordering.
-
-If conflicting entries do not establish which score is latest, the affected section needs review. No score is selected by its numerical value or position in the paste. Other sections continue to import independently.
+These are ordered amounts per dose. They do not represent a total PRN amount administered.
 
 ## Verification and preview
 
-DATED_SCORES_681.md describes parsing, source dates and the SBS condition.
-TEST_REPORT.md records the completed checks and their limits.
-examples/dated_scores_681_preview.pdf contains two synthetic handoffs.
-validation/build_dated_scores_681_preview.py rebuilds that preview.
+MEDICATION_UPDATE_680.md describes the exact matching and calculation boundaries.
+TEST_REPORT.md records completed verification and its limits.
+examples/medication_doses_680_preview.pdf contains two synthetic handoffs.
+validation/build_medication_preview_680.py rebuilds that preview.
 
-MEDICATION_UPDATE_680.md and TEST_REPORT_680.md retain the medication release details. TEST_REPORT_679.md and FASTER_PRINT_ALL.md retain the prior printing release details.
+TEST_REPORT_679.md and FASTER_PRINT_ALL.md retain the prior printing release details.

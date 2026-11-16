@@ -1,8 +1,5 @@
 from style_assert_helpers import without_style_tags
-"""Neuro and medication regressions, with v6.81 source-dated SBS expectations.
-
-Fixtures contain synthetic inputs, no live repository or patient data.
-"""
+"""6.45 regression coverage with synthetic inputs, no live repository or patient data."""
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 from io import BytesIO
@@ -27,7 +24,6 @@ from test_rooms_infusions import med
 from test_callbacks import app, open_room
 
 NOW = datetime(2026, 11, 9, 12, 0, tzinfo=EASTERN)
-PC = 'Pressure Control - Intermittent Mandatory Ventilation'
 ICP = '''ICP Trends:
 ICP Range: ICP Mean (mmHg)  Avg: 9.6 mmHg  Min: 1 mmHg  Max: 22 mmHg
 Last ICP: ICP Mean (mmHg): 11 mmHg
@@ -37,9 +33,7 @@ Last CPP: CPP: 52 mmHg'''
 def block(letter, content):
     return letter*24+'\n'+content+'\n'+letter*24
 
-def imported(text, sheet=None, settings=None, *, intubated=False):
-    if intubated:
-        text += '\n' + block('c', 'Invasive Ventilation:\nMode: ' + PC)
+def imported(text, sheet=None, settings=None):
     r=import_sections(sheet or new_sheet('P4102'),text,settings or new_vault()['settings'])
     assert not r.errors,r.errors
     return r.sheet
@@ -75,9 +69,9 @@ def test_icp_missing_and_zero(body,expect):
 @pytest.mark.parametrize('value',[-3,-2,-1,0,1,2])
 def test_sbs_valid_scores_and_target_separation(value):
     source='Target Arousal Level:\nTarget Arousal Level (SBS): SBS -3\nLast SBS: SBS '+str(value)+' ['+timestamp(-1)+']'
-    s=imported(block('k',source), intubated=True)
+    s=imported(block('k',source))
     with display_clock(NOW):
-        assert automatic_vitals(s)['Neurologic'].startswith('SBS: '+str(value)+' (11/09/26)\nCAPD: None')
+        assert automatic_vitals(s)['Neurologic'].startswith('SBS: '+str(value)+'\nCAPD: None')
     assert s['neuro_vitals']['k'][0]['value']=='SBS -3'
 
 @pytest.mark.parametrize('source',[
@@ -92,34 +86,26 @@ def test_sbs_valid_scores_and_target_separation(value):
 def test_timestamped_sbs_formats(source):
     p=parse_sbs(source);assert not p.error
     latest=latest_sbs(p.data,NOW);assert latest and latest['value']=='-1'
-    s=imported(block('k',source), intubated=True)
-    assert sbs_display_rows(s,NOW)[0]['value']=='-1 (11/09/26)'
+    s=imported(block('k',source))
+    assert sbs_display_rows(s,NOW)[0]['value']=='-1'
 
 @pytest.mark.parametrize('hours,printed',[(-24,True),(-24.02,False),(0,True),(0.02,False),(-2,True),(-48,False)])
-def test_legacy_sbs_window_helper_keeps_strict_24h_and_no_future(hours,printed):
+def test_sbs_strict_24h_and_no_future(hours,printed):
     data={'readings':[{'value':'0','recorded_at':timestamp(hours),'include':True}],'notes':[]}
     assert bool(latest_sbs(data,NOW))==printed
 
-@pytest.mark.parametrize('source,expected',[
- ('Target Arousal Level:\nTarget Arousal Level (SBS): SBS -1', [('SBS target', '-1')]),
- ('Target Arousal Level:\nSBS -1', [('SBS target', '-1')]),
- ('SBS: -1', [('SBS', '-1')]),
- ('SBS: 0 [11/09/2026]', [('SBS', '0 (11/09/26)')]),
- ('Target Arousal Level:', []), ('', []), ('SBS observations:\nNo data recorded', []),
+@pytest.mark.parametrize('source',[
+ 'Target Arousal Level:\nTarget Arousal Level (SBS): SBS -1',
+ 'Target Arousal Level:\nSBS -1',
+ 'SBS: -1', 'SBS: 0 [11/09/2026]',
+ 'Target Arousal Level:', '', 'SBS observations:\nNo data recorded',
 ])
-@pytest.mark.parametrize('intubated', [False, True])
-def test_legacy_and_date_only_sbs_preserve_provenance_and_require_invasive_mode(source, expected, intubated):
+def test_untimed_targets_never_become_current_sbs(source):
     p=parse_sbs(source);assert not p.error
     assert latest_sbs(p.data,NOW) is None
-    s=imported(block('k',source), intubated=intubated)
-    rows = sbs_display_rows(s,NOW)
-    assert [(row['label'], row['value']) for row in rows] == (expected if intubated else [])
-    with display_clock(NOW):
-        text = fields_with_medications(s)['Neurologic']
-        if not rows:
-            assert 'SBS' not in text
-        elif rows[0]['label'] == 'SBS target':
-            assert 'SBS target: -1' in text and 'SBS: -1' not in text
+    s=imported(block('k',source))
+    assert sbs_display_rows(s,NOW)==[]
+    with display_clock(NOW): assert 'SBS:' not in fields_with_medications(s)['Neurologic']
 
 @pytest.mark.parametrize('source',[
  'SBS: -4 [11/09/26 1100]', 'SBS: 3 [11/09/26 1100]', 'SBS: 1.5 [11/09/26 1100]',
@@ -128,8 +114,7 @@ def test_legacy_and_date_only_sbs_preserve_provenance_and_require_invasive_mode(
  'Lab\tUnits\t11/09/26\n1100\t11/08/26\n0800\nSBS\t\t-1',
 ])
 def test_bad_sbs_does_not_block_other_import_or_refresh_old_reading(source):
-    old=imported(block('k','SBS: -1 ['+timestamp(-2)+']'), intubated=True);before=deepcopy(old)
-    assert sbs_display_rows(old,NOW)[0]['value'] == '-1 (11/09/26)'
+    old=imported(block('k','SBS: -1 ['+timestamp(-2)+']'));before=deepcopy(old)
     r=import_sections(old,block('k',source)+'\n'+block('y','CAPD: 0'),new_vault()['settings'])
     assert r.errors and 'k' in r.skipped and old==before
     assert r.sheet['sbs_observations']==old['sbs_observations']
@@ -138,16 +123,16 @@ def test_bad_sbs_does_not_block_other_import_or_refresh_old_reading(source):
     assert source not in str(r.diagnostics)
 
 
-def test_sbs_unsorted_readings_select_latest_and_retain_source_date_after_save():
-    s=imported(block('k','SBS: -1 ['+timestamp(-20)+']\nSBS: 0 ['+timestamp(-2)+']\nSBS: 2 ['+timestamp(-10)+']'), intubated=True)
+def test_sbs_unsorted_readings_select_latest_and_expire_after_save():
+    s=imported(block('k','SBS: -1 ['+timestamp(-20)+']\nSBS: 0 ['+timestamp(-2)+']\nSBS: 2 ['+timestamp(-10)+']'))
     before=deepcopy(s)
-    assert sbs_display_rows(s,NOW)[0]['value']=='0 (11/09/26)'
-    assert sbs_display_rows(s,NOW+timedelta(hours=23))[0]['value']=='0 (11/09/26)'
+    assert sbs_display_rows(s,NOW)[0]['value']=='0'
+    assert sbs_display_rows(s,NOW+timedelta(hours=23))==[]
     assert s==before
 
 
 def test_sbs_omitted_preserves_empty_k_clears_and_last_is_before_capd_wat():
-    s=imported(block('k','SBS: 0 ['+timestamp(-1)+']')+'\n'+block('y','CAPD: 4')+'\n'+block('l','WAT Score:\nWAT-1 total score (0-12): 2'), intubated=True)
+    s=imported(block('k','SBS: 0 ['+timestamp(-1)+']')+'\n'+block('y','CAPD: 4')+'\n'+block('l','WAT Score:\nWAT-1 total score (0-12): 2'))
     s=imported(block('m',ICP),s)
     with display_clock(NOW):
         text=fields_with_medications(s)['Neurologic']
@@ -279,13 +264,13 @@ def test_failed_culture_import_does_not_print_none_or_retained_as_refreshed():
 
 
 def test_sbs_encrypted_roundtrip_batch_and_no_mutation():
-    v=new_vault();s=imported(block('k','SBS: 0 ['+timestamp(-1)+']'), intubated=True);s['updated_at']='2026-11-09T16:01:00+00:00'
+    v=new_vault();s=imported(block('k','SBS: 0 ['+timestamp(-1)+']'));s['updated_at']='2026-11-09T16:01:00+00:00'
     v['rooms']['P4102']=s;key=generate_key();before=deepcopy(v)
     restored=open_vault(seal_vault(v,key),key)
     assert restored==v
     with display_clock(NOW):assert 'P4102' in available_handoffs(v,{})
     text='\n'.join(pg.extract_text() for pg in PdfReader(BytesIO(handoffs_pdf([s],NOW))).pages)
-    assert 'SBS: 0 (11/09/26)' in text and v==before
+    assert 'SBS: 0' in text and v==before
 
 
 def test_add_sbs_callback_and_room_guard(app):

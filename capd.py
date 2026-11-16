@@ -7,7 +7,6 @@ Error messages contain no clinical source text or values.
 from __future__ import annotations
 from dataclasses import dataclass, field
 import re
-from score_dates import split_score_stamp, score_with_date, latest_score
 
 LABEL = r"(?:CAPD(?:\s+(?:total\s+)?score)?|Cornell\s+Assessment\s+of\s+Pediatric\s+Delirium(?:\s+(?:total\s+)?score)?)"
 LABEL_PREFIX = re.compile(r"^" + LABEL + r"\s*(?:\(\s*0\s*[-–]\s*32\s*\))?\s*:\s*", re.I)
@@ -30,20 +29,6 @@ def score_text(value: str) -> str:
         raise ValueError("Enter the recorded CAPD total as a whole number from 0 to 32.")
     return str(int(match.group(1)))
 
-
-def canonical_capd_value(value: str) -> str:
-    """Keep a score and its source date, never the source attribution or time."""
-    if not isinstance(value, str):
-        raise ValueError("Enter the recorded CAPD total as a whole number from 0 to 32.")
-    text = value.strip()
-    for _ in range(4):
-        stripped, count = LABEL_PREFIX.subn("", text, count=1)
-        if not count:
-            break
-        text = stripped.strip()
-    body, stamp = split_score_stamp(text)
-    return score_with_date(score_text(body), stamp)
-
 def validate_capd_rows(rows: list[dict]) -> None:
     if not isinstance(rows, list) or len(rows) > 1:
         raise ValueError("The CAPD record must contain at most one documented total.")
@@ -54,20 +39,15 @@ def validate_capd_rows(rows: list[dict]) -> None:
     row = rows[0]
     if row["label"] != "CAPD" or row["section"] != "Neurologic":
         raise ValueError("The CAPD total must remain in Neurologic.")
-    body, stamp = split_score_stamp(row["value"])
-    score_text(body)
-    if stamp and row["value"] != score_with_date(score_text(body), stamp):
-        raise ValueError("A saved CAPD value must contain only its score and source date.")
+    score_text(row["value"])
 
 def capd_display_row(rows: list[dict]) -> dict:
     validate_capd_rows(rows)
-    body, stamp = split_score_stamp(rows[0]["value"]) if rows and rows[0]["include"] else ("None", "")
-    value = score_text(body) if body != "None" else "None"
-    # Clinician-requested display flag only. The saved numerical total is
-    # unchanged. This helper does not add a diagnosis or alter the result.
+    value = score_text(rows[0]["value"]) if rows and rows[0]["include"] else "None"
+    # Clinician-requested display flag only. The saved score remains numeric,
+    # and this helper does not add a diagnosis or alter the imported result.
     if value != "None" and int(value) >= 9:
         value += " (H)"
-    value = score_with_date(value, stamp)
     return {"label": "CAPD", "value": value, "section": "Neurologic", "include": True}
 
 def parse_capd(block: str) -> CapdResult:
@@ -88,21 +68,17 @@ def parse_capd(block: str) -> CapdResult:
             cells = [p.strip() for p in raw.split("\t") if p.strip()]
             if len(cells) == 2 and LABEL_ONLY.fullmatch(cells[0]):
                 text = cells[1]
+        if LABEL_ONLY.fullmatch(text) or text.casefold().rstrip(".") in MISSING:
+            continue
         try:
-            body, stamp = split_score_stamp(text)
-            if LABEL_ONLY.fullmatch(body) or body.casefold().rstrip(".") in MISSING:
-                continue
-            total = score_text(body)
+            total = score_text(text)
         except ValueError:
             out.error = "A CAPD total could not be read. This section was not updated."
             return out
-        totals.append({"value": total, "recorded_at": stamp, "include": True})
-    if totals:
-        try:
-            selected = latest_score(totals)
-        except ValueError:
+        if totals and totals[0] != total:
             out.error = "Conflicting CAPD totals were supplied without an established order. This section was not updated."
             return out
-        out.rows = [{"label": "CAPD", "value": score_with_date(selected["value"], selected["recorded_at"]),
-                     "section": "Neurologic", "include": True}]
+        totals.append(total)
+    if totals:
+        out.rows = [{"label": "CAPD", "value": totals[0], "section": "Neurologic", "include": True}]
     return out
