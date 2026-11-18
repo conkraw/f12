@@ -1,22 +1,16 @@
-PICU Handoff 6.80 archive compatibility
+PICU Handoff 6.83 archive compatibility
 
-Archive schema remains 34. Encryption and the patient-data storage format
-are unchanged. No key rotation, storage reset or data migration is required.
+Based on version 6.80. The archive schema remains 34.
+Existing archives can be opened without a migration. Encryption and storage code are unchanged.
 
-The new Airway Clearance category is backfilled for older category catalogs.
-Existing category definitions and their original capacity remain available.
-Source names, doses, routes and frequencies are preserved.
+Five ventilation field labels are appended: NAVA level, EDI peak, EDI min,
+Resp Rate Observed, and Apnea Interval (sec). Existing field indices and the
+mode/values structure are unchanged.
 
-Calculated per-dose annotations exist only on display copies. They are not
-written into medication records or saved mapping rules.
+Older app versions do not recognize these new saved fields. Use version 6.83
+or later for archives containing the new NAVA fields. When testing a rollback,
+use a compatible pre-update archive rather than asking an older app to read
+new NAVA records.
 
-Generic sodium chloride/NaCl rules targeting Respiratory no longer sweep
-nonqualifying sodium orders into that section. More specific assignments
-remain available. The saved settings list itself is not deleted.
-
-Install the complete runtime update listed in UPDATE_FILES.txt.
-Keep existing Streamlit Secrets and encrypted patient/mapping storage.
-
-The 6.79 session-private PDF cache and 6.78 complete-room replacement
-workflow are retained. Cache signatures include dose, weight and current
-display. Old downloads and printed pages cannot be recalled.
+Re-paste the current SmartPhrase to populate fields that were not retained by
+older versions. Missing fields are not reconstructed from historical values.

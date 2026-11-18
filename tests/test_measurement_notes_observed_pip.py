@@ -173,9 +173,13 @@ def test_observed_pip_prints_for_supported_invasive_modes(mode):
     assert not result.error
     before = deepcopy(result.data)
     output = format_ventilation(result.data)
-    assert 'Observed PIP: Avg: 22.4 Min: 18.2 Max: 28 cm H2O' in output
+    if mode == 'Neurally Adjusted Ventilatory Assist':
+        assert 'Observed PIP: 18.2–28 cm H2O' in output
+        assert output.index('Set PEEP:') < output.index('Observed PIP:')
+    else:
+        assert 'Observed PIP: Avg: 22.4 Min: 18.2 Max: 28 cm H2O' in output
+        assert output.index('Observed PIP:') < output.index('Set PEEP:')
     assert output.count('Observed PIP:') == 1
-    assert output.index('Observed PIP:') < output.index('Set PEEP:')
     assert result.data == before
 
 

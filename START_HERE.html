@@ -1,8 +1,17 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PICU Handoff 6.78</title><style>
-body {font: 17px/1.5 Arial, sans-serif}
-body {max-width: 850px}
-body {margin: 40px auto}
-body {padding: 0 20px}
-code {background: #f0f0f0}
-code {padding: 2px 5px}
-</style></head><body><h1>PICU Handoff 6.78</h1><h2>Replace room handoff</h2><p>Select the correct room and paste the complete new SmartPhrase. Replace room handoff builds and saves a new handoff for that room only. Previous patient data, omitted fields, manual notes, and airway information are cleared. Other rooms and reusable settings stay unchanged. This also applies when updating the same patient.</p><h2>Failed imports</h2><p>A completely unusable paste does not replace the old handoff. An unconfirmed save does not claim success. Correct the paste or reload the archive before retrying. A partly successful import uses only new information and flags failed sections. Review Alerts before use.</p><h2>Your existing start buttons</h2><p>START HERE: Create an Updated Handoff still opens the clear-all warning. Move Forward and Delete Previous Handoffs confirms the reset. Add a Patient or Print Current List keeps the list. A new import in either workflow replaces only its selected room.</p><h2>Install</h2><p>Replace all six changed modules together: app.py, importing.py, import_review.py, census_guard.py, user_guide.py, workspace_ui.py. The full file set can also be uploaded. Keep Secrets, the encryption key, and separate storage repositories. Restart and verify Version 6.78 | Replace, never merge.</p><h2>Before clinical use</h2><p>Verify with two fictional patients in the same room, including an old manual note and omitted fields. Confirm the second patient fully replaces the first in saved data and print output while another room stays unchanged. Use START HERE to rebuild any existing list that might already contain mixed information.</p><h2>Limitations</h2><p>No live app, clinical data, or production repository was accessed. Existing saved records are not retroactively corrected. Encrypted Git history, previously downloaded files, and printed pages are not erased. Other users must reload their open previews. See TEST_REPORT.md for test results and scope.</p></body></html>
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><title>PICU Handoff 6.83</title>
+<style>body{font:17px/1.6 system-ui,sans-serif;max-width:800px;margin:48px auto;padding:0 24px;color:#172d3b}h1{color:#146c76}code,pre{background:#eef5f6;padding:5px 8px}pre{padding:16px}</style>
+<h1>PICU Handoff 6.83</h1>
+<p>Dedicated invasive NAVA settings, built on your version 6.80 baseline.</p>
+<h2>Install the update</h2>
+<p>Replace these files together at the root of your existing app repository, beside app.py:</p>
+<pre>app.py
+ventilation.py
+noninvasive.py</pre>
+<p>Restart Streamlit. The sidebar should read <code>Version 6.83 | Invasive NAVA settings</code>.</p>
+<p>No new dependency or configuration change is required. Keep your current Secrets, encryption keys, archives, and mappings.</p>
+<h2>Use your current SmartPhrase</h2>
+<p>When Vent Mode is Neurally Adjusted Ventilatory Assist, the app reads the NAVA Ventilator Settings subsection. Paste the handoff again after installing to populate these fields. Your supplied example needs no changes.</p>
+<p>README.md includes the output example. TEST_REPORT.md records verification and ARCHIVE_COMPATIBILITY.txt describes saved-file compatibility.</p>
+<p>This package has not been deployed to the live application.</p>
+</html>

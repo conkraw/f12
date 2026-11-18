@@ -1,13 +1,14 @@
-PICU Handoff 6.80 delivery verification
+PICU Handoff 6.83 delivery verification
 
-Built from PICU679.zip.
-Source ZIP SHA-256: 5a857f84cf391991ca3ceb107ce98eb42889d6e5c9b32413e1aa10142891ef91
-Final complete suite: 6729 passed, 213 warnings, 14 subtests passed in 202.94s (0:03:22)
-190 Python files and 3 TOML files parsed.
-Nine runtime files changed or added. See UPDATE_FILES.txt.
-Both synthetic PDF preview pages were visually reviewed.
-Archive schema 34, encrypted storage and PDF reuse are retained.
-No patient paste, runtime logs, real secrets or production archive were added.
-No live application was deployed.
+Baseline: PICU680.zip, version 6.80.
+Runtime changes: app.py, ventilation.py, noninvasive.py.
+No new runtime dependency or configuration is required.
 
-SHA256SUMS.txt covers packaged files except itself. ZIP CRC verified.
+681 focused test cases passed across respiratory, room replacement, batch
+export, and PDF cache suites. A synthetic PDF was rendered and visually checked.
+
+The package contains application source, synthetic tests, documentation, and
+previously bundled examples. It does not contain the supplied patient paste,
+patient identifiers, production credentials, or generated cache directories.
+
+Prepared for installation. Not deployed to the live application.

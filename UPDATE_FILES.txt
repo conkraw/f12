@@ -1,23 +1,19 @@
-PICU Handoff 6.80
+PICU Handoff 6.83
+Baseline: 6.80
 
-Required runtime update from 6.79, install all nine together:
+Required runtime files to replace together:
 app.py
-medications.py
-medication_groups.py
-categories.py
-fen_gi.py
-models.py
-exports.py
-airway_clearance.py
-medication_doses.py
+ventilation.py
+noninvasive.py
 
-airway_clearance.py and medication_doses.py are new files.
-For an older version, replace the complete application code set, including
-pdf_cache.py and requirements.txt. Install at the existing repository root,
-without an extra nested folder. Restart Streamlit after the upload.
+Install at the existing repository root, beside app.py, without another folder level.
+Restart Streamlit after uploading the files.
 
-Keep current Streamlit Secrets, encryption keys, archives and saved settings.
-No new dependency or archive migration is required from 6.79.
+Verify: Version 6.83 | Invasive NAVA settings
 
-Verify: Version 6.80 | Airway clearance and weight-based doses
+No new dependencies or configuration changes are required from 6.80.
+Keep existing Streamlit Secrets, encryption keys, archives, and saved mappings.
+The supplied SmartPhrase already includes the required NAVA section.
+Re-paste the handoff after installing to populate the NAVA fields.
+
 This package has not been deployed to the live application.

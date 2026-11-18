@@ -9,7 +9,7 @@ labels, never a numerical flow threshold. Values are not recalculated.
 from __future__ import annotations
 from dataclasses import dataclass, field
 import re
-from ventilation import normalize, parse_ventilation, unwrap_vent_line
+from ventilation import normalize, parse_ventilation, select_ventilation_source, unwrap_vent_line
 from ventilator_modes import spec, strip_setting_marker
 
 DEVICE_FIELDS = {
@@ -50,7 +50,8 @@ def clean(value: str) -> str:
 
 def read_fields(block: str | None, block_name: str) -> dict[str, str]:
     entries = {}
-    for raw in (block or "").splitlines():
+    source = select_ventilation_source(block or "") if block_name == "C" else (block or "")
+    for raw in source.splitlines():
         line = unwrap_vent_line(raw) if block_name == "C" else raw
         if ":" not in line:
             continue

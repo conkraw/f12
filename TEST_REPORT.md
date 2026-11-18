@@ -1,91 +1,35 @@
-# PICU Handoff 6.80 verification
+# Verification for PICU Handoff 6.83
 
-Verified November 16, 2026. Built from PICU679.zip.
-This package has not been deployed to the live application.
+## Scope
 
-## Final result
+Baseline: PICU680.zip. Changed runtime files: app.py, ventilation.py, and noninvasive.py.
 
-    6729 passed, 213 warnings, 14 subtests passed in 202.94s (0:03:22)
+The focused verification covered 681 selected test cases. The complete historical application suite was not rerun.
 
-The final complete suite was run with:
+## Results
 
-    PYTHONPATH=.:tests python3 -m pytest -q --tb=short
+523 respiratory-focused cases passed, including 54 new NAVA cases. The selected suites were test_nava_settings.py, test_ventilation.py, test_noninvasive.py, test_avaps_settings.py, test_mode_specific_ventilator.py, test_vent_markers_clean_start.py, and test_measurement_notes_observed_pip.py.
 
-No test was skipped or marked as an expected failure for this release.
-The first full run found two historical category-capacity fixtures that still
-assumed five backfilled built-ins. Their historical input catalogs and expected
-capacity were updated to account for the new Airway Clearance built-in. The
-existing requirement to retain all original slots and reject an extra slot is
-still asserted. No runtime code changed after that first full run.
+158 existing cases passed across test_room_replacement.py, test_batch_exports.py, and test_pdf_cache.py.
 
-## New coverage
+The original respiratory example was parsed directly from its C and D blocks. It produced NAVA level 3, PEEP 5 cm H2O, FiO2 21%, Edi peak 3.1–13.6 µV, Edi min 0.1–3 µV, observed PIP 21–31 cm H2O, observed tidal volume 22–57 mL, observed respiratory rate 24–45 breaths/min, and apnea time 10 seconds.
 
-tests/test_airway_clearance_680.py verifies both supplied nebulizer volumes,
-NaCl spellings, concentration and route exclusions, mixtures, contrary saved
-categories, generic rule correction, specific exceptions, hidden/ignored rows,
-explicit restoration, old catalog capacity and existing custom headings.
+## Source and missing-value checks
 
-tests/test_medication_doses_680.py covers source dose authority, mg/mcg units,
-dosing weight precedence, labeled measured-weight fallback, grams, precision,
-missing/invalid/failed weights, custom wording, concentrations, ranges, infusion
-rates, daily totals and immutable records.
+The selected NAVA subsection overrides conflicting generic settings as a group. Missing fields and an empty NAVA subsection do not borrow generic or D-block values. Single measurements and partial statistics do not gain invented range endpoints. Identical duplicates are accepted and conflicting repeated selected fields are rejected.
 
-tests/test_medication_integration_680.py checks actual text/HTML/PDF rendering,
-encrypted round trips, preserved source fields and safe mapping suggestions.
-It also verifies unchanged prepared PDF reuse and regeneration for dose,
-dosing-weight and warning changes in the affected room.
+Conventional modes and NAVA NIV ignore the invasive NAVA subsection. Conflicting mode lines remain errors even across subsection boundaries. Nested blank SmartLinks do not hide later valid values. Ventilator On values of No, Off, and False retain the existing SBS suppression behavior.
 
-The broader suite covers the existing SmartPhrase replacement, room isolation,
-autosave, shared-record guards, parsers, nutrition, I/O, encryption and Print all.
+Additional direct probes passed for LF, CRLF, and CR line endings, plus a following Home Ventilator Settings heading without a colon.
 
-## Supplied EPIC examples
+## Integration checks
 
-Both complete user examples imported successfully in memory with no import
-errors. The qualifying 3 mL and 4 mL nebulizer products appeared under
-Respiratory / Airway Clearance. Explicit source chlorothiazide mg/kg was
-preserved, and the furosemide absolute dose produced the expected per-kg
-calculation using the documented dosing weight. Simulated broad old saline
-rules did not sweep the enteral sodium order into Respiratory.
+The handoff text, HTML, and PDF use the same respiratory content. Encrypted save and reload preserve the original NAVA source values. Existing editor indices stay unchanged because new field labels are appended. The stored ventilation structure remains mode plus values.
 
-The original examples and their patient content are not in this package.
-All new packaged test data and preview data are synthetic.
+A one-page synthetic PDF was generated, rendered to PNG, and visually inspected. All NAVA lines fit inside the existing respiratory column without clipping or overlap. The PDF keeps the exporter's existing ASCII-hyphen range style.
 
-## PDF review
+The pre-existing observed-PIP test was updated only for NAVA's requested range display and ordering. Other mode expectations are unchanged.
 
-examples/medication_doses_680_preview.pdf contains two synthetic rooms. Both
-pages were rendered and visually inspected with PyMuPDF. The additional dose
-annotations and their weight basis are readable within the existing columns.
-Source dose text, grouping and per-kg output are also asserted through PDF text
-extraction. The original layout and pagination code were not changed.
+## Limits
 
-## Compatibility
-
-Exactly nine runtime modules changed or were added. UPDATE_FILES.txt identifies
-them. Archive schema remains 34. New dose annotations are transient display
-data and do not add saved medication fields.
-
-pdf_cache.py, census_guard.py, importing.py, import_review.py, current_shift.py,
-fluid_balance.py, nutrition_display.py, github_store.py, security.py and
-requirements.txt are byte-identical to the 6.79 baseline. exports.py changes
-only the Labs display context and renderer content-signature version.
-
-190 Python files and 3 TOML files passed syntax parsing.
-The ZIP CRC and the packaged SHA256SUMS manifest were verified.
-
-Source ZIP SHA-256: 5a857f84cf391991ca3ceb107ce98eb42889d6e5c9b32413e1aa10142891ef91
-
-## Environment and limits
-
-Python 3.12.14, pytest 9.2.0,
-ReportLab 4.4.9, pypdf 6.21.4,
-PyMuPDF 1.26.6, cryptography 50.0.0,
-requests 2.34.2.
-
-The warnings were library deprecations in the existing PDF compression API and
-pytest plugin. Requirements keep pypdf below version 7, where the deprecated
-compression arguments are scheduled for removal.
-
-Tests use local synthetic data and storage/widget stubs. There was no live
-Streamlit browser, production archive, clinical administration history or
-physical-printer validation. No new speed claim is made. Prior 6.79 benchmark
-results remain in TEST_REPORT_679.md and PRINT_PERFORMANCE_679.json.
+This package was not deployed and was not tested against a live Epic session or a production archive. The real pasted handoff was used only for local parsing verification and is not bundled. No treatment settings or values were inferred beyond field units and the requested display format.

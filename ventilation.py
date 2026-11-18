@@ -36,6 +36,11 @@ LABELS = (
     "Pressure Support Min (cm H2O)",
     "Pressure Support Max (cm H2O)",
     "AVAPS Observed TV (mL)",
+    "NAVA level",
+    "EDI peak",
+    "EDI min",
+    "Resp Rate Observed",
+    "Apnea Interval (sec)",
 )
 
 
@@ -116,6 +121,58 @@ def _avaps_rate_unit_needs_review(value: str) -> bool:
     return re.search(r"\bcm H2O\s*/\s*min(?:ute)?s?\b", text, re.I) is None
 
 
+def _nava_observed(value: str, unit: str) -> str:
+    """Display documented bounds without deriving a range from an average."""
+    text = _clean_output(value)
+    number = r"[+-]?(?:\d+(?:\.\d*)?|\.\d+)"
+    unit_pattern = {
+        "µV": r"[µμu]V",
+        "cm H2O": r"cm\s*H2O",
+        "mL": r"mL",
+        "breaths/min": r"(?:breaths?\s*/\s*min(?:ute)?|breaths?\s+per\s+minute|bpm)",
+    }[unit]
+    statistic = rf"(?:Avg|Min|Max)\s*:\s*{number}(?:\s*{unit_pattern})?"
+    if re.fullmatch(rf"(?:\s*{statistic}\s*)+", text, re.I):
+        fields = re.findall(rf"\b(Avg|Min|Max)\s*:\s*({number})", text, re.I)
+        bounds = {name.casefold(): value for name, value in fields}
+        if len(bounds) == len(fields) and "min" in bounds and "max" in bounds:
+            if float(bounds["min"]) <= float(bounds["max"]):
+                return bounds["min"] + "–" + bounds["max"] + " " + unit
+        # Keep partial or reversed bounds explicitly labeled for review.
+        return _observed(text, unit)
+    interval = re.fullmatch(rf"({number})\s*(?:-|–|to)\s*({number})(?:\s*{unit_pattern})?", text, re.I)
+    if interval and float(interval[1]) <= float(interval[2]):
+        return interval[1] + "–" + interval[2] + " " + unit
+    # Preserve an annotation or unexpected unit rather than silently dropping it.
+    return _measurement(text, unit)
+
+
+def _format_nava(data: dict) -> str:
+    values = data["values"]
+    lines = ["Mode: " + display_mode(data["mode"])]
+
+    def add(source: str, label: str, unit: str, observed: bool = False) -> None:
+        value = values.get(source, "")
+        if is_present(value):
+            formatted = _nava_observed(value, unit) if observed else _measurement(value, unit)
+            lines.append(label + ": " + formatted)
+
+    add("NAVA level", "NAVA Level", "cm H2O/µV")
+    add("PEEP (cm H2O)", "Set PEEP", "cm H2O")
+    fio2 = "FiO2 set (%)" if is_present(values.get("FiO2 set (%)", "")) else "FiO2 (%)"
+    add(fio2, "FiO2", "%")
+    add("EDI peak", "Edi Peak", "µV", observed=True)
+    add("EDI min", "Edi Min", "µV", observed=True)
+    add("PIP Observed (cm H2O)", "Observed PIP", "cm H2O", observed=True)
+    for source in ("Vt (observed, mL)", "Vt Exp ml", "Vt Insp ml"):
+        if is_present(values.get(source, "")):
+            add(source, "Observed TV", "mL", observed=True)
+            break
+    add("Resp Rate Observed", "Observed RR", "breaths/min", observed=True)
+    add("Apnea Interval (sec)", "Apnea Time", "sec")
+    return "\n".join(lines)
+
+
 def home_vent(data: dict | None) -> bool:
     if not data:
         return False
@@ -129,8 +186,10 @@ def format_ventilation(data: dict | None) -> str:
     if data is None:
         return ""
     values = data["values"]
-    home = home_vent(data)
     family = control_family(data["mode"])
+    if family == "NAVA":
+        return _format_nava(data)
+    home = home_vent(data)
     lines = ["Device: Home Vent"] if home else []
     lines.append("Mode: " + display_mode(data["mode"], home=home))
 
@@ -220,6 +279,13 @@ WRAPPERS = {
     "observed avaps tv": "AVAPS Observed TV (mL)",
     "ps min": "Pressure Support Min (cm H2O)",
     "ps max": "Pressure Support Max (cm H2O)",
+    "nava level": "NAVA level",
+    "set fio2": "FiO2 (%)",
+    "edi peak": "EDI peak",
+    "edi min": "EDI min",
+    "observed tidal volume": "Vt (observed, mL)",
+    "observed respiratory rate": "Resp Rate Observed",
+    "apnea time": "Apnea Interval (sec)",
 }
 
 # Typography aliases do not change a field's meaning or unit. Include them
@@ -291,9 +357,59 @@ def unwrap_vent_line(raw: str) -> str:
         line = target + ": " + content
         break
     stats = re.match(r"^(.+?)\s+((?:Avg|Min|Max)\s*:.*)$", line, re.I)
-    if stats and normalize(stats.group(1)) in {normalize(x) for x in ("PIP Observed (cm H2O)", "Vt Insp ml", "Vt Exp ml", "Vt (observed, mL)", "Vti", "Vte")}:
+    if stats and normalize(stats.group(1)) in {normalize(x) for x in ("PIP Observed (cm H2O)", "Vt Insp ml", "Vt Exp ml", "Vt (observed, mL)", "Vti", "Vte", "EDI peak", "EDI min", "Resp Rate Observed")}:
         line = stats.group(1).strip() + ": " + stats.group(2)
     return line
+
+
+def select_ventilation_source(block: str) -> str:
+    """Scope dedicated NAVA values before either C-block field reader runs.
+
+    Only a documented invasive NAVA mode selects this subsection. Its fields
+    replace generic values as a group, including when they are blank. Other
+    modes ignore the subsection, so carried-forward NAVA settings cannot leak
+    into conventional ventilation or NIV.
+    """
+    normalized_block = block.replace("\r\n", "\n").replace("\r", "\n")
+    if not re.search(r"(?im)^[ \t]*(?:\(\s*S\s*\)\s*)*NAVA\s+(?:Ventilator\s+)?Settings[ \t]*:?[ \t]*$", normalized_block):
+        return block
+    general: list[str] = []
+    nava: list[str] = []
+    control_lines: list[str] = []
+    first_mode = ""
+    found = False
+    in_nava = False
+    field_labels = {normalize(label) for label in LABELS} | set(WRAPPERS)
+    section_headings = {"invasive ventilation", "non-invasive ventilation", "vent information", "settings",
+                        "home ventilator settings", "average volume-assured pressure support settings", "avaps settings"}
+    for raw in normalized_block.splitlines():
+        line = strip_setting_marker(raw).strip()
+        heading = normalize(line.rstrip(":"))
+        if heading in {"nava ventilator settings", "nava settings"}:
+            found = in_nava = True
+            continue
+        unwrapped = unwrap_vent_line(raw)
+        label, separator, value = unwrapped.partition(":")
+        label = normalize(label)
+        if separator and label in {"vent mode", "ventilator on"}:
+            # Mode conflicts and the existing SBS on/off guard apply to all C.
+            control_lines.append(raw)
+            if label == "vent mode" and not first_mode and is_present(value):
+                first_mode = value.strip()
+            continue
+        # A new heading or outer SmartPhrase delimiter ends the subsection.
+        # A nested blank SmartLink is still a field, not a section heading.
+        if in_nava and (heading in section_headings or re.fullmatch(r"([a-zA-Z])\1{7,}", line)
+                        or (line.endswith(":") and label not in field_labels)):
+            in_nava = False
+        (nava if in_nava else general).append(raw)
+    if not found:
+        return block
+    known = spec(first_mode)
+    if known and known[1] == "NAVA" and not known[2]:
+        # Preserve all mode lines so conflicting modes still fail validation.
+        return "\n".join(control_lines + nava)
+    return "\n".join(control_lines + general)
 
 
 @dataclass
@@ -314,7 +430,8 @@ def parse_ventilation(block: str) -> VentilationResult:
         return normalize(label.replace("₂", "2"))
     entries: dict[str, str] = {}
     meaningful = []
-    for raw in block.replace("\r\n", "\n").replace("\r", "\n").splitlines():
+    source = select_ventilation_source(block)
+    for raw in source.replace("\r\n", "\n").replace("\r", "\n").splitlines():
         line = unwrap_vent_line(raw)
         if not line or normalize(line.rstrip(":")) in ("invasive ventilation", "vent information", "settings", "home ventilator settings", "average volume-assured pressure support settings", "avaps settings"):
             continue
@@ -358,7 +475,11 @@ def parse_ventilation(block: str) -> VentilationResult:
         return result
     family = control_family(mode)
     required = ["Resp Rate (Set)", "PEEP (cm H2O)"]
-    if family == "PC":
+    if family == "NAVA":
+        required = ["NAVA level", "PEEP (cm H2O)"]
+        if not any(is_present(entries.get(label, "")) for label in ("FiO2 (%)", "FiO2 set (%)")):
+            required.append("FiO2 (%)")
+    elif family == "PC":
         required.append("PIP Set (cm H2O)")
     elif family == "AVAPS":
         if not is_present(entries.get("Vt Set/Target ml", "")):
