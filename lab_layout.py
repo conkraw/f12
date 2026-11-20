@@ -188,13 +188,13 @@ def horizontal_card_markup(card: dict) -> str:
     rows = list(card['rows'].values())
     if card['kind'] == 'aed':
         # Each drug keeps its own source date even when the dates happen to match.
-        # Line breaks make the fallback easy to distinguish from the recent Neuro block.
-        values = ['<b>AED Drug Levels:</b>']
+        # Keep the heading and results inline, allowing ordinary column wrapping.
+        values = []
         for row in rows:
             values.append('<b>' + escape(display_component(row['component'])) + ':</b> '
                           + value_markup(row['value']) + ' [Last checked: '
                           + escape(row['date']) + ']')
-        return '<br/>'.join(values)
+        return '<b>AED Drug Levels:</b> ' + ', '.join(values)
     dates = {short_date(row['date']) for row in rows if row['date']}
     title = escape(card['title'].split(' | ', 1)[0]) if card['kind'] not in ('cbc', 'bmp') else ''
     same_date = len(dates) == 1 and all(row['date'] for row in rows)

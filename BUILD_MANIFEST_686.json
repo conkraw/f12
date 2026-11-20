@@ -1,0 +1,28 @@
+{
+  "version": "6.86",
+  "baseline": "6.85",
+  "source_zip_sha256": "af58f301f33edfacf75c68ad58f523611cfe9e4002f4b644608dff6340ccd942",
+  "runtime_files": [
+    "aed_levels.py",
+    "app.py",
+    "error_store.py",
+    "exports.py",
+    "lab_layout.py",
+    "labs.py"
+  ],
+  "new_runtime_files": [],
+  "schema": 34,
+  "dependencies_changed": false,
+  "aed_neuro_layout": "Unchanged: heading and each drug on separate lines",
+  "aed_labs_layout": "Heading and dated results on one inline line, separated by commas and wrapping naturally when needed",
+  "aed_selection_changed": false,
+  "ecls_layout_changed": false,
+  "login_changed": false,
+  "verification": {
+    "existing_aed_checks": 109,
+    "status": "passed",
+    "synthetic_pdf_pages": 2,
+    "synthetic_pdf_visual_review": "passed"
+  },
+  "deployed": false
+}

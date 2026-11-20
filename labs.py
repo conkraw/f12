@@ -370,10 +370,11 @@ def labs_text(data: dict, include_id_panels: bool = True, blood_gas: dict | None
     lines = []
     for card in result_cards(data, include_id_panels=include_id_panels, blood_gas=blood_gas, cbc=cbc):
         if card['kind'] == 'aed':
-            lines.append('AED Drug Levels:')
+            values = []
             for row in card['rows'].values():
-                lines.append(display_component(row['component']) + ': ' + row['value']
-                             + ' [Last checked: ' + row['date'] + ']')
+                values.append(display_component(row['component']) + ': ' + row['value']
+                              + ' [Last checked: ' + row['date'] + ']')
+            lines.append('AED Drug Levels: ' + ', '.join(values))
             continue
         if card['kind'] not in ('cbc', 'bmp'):
             lines.append(card['title'].split(' | ', 1)[0])

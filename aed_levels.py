@@ -134,17 +134,17 @@ def aed_lab_rows(sheet: dict, as_of: datetime | None = None) -> list[dict]:
 
 
 def aed_lab_summary(sheet: dict, as_of: datetime | None = None) -> str:
-    """Optional plain-text fallback with an explicit last-checked label."""
+    """One inline fallback with each result's explicit last-checked date."""
     rows = aed_selection(sheet, as_of)["older"]
     if not rows:
         return ""
-    lines = ["AED Drug Levels:"]
+    values = []
     for code in COMPONENTS:
         if code in rows:
             row = rows[code]
-            lines.append(LABELS[code] + ": " + row["value"]
+            values.append(LABELS[code] + ": " + row["value"]
                          + " [Last checked: " + row["date"] + "]")
-    return "\n".join(lines)
+    return "AED Drug Levels: " + ", ".join(values)
 
 
 def aed_card_rows(data: dict) -> dict[str, dict]:

@@ -1,6 +1,6 @@
-PICU Handoff 6.85 archive compatibility
+PICU Handoff 6.86 archive compatibility
 
-Baseline: delivered version 6.84, including centered sign in, ECLS and NAVA.
+Baseline: delivered version 6.85, including centered sign in, ECLS, AED and NAVA.
 The archive schema remains 34. Existing archives open without a new migration.
 The encryption key, dependencies and configuration requirements are unchanged.
 
@@ -17,7 +17,7 @@ for that room. Other rooms retain their own stored handoffs.
 ECLS remains the optional structured field introduced in 6.84. Legacy
 handoffs can omit it. Only the six normalized ECLS settings are stored.
 Indexed flow and CI are recomputed from current settings, dosing weight and
-recorded BSA. The 6.85 line layout does not change the stored ECLS structure.
+recorded BSA. The 6.86 display update does not change the stored ECLS structure.
 Raw AD source narrative is not saved.
 
 Version 6.84 uses the same schema and fields, but does not provide the 6.85 AED
@@ -29,3 +29,7 @@ archive compatible with that application version.
 The existing NAVA, encrypted storage and mapping formats remain in place.
 Encrypted round trips and older handoffs without ECLS or AED results were
 covered by the executed verification checks.
+
+Version 6.86 changes only the lower Labs AED presentation to one inline line.
+Neuro retains separate lines. AED selection, source rows and archive fields
+are unchanged from version 6.85. No data migration is needed.

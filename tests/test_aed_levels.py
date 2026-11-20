@@ -49,7 +49,7 @@ def test_supplied_date_only_structure_keeps_each_level_with_last_checked_date():
     before = deepcopy(data)
     assert aed_summary(data, NOW) == ""
     assert aed_lab_summary(data, NOW) == (
-        "AED Drug Levels:\nPhenobarbital: 33.6 [Last checked: 11/19/2026]\n"
+        "AED Drug Levels: Phenobarbital: 33.6 [Last checked: 11/19/2026], "
         "Phenytoin: 1.9 (L) [Last checked: 11/19/2026]")
     rows = aed_lab_rows(data, NOW)
     assert [row["component"] for row in rows] == ["PHENOBARB", "PHENYTOIN"]
@@ -66,7 +66,7 @@ def test_each_drug_has_independent_location_and_no_duplicate_history():
     assert set(selected["recent"]) == {"PHENOBARB"}
     assert set(selected["older"]) == {"PHENYTOIN"}
     assert aed_summary(data, NOW) == "AED Drug Levels:\nPhenobarbital: 33.6 [11/20/2026 07:00]"
-    assert aed_lab_summary(data, NOW) == "AED Drug Levels:\nPhenytoin: 1.9 (L) [Last checked: 11/18/2026 10:00]"
+    assert aed_lab_summary(data, NOW) == "AED Drug Levels: Phenytoin: 1.9 (L) [Last checked: 11/18/2026 10:00]"
 
 
 @pytest.mark.parametrize("source,code", [

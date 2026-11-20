@@ -1,4 +1,4 @@
-"""PICU SmartPhrase v6.85: readable ECLS lines and dated AED drug levels."""
+"""PICU SmartPhrase v6.86: compact inline AED drug levels."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,
@@ -1889,7 +1889,7 @@ def main() -> None:
         return
     with st.sidebar:
         st.header("PICU Handoff")
-        st.caption("Version 6.85 | ECLS lines and AED drug levels")
+        st.caption("Version 6.86 | Compact AED drug levels")
         # Retire the old instructions workspace without discarding room drafts.
         if st.session_state.get("page") == "Instructions / SmartPhrase":
             st.session_state["page"] = "Handoff"

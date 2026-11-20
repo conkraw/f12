@@ -1,27 +1,23 @@
-# PICU Handoff 6.85
+# PICU Handoff 6.86
 
-This update puts each ECLS setting on its own line and adds Phenobarbital and Phenytoin drug levels from section G. Recent levels appear in Neuro. Older levels appear in Labs with their last checked date. It builds on version 6.84 and retains the centered password screen and invasive NAVA support.
+This update puts the AED heading and results on one compact line in the lower Labs area. Neuro keeps its heading and each drug on separate lines. It builds on version 6.85, with the same 24-hour placement rule, ECLS display and centered password screen.
 
 ## Install
 
-Extract PICU685.zip. Copy the contents of PICU_Handoff_v6_85_ECLS_AED into the root of your existing app repository, where app.py is located. Replace matching application files and add the new module. Do not add an extra folder level.
+Extract PICU686.zip. Copy the contents of PICU_Handoff_v6_86_AED_Inline into the root of your existing app repository, where app.py is located. Replace matching application files and include all listed modules. Do not add an extra folder level.
 
-When updating from version 6.84, upload these application files together:
+When updating from version 6.85, upload these application files together:
 
     app.py
     aed_levels.py
-    ecls.py
     labs.py
-    lab_windows.py
     lab_layout.py
-    models.py
     exports.py
-    clinical_style.py
     error_store.py
 
 Keep your existing Streamlit Secrets and encryption key. Dependencies and configuration are unchanged. The archive schema remains 34. Restart Streamlit, then confirm the sidebar reads:
 
-    Version 6.85 | ECLS lines and AED drug levels
+    Version 6.86 | Compact AED drug levels
 
 Re-paste the current complete SmartPhrase to load the latest ECLS settings and drug levels. Existing saved handoffs with supported G-section results can use the new AED display without a data migration.
 
@@ -67,11 +63,9 @@ The app selects the latest valid measured result for each drug independently. If
     Phenobarbital: 30.2 [11/20/2026 07:00]
     Phenytoin: 7.1 (L) [11/20/2026 06:30]
 
-If the latest result is older, it appears in the lower Labs area with its original date and any recorded time:
+If the latest result is older, it appears on one continuous line in the lower Labs area with its original date and any recorded time. Results are separated by commas and wrap naturally if needed:
 
-    AED Drug Levels:
-    Phenobarbital: 30.2 [Last checked: 11/19/2026]
-    Phenytoin: 7.1 (L) [Last checked: 11/18/2026 12:00]
+    AED Drug Levels: Phenobarbital: 30.2 [Last checked: 11/19/2026], Phenytoin: 7.1 (L) [Last checked: 11/18/2026 12:00]
 
 Each drug appears in one location. A recent Phenobarbital result can appear in Neuro while an older Phenytoin result appears in Labs. Earlier results for the same drug are not repeated in either display. The latest older result has no age limit if it is present in the current source.
 
@@ -91,6 +85,6 @@ An invalid AD block does not carry forward previous circuit settings. If section
 
 The centered password screen from version 6.84 is unchanged, including masked entry, Enter to submit, retry delay, session expiry and logout. The invasive NAVA implementation and existing mapping, I/O and room replacement workflows remain in place.
 
-All 718 distinct executed checks passed. TEST_REPORT.md describes the AED, ECLS, import, storage, login and export coverage. A two-page synthetic PDF was rendered and visually checked at the existing font size and column widths. No supplied patient paste or production credentials are included in this package.
+All 109 existing AED checks passed for version 6.86. A two-page synthetic PDF was rendered and visually checked to confirm separate Neuro lines and compact inline Labs results at the existing font size. The 718-check regression run belongs to the version 6.85 baseline. TEST_REPORT.md records the scope of this update. No supplied patient paste or production credentials are included in this package.
 
 ARCHIVE_COMPATIBILITY.txt describes saved handoff compatibility.
