@@ -24,6 +24,7 @@ from devices import devices_text, devices_markup
 from pacemaker import pacemaker_text
 from ecls import ecls_text
 from aed_levels import aed_summary
+from lysis_labs import lysis_summary
 from lab_layout import laboratory_flowables, laboratory_html, LabRow
 from cultures import cultures_text
 from viral import viral_text
@@ -100,6 +101,8 @@ def infusion_section_prefix(sheet: dict, section: str, has_body: bool) -> str:
         parts.append(ecls_text(sheet))
     elif section == "Neurologic":
         parts.append(aed_summary(sheet))
+    elif section == "Hematology":
+        parts.append(lysis_summary(sheet))
     elif section == "Respiratory":
         support = respiratory_text(sheet)
         level = "" if theophylline_anchor(sheet) else theophylline_summary(sheet)
@@ -726,7 +729,7 @@ def pdf_content_signature(sheet: dict, printed_at: datetime | None = None, *,
     validate_sheet(sheet)
     fields = display_fields(sheet, include_lab_text=False)
     payload = {
-        'renderer': '6.86-aed-inline-body-v1', 'target_pages': target_pages,
+        'renderer': '6.87-lysis-labs-body-v1', 'target_pages': target_pages,
         'sheet': {key: value for key, value in sheet.items()
                   if key not in ('created_at', 'updated_at')},
         'fields': fields,

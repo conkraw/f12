@@ -117,7 +117,10 @@ def validate_labs(data: dict) -> None:
 
 def panel_for(component: str, source_panel: str = 'Other labs') -> str:
     from aed_levels import aed_component
+    from lysis_labs import lysis_component
     key = canonical(component)
+    if lysis_component(component):
+        return 'Lysis Labs'
     if aed_component(component):
         return 'AED Drug Levels'
     if is_lactate(component):
@@ -226,6 +229,7 @@ def result_cards(data: dict, include_id_panels: bool = True, blood_gas: dict | N
     Only inflammatory markers are routed to ID when include_id_panels is False.
     """
     from aed_levels import aed_component, LABELS as AED_LABELS
+    from lysis_labs import lysis_component
     groups = ordered_components(data)
     from cbc import cbc_cards, cbc_component
     cards = cbc_cards(data, cbc)
@@ -234,6 +238,7 @@ def result_cards(data: dict, include_id_panels: bool = True, blood_gas: dict | N
     consumed.add('THEOPH')
     consumed.add('VANCOTROUGH')
     consumed.update(MRSA_COMPONENTS)  # latest combined screen is in demographics
+    consumed.update(key for key in groups if lysis_component(key))  # trends are in HEME
     # Normalize a display copy so historical source aliases remain one drug.
     aed_data = {'rows': [dict(row, component=aed_component(row['component']))
                          for row in data['rows'] if aed_component(row['component'])],

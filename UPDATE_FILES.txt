@@ -1,22 +1,24 @@
-PICU Handoff 6.86
-Baseline: 6.85
+PICU Handoff 6.87
+Baseline: 6.86
 
-Required runtime files to replace together:
+Required runtime files to replace or add together:
 app.py
-aed_levels.py
+lysis_labs.py
 labs.py
-lab_layout.py
+lab_windows.py
+models.py
 exports.py
+clinical_style.py
 error_store.py
 
-Extract PICU686.zip. Copy the contents of PICU_Handoff_v6_86_AED_Inline
-into the existing app repository root, beside app.py, without another folder
-level. Restart Streamlit after updating the files.
+lysis_labs.py is a new module. Include it beside app.py.
+Extract PICU687.zip and copy the contents of PICU_Handoff_v6_87_Lysis_Labs
+into the existing app repository root, without an extra folder level.
+Restart Streamlit and confirm:
+Version 6.87 | Hematology lysis lab trends
 
-Verify: Version 6.86 | Compact AED drug levels
-
-The AED heading and dated results now share one compact line in lower Labs.
-Neuro keeps separate lines. The 24-hour placement rule and ECLS are unchanged.
+Re-paste the current complete SmartPhrase to load current laboratory results.
+Saved supported G rows can also use the Lysis Labs display immediately.
 No new dependencies, configuration changes or data migration are required.
 Keep existing Streamlit Secrets, encryption keys, archives and saved mappings.
 

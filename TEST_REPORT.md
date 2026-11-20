@@ -1,21 +1,29 @@
-# PICU Handoff 6.86 verification
+# PICU Handoff 6.87 verification
 
-## Scope and results
+## Results
 
-All 109 existing AED checks passed after the Labs-only formatting change. These include 87 selection checks and 22 import, routing and export checks. Existing assertions for lower Labs formatting were updated. Neuro expectations remain unchanged.
+All 630 executed checks passed.
 
-The 718-check regression run reported in version 6.85 belongs to that baseline and was not repeated for this formatting update.
+| Check group | Passed | Coverage |
+| --- | ---: | --- |
+| Existing regression checks | 516 | Anti-Xa, Heme infusions, DVT grouping, lab routing, lactate trends, AED selection and exports, ECLS exports, PDF cache and UI smoke checks |
+| Lysis Labs selection checks | 97 | Supported assays, latest two results, time windows, source ordering, single results, flags, units and unchanged source rows |
+| Lysis Labs integration checks | 17 | G imports, Heme-only placement, text and HTML, single and batch PDFs, cache aging, failed imports and room replacement |
 
-## Display and clinical behavior
+The supplied complete SmartPhrase imported without errors. Its only available lysis assay was correctly displayed as a single HGBFREE result with its less-than symbol and source date. No missing LDH or uric acid value was invented. The supplied patient paste was processed in memory and is excluded from the package.
 
-Neuro retains the AED Drug Levels: heading and each drug on separate lines. In lower Labs, the heading and selected drug results are on one continuous line, separated by commas. Each result keeps its own Last checked date, recorded value and flags. The line wraps naturally when needed.
+## Selection and placement
 
-The existing checks cover the strict 24-hour boundary, date-only sources, independent drug selection, unchanged stored rows, duplicate suppression, whole-room replacement, plain text, HTML, single and batch PDFs, and cache expiration.
+The checks confirm that each supported assay uses the latest two eligible measurements rather than the earliest and latest when there are more than two. The displayed arrow runs from older to newer. A single result has no arrow. Missing or unusable assays have no placeholder line, and an empty group has no heading.
 
-The PDF renderer signature was updated so cached output uses the new Labs layout. ECLS, login, the lab time-window module, models and dependencies were confirmed unchanged from version 6.85.
+The time window and date-only overlap convention match lactate. Tests cover the exact 24-hour boundary, future and malformed dates, same-day source ordering, zero values, explicit status messages, excluded rows and failed G imports. Source values, units and flags remain unchanged. CBC HGB, lactate, urine uric acid and LDH isoenzymes are kept separate.
+
+All export formats show the block once in Hematology before existing body content. Recognized lysis assays are not duplicated in lower Labs or CV. Cached PDFs are rebuilt when the current time changes result eligibility. A new complete paste without G removes prior lysis results for that room, with other rooms preserved.
 
 ## Visual review
 
-A two-page synthetic PDF was rendered to PNG and visually inspected. Neuro retains separate lines on the recent-results page. Both older AED results and their dates fit on one physical line in lower Labs on the second page. Bold headings, labels and low-flag coloring are retained. No clipping or overlap was seen at the existing font size.
+A two-page synthetic PDF was rendered to PNG with Poppler and visually inspected. The first page shows a single HGBFREE result. The second shows separate HGBFREE, LDH and uric acid trend lines. The bold heading, labels, flags and dates are readable in the Heme column. Long lines wrap within the existing column at the existing font size. No clipping or overlap was seen.
 
-No supplied patient paste or production credentials are included. This package is ready to install and has not been deployed.
+## Scope
+
+The package retains the centered login and the previous ECLS and AED formatting. No dependencies or archive schema changes were needed. Existing pytest and pypdf deprecation warnings did not affect the checks. Verification used synthetic fixtures and local imports, without a live deployment or production credentials.

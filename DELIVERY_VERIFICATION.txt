@@ -1,32 +1,35 @@
-PICU Handoff 6.86 delivery verification
+PICU Handoff 6.87 delivery verification
 
-Baseline: delivered PICU685.zip, version 6.85.
-Package: PICU686.zip
-Application folder: PICU_Handoff_v6_86_AED_Inline
+Baseline: delivered PICU686.zip, version 6.86.
+Package: PICU687.zip
+Application folder: PICU_Handoff_v6_87_Lysis_Labs
 
-Lower Labs now shows AED Drug Levels: and the drug results on one continuous
-line, separated by commas. Each result retains its Last checked date.
-Neuro keeps the heading and each drug on separate lines.
-ECLS settings, the 24-hour placement rule, values and flags are unchanged.
+Adds a bold Lysis Labs: block at the top of Hematology. HGBFREE, LDH and
+uric acid each have a separate line when available. The latest two eligible
+results appear older -> newer, or one value without an arrow. Selection uses
+the existing lactate rolling 24-hour window. Values, units, flags and source
+dates are retained. The block is not duplicated in lower Labs.
 
-All 109 existing AED checks passed. A two-page synthetic PDF was visually
-checked for the separate Neuro lines and compact lower Labs line.
-The 718-check regression run belongs to the version 6.85 baseline.
+All 630 checks passed: 516 existing regression checks, 97 lysis selection
+checks and 17 lysis integration checks. The supplied single-result sample
+imported without errors. A synthetic two-page PDF was visually inspected.
 
-Runtime files changed since 6.85:
+Runtime files changed or added since 6.86:
 app.py
-aed_levels.py
+lysis_labs.py
 labs.py
-lab_layout.py
+lab_windows.py
+models.py
 exports.py
+clinical_style.py
 error_store.py
 
+The new lysis_labs.py module must be included beside app.py.
 Dependencies, configuration and archive schema 34 are unchanged.
-Keep existing Streamlit Secrets and the encryption key. Copy the application
-folder contents into the existing repository root beside app.py, then restart.
-Confirm the sidebar reads:
+Keep existing Streamlit Secrets and encryption keys.
 
-Version 6.86 | Compact AED drug levels
+After installing and restarting, verify:
+Version 6.87 | Hematology lysis lab trends
 
-The supplied patient paste, production credentials and generated caches are
-excluded. This package is ready to install and has not been deployed.
+The package excludes the supplied patient paste, production credentials and
+generated caches. It is ready to install and has not been deployed.

@@ -234,6 +234,7 @@ def anti_xa_today_summary(sheet: dict, as_of: datetime | None = None) -> str:
 def laboratory_data(sheet: dict, as_of: datetime | None = None) -> dict:
     """Filter system-specific G rows without changing stored laboratory data."""
     from aed_levels import aed_component, aed_lab_rows
+    from lysis_labs import lysis_component
     now = clock(as_of)
     data = deepcopy(sheet['labs'])
     aed_fallback = {row['id']: row for row in aed_lab_rows(sheet, now)}
@@ -244,6 +245,8 @@ def laboratory_data(sheet: dict, as_of: datetime | None = None) -> dict:
     anti_xa_ids = {r['id'] for r in rows_for(sheet, 'HEPLMW', now)}
     out = []
     for row in data['rows']:
+        if lysis_component(row['component']):
+            continue  # shown only in the Hematology Lysis Labs block
         if aed_component(row['component']):
             # One latest result per drug. Recent values appear only in NEURO.
             # An older or uncertain-date value stays in Labs with its source date.
@@ -269,6 +272,8 @@ def window_help(sheet: dict, as_of: datetime | None = None) -> str:
     now = clock(as_of)
     return ('Display windows as of ' + now.strftime('%m/%d/%Y %H:%M %Z') +
             '. Lactate, theophylline, CK and vancomycin trough: rolling 24 hours. '
+            'Lysis Labs in HEME: the two latest HGBFREE, LDH and uric acid results per test, '
+            'using the same rolling 24-hour window as lactate. '
             'Methemoglobin (METHB) and SvO2 (O2SATV): latest within 24 hours. '
             'A date-only result for these two tests qualifies only when the start of its '
             'Eastern date is within 24 hours. Include collection times for prior-day results. '

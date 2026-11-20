@@ -1,35 +1,23 @@
-PICU Handoff 6.86 archive compatibility
+PICU Handoff 6.87 archive compatibility
 
-Baseline: delivered version 6.85, including centered sign in, ECLS, AED and NAVA.
-The archive schema remains 34. Existing archives open without a new migration.
-The encryption key, dependencies and configuration requirements are unchanged.
+Baseline: delivered version 6.86.
+The archive schema remains 34. No data migration is required.
+Dependencies, configuration and encryption requirements are unchanged.
 
-AED drug levels are derived for display from the existing G-section lab rows.
-No new AED archive field or cached routing decision is stored. Source rows,
-values, flags, dates and supplied units remain unchanged. Recent versus older
-placement is recalculated using the current display or export time.
+Lysis Labs is derived for display from the existing G-section laboratory rows.
+No separate lysis archive field or cached selection is stored. Original source
+components, values, units, flags and dates remain unchanged. The current
+Eastern display or print clock determines the rolling 24-hour window.
 
-Previously saved supported G-section results can use the new Neuro and Labs
-placement immediately. Re-paste a current complete SmartPhrase to update the
-underlying results. A new complete paste without G removes old drug levels
-for that room. Other rooms retain their own stored handoffs.
+Saved handoffs with supported HGBFREE, LDH or uric acid rows can use the new
+Hematology display immediately. Re-paste a current complete SmartPhrase to
+update the underlying results. The existing full replacement workflow clears
+prior results when a new room paste omits G and preserves other rooms.
 
-ECLS remains the optional structured field introduced in 6.84. Legacy
-handoffs can omit it. Only the six normalized ECLS settings are stored.
-Indexed flow and CI are recomputed from current settings, dosing weight and
-recorded BSA. The 6.86 display update does not change the stored ECLS structure.
-Raw AD source narrative is not saved.
+Version 6.86 can read the same archive fields but does not provide the new
+Hematology lysis trends. The centered login, ECLS, AED and NAVA data formats
+remain compatible with their respective earlier versions. Versions before
+6.84 do not recognize the optional ECLS field or AD review flags.
 
-Version 6.84 uses the same schema and fields, but does not provide the 6.85 AED
-routing or separate ECLS settings lines. Versions before 6.84 do not recognize
-the optional ECLS field or AD review flags. Use version 6.84 or later for
-archives that contain ECLS. A rollback to an earlier version requires an
-archive compatible with that application version.
-
-The existing NAVA, encrypted storage and mapping formats remain in place.
-Encrypted round trips and older handoffs without ECLS or AED results were
-covered by the executed verification checks.
-
-Version 6.86 changes only the lower Labs AED presentation to one inline line.
-Neuro retains separate lines. AED selection, source rows and archive fields
-are unchanged from version 6.85. No data migration is needed.
+No patient identifiers, source patient paste or production credentials are
+added to this delivery package.
