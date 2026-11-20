@@ -1,0 +1,39 @@
+{
+  "version": "6.85",
+  "baseline": "6.84",
+  "source_zip_sha256": "20000d4519f844dbc118ad5b9db7f6d3366fddb813d4b74ddc7bb0cab2d2b000",
+  "runtime_files": [
+    "aed_levels.py",
+    "app.py",
+    "clinical_style.py",
+    "ecls.py",
+    "error_store.py",
+    "exports.py",
+    "lab_layout.py",
+    "lab_windows.py",
+    "labs.py",
+    "models.py"
+  ],
+  "new_runtime_files": [
+    "aed_levels.py"
+  ],
+  "schema": 34,
+  "dependencies_changed": false,
+  "login_implementation_changed": false,
+  "ecls_layout": "Each of five settings on its own line below the heading, with no pipe separators",
+  "aed_sources": [
+    "PHENOBARB",
+    "PHENYTOIN"
+  ],
+  "aed_routing": "Latest valid measured result per drug, strict inclusive 24-hour Neuro window, otherwise last checked in Labs",
+  "source_rows_preserved": true,
+  "verification": {
+    "focused_regression_checks": 609,
+    "aed_unit_checks": 87,
+    "aed_integration_checks": 22,
+    "total_distinct_checks": 718,
+    "status": "passed",
+    "synthetic_pdf_visual_review": "passed"
+  },
+  "deployed": false
+}

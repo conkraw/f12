@@ -1,9 +1,48 @@
-PICU Handoff 6.84 delivery verification
+PICU Handoff 6.85 delivery verification
 
-Baseline: PICU683.zip, version 6.83.
-Adds compact CV ECLS settings and a centered password login.
-All executed focused checks passed. See TEST_REPORT.md for exact suite runs.
-A synthetic PDF was rendered and visually checked.
+Baseline: delivered PICU684.zip, version 6.84.
+Package: PICU685.zip
+Application folder: PICU_Handoff_v6_85_ECLS_AED
+
+ECLS now uses six logical lines, including its heading, with each setting on
+its own line. PHENOBARB and PHENYTOIN results from section G are selected
+independently. Latest valid results within 24 hours appear in Neuro. Older
+results or date-only results whose age is uncertain appear in lower Labs
+with Last checked and the original date. Values and flags are preserved.
+
+All 718 distinct executed checks passed:
+609 focused regression checks
+87 AED selection checks
+22 AED integration and export checks
+
+A final combined 109-check AED run also passed. It repeats the AED checks
+above and is not added to the total. See TEST_REPORT.md for coverage.
+
+A two-page synthetic PDF was rendered and visually checked at the existing
+font size and column widths. Recent Neuro results, separate ECLS lines and
+dated lower Labs results were readable without clipping or overlap.
+
+The centered login is unchanged. Its existing automated Streamlit checks
+passed. No new browser visual review was performed for this update.
+
+Runtime files changed or added since 6.84:
+app.py
+aed_levels.py
+ecls.py
+labs.py
+lab_windows.py
+lab_layout.py
+models.py
+exports.py
+clinical_style.py
+error_store.py
+
+Dependencies, configuration and archive schema 34 are unchanged. Keep the
+existing Streamlit Secrets and encryption key. Copy the application folder's
+contents into the repository root beside app.py, without an extra folder
+level. After restarting, confirm the sidebar reads:
+
+Version 6.85 | ECLS lines and AED drug levels
 
 The package contains application source, synthetic tests, documentation and
 previously bundled examples. It excludes the supplied patient paste,

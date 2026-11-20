@@ -116,7 +116,10 @@ def validate_labs(data: dict) -> None:
 
 
 def panel_for(component: str, source_panel: str = 'Other labs') -> str:
+    from aed_levels import aed_component
     key = canonical(component)
+    if aed_component(component):
+        return 'AED Drug Levels'
     if is_lactate(component):
         return 'Lactate'
     if key == 'VANCOTROUGH':
@@ -222,6 +225,7 @@ def result_cards(data: dict, include_id_panels: bool = True, blood_gas: dict | N
     Coagulation stays immediately below Hepatic in the laboratory area.
     Only inflammatory markers are routed to ID when include_id_panels is False.
     """
+    from aed_levels import aed_component, LABELS as AED_LABELS
     groups = ordered_components(data)
     from cbc import cbc_cards, cbc_component
     cards = cbc_cards(data, cbc)
@@ -230,6 +234,12 @@ def result_cards(data: dict, include_id_panels: bool = True, blood_gas: dict | N
     consumed.add('THEOPH')
     consumed.add('VANCOTROUGH')
     consumed.update(MRSA_COMPONENTS)  # latest combined screen is in demographics
+    # Normalize a display copy so historical source aliases remain one drug.
+    aed_data = {'rows': [dict(row, component=aed_component(row['component']))
+                         for row in data['rows'] if aed_component(row['component'])],
+                'notes': []}
+    aed_groups = ordered_components(aed_data)
+    consumed.update(key for key in groups if aed_component(key))
     for name, components, count, kind in (('BMP', BMP, 2, 'bmp'),):
         if not any(key in groups for key in components):
             continue
@@ -255,6 +265,9 @@ def result_cards(data: dict, include_id_panels: bool = True, blood_gas: dict | N
         # After hepatic/coagulation, before any other ancillary results.
         insert_at = next((i for i, card in enumerate(cards) if card["title"].startswith("Inflammatory")), len(cards))
         cards.insert(insert_at, gas)
+    aed_rows = {key: aed_groups[key][0] for key in AED_LABELS if key in aed_groups}
+    if aed_rows:
+        cards.append({'title': 'AED Drug Levels', 'kind': 'aed', 'rows': aed_rows})
     # Unknown analytes stay visible, without assigning guessed units or a panel.
     other = defaultdict(dict)
     for key, rows in groups.items():
@@ -340,7 +353,11 @@ def theophylline_text(data: dict) -> str:
 
 
 def display_component(component: str) -> str:
-    """Clarify the documented anti-Xa code without changing its stored value."""
+    """Use clear display labels without changing source codes or values."""
+    from aed_levels import aed_component, LABELS as AED_LABELS
+    aed = aed_component(component)
+    if aed:
+        return AED_LABELS[aed]
     return 'Anti-Xa (HEPLMW)' if canonical(component) == 'HEPLMW' else component
 
 
@@ -352,6 +369,12 @@ def printable_source_notes(notes: list[str]) -> list[str]:
 def labs_text(data: dict, include_id_panels: bool = True, blood_gas: dict | None = None, cbc: dict | None = None) -> str:
     lines = []
     for card in result_cards(data, include_id_panels=include_id_panels, blood_gas=blood_gas, cbc=cbc):
+        if card['kind'] == 'aed':
+            lines.append('AED Drug Levels:')
+            for row in card['rows'].values():
+                lines.append(display_component(row['component']) + ': ' + row['value']
+                             + ' [Last checked: ' + row['date'] + ']')
+            continue
         if card['kind'] not in ('cbc', 'bmp'):
             lines.append(card['title'].split(' | ', 1)[0])
         for row in card['rows'].values():

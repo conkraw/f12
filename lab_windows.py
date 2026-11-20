@@ -3,7 +3,7 @@
 24-hour windows use the current Eastern clock, not the newest laboratory date.
 A previous-day date without a time may overlap the cutoff and is included.
 Its recorded date is retained without inventing a collection time.
-METHB and O2SATV use a stricter window: date-only results qualify only when
+METHB, O2SATV and AED drug levels use a stricter window: date-only results qualify only when
 the beginning of their source date is within the past 24 hours.
 """
 from __future__ import annotations
@@ -233,8 +233,10 @@ def anti_xa_today_summary(sheet: dict, as_of: datetime | None = None) -> str:
 
 def laboratory_data(sheet: dict, as_of: datetime | None = None) -> dict:
     """Filter system-specific G rows without changing stored laboratory data."""
+    from aed_levels import aed_component, aed_lab_rows
     now = clock(as_of)
     data = deepcopy(sheet['labs'])
+    aed_fallback = {row['id']: row for row in aed_lab_rows(sheet, now)}
     ck = {r['id'] for r in rows_for(sheet, 'CK', now)}
     # When promoted to HEME, do not also show an older HEPLMW below. Once its
     # date is no longer today, the existing coagulation card selects it below.
@@ -242,6 +244,12 @@ def laboratory_data(sheet: dict, as_of: datetime | None = None) -> dict:
     anti_xa_ids = {r['id'] for r in rows_for(sheet, 'HEPLMW', now)}
     out = []
     for row in data['rows']:
+        if aed_component(row['component']):
+            # One latest result per drug. Recent values appear only in NEURO.
+            # An older or uncertain-date value stays in Labs with its source date.
+            if row['id'] in aed_fallback:
+                out.append(aed_fallback[row['id']])
+            continue
         key = analyte(row['component'])
         if key in {'NTPROBNP', 'VANCOTROUGH'} | CARDIAC_RECENT:
             continue  # shown only in the appropriate system column
@@ -266,6 +274,8 @@ def window_help(sheet: dict, as_of: datetime | None = None) -> str:
             'Eastern date is within 24 hours. Include collection times for prior-day results. '
             'CRP/procalcitonin: admission onward. NT-proBNP: latest from all supplied dates. '
             'HEPLMW: today in HEME, older results in the lower coagulation area. '
+            'Phenobarbital and phenytoin: latest within 24 hours in NEURO. '
+            'Older results or prior-day results without collection times stay in Labs with the last checked date. '
             'Original rows remain available below.')
 
 

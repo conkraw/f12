@@ -34,6 +34,7 @@ from pacemaker import validate_pacemaker, pacemaker_text
 from diet import validate_diet, diet_for_output, diet_failed
 from ecg import validate_ecg, ecg_text
 from ecls import validate_ecls, ecls_text
+from aed_levels import aed_summary
 from fluid_balance import validate_balance
 from current_shift import validate_current_shift
 from bowel_movements import validate_bowel_movement
@@ -511,6 +512,9 @@ def fields_with_medications(sheet: dict, include_lab_text: bool = True) -> dict[
     result["Cardiovascular"] = cardiovascular_body(sheet["fields"]["Cardiovascular"], sheet["medications"], sheet=sheet)
     result["Hematology"] = hematology_body(sheet["fields"]["Hematology"], sheet["medications"], sheet=sheet)
     result["Respiratory"] = respiratory_body(sheet["fields"]["Respiratory"], sheet["medications"], sheet=sheet)
+    aed = aed_summary(sheet)
+    if aed:
+        result["Neurologic"] = aed + ("\n-----\n" + result["Neurologic"] if result["Neurologic"].strip() else "")
     from categories import theophylline_anchor, medication_blocks
     from infusions import render_body_blocks
     for section in ("Infectious Disease", "Skin / Wounds", "Other Medications"):

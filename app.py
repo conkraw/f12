@@ -1,4 +1,4 @@
-"""PICU SmartPhrase v6.84: centered sign in and compact cardiovascular ECLS settings."""
+"""PICU SmartPhrase v6.85: readable ECLS lines and dated AED drug levels."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,
@@ -39,6 +39,7 @@ from parser import MAX_PASTE, SECTION_NAMES
 from security import valid_password_hash, verify_password
 from login_ui import render_login
 from ecls import ecls_text, ecls_issues
+from aed_levels import aed_summary
 from admin_access import admin_valid, unlock_admin, lock_admin, config_error as admin_config_error
 from user_guide import (default_guide, publication, validate_guide, instructions_html, handoff_instructions,
                         MAX_TEMPLATE, MAX_INSTRUCTIONS, MAX_NOTES)
@@ -1171,6 +1172,9 @@ def labs_vitals_editor(sheet: dict) -> None:
     components.html('<style>.labcards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.labcard{width:100%;border:1px solid #aaa}.labnote{font:13px sans-serif;margin:8px 0}.lab-summary{font:14px/1.3 sans-serif;overflow-wrap:anywhere;margin:3px 0}.lab-full{grid-column:1/-1}</style>' + laboratory_html(laboratory_data(sheet), blood_gas=sheet["blood_gas"], cbc=sheet["cbc"]), height=490, scrolling=True)
     if theophylline_summary(sheet):
         st.text("Respiratory: " + theophylline_summary(sheet))
+    if aed_summary(sheet):
+        st.markdown('<div style="white-space:pre-wrap">Neuro:\n' + clinical_markup(aed_summary(sheet)) + '</div>', unsafe_allow_html=True)
+    st.caption("Phenobarbital and phenytoin levels within 24 hours appear in Neuro. Older results stay in Labs with their last checked date. Include collection times for results from yesterday.")
     if cardiac_labs_summary(sheet):
         st.text("Cardiovascular: " + cardiac_labs_summary(sheet))
         st.caption("Lactate shows the earliest and latest usable results in the rolling 24-hour display window. The printed result omits the source code. All original codes, dates, flags and units remain in the editor. NT-proBNP shows the latest from all supplied dates. The original dates remain visible.")
@@ -1885,7 +1889,7 @@ def main() -> None:
         return
     with st.sidebar:
         st.header("PICU Handoff")
-        st.caption("Version 6.84 | ECLS settings and centered sign in")
+        st.caption("Version 6.85 | ECLS lines and AED drug levels")
         # Retire the old instructions workspace without discarding room drafts.
         if st.session_state.get("page") == "Instructions / SmartPhrase":
             st.session_state["page"] = "Handoff"
@@ -2178,6 +2182,8 @@ def handoff_notes(sheet: dict) -> None:
                 st.markdown('<div style="white-space:pre-wrap">' + clinical_markup(mrsa_screen_text(sheet)) + '</div>', unsafe_allow_html=True)
             if section == "Infectious Disease" and id_summary(sheet):
                 st.text(id_summary(sheet) + "\n------")
+            if section == "Neurologic" and aed_summary(sheet):
+                st.markdown('<div style="white-space:pre-wrap">' + clinical_markup(aed_summary(sheet) + "\n-----") + '</div>', unsafe_allow_html=True)
             if section == "Cardiovascular" and cardiac_labs_summary(sheet):
                 st.text(cardiac_labs_summary(sheet) + "\n-----")
             if section == "Cardiovascular" and ecls_text(sheet):

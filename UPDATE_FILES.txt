@@ -1,19 +1,37 @@
-PICU Handoff 6.83
-Baseline: 6.80
+PICU Handoff 6.85
+Baseline: 6.84
 
-Required runtime files to replace together:
+Required runtime files to replace together when updating from 6.84:
 app.py
-ventilation.py
-noninvasive.py
+aed_levels.py
+clinical_style.py
+ecls.py
+error_store.py
+exports.py
+lab_layout.py
+lab_windows.py
+labs.py
+models.py
 
-Install at the existing repository root, beside app.py, without another folder level.
-Restart Streamlit after uploading the files.
+aed_levels.py is a new module. Include it beside app.py.
+The complete package also includes the centered login and invasive NAVA updates.
 
-Verify: Version 6.83 | Invasive NAVA settings
+Extract PICU685.zip. Copy the contents of PICU_Handoff_v6_85_ECLS_AED
+into the existing application repository root, beside app.py.
+Do not add another folder level. Restart Streamlit after updating the files.
 
-No new dependencies or configuration changes are required from 6.80.
+Verify: Version 6.85 | ECLS lines and AED drug levels
+
+No new dependencies or configuration changes are required from 6.84.
 Keep existing Streamlit Secrets, encryption keys, archives, and saved mappings.
-The supplied SmartPhrase already includes the required NAVA section.
-Re-paste the handoff after installing to populate the NAVA fields.
+Re-paste the current complete SmartPhrase to import current ECLS settings
+and the phenobarbital and phenytoin results from section G.
+
+ECLS settings appear one per line in CV, beneath vitals and cardiac labs.
+The latest qualifying AED level for each drug appears in Neuro when its
+collection date/time places it within the past 24 hours. Older or date-uncertain
+levels appear in Labs with the original last-checked date.
+
+This package is ready to install. It has not been deployed.
 
 This package has not been deployed to the live application.

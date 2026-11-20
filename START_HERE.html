@@ -1,31 +1,51 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PICU Handoff 6.84</title>
-<style>body{font:17px/1.6 system-ui,sans-serif;max-width:850px;margin:48px auto;padding:0 24px;color:#172d3b}h1,h2{color:#146c76}code,pre{background:#eef5f6;padding:5px 8px}pre{padding:16px;white-space:pre-wrap}h2{margin-top:28px}@media(max-width:600px){body{margin:24px auto;padding:0 18px}}</style></head><body>
-<h1>PICU Handoff 6.84</h1>
-<p>Centered sign in and compact ECLS settings in the CV section, built on version 6.83.</p>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PICU Handoff 6.85</title>
+<style>body{font:17px/1.6 system-ui,sans-serif;max-width:850px;margin:48px auto;padding:0 24px;color:#172d3b}h1,h2{color:#146c76}code,pre{background:#eef5f6;padding:5px 8px}pre{padding:16px;white-space:pre-wrap}h2{margin-top:28px}@media(max-width:600px){body{margin:24px auto;padding:0 18px}}</style>
+</head>
+<body>
+<h1>PICU Handoff 6.85</h1>
+<p>ECLS settings now appear on separate lines. Phenobarbital and Phenytoin results from section G appear in Neuro when recent, or in Labs with their last checked date. This update builds on version 6.84 and keeps its centered sign in screen.</p>
 <h2>Install</h2>
-<p>Copy the contents of the extracted folder into the root of your existing app repository, beside app.py. Replace matching files and add the new modules.</p>
-<p>For an update from 6.83, upload these files together:</p>
+<p>Extract <code>PICU685.zip</code>. Copy the contents of <code>PICU_Handoff_v6_85_ECLS_AED</code> into the root of your existing app repository, beside <code>app.py</code>. Replace matching files and add the new module. Do not add an extra folder level.</p>
+<p>For an update from 6.84, upload these application files together:</p>
 <pre>app.py
-login_ui.py
+aed_levels.py
 ecls.py
-parser.py
-importing.py
+labs.py
+lab_windows.py
+lab_layout.py
 models.py
-import_review.py
 exports.py
 clinical_style.py
-batching.py
 error_store.py</pre>
-<p>Keep your existing Streamlit Secrets and encryption key. No new dependencies or configuration are needed.</p>
-<p>Restart Streamlit. Confirm the sidebar reads <code>Version 6.84 | ECLS settings and centered sign in</code>.</p>
+<p>Keep your existing Streamlit Secrets and encryption key. Dependencies and configuration are unchanged. Archive schema 34 remains in use.</p>
+<p>Restart Streamlit. Confirm the sidebar reads <code>Version 6.85 | ECLS lines and AED drug levels</code>.</p>
+<p>Re-paste the current complete SmartPhrase to refresh the settings and results. Supported drug levels already saved in section G also use the new display.</p>
 <h2>ECLS in CV</h2>
-<p>Re-paste the current complete SmartPhrase. The paired adadadad section supplies the circuit settings. ECLS appears under CV vitals and cardiac labs, before notes and medications.</p>
+<p>The paired adadadad section supplies the circuit settings. ECLS remains below CV vitals and cardiac labs, before notes and medications. Each setting has its own line, with no pipe separators.</p>
 <pre><b>ECLS settings:</b>
 Mode: VA [Oxy Day: 0]
-Blood flow: 2.3 L/min, 85.2 mL/kg/min [CI: 2.3 L/min/m²]
-RPM: 3400 | Sweep: 1.2 L/min | FiO₂: 50%</pre>
-<p>This example uses dosing weight 27 kg and reported BSA 1 m². Missing settings or calculation inputs show UNK. A replacement paste without ECLS clears the prior room's ECLS settings.</p>
-<p>README.md includes field mapping and calculations. TEST_REPORT.md describes verification.</p>
-<p>This package is prepared for installation. It has not been deployed to the live application.</p>
-</body></html>
+Blood flow: 1.6 L/min, 80.0 mL/kg/min [CI: 2 L/min/m²]
+RPM: 3100
+Sweep: 0.7 L/min
+FiO₂: 40%</pre>
+<p>This synthetic example uses dosing weight 20 kg and reported BSA 0.8 m². The six logical lines include the heading. Long lines can wrap within the existing column. Missing settings or calculation inputs show UNK.</p>
+<h2>AED Drug Levels</h2>
+<p>The latest valid measured PHENOBARB and PHENYTOIN results are selected independently. Results within the past 24 hours, including the exact boundary, appear under the bold AED Drug Levels: heading in Neuro. Older results appear in lower Labs with their original Last checked date.</p>
+<p>A synthetic lower Labs example:</p>
+<pre><b>AED Drug Levels:</b>
+Phenobarbital: 30.2 [Last checked: 11/19/2026]
+Phenytoin: 7.1 (L) [Last checked: 11/18/2026 12:00]</pre>
+<p>A recent result for one drug can appear in Neuro while the other drug stays in Labs. Each drug appears once. Its values, flags and source dates are preserved. Units are not invented, and free Phenytoin is not combined with total Phenytoin.</p>
+<p>The window uses the current Eastern time. A date without a time qualifies for Neuro only when the beginning of that date is within the past 24 hours. At 08:00 on November 20, a result dated only November 19 therefore stays in Labs with its recorded date.</p>
+<p>A complete replacement paste without G clears prior drug levels for that room. A replacement paste without AD clears prior ECLS settings. Other rooms stay separate.</p>
+<h2>Verification and compatibility</h2>
+<p>All 718 distinct executed checks passed. The two-page synthetic PDF was rendered and visually reviewed at the existing font size. The centered login is unchanged and its automated Streamlit checks passed. No new browser visual review was performed for this update.</p>
+<p><a href="README.md">README.md</a> includes field mapping, date handling and installation details. <a href="TEST_REPORT.md">TEST_REPORT.md</a> records verification. <a href="ARCHIVE_COMPATIBILITY.txt">ARCHIVE_COMPATIBILITY.txt</a> describes saved handoff compatibility.</p>
+<p>This package is ready to install. It has not been deployed to the live application.</p>
+</body>
+</html>

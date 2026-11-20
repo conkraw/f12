@@ -1,37 +1,51 @@
-# PICU Handoff 6.84 verification
+# PICU Handoff 6.85 verification
 
 ## Results
 
-All executed checks passed.
+All 718 distinct executed checks passed.
 
-- 504 checks passed across ECLS import integration, SmartPhrase parsing, room replacement, section recovery, security and models, NAVA, arterial pressure, CV laboratory results, PDF caching, I/O sources and current-shift/BM layout.
-- A final 138-check run passed across ECLS parsing, ECLS integration, ECLS exports, real Streamlit login tests, error review, UI smoke tests and batch exports. This run overlaps some of the preceding import checks.
-- An independent export run passed 173 checks covering ECLS output, CV laboratory placement, batch exports and PDF caching. These overlap the suites above.
+| Check group | Passed | Coverage |
+| --- | ---: | --- |
+| Focused regression suite | 609 | Anti-Xa, lab routing, CV time windows, existing drug levels, ECLS, room replacement, security, UI, login, PDF exports and cache behavior |
+| AED selection tests | 87 | Assay recognition, latest result selection, strict 24-hour handling, date uncertainty, flags and unchanged source rows |
+| AED integration and export tests | 22 | G imports, Neuro and Labs placement, single and batch exports, room separation, archive round trips and cache expiration |
 
-## Supplied sample
+A final combined run of the 87 AED selection tests and 22 integration tests passed all 109 checks. This repeats those checks and is not added to the 718 total.
 
-The complete supplied SmartPhrase imported with no skipped sections. The AD block produced VA, oxygenator day 0, pump flow 2.3 L/min, RPM 3400, sweep 1.2 L/min and blender FiO2 50%.
+The supplied complete SmartPhrase imported with no skipped sections. Its requested G-section drug levels and flags were recognized, and the date-only prior-day results used the dated Labs fallback at the reviewed morning cutoff. The source text was processed locally and is excluded from this package.
 
-The I block supplied dosing weight 27 kg and reported BSA 1 m². Derived flow was 85.2 mL/kg/min and CI was 2.3 L/min/m². Source text was processed in memory and is excluded from this package.
+## AED selection and placement
 
-## Import and storage checks
+Tests cover PHENOBARB and PHENYTOIN, supported Phenobarbital and total Phenytoin aliases, and separation of free Phenytoin. They verify that the latest valid measured result is selected before applying the time window, independently for each drug.
 
-Checks cover exact source labels, unrelated flow/oxygen fields, zero values, missing or invalid settings, duplicate snapshots, malformed AD boundaries and reported BSA parsing. They verify that actual weight and separately reported CI cannot substitute for the requested calculation inputs.
+Recent results appear in Neuro through the exact 24-hour boundary. Older or date-only results whose age cannot be established within that window appear in lower Labs with Last checked and the original date. A mixed case puts one drug in Neuro and the other in Labs. Earlier history is not duplicated.
 
-Replacement tests confirm that an AD-free new patient clears old ECLS, incomplete new settings do not reuse old fields, other rooms remain separate, ECLS-only handoffs can be printed, and encrypted archive round trips retain the structured snapshot. Existing handoffs without ECLS remain valid.
+Coverage includes missing results, disabled rows, invalid values, status text, future dates, date-only uncertainty, daylight saving time boundaries, stale saved timestamps and recognized label variants. Values, abnormal flags, supplied units and raw rows remain unchanged. No collection time or unit is invented.
 
-## Output review
+## Import, storage and replacement
 
-Plain text, HTML preview, batch HTML, single PDF and batch PDF contain the ECLS block once. CV vital signs precede cardiac laboratory results, followed by ECLS and then notes/medications. The heading is bold and body text remains at the existing clinical size.
+Real G-section import tests cover dated and timed source rows. New complete room imports without G do not retain prior drug levels. Failed G-section imports suppress automatic AED output from retained rows. Batch checks keep separate rooms' results independent.
 
-A synthetic PDF was rendered and visually inspected. In the existing narrow CV column, the four logical ECLS lines wrap to six printed lines in the checked example. No clipping or overlap was seen. Changes to pump flow, dosing weight, BSA or ECLS presence invalidate the PDF content cache.
+Encrypted archive round trips retain the original lab rows without a new AED field. Schema 34 remains in use. Existing ECLS import, calculations, missing data handling and room replacement checks passed.
 
-## Login verification
+## ECLS and export coverage
 
-Real Streamlit AppTest checks passed for masked entry, successful sign in, logout, password cleanup, rejected passwords and retry cooldown. The actual app started successfully with synthetic credentials in an isolated verification directory.
+ECLS now has six logical lines, including its heading. Mode, blood flow, RPM, sweep and FiO₂ each have a separate setting line without pipe separators. The existing CV order remains vitals, cardiac labs, ECLS, then notes and medications. Indexed flow still uses dosing weight, and CI still uses the chart-reported BSA.
 
-A full Chromium visual check was unavailable because the environment denied the browser's startup socket operation. No browser security or permission override was used. Responsive sizing and login-only CSS were reviewed in source. No browser screenshot is included.
+Plain text, HTML preview, batch HTML, single PDF and batch PDF checks cover AED placement and one selected result per drug. They verify preserved dates and flags, lower Labs labels, bold AED Drug Levels: headings in HTML and PDF, and the existing clinical font size. ECLS export checks cover the separate setting lines and placement.
 
-## Scope
+The display uses the current Eastern clock. A result at the exact 24-hour boundary appears in Neuro. One second later, it moves to Labs. The PDF content signature changes so an earlier cached PDF is not reused after that change.
 
-Tests ran locally against Streamlit 1.67.0 and the installed runtime dependencies. No live deployment, production password or production archive was used. Existing pytest/pypdf deprecation warnings did not affect these checks. The prior invasive NAVA implementation is unchanged.
+## Visual PDF review
+
+A two-page synthetic batch PDF was generated, rendered to PNG with Poppler, and visually inspected at the existing handoff size.
+
+The first page contains recent AED levels in Neuro and the separate ECLS settings lines in CV. The second page contains older AED results in a compact lower Labs card with independent Last checked dates. The headings are bold and the drug results remain readable. Long blood flow and date lines wrap within their columns. No clipping or overlap was seen.
+
+These visual examples contain synthetic data only. The handoff font size and column widths were not enlarged for the review.
+
+## Login and scope
+
+The centered password screen is unchanged from version 6.84. Its existing Streamlit AppTest checks passed within the 609-check regression suite. No new browser visual review was performed for this update.
+
+Checks ran locally with the installed runtime dependencies. Dependencies and configuration requirements are unchanged. Existing deprecation warnings did not affect the checks. No live deployment, production password or production archive was used.

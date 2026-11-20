@@ -274,7 +274,7 @@ def ecls_issues(sheet: dict) -> list[str]:
 
 
 def ecls_lines(sheet: dict) -> list[str]:
-    """Return the compact four-line ECLS block, or no block when absent/hidden."""
+    """Return one ECLS setting per line, or no block when absent/hidden."""
     if _blocked(sheet):
         return []
     data = sheet.get("ecls")
@@ -295,8 +295,9 @@ def ecls_lines(sheet: dict) -> list[str]:
     return ["ECLS settings:",
             "Mode: " + mode + " [Oxy Day: " + day + "]",
             "Blood flow: " + flow_text,
-            "RPM: " + (data["rpm"] or "UNK") + " | Sweep: " + (data["sweep_l_min"] + " L/min" if data["sweep_l_min"] else "UNK")
-            + " | FiO₂: " + (data["fio2_percent"] + "%" if data["fio2_percent"] else "UNK")]
+            "RPM: " + (data["rpm"] or "UNK"),
+            "Sweep: " + (data["sweep_l_min"] + " L/min" if data["sweep_l_min"] else "UNK"),
+            "FiO₂: " + (data["fio2_percent"] + "%" if data["fio2_percent"] else "UNK")]
 
 
 def ecls_text(sheet: dict) -> str:

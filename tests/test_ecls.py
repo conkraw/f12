@@ -35,7 +35,9 @@ def test_exact_fields_and_compact_calculation():
                            "rpm": "3400", "sweep_l_min": "1.2", "fio2_percent": "50"}
     assert ecls_lines(sheet()) == ["ECLS settings:", "Mode: VA [Oxy Day: 0]",
         "Blood flow: 2.3 L/min, 85.2 mL/kg/min [CI: 2.3 L/min/m²]",
-        "RPM: 3400 | Sweep: 1.2 L/min | FiO₂: 50%"]
+        "RPM: 3400",
+        "Sweep: 1.2 L/min",
+        "FiO₂: 50%"]
 
 
 @pytest.mark.parametrize("label,expected", [("VA", "VA"), ("veno arterial", "VA"),
@@ -56,7 +58,7 @@ def test_documented_zero_is_not_missing():
     text = ecls_text(sheet(body))
     assert "Oxy Day: 0" in text
     assert "0 L/min, 0.0 mL/kg/min [CI: 0 L/min/m²]" in text
-    assert "RPM: 0 | Sweep: 0 L/min" in text
+    assert "RPM: 0\nSweep: 0 L/min" in text
 
 
 @pytest.mark.parametrize("weight", ["", "0 kg", "nan kg", "27", "-27 kg"])
@@ -109,7 +111,7 @@ def test_missing_settings_are_unknown_and_never_filled_from_unrelated_values():
     text = ecls_text(data)
     assert "Mode: VA [Oxy Day: UNK]" in text
     assert "Blood flow: UNK" in text
-    assert "RPM: UNK | Sweep: UNK | FiO₂: UNK" in text
+    assert "RPM: UNK\nSweep: UNK\nFiO₂: UNK" in text
 
 
 @pytest.mark.parametrize("before,after,key", [

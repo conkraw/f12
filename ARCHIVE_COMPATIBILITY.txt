@@ -1,16 +1,31 @@
-PICU Handoff 6.84 archive compatibility
+PICU Handoff 6.85 archive compatibility
 
-Baseline: version 6.83, including its invasive NAVA changes.
-The archive schema remains 34. Existing archives open without a migration.
+Baseline: delivered version 6.84, including centered sign in, ECLS and NAVA.
+The archive schema remains 34. Existing archives open without a new migration.
+The encryption key, dependencies and configuration requirements are unchanged.
 
-ECLS is an optional structured field on a handoff. Legacy handoffs can omit it.
-Only the six normalized ECLS settings are stored. Derived indexed flow and CI
-are recomputed from the current settings, dosing weight and recorded BSA.
+AED drug levels are derived for display from the existing G-section lab rows.
+No new AED archive field or cached routing decision is stored. Source rows,
+values, flags, dates and supplied units remain unchanged. Recent versus older
+placement is recalculated using the current display or export time.
+
+Previously saved supported G-section results can use the new Neuro and Labs
+placement immediately. Re-paste a current complete SmartPhrase to update the
+underlying results. A new complete paste without G removes old drug levels
+for that room. Other rooms retain their own stored handoffs.
+
+ECLS remains the optional structured field introduced in 6.84. Legacy
+handoffs can omit it. Only the six normalized ECLS settings are stored.
+Indexed flow and CI are recomputed from current settings, dosing weight and
+recorded BSA. The 6.85 line layout does not change the stored ECLS structure.
 Raw AD source narrative is not saved.
 
-Versions before 6.84 do not recognize the optional ECLS field or AD review
-flags. Use version 6.84 or later for archives that contain ECLS. A rollback
-requires an archive compatible with the chosen older application version.
+Version 6.84 uses the same schema and fields, but does not provide the 6.85 AED
+routing or separate ECLS settings lines. Versions before 6.84 do not recognize
+the optional ECLS field or AD review flags. Use version 6.84 or later for
+archives that contain ECLS. A rollback to an earlier version requires an
+archive compatible with that application version.
 
 The existing NAVA, encrypted storage and mapping formats remain in place.
-Re-paste a complete current SmartPhrase to populate ECLS in older handoffs.
+Encrypted round trips and older handoffs without ECLS or AED results were
+covered by the executed verification checks.

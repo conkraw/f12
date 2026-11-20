@@ -1,47 +1,46 @@
-# PICU Handoff 6.84
+# PICU Handoff 6.85
 
-This update adds a centered password screen and a compact ECLS settings block in the Cardiovascular section. It builds on version 6.83 and includes the invasive NAVA update.
+This update puts each ECLS setting on its own line and adds Phenobarbital and Phenytoin drug levels from section G. Recent levels appear in Neuro. Older levels appear in Labs with their last checked date. It builds on version 6.84 and retains the centered password screen and invasive NAVA support.
 
 ## Install
 
-Extract PICU684.zip. Copy the contents of PICU_Handoff_v6_84_ECLS_Login into the root of your existing app repository, where app.py is located. Replace matching application files and add the new modules. Do not add an extra folder level.
+Extract PICU685.zip. Copy the contents of PICU_Handoff_v6_85_ECLS_AED into the root of your existing app repository, where app.py is located. Replace matching application files and add the new module. Do not add an extra folder level.
 
-When updating from version 6.83, these application files must be uploaded together:
+When updating from version 6.84, upload these application files together:
 
     app.py
-    login_ui.py
+    aed_levels.py
     ecls.py
-    parser.py
-    importing.py
+    labs.py
+    lab_windows.py
+    lab_layout.py
     models.py
-    import_review.py
     exports.py
     clinical_style.py
-    batching.py
     error_store.py
 
-Keep your existing Streamlit Secrets and encryption key. No new package or configuration setting is required. Restart Streamlit, then confirm the sidebar reads:
+Keep your existing Streamlit Secrets and encryption key. Dependencies and configuration are unchanged. The archive schema remains 34. Restart Streamlit, then confirm the sidebar reads:
 
-    Version 6.84 | ECLS settings and centered sign in
+    Version 6.85 | ECLS lines and AED drug levels
 
-This package is ready to install. The live application has not been updated.
+Re-paste the current complete SmartPhrase to load the latest ECLS settings and drug levels. Existing saved handoffs with supported G-section results can use the new AED display without a data migration.
 
-## Centered sign in
+This package is ready to install. It has not been deployed to the live application.
 
-The password screen uses the EPA tracker's navy and teal palette, a centered card, a masked Password field, and a full-width Sign in button. Enter submits the form. The card adapts to narrow screens. Existing password verification, retry delay, session expiry and logout behavior continue to apply.
+## ECLS in CV
 
-## ECLS placement and display
+The app reads ECLS settings from the paired alternating adadadad section of the complete SmartPhrase. The CV order remains vital signs, cardiac laboratory results, ECLS settings, then existing CV notes and medications. The ECLS settings heading is bold in the preview and PDF.
 
-The app reads ECLS settings from the paired alternating adadadad section of the complete SmartPhrase. In the CV column, the order is vital signs, cardiac laboratory results, ECLS settings, then existing CV notes and medications. The ECLS settings heading is bold in the preview and PDF.
-
-For the provided field values, with a dosing weight of 27 kg and a chart-reported BSA of 1 m², the output is:
+This synthetic example uses dosing weight 20 kg and chart-reported BSA 0.8 m²:
 
     ECLS settings:
     Mode: VA [Oxy Day: 0]
-    Blood flow: 2.3 L/min, 85.2 mL/kg/min [CI: 2.3 L/min/m²]
-    RPM: 3400 | Sweep: 1.2 L/min | FiO₂: 50%
+    Blood flow: 1.6 L/min, 80.0 mL/kg/min [CI: 2 L/min/m²]
+    RPM: 3100
+    Sweep: 0.7 L/min
+    FiO₂: 40%
 
-The block has four logical lines. Long lines wrap within the existing CV column, using the current handoff font size.
+There are six logical lines, including the heading, with no pipe separators between settings. Long lines can wrap within the existing CV column. The handoff font size is unchanged.
 
 | Display | SmartPhrase source |
 | --- | --- |
@@ -54,24 +53,44 @@ The block has four logical lines. Long lines wrap within the existing CV column,
 | Sweep | Sweep Gas Flow Rate (L/min) |
 | FiO₂ | Blender FiO2 (%) |
 
-Weight indexed flow is displayed to one decimal place. CI is rounded to two decimal places with trailing zeroes removed. Flow goal and the separately charted CI are not inputs to these calculations. Measured weight does not replace missing dosing weight, and BSA is not reconstructed from height and weight.
+Indexed flow is displayed to one decimal place. CI is rounded to two decimal places with trailing zeroes removed. Measured weight does not replace missing dosing weight, and BSA is not reconstructed from height and weight. A separately charted CI is not used in this calculation.
 
-## Missing data and replacement
+Documented zero values are retained. Missing settings or calculation inputs show UNK. One complete source snapshot supplies the settings. Conflicting duplicate fields or multiple populated reports remain flagged for review.
 
-A documented oxygenator day of 0 is retained. Documented zero pump flow or sweep is also retained. Missing settings show UNK. An unavailable dosing weight or BSA withholds the corresponding calculation and shows UNK. Notes in the CV review explain unavailable calculations.
+## AED drug levels
 
-One complete source snapshot supplies the ECLS block. Conflicting duplicate fields or multiple populated reports are flagged for review. The parser does not combine separate circuit snapshots.
+Section G supplies PHENOBARB and PHENYTOIN results. Recognized Phenobarbital and total Phenytoin label variants are supported. Free Phenytoin remains a separate assay and is not combined with total Phenytoin.
 
-Every complete SmartPhrase paste replaces the selected room's handoff. If that new paste lacks AD data, the old ECLS settings are removed. An empty or invalid AD block does not carry forward previous circuit settings. Other rooms keep their own saved handoffs.
+The app selects the latest valid measured result for each drug independently. If that result is within the past 24 hours, including the exact 24-hour boundary, it appears under the bold AED Drug Levels: heading in Neuro. Each drug gets its own line. A synthetic recent example is:
 
-Re-paste the current complete SmartPhrase after installing to populate ECLS settings. Existing saved handoffs without ECLS still open normally and show no ECLS heading.
+    AED Drug Levels:
+    Phenobarbital: 30.2 [11/20/2026 07:00]
+    Phenytoin: 7.1 (L) [11/20/2026 06:30]
 
-## NAVA and existing workflows
+If the latest result is older, it appears in the lower Labs area with its original date and any recorded time:
 
-Version 6.83's invasive NAVA parser and display are included unchanged. The app still uses NAVA Ventilator Settings for NAVA level, PEEP, oxygen, Edi peak/min, observed PIP, tidal volume, respiratory rate and apnea time. The current room replacement, mapping, I/O and print cache workflows remain in place.
+    AED Drug Levels:
+    Phenobarbital: 30.2 [Last checked: 11/19/2026]
+    Phenytoin: 7.1 (L) [Last checked: 11/18/2026 12:00]
 
-## Verification
+Each drug appears in one location. A recent Phenobarbital result can appear in Neuro while an older Phenytoin result appears in Labs. Earlier results for the same drug are not repeated in either display. The latest older result has no age limit if it is present in the current source.
 
-TEST_REPORT.md describes the calculation, import, replacement, encrypted storage, login and export checks. A synthetic PDF was rendered and visually checked at the existing CV column width. No supplied patient paste or production credentials are included in this package.
+The 24-hour window uses the current Eastern time when the handoff is displayed or exported. It does not use the most recent lab date or a saved handoff timestamp. Each render reevaluates placement, and an earlier cached PDF is not reused after a result crosses that cutoff.
+
+A date without a collection time qualifies for Neuro only when the beginning of that source date is within the past 24 hours. At 08:00 on November 20, for example, a result dated only November 19 stays in Labs with Last checked: 11/19/2026. Its collection time is not invented. Pending, cancelled, invalid or future results do not become selected AED levels.
+
+Recorded values, flags such as (L), source dates and supplied units are preserved. No units are added when the source omits them. Display routing does not change the stored G-section rows.
+
+## Replacement and saved handoffs
+
+Every complete SmartPhrase paste replaces the selected room's handoff. A new paste without AD removes old ECLS settings. A new paste without G removes old drug levels. Other rooms keep their own handoffs.
+
+An invalid AD block does not carry forward previous circuit settings. If section G fails import review, the app suppresses automatic AED output from retained rows until the source is corrected. Existing handoffs without ECLS or these drug levels still open normally.
+
+## Existing workflows and verification
+
+The centered password screen from version 6.84 is unchanged, including masked entry, Enter to submit, retry delay, session expiry and logout. The invasive NAVA implementation and existing mapping, I/O and room replacement workflows remain in place.
+
+All 718 distinct executed checks passed. TEST_REPORT.md describes the AED, ECLS, import, storage, login and export coverage. A two-page synthetic PDF was rendered and visually checked at the existing font size and column widths. No supplied patient paste or production credentials are included in this package.
 
 ARCHIVE_COMPATIBILITY.txt describes saved handoff compatibility.
