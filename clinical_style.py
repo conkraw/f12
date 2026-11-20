@@ -20,7 +20,7 @@ LOW = re.compile(r"\((?:L|LL|LOW)\)", re.I)
 # interpreted as a vital sign, and a colon in a collection time is untouched.
 LABEL = re.compile(
     r"^(?:Room|Age|Sex|Admission|Diagnoses|Weight|Z-score|Dosing weight|Height|BSA|BMI|MRSA Screen|EVD|"
-    r"SBS(?: target)?|RASS|Target Arousal Level(?: \(SBS\))?|"
+    r"ECLS settings|SBS(?: target)?|RASS|Target Arousal Level(?: \(SBS\))?|"
     r"WAT(?:-1)?(?: total score)?(?: \(0-12\))?|CAPD|"
     r"ICP(?: Mean)?(?: \(mmHg\))?|CPP|(?:Last )?NIRS|QTc|Resp(?:iratory Rate)?|RR|"
     r"FiO2(?:[ \t]*\(%\))?|SpO2|Pulse Ox(?:imetry)?|"

@@ -1,16 +1,16 @@
-PICU Handoff 6.83 archive compatibility
+PICU Handoff 6.84 archive compatibility
 
-Based on version 6.80. The archive schema remains 34.
-Existing archives can be opened without a migration. Encryption and storage code are unchanged.
+Baseline: version 6.83, including its invasive NAVA changes.
+The archive schema remains 34. Existing archives open without a migration.
 
-Five ventilation field labels are appended: NAVA level, EDI peak, EDI min,
-Resp Rate Observed, and Apnea Interval (sec). Existing field indices and the
-mode/values structure are unchanged.
+ECLS is an optional structured field on a handoff. Legacy handoffs can omit it.
+Only the six normalized ECLS settings are stored. Derived indexed flow and CI
+are recomputed from the current settings, dosing weight and recorded BSA.
+Raw AD source narrative is not saved.
 
-Older app versions do not recognize these new saved fields. Use version 6.83
-or later for archives containing the new NAVA fields. When testing a rollback,
-use a compatible pre-update archive rather than asking an older app to read
-new NAVA records.
+Versions before 6.84 do not recognize the optional ECLS field or AD review
+flags. Use version 6.84 or later for archives that contain ECLS. A rollback
+requires an archive compatible with the chosen older application version.
 
-Re-paste the current SmartPhrase to populate fields that were not retained by
-older versions. Missing fields are not reconstructed from historical values.
+The existing NAVA, encrypted storage and mapping formats remain in place.
+Re-paste a complete current SmartPhrase to populate ECLS in older handoffs.

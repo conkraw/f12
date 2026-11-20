@@ -33,6 +33,7 @@ from devices import validate_devices, evd_text
 from pacemaker import validate_pacemaker, pacemaker_text
 from diet import validate_diet, diet_for_output, diet_failed
 from ecg import validate_ecg, ecg_text
+from ecls import validate_ecls, ecls_text
 from fluid_balance import validate_balance
 from current_shift import validate_current_shift
 from bowel_movements import validate_bowel_movement
@@ -87,7 +88,7 @@ def new_vault() -> dict:
 
 
 def validate_sheet(sheet: dict) -> None:
-    if not isinstance(sheet, dict) or set(sheet) - {"anthropometrics", "problem_review", "difficult_airway", "empty_group_layout", "sbs_observations", "sbs_vent_mode", "ecg", "current_shift", "bowel_movement"} != {"id", "room", "created_at", "updated_at", "fields", "medications", "ventilation", "noninvasive", "vitals", "labs", "neuro_vitals", "nutrition", "cultures", "dosing_weight", "admission_date", "viral_panel", "blood_gas", "cbc", "recurring_orders", "intake_output", "feeds", "devices", "neuro_devices", "pacemaker", "diet", "import_warnings"}:
+    if not isinstance(sheet, dict) or set(sheet) - {"anthropometrics", "problem_review", "difficult_airway", "empty_group_layout", "sbs_observations", "sbs_vent_mode", "ecg", "current_shift", "bowel_movement", "ecls"} != {"id", "room", "created_at", "updated_at", "fields", "medications", "ventilation", "noninvasive", "vitals", "labs", "neuro_vitals", "nutrition", "cultures", "dosing_weight", "admission_date", "viral_panel", "blood_gas", "cbc", "recurring_orders", "intake_output", "feeds", "devices", "neuro_devices", "pacemaker", "diet", "import_warnings"}:
         raise ValidationError("The handoff structure is invalid.")
     if not isinstance(sheet["id"], str) or not re.fullmatch(r"[0-9a-f]{32}", sheet["id"]):
         raise ValidationError("The handoff identifier is invalid.")
@@ -132,6 +133,7 @@ def validate_sheet(sheet: dict) -> None:
         validate_pacemaker(sheet["pacemaker"])
         validate_diet(sheet["diet"])
         validate_ecg(sheet.get("ecg"))
+        validate_ecls(sheet.get("ecls"))
         validate_anthropometrics(sheet.get("anthropometrics", empty_anthropometrics()))
         validate_import_warnings(sheet["import_warnings"])
         validate_review(sheet.get("problem_review", empty_review()))
@@ -519,6 +521,9 @@ def fields_with_medications(sheet: dict, include_lab_text: bool = True) -> dict[
     vent = respiratory_text(sheet)
     if vent:
         result["Respiratory"] = vent + "\n-----" + ("\n" + result["Respiratory"] if result["Respiratory"].strip() else "")
+    ecls = ecls_text(sheet)
+    if ecls:
+        result["Cardiovascular"] = ecls + ("\n-----\n" + result["Cardiovascular"] if result["Cardiovascular"].strip() else "")
     lactate = cardiac_labs_summary(sheet)
     if lactate:
         result["Cardiovascular"] = lactate + ("\n-----\n" + result["Cardiovascular"] if result["Cardiovascular"].strip() else "")

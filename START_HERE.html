@@ -1,17 +1,31 @@
 <!doctype html>
-<html lang="en"><meta charset="utf-8"><title>PICU Handoff 6.83</title>
-<style>body{font:17px/1.6 system-ui,sans-serif;max-width:800px;margin:48px auto;padding:0 24px;color:#172d3b}h1{color:#146c76}code,pre{background:#eef5f6;padding:5px 8px}pre{padding:16px}</style>
-<h1>PICU Handoff 6.83</h1>
-<p>Dedicated invasive NAVA settings, built on your version 6.80 baseline.</p>
-<h2>Install the update</h2>
-<p>Replace these files together at the root of your existing app repository, beside app.py:</p>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PICU Handoff 6.84</title>
+<style>body{font:17px/1.6 system-ui,sans-serif;max-width:850px;margin:48px auto;padding:0 24px;color:#172d3b}h1,h2{color:#146c76}code,pre{background:#eef5f6;padding:5px 8px}pre{padding:16px;white-space:pre-wrap}h2{margin-top:28px}@media(max-width:600px){body{margin:24px auto;padding:0 18px}}</style></head><body>
+<h1>PICU Handoff 6.84</h1>
+<p>Centered sign in and compact ECLS settings in the CV section, built on version 6.83.</p>
+<h2>Install</h2>
+<p>Copy the contents of the extracted folder into the root of your existing app repository, beside app.py. Replace matching files and add the new modules.</p>
+<p>For an update from 6.83, upload these files together:</p>
 <pre>app.py
-ventilation.py
-noninvasive.py</pre>
-<p>Restart Streamlit. The sidebar should read <code>Version 6.83 | Invasive NAVA settings</code>.</p>
-<p>No new dependency or configuration change is required. Keep your current Secrets, encryption keys, archives, and mappings.</p>
-<h2>Use your current SmartPhrase</h2>
-<p>When Vent Mode is Neurally Adjusted Ventilatory Assist, the app reads the NAVA Ventilator Settings subsection. Paste the handoff again after installing to populate these fields. Your supplied example needs no changes.</p>
-<p>README.md includes the output example. TEST_REPORT.md records verification and ARCHIVE_COMPATIBILITY.txt describes saved-file compatibility.</p>
-<p>This package has not been deployed to the live application.</p>
-</html>
+login_ui.py
+ecls.py
+parser.py
+importing.py
+models.py
+import_review.py
+exports.py
+clinical_style.py
+batching.py
+error_store.py</pre>
+<p>Keep your existing Streamlit Secrets and encryption key. No new dependencies or configuration are needed.</p>
+<p>Restart Streamlit. Confirm the sidebar reads <code>Version 6.84 | ECLS settings and centered sign in</code>.</p>
+<h2>ECLS in CV</h2>
+<p>Re-paste the current complete SmartPhrase. The paired adadadad section supplies the circuit settings. ECLS appears under CV vitals and cardiac labs, before notes and medications.</p>
+<pre><b>ECLS settings:</b>
+Mode: VA [Oxy Day: 0]
+Blood flow: 2.3 L/min, 85.2 mL/kg/min [CI: 2.3 L/min/m²]
+RPM: 3400 | Sweep: 1.2 L/min | FiO₂: 50%</pre>
+<p>This example uses dosing weight 27 kg and reported BSA 1 m². Missing settings or calculation inputs show UNK. A replacement paste without ECLS clears the prior room's ECLS settings.</p>
+<p>README.md includes field mapping and calculations. TEST_REPORT.md describes verification.</p>
+<p>This package is prepared for installation. It has not been deployed to the live application.</p>
+</body></html>

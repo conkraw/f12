@@ -9,12 +9,13 @@ SECTION_NAMES = {
     "a": "Diagnoses", "b": "Medications", "c": "Invasive Ventilation",
     "d": "Non-invasive Ventilation", "e": "VITALS", "f": "CULTURES",
     "g": "LABS", "h": "INTAKE/OUTPUT", "i": "NUTRITION", "j": "Wound Review",
-    "k": "Target Arousal Level", "l": "WAT Score", "m": "ICP Trends", "n": "Date of Admission", "o": "Respiratory Viral Panel", "p": "Blood Gas", "q": "Complete Blood Count", "r": "Orders Placed This Encounter", "s": "Intake / Output totals", "t": "Feeds", "u": "Devices", "v": "Intracranial Pressure Monitor", "w": "Pacemaker", "x": "Diet", "y": "CAPD", "z": "ECG", "ab": "Dietary Orders", "ac": "Stool / bowel movement",
+    "k": "Target Arousal Level", "l": "WAT Score", "m": "ICP Trends", "n": "Date of Admission", "o": "Respiratory Viral Panel", "p": "Blood Gas", "q": "Complete Blood Count", "r": "Orders Placed This Encounter", "s": "Intake / Output totals", "t": "Feeds", "u": "Devices", "v": "Intracranial Pressure Monitor", "w": "Pacemaker", "x": "Diet", "y": "CAPD", "z": "ECG", "ab": "Dietary Orders", "ac": "Stool / bowel movement", "ad": "ECLS settings",
 }
 MAX_PASTE = 150_000
 DIVIDER = re.compile(r"^([a-z])\1{7,}$", re.I)
 DIETARY_DIVIDER = re.compile(r"^(?:ab){4,}a?$", re.I)
 STOOL_DIVIDER = re.compile(r"^(?:ac){4,}a?$", re.I)
+ECLS_DIVIDER = re.compile(r"^(?:ad){4,}a?$", re.I)
 NUMBER_OR_BULLET = re.compile(r"^\s*(?:\d+[.)]\s+|[•\-]\s+)")
 
 
@@ -35,6 +36,8 @@ def _heading(line: str) -> str | None:
         return "k"
     if text in ("orders", "recurring orders", "labs/imaging"):
         return "r"
+    if text in ("system readings", "ecls", "ecmo", "ecls settings", "ecmo settings"):
+        return "ad"
     for key, value in SECTION_NAMES.items():
         if text == value.casefold():
             return key
@@ -52,7 +55,7 @@ class ParseResult:
 
 
 def parse_smartphrase(text: str) -> ParseResult:
-    """Accept a..z dividers, alternating ab dietary and ac stool dividers.
+    """Accept a..z dividers and alternating ab dietary, ac stool, ad ECLS dividers.
 
     Ambiguous/missing/duplicate boundaries fail closed for that section.
     Issues in a later section do not invalidate a complete, unambiguous a block.
@@ -75,8 +78,9 @@ def parse_smartphrase(text: str) -> ParseResult:
         marker = DIVIDER.fullmatch(line)
         dietary_marker = DIETARY_DIVIDER.fullmatch(line)
         stool_marker = STOOL_DIVIDER.fullmatch(line)
-        if marker or dietary_marker or stool_marker:
-            key = "ac" if stool_marker else "ab" if dietary_marker else marker.group(1).lower()
+        ecls_marker = ECLS_DIVIDER.fullmatch(line)
+        if marker or dietary_marker or stool_marker or ecls_marker:
+            key = "ad" if ecls_marker else "ac" if stool_marker else "ab" if dietary_marker else marker.group(1).lower()
             if active == key:
                 seen[key] = seen.get(key, 0) + 1
                 if seen[key] > 1:
@@ -98,6 +102,19 @@ def parse_smartphrase(text: str) -> ParseResult:
                     result.invalid.add(active)
                     result.issues.append(f"{SECTION_NAMES[active]} is missing its closing divider before line {n}.")
                 active, buffer = key, []
+            continue
+        # Never absorb a mistyped AD boundary into the preceding patient section.
+        near_ecls_marker = (
+            len(line) >= 8 and line.isalpha()
+            and re.search(r"(?:ad){3,}", line, re.I)
+            and sum(char.casefold() == ("a" if index % 2 == 0 else "d")
+                    for index, char in enumerate(line)) / len(line) >= 0.75
+        )
+        if near_ecls_marker:
+            result.invalid.add("ad")
+            if active:
+                result.invalid.add(active)
+            result.issues.append(f"Malformed divider on line {n}. Use an uninterrupted alternating ad line for ECLS settings.")
             continue
         # Reject near-AC dividers rather than consuming stool data into ECG,
         # Dietary Orders or another patient section.
@@ -158,10 +175,13 @@ def parse_smartphrase(text: str) -> ParseResult:
             r"^(?:(?:Last|Observed|Recorded|Actual)\s+)?(?:SBS\b|State\s+Behavio(?:u)?r(?:al)?\s+Scale\b)|^(?:results? from |patient vitals? for |Date(?:/Time)?\s|\d{1,2}/\d{1,2}/\d{2,4}\b)",
             nonempty[0], re.I)))
         # T contains device-prefixed lines and may have no heading at all.
-        t_start = key in ("t", "u", "v", "w", "x", "y", "z", "ac")
+        t_start = key in ("t", "u", "v", "w", "x", "y", "z", "ac", "ad")
         if key == "ac" and nonempty and _heading(nonempty[0]) not in (None, "ac"):
             result.invalid.add(key)
             result.issues.append("Another section heading appears inside Stool / bowel movement. Check the dividers.")
+        if key == "ad" and nonempty and _heading(nonempty[0]) not in (None, "ad"):
+            result.invalid.add(key)
+            result.issues.append("Another section heading appears inside ECLS settings. Check the dividers.")
         dietary_start = key == "ab" and (not nonempty or _heading(nonempty[0]) in ("ab", "x"))
         if not p_start and not r_start and not s_start and not t_start and not m_start and not k_start and not dietary_start and (not nonempty or _heading(nonempty[0]) != key):
             result.invalid.add(key)

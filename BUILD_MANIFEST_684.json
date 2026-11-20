@@ -1,0 +1,28 @@
+{
+  "version": "6.84",
+  "baseline": "6.83",
+  "source_zip_sha256": "dd4e28ec730ccc5b7458319381a44df85bb2625849848de96fde38dce6487153",
+  "runtime_files": [
+    "app.py",
+    "login_ui.py",
+    "ecls.py",
+    "parser.py",
+    "importing.py",
+    "models.py",
+    "import_review.py",
+    "exports.py",
+    "clinical_style.py",
+    "batching.py",
+    "error_store.py"
+  ],
+  "new_runtime_files": [
+    "ecls.py",
+    "login_ui.py"
+  ],
+  "schema": 34,
+  "focused_suites": "all passed",
+  "pdf_visual_review": "passed",
+  "login_streamlit_tests": "2 passed",
+  "browser_visual_review": "unavailable: browser startup socket denied",
+  "deployed": false
+}

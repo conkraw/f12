@@ -1,4 +1,4 @@
-"""PICU SmartPhrase v6.83: dedicated invasive NAVA settings and observed ranges."""
+"""PICU SmartPhrase v6.84: centered sign in and compact cardiovascular ECLS settings."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,
@@ -37,6 +37,8 @@ from save_status import (room_save_status, saved_time_text, latest_saved_time,
                          most_recent_save_caption, save_status_table)
 from parser import MAX_PASTE, SECTION_NAMES
 from security import valid_password_hash, verify_password
+from login_ui import render_login
+from ecls import ecls_text, ecls_issues
 from admin_access import admin_valid, unlock_admin, lock_admin, config_error as admin_config_error
 from user_guide import (default_guide, publication, validate_guide, instructions_html, handoff_instructions,
                         MAX_TEMPLATE, MAX_INSTRUCTIONS, MAX_NOTES)
@@ -1864,12 +1866,7 @@ def main() -> None:
     if st.session_state.get("authenticated") and (now - st.session_state.get("last_activity", now) > app["idle_minutes"] * 60 or now - st.session_state.get("login_at", now) > 8 * 3600):
         clear_session()
     if not st.session_state.get("authenticated"):
-        st.title("PICU Handoff")
-        with st.form("login"):
-            st.text_input("App password", type="password", key="login_password", max_chars=1024)
-            st.form_submit_button("Open app", on_click=authenticate, args=(app["password_hash"],))
-        if st.session_state.get("login_error"):
-            st.error(st.session_state["login_error"])
+        render_login(st, app["password_hash"], authenticate)
         return
     st.session_state["last_activity"] = now
     st.session_state["idle_seconds"] = app["idle_minutes"] * 60
@@ -1888,7 +1885,7 @@ def main() -> None:
         return
     with st.sidebar:
         st.header("PICU Handoff")
-        st.caption("Version 6.83 | Invasive NAVA settings")
+        st.caption("Version 6.84 | ECLS settings and centered sign in")
         # Retire the old instructions workspace without discarding room drafts.
         if st.session_state.get("page") == "Instructions / SmartPhrase":
             st.session_state["page"] = "Handoff"
@@ -2183,6 +2180,10 @@ def handoff_notes(sheet: dict) -> None:
                 st.text(id_summary(sheet) + "\n------")
             if section == "Cardiovascular" and cardiac_labs_summary(sheet):
                 st.text(cardiac_labs_summary(sheet) + "\n-----")
+            if section == "Cardiovascular" and ecls_text(sheet):
+                st.markdown('<div style="white-space:pre-wrap">' + clinical_markup(ecls_text(sheet) + "\n-----") + '</div>', unsafe_allow_html=True)
+                for issue in ecls_issues(sheet):
+                    st.caption(issue)
             if section == "Respiratory" and respiratory_text(sheet):
                 st.text(respiratory_text(sheet) + "\n-----")
                 st.caption("Vital signs print first, then support settings. Edit support in Respiratory support above.")

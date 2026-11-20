@@ -22,6 +22,7 @@ from feeds import feeds_for_output
 from diet import diet_for_output, diet_failed
 from devices import devices_text, devices_markup
 from pacemaker import pacemaker_text
+from ecls import ecls_text
 from lab_layout import laboratory_flowables, laboratory_html, LabRow
 from cultures import cultures_text
 from viral import viral_text
@@ -95,6 +96,7 @@ def infusion_section_prefix(sheet: dict, section: str, has_body: bool) -> str:
     trailing_support_separator = False
     if section == "Cardiovascular":
         parts.append(cardiac_labs_summary(sheet))
+        parts.append(ecls_text(sheet))
     elif section == "Respiratory":
         support = respiratory_text(sheet)
         level = "" if theophylline_anchor(sheet) else theophylline_summary(sheet)
@@ -721,7 +723,7 @@ def pdf_content_signature(sheet: dict, printed_at: datetime | None = None, *,
     validate_sheet(sheet)
     fields = display_fields(sheet, include_lab_text=False)
     payload = {
-        'renderer': '6.80-body-v1', 'target_pages': target_pages,
+        'renderer': '6.84-ecls-body-v1', 'target_pages': target_pages,
         'sheet': {key: value for key, value in sheet.items()
                   if key not in ('created_at', 'updated_at')},
         'fields': fields,

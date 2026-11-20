@@ -1,14 +1,12 @@
-PICU Handoff 6.83 delivery verification
+PICU Handoff 6.84 delivery verification
 
-Baseline: PICU680.zip, version 6.80.
-Runtime changes: app.py, ventilation.py, noninvasive.py.
-No new runtime dependency or configuration is required.
+Baseline: PICU683.zip, version 6.83.
+Adds compact CV ECLS settings and a centered password login.
+All executed focused checks passed. See TEST_REPORT.md for exact suite runs.
+A synthetic PDF was rendered and visually checked.
 
-681 focused test cases passed across respiratory, room replacement, batch
-export, and PDF cache suites. A synthetic PDF was rendered and visually checked.
+The package contains application source, synthetic tests, documentation and
+previously bundled examples. It excludes the supplied patient paste,
+production credentials and generated cache directories.
 
-The package contains application source, synthetic tests, documentation, and
-previously bundled examples. It does not contain the supplied patient paste,
-patient identifiers, production credentials, or generated cache directories.
-
-Prepared for installation. Not deployed to the live application.
+Ready for installation. The live application has not been deployed.
