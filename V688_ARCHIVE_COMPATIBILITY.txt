@@ -1,0 +1,16 @@
+PICU Handoff 6.88 archive compatibility
+
+Baseline: delivered version 6.87.
+The archive schema remains 34. No data migration or handoff re-paste is required.
+Dependencies, configuration, passwords and encryption requirements are unchanged.
+
+This update changes only how the existing login view is grouped and cleared
+before app initialization. It adds no stored handoff field, authentication
+flag, cookie, password rule or patient-data transformation.
+
+All clinical parsers, calculations, display functions and export modules are
+unchanged from version 6.87. The ECLS, AED and Lysis Labs behavior is retained.
+Existing archives can be used directly after updating and restarting the app.
+
+The diagnostic application version is updated to 6.88. No production
+credentials or supplied patient paste are included in this package.

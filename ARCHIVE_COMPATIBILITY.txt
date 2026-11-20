@@ -1,16 +1,18 @@
-PICU Handoff 6.88 archive compatibility
+PICU Handoff 6.89 archive compatibility
 
-Baseline: delivered version 6.87.
-The archive schema remains 34. No data migration or handoff re-paste is required.
-Dependencies, configuration, passwords and encryption requirements are unchanged.
+Archive schema remains 34. code_status is an optional, validated text field.
+Existing archives without this field remain valid. Failed or absent AE in
+a complete replacement paste cannot preserve an earlier patient status.
 
-This update changes only how the existing login view is grouped and cleared
-before app initialization. It adds no stored handoff field, authentication
-flag, cookie, password rule or patient-data transformation.
+New medication groups are backfilled into older category catalogs during
+reads. Requested fixed placements apply without rewriting saved category
+definitions. Hidden, excluded and Ignore choices retain their effect.
 
-All clinical parsers, calculations, display functions and export modules are
-unchanged from version 6.87. The ECLS, AED and Lysis Labs behavior is retained.
-Existing archives can be used directly after updating and restarting the app.
+Original PN and lipid medication rows remain stored. The latest-order
+filter changes handoff display only. Dietary scheduling data uses the
+existing source field and does not require a schema migration.
 
-The diagnostic application version is updated to 6.88. No production
-credentials or supplied patient paste are included in this package.
+Keep existing encrypted archives, passwords, encryption keys and repository
+settings. This package does not contain production credentials or uploaded
+patient source examples. Prior app versions may reject the new optional
+code-status field, so use the updated application files together.

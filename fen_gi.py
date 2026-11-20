@@ -15,7 +15,7 @@ from fluid_balance import balance_text, balance_heading
 from current_shift import current_shift_text
 from diet import diet_text
 from nutrition_display import has_detailed_nutrition, nutrition_sections, parenteral_kind
-from medication_groups import group_for as special_group, GROUP_SECTIONS
+from medication_groups import group_for as special_group, GROUP_SECTIONS, fixed_handoff_group
 from airway_clearance import is_sodium_chloride_3_percent_nebulizer
 
 MODES = ("auto", "prophylaxis", "bowel", "diuretic", "antiemetic", "endocrine", "prokinetic", "tpn", "hypoglycemia", "probiotic", "other")
@@ -38,10 +38,9 @@ def automatic_group(row: dict) -> str:
             and (row.get("infusion_mode") == "infusion" or
                  re.search(r"\bcontinuous\b|\btitrat(?:e|able)\b", normalized(row.get("frequency", ""))))):
         return "hypoglycemia"
-    if (parenteral_kind(name) == "pn"
-            or re.match(r"^smoflipid\b", name)
-            or (name.startswith("fat emulsion ") and "smoflipid" in name)):
-        # Name/route grouping only. Do not infer the current bag or calculate a rate.
+    if parenteral_kind(name) in {"pn", "lipid"}:
+        # Intravenous nutrition products share the TPN display group. The
+        # latest-order selector chooses the displayed bags independently.
         if normalized(row.get("route", "")) in {"", "iv", "intravenous"}:
             return "tpn"
     if re.match(r"^(?:levothyroxine|synthroid|levoxyl|insulin|lantus|metformin)(?=$|[\s(,])", name):
@@ -78,6 +77,9 @@ def effective_section(row: dict) -> str:
         return "Neurologic"
     if is_sodium_chloride_3_percent_nebulizer(row):
         return "Respiratory"
+    requested_group = fixed_handoff_group(row)
+    if requested_group:
+        return GROUP_SECTIONS[requested_group]
     if row.get("category_path") is not None:
         return row["category_path"]["section"]
     special = special_group(row)
@@ -167,7 +169,8 @@ def fen_gi_body(notes: str, rows: list[dict], intake_output: dict | None, rich: 
             sections.append(feeding)
     from categories import medication_blocks
     from infusions import render_body_blocks
-    body = render_body_blocks(medication_blocks("FEN / GI", notes, rows, sheet), rich, esc)
+    body = render_body_blocks(medication_blocks("FEN / GI", notes, rows, sheet,
+                              diet=None if diet_failed else diet), rich, esc)
     if body:
         sections.append(body)
     return "\n-----\n".join(sections)

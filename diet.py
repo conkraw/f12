@@ -2,8 +2,9 @@
 
 Legacy compact X snapshots remain readable. Detailed dietary orders retain
 explicit route, formula, rate and feeding hours without estimating delivery.
-Dates do not silently cancel another listed order, and medication exceptions
-or milk-label printing are never interpreted as permission to feed.
+Oral and enteral dates do not cancel another listed order. PN/lipid dates remain
+available for latest-order display selection. Medication exceptions or milk-label
+printing are never interpreted as permission to feed.
 """
 from __future__ import annotations
 from dataclasses import dataclass, field
@@ -13,6 +14,7 @@ import re
 import uuid
 from import_review import diagnostic
 from feeds import feeding_method, METHODS
+from pn_orders import parenteral_kind, order_timestamp_key
 
 MAX_ROWS = 100
 MAX_SOURCE = 6000
@@ -33,7 +35,6 @@ _NUTRITION_NUMBER = r'(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?'
 _CANONICAL_NUMBER = re.compile(r'\d+(?:\.\d+)?')
 _NUTRITION_RATE = re.compile(rf'(?P<number>{_NUTRITION_NUMBER})\s*mL\s*(?:/\s*(?:h|hr|hrs|hour|hours)|per\s+hour)\b', re.I)
 _TUBE_ORDER = re.compile(r'^(?:Diet,?\s*tube\s*feeding|(?:(?:Infant|Pediatric|Peds|Adult)\s+)?tube\s*feeding)\b', re.I)
-_PN_ORDER = re.compile(r'\b(?:parenteral nutrition|TPN|PPN|PN)\b', re.I)
 _ANNOTATION = re.compile(r'^\s*\[(?P<kind>START ON|HELD BY PROVIDER)[^\]]*\]\s*', re.I)
 _ORDER_TIMESTAMP = re.compile(r'^\d{1,2}/\d{1,2}/(?:\d{4}|\d{2})\s+\d{4}\s*$')
 _QA_LABELS = {
@@ -278,7 +279,7 @@ def _order_kind(value: str) -> str:
         return 'oral'
     if re.match(r'^(?:nutrition consult|dietitian consult|calorie count)\b', body, re.I):
         return 'ignored'
-    if _PN_ORDER.search(body):
+    if parenteral_kind(body):
         return 'parenteral'
     if IGNORE.search(body):
         return 'ignored'
@@ -554,9 +555,12 @@ def parse_diet(block: str, *, detailed: bool = False) -> DietResult:
         return _parse_legacy_diet(block)
     out = DietResult(data={'rows': [], 'enteral': [], 'parenteral': []})
     records, current = [], None
+    pending_start = ''
+    ordered_column = False
     comments_open = False
     normalized = block.replace('\r\n', '\n').replace('\r', '\n').replace('\u00a0', ' ')
-    for number, raw in enumerate(normalized.splitlines(), 1):
+    source_lines = normalized.splitlines()
+    for number, raw in enumerate(source_lines, 1):
         line = _compact(re.sub(r'^\s*[•\-]\s*', '', raw))
         if not line:
             continue
@@ -566,14 +570,32 @@ def parse_diet(block: str, *, detailed: bool = False) -> DietResult:
         if re.fullmatch(r'(?:Diet(?:ary)?(?: Orders)?(?: \(From admission, onward\))?|Start(?: Ordered)?|Question Answer(?: Comment)?)\s*:?', line, re.I):
             if re.match(r'^Diet(?:ary)?\s+Orders\b', line, re.I):
                 current, comments_open = None, False
+                pending_start = ''
+                ordered_column = False
+            elif re.match(r'^Start\b', line, re.I):
+                ordered_column = bool(re.search(r'\bOrdered\b', line, re.I))
             elif re.match(r'^Question\b', line, re.I):
                 comments_open = False
             continue
         if _ORDER_TIMESTAMP.fullmatch(line):
+            next_line = next((_compact(value) for value in source_lines[number:] if _compact(value)), '')
+            if current is not None and ordered_column:
+                if current['kind'] == 'parenteral' and (not next_line or _ORDER_TIMESTAMP.fullmatch(next_line)
+                        or re.match(r'^Diet(?:ary)?\s+Orders\b', next_line, re.I)):
+                    current['source'].append('Ordered: ' + line)
+                elif current['kind'] == 'parenteral':
+                    # A lone time between orders could be this row's Ordered
+                    # cell or the next row's Start cell. Preserve it without
+                    # claiming a relationship the clipboard did not establish.
+                    current['source'].append('Unassigned table time: ' + line)
+                pending_start = ''
+            else:
+                pending_start = line
             current, comments_open = None, False
             continue
         if EMPTY.fullmatch(line):
             current, comments_open = None, False
+            pending_start = ''
             continue
         if re.match(r'^Question\s*:', line, re.I):
             comments_open = False
@@ -612,6 +634,9 @@ def parse_diet(block: str, *, detailed: bool = False) -> DietResult:
         kind = _order_kind(line)
         if kind:
             current = _new_record(kind, line, number)
+            if kind == 'parenteral' and pending_start:
+                current['source'].append('Start: ' + pending_start)
+            pending_start = ''
             records.append(current)
             comments_open = False
             continue
@@ -628,6 +653,10 @@ def parse_diet(block: str, *, detailed: bool = False) -> DietResult:
         if record['kind'] == 'ignored':
             continue
         key = (record['kind'], record['header'].casefold())
+        if record['kind'] == 'parenteral':
+            # Daily PN bags may have identical formulation/rate headers. Their
+            # dates distinguish orders and remain in the existing source field.
+            key += (order_timestamp_key({'source': _record_source(record)}),)
         if key not in combined:
             combined[key] = record
             continue
@@ -649,6 +678,8 @@ def parse_diet(block: str, *, detailed: bool = False) -> DietResult:
             for row in out.data[group]:
                 fields = ['text'] if group == 'rows' else sorted(set(row) - {'id', 'source', 'comments', 'include'})
                 key = tuple((field, row[field].casefold()) for field in fields)
+                if group == 'parenteral':
+                    key += (('order_timestamp', order_timestamp_key(row)),)
                 if key in unique:
                     old = unique[key]
                     if len(row['source']) > len(old['source']):

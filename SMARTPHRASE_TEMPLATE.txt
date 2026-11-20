@@ -185,3 +185,10 @@ Retain the field labels Stool Amount, Diaper Weight Mixed Urine/Stool (g),
 and/or Diaper Weight with Stool (g). Do not use a historical last-ever value.
 When the SmartLinks return no data, leave the paired AC block empty.]
 acacacacacacacacacacacacacacacacac
+
+
+aeaeaeaeaeaeaeaeaeaeaeaeaeaeaeae
+Code Status:
+[Insert your actual Epic code-status SmartLink. Retain the returned value,
+including No Order. Do not insert a sample status into the reusable source.]
+aeaeaeaeaeaeaeaeaeaeaeaeaeaeaeae

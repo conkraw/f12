@@ -299,21 +299,21 @@ def test_uniquely_matching_generic_pn_suppresses_the_diet_duplicate(name):
     ("Intralipid 20 % infusion", "SMOFlipid 20 % infusion"),
     ("Pediatric 2-in-1 PN (Continuous)", "PPN (Continuous)"),
 ])
-def test_distinct_pn_products_and_schedules_are_not_suppressed(diet_name, med_name):
+def test_medication_pn_replaces_undated_diet_products_in_the_same_family(diet_name, med_name):
     data = diet(pn_rows=[pn(name=diet_name)])
-    assert diet_name in nutrition_text(data, medications=[medication(med_name)])
+    assert not nutrition_text(data, medications=[medication(med_name)])
 
 
-def test_generic_pn_does_not_choose_between_multiple_medication_products():
+def test_generic_diet_pn_does_not_duplicate_latest_medication_product():
     data = diet(pn_rows=[pn(name="TPN")])
     meds = [medication(), medication("Pediatric 3-in-1 PN (Cyclic)")]
-    assert "TPN (diet order): TPN" in nutrition_text(data, medications=meds)
+    assert not nutrition_text(data, medications=meds)
 
 
-def test_generic_medication_does_not_hide_two_distinct_dietary_pn_products():
+def test_generic_medication_suppresses_older_undated_dietary_pn_products():
     data = diet(pn_rows=[pn(), pn(name="Pediatric 3-in-1 PN (Cyclic)")])
     text = nutrition_text(data, medications=[medication("TPN")])
-    assert "Pediatric 2-in-1 PN" in text and "Pediatric 3-in-1 PN" in text
+    assert not text
 
 
 def test_same_lipid_product_with_generic_wrapper_is_deduplicated():
@@ -321,10 +321,10 @@ def test_same_lipid_product_with_generic_wrapper_is_deduplicated():
     assert not nutrition_text(data, medications=[medication("fat emulsion (SMOFlipid) 20 % infusion")])
 
 
-def test_hidden_matching_pn_does_not_hide_a_distinct_diet_product():
+def test_hidden_latest_medication_pn_does_not_revive_an_older_diet_product():
     data = diet(pn_rows=[pn(), pn(name="Pediatric 3-in-1 PN (Cyclic)")])
     text = nutrition_text(data, medications=[medication(hidden=True)])
-    assert "Pediatric 2-in-1 PN" not in text and "Pediatric 3-in-1 PN" in text
+    assert not text
 
 
 def test_specific_manual_medication_destination_is_preserved():

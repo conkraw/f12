@@ -210,7 +210,11 @@ def test_separate_pn_orders_not_silently_merged_or_filled():
     s=imported(block('b','\n'.join(lines)))
     assert len(s['medications'])==3
     text=fields_with_medications(s)['FEN / GI']
-    assert text.count('Pediatric 2-in-1 PN')==2 and '26.6 mL/hr' in text
+    # The newer pending order prints once, without borrowing the prior rate.
+    # Both original source rows remain available in the medication editor.
+    assert text.count('Pediatric 2-in-1 PN')==1 and '26.6 mL/hr' not in text
+    assert s['medications'][0]['last_rate']=='26.6 mL/hr'
+    assert s['medications'][-1]['last_rate']==''
     assert all(placement(r)['name']=='TPN' for r in s['medications'])
 
 @pytest.mark.parametrize('component', ['VANCOTROUGH','vancotrough','Vancomycin trough','VANCOMYCIN, TROUGH'])

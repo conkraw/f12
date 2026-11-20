@@ -28,11 +28,12 @@ from pacemaker import parse_pacemaker
 from diet import parse_diet
 from ecg import parse_ecg
 from ecls import parse_ecls
+from code_status import parse_code_status
 from fen_gi import apply_gi_rules
 from medication_groups import apply_group_rules
 from import_review import diagnostic, diagnostic_text
 
-SUPPORTED_SECTIONS = tuple("abcdefghiklmnopqrstuvwxyz") + ("ab", "ac", "ad")
+SUPPORTED_SECTIONS = tuple("abcdefghiklmnopqrstuvwxyz") + ("ab", "ac", "ad", "ae")
 
 
 @dataclass
@@ -77,7 +78,7 @@ def import_sections(sheet: dict, text: str, settings: dict) -> ImportResult:
     parsed = parse_smartphrase(text)
     relevant = set(SUPPORTED_SECTIONS) & (set(parsed.blocks) | parsed.invalid)
     if not relevant:
-        out.errors.append("No supported block was found. Use paired A, B, C, D, E, F, G, H, I, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, AB, AC or AD dividers.")
+        out.errors.append("No supported block was found. Use paired A, B, C, D, E, F, G, H, I, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, AB, AC, AD or AE dividers.")
         return out
     # Repeated paired sections can mean two patients were pasted together.
     # That document-wide identity ambiguity cannot be repaired by partial import.
@@ -109,8 +110,11 @@ def import_sections(sheet: dict, text: str, settings: dict) -> ImportResult:
         if group == 'ad':
             # A failed new circuit snapshot must not retain old support settings.
             candidate['ecls'] = None
+        if group == 'ae':
+            # A failed status import must not present a prior resuscitation order.
+            candidate['code_status'] = ''
         item = diagnostic(group, code,
-                          action='ecls_hidden' if group == 'ad' else 'bowel_movement_hidden' if group == 'ac' else 'current_shift_hidden' if group == 'h' else 'orders_hidden' if group == 'r' else 'feeds_hidden' if group == 't' else 'devices_hidden' if group == 'u' else 'neuro_devices_hidden' if group == 'v' else 'pacemaker_hidden' if group == 'w' else 'diet_hidden' if group in ('x', 'ab') else 'ecg_hidden' if group == 'z' else 'not_updated', line=line)
+                          action='code_status_hidden' if group == 'ae' else 'ecls_hidden' if group == 'ad' else 'bowel_movement_hidden' if group == 'ac' else 'current_shift_hidden' if group == 'h' else 'orders_hidden' if group == 'r' else 'feeds_hidden' if group == 't' else 'devices_hidden' if group == 'u' else 'neuro_devices_hidden' if group == 'v' else 'pacemaker_hidden' if group == 'w' else 'diet_hidden' if group in ('x', 'ab') else 'ecg_hidden' if group == 'z' else 'not_updated', line=line)
         candidate['import_warnings'][group] = [item]
         out.diagnostics.append(item)
         if group not in out.skipped:
@@ -343,6 +347,13 @@ def import_sections(sheet: dict, text: str, settings: dict) -> ImportResult:
                 if ecls.issues:
                     recoveries = [diagnostic("ad", "ecls_incomplete", action="field_unknown")]
                 out.imported.append("ECLS settings" if ecls.data else "ECLS display cleared")
+            elif letter == "ae":
+                status = parse_code_status(parsed.blocks[letter])
+                if status.error:
+                    out.errors.append(status.error)
+                    continue
+                candidate["code_status"] = status.value
+                out.imported.append("code status" if status.value else "code status cleared")
             elif letter == "z":
                 ecg = parse_ecg(parsed.blocks[letter])
                 if ecg.error:
@@ -434,7 +445,7 @@ def import_replacement(room: str, text: str, settings: dict) -> ImportResult:
     omitted_actions = {"not_updated", "orders_hidden", "feeds_hidden",
                        "devices_hidden", "neuro_devices_hidden", "pacemaker_hidden",
                        "diet_hidden", "ecg_hidden", "current_shift_hidden",
-                       "bowel_movement_hidden", "ecls_hidden"}
+                       "bowel_movement_hidden", "ecls_hidden", "code_status_hidden"}
     for entries in result.sheet.get("import_warnings", {}).values():
         for item in entries:
             if item["section"] in result.skipped and item["action"] in omitted_actions:

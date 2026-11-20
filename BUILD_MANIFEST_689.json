@@ -1,0 +1,54 @@
+{
+  "version": "6.89",
+  "baseline": "6.88",
+  "source_zip_sha256": "842a9d36f010b5a2bfade1ed27c51497824f7e6796f6b51338a8ed00966e4df1",
+  "runtime_files": [
+    "app.py",
+    "batching.py",
+    "categories.py",
+    "clinical_style.py",
+    "code_status.py",
+    "diet.py",
+    "fen_gi.py",
+    "import_review.py",
+    "importing.py",
+    "medication_groups.py",
+    "models.py",
+    "nutrition_display.py",
+    "parser.py",
+    "pn_orders.py"
+  ],
+  "new_runtime_files": [
+    "code_status.py",
+    "pn_orders.py"
+  ],
+  "schema": 34,
+  "dependencies_changed": false,
+  "deployed": false,
+  "verification": {
+    "selected_test_modules": 33,
+    "tests": 1805,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "status": "passed",
+    "synthetic_pdf_visual_review": true,
+    "live_remote_deployment_test": false
+  },
+  "runtime_sha256": {
+    "app.py": "f8b14b31a57fe92245d4e92ff804ae34ebdd89efce33f64e1b449a9e3f5c382f",
+    "batching.py": "30924afe38f419f8524613d9bcf394bb2cb3fecada2407060698be1356418911",
+    "categories.py": "99654915cb4e08e838ab7591deeef20316171bf07b1e4485bc953ac3bbf2c141",
+    "clinical_style.py": "607f4a8ce5b221e56cbddaec3faf27046e1fc97d2e01917da10530dbba44c5c6",
+    "code_status.py": "a22a50be6de4fa36e1caf8c7526fd36878b05805fe1ab06a60597213dca6481e",
+    "diet.py": "53b8713b6abf1a5094da2faa5b87debdbeb3a85f2c81360fdd19b77bb97cb848",
+    "fen_gi.py": "87446b5a5cec11110cefb6956c9a8c053269578b640203e257b2279c6aab8a39",
+    "import_review.py": "70874972064d55d9f5d50c592d5aa9961e0e263e1a8da87f2526bb2ee5e6aa9f",
+    "importing.py": "76eb0391aa436f12deab6024661e55108b0b1c616cd2136ea918abc30566726c",
+    "medication_groups.py": "9a82137a4a6a222f0688f14a6bfac061b1c36cc6eba661b3ce8af01e83b24c0c",
+    "models.py": "39566e5e88acc4c067e0bc1d3589a4243d0371728e3e521d8f44a62054d301f4",
+    "nutrition_display.py": "e21c61938f1e54457e2c2dcf2c763f96141a695c3794d2c85a65d3aac9eb349a",
+    "parser.py": "47d9d11cc21d5a1ec91e869ff6f891786fbd7be8027aa0f848f609b890605d0b",
+    "pn_orders.py": "ee5451aacf9a355ba2a01f81b41a1c5eb2dd6fb10ae173460ed1323fe5a145da"
+  }
+}

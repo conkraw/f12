@@ -34,6 +34,7 @@ from pacemaker import validate_pacemaker, pacemaker_text
 from diet import validate_diet, diet_for_output, diet_failed
 from ecg import validate_ecg, ecg_text
 from ecls import validate_ecls, ecls_text
+from code_status import validate_code_status, code_status_text
 from aed_levels import aed_summary
 from lysis_labs import lysis_summary
 from fluid_balance import validate_balance
@@ -90,7 +91,7 @@ def new_vault() -> dict:
 
 
 def validate_sheet(sheet: dict) -> None:
-    if not isinstance(sheet, dict) or set(sheet) - {"anthropometrics", "problem_review", "difficult_airway", "empty_group_layout", "sbs_observations", "sbs_vent_mode", "ecg", "current_shift", "bowel_movement", "ecls"} != {"id", "room", "created_at", "updated_at", "fields", "medications", "ventilation", "noninvasive", "vitals", "labs", "neuro_vitals", "nutrition", "cultures", "dosing_weight", "admission_date", "viral_panel", "blood_gas", "cbc", "recurring_orders", "intake_output", "feeds", "devices", "neuro_devices", "pacemaker", "diet", "import_warnings"}:
+    if not isinstance(sheet, dict) or set(sheet) - {"anthropometrics", "problem_review", "difficult_airway", "empty_group_layout", "sbs_observations", "sbs_vent_mode", "ecg", "current_shift", "bowel_movement", "ecls", "code_status"} != {"id", "room", "created_at", "updated_at", "fields", "medications", "ventilation", "noninvasive", "vitals", "labs", "neuro_vitals", "nutrition", "cultures", "dosing_weight", "admission_date", "viral_panel", "blood_gas", "cbc", "recurring_orders", "intake_output", "feeds", "devices", "neuro_devices", "pacemaker", "diet", "import_warnings"}:
         raise ValidationError("The handoff structure is invalid.")
     if not isinstance(sheet["id"], str) or not re.fullmatch(r"[0-9a-f]{32}", sheet["id"]):
         raise ValidationError("The handoff identifier is invalid.")
@@ -136,6 +137,7 @@ def validate_sheet(sheet: dict) -> None:
         validate_diet(sheet["diet"])
         validate_ecg(sheet.get("ecg"))
         validate_ecls(sheet.get("ecls"))
+        validate_code_status(sheet.get("code_status", ""))
         validate_anthropometrics(sheet.get("anthropometrics", empty_anthropometrics()))
         validate_import_warnings(sheet["import_warnings"])
         validate_review(sheet.get("problem_review", empty_review()))
@@ -548,6 +550,10 @@ def fields_with_medications(sheet: dict, include_lab_text: bool = True) -> dict[
     if sheet["admission_date"]:
         text = "Admission: " + sheet["admission_date"]
         result["Demographics / Weight"] = text + ("\n" + result["Demographics / Weight"] if result["Demographics / Weight"].strip() else "")
+    status = code_status_text(sheet)
+    if status:
+        demographic_notes = result["Demographics / Weight"].rstrip()
+        result["Demographics / Weight"] = (demographic_notes + "\n" if demographic_notes else "") + status
     screen = mrsa_screen_text(sheet)
     if screen:
         demographic_notes = result["Demographics / Weight"].rstrip()

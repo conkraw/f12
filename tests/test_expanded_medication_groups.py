@@ -30,7 +30,7 @@ from github_store import StorageError, ConflictError
 
 @pytest.mark.parametrize('name,group', [
     ('enoxaparin (Lovenox) syringe', 'dvt'), ('cangrelor (Kengreal) infusion', 'antiplatelet'),
-    ('acetaminophen injection', 'fever'), ('ibuprofen suspension', 'fever'),
+    ('acetaminophen injection', 'fever'), ('ibuprofen suspension', 'nsaids'),
     ('fentaNYL NCS infusion syringe', 'sedative_prn'), ('midazolam PF', 'sedative_prn'),
     ('ketamine injection', 'sedative_prn'), ('morphine PF', 'sedative_prn'),
     ('HYDROmorphone injection', 'sedative_prn'), ('rocuronium injection', 'paralytic_prn'),

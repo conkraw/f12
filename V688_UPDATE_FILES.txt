@@ -1,0 +1,18 @@
+PICU Handoff 6.88
+Baseline: 6.87
+
+Required runtime files to replace together:
+app.py
+error_store.py
+
+Extract PICU688.zip. Copy these files from PICU_Handoff_v6_88_Login_Transition
+into the existing app repository root beside app.py. The complete package
+also contains all prior modules if a full folder replacement is preferred.
+Restart Streamlit and confirm:
+Version 6.88 | Smooth sign in
+
+This fixes the login transition only. No handoff re-paste, data migration,
+new dependencies or configuration changes are required. Keep existing
+Streamlit Secrets, encryption keys, archives and saved mappings.
+
+This package is ready to install and has not been deployed.

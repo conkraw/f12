@@ -1,0 +1,28 @@
+PICU Handoff 6.88 delivery verification
+
+Baseline: delivered PICU687.zip, version 6.87.
+Package: PICU688.zip
+Application folder: PICU_Handoff_v6_88_Login_Transition
+
+Fixes the brief unstyled password-form flash after sign in by grouping the
+complete login view in one replaceable region and clearing it before loading.
+Password verification, retry delay, session expiry and logout remain intact.
+
+All 64 executed checks passed: 60 existing login/startup/UI checks and four
+real Streamlit transition checks. The transition checks observe message order
+before archive loading returns or fails. No browser-frame recording was made.
+
+Runtime files changed since 6.87:
+app.py
+error_store.py
+
+All clinical modules, login design, exports and dependencies are unchanged.
+Archive schema 34, deployment secrets and encryption keys remain the same.
+
+Replace the two files above when updating from 6.87, or copy the complete
+application folder contents into the repository root beside app.py.
+Restart Streamlit and confirm:
+Version 6.88 | Smooth sign in
+
+The package excludes production credentials and supplied patient pastes.
+It is ready to install and has not been deployed.

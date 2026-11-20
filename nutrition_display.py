@@ -13,7 +13,7 @@ from html import escape
 import re
 
 from feeds import RATE, validate_feeds
-from medications import match_name
+from pn_orders import parenteral_kind, dietary_rows_for_display
 
 
 _NUMBER = re.compile(r"(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?|\.\d+")
@@ -66,16 +66,6 @@ def dosing_weight_for_feeds(dosing_weight: str = "", sheet: dict | None = None) 
     return kg, match[1] + " " + match[2].lower()
 
 
-def parenteral_kind(name: str) -> str:
-    """Identify explicitly named PN and lipid products, not their indication."""
-    name = match_name(name)
-    if re.match(r"^(?:fat\s+emulsion|smoflipid|intralipid)\b", name):
-        return "lipid"
-    if re.search(r"\b(?:TPN|PPN|PN|parenteral\s+nutrition)\b", name, re.I):
-        return "pn"
-    return ""
-
-
 def _formula_key(value: str) -> str:
     # Decimal strengths and ratios are formulation data, not punctuation noise.
     text = re.sub(r"(?<=\d)\s*([.:/%+\-])\s*(?=\d)", r"\1", value.casefold())
@@ -85,69 +75,6 @@ def _formula_key(value: str) -> str:
 def _known_formula(value: str) -> str:
     value = value.strip()
     return "" if value.casefold() in {"unk", "unknown"} else value
-
-
-def _pn_key(name: str) -> str:
-    """Normalize typography and generic wrappers without merging products."""
-    text = match_name(name).replace("–", "-").replace("—", "-")
-    text = re.sub(r"\btotal\s+parenteral\s+nutrition\b", "tpn", text)
-    text = re.sub(r"\bperipheral\s+parenteral\s+nutrition\b", "ppn", text)
-    text = re.sub(r"\bparenteral\s+nutrition\b|\btpn\b", "pn", text)
-    text = re.sub(r"\b(\d+)\s*[- ]?in\s*[- ]?(\d+)\b", r"\1-in-\2", text)
-    if re.search(r"\b(?:smoflipid|intralipid)\b", text):
-        text = re.sub(r"^fat\s+emulsion\s*", "", text)
-    text = re.sub(r"\s+(?:infusion|injection)\s*$", "", text)
-    return _formula_key(text)
-
-
-def _generic_pn(key: str) -> bool:
-    return re.fullmatch(r"(?:(?:pediatric|peds|adult|infant|neonatal)\s+)?pn(?:\s+(?:continuous|cyclic))?", key) is not None
-
-
-def _pn_compatible(left: str, right: str) -> bool:
-    """A generic label may match only when its supplied qualifiers agree."""
-    if bool(re.search(r"\bppn\b", left)) != bool(re.search(r"\bppn\b", right)):
-        return False
-    for pattern in (r"\b(?:continuous|cyclic)\b", r"\b(?:pediatric|peds|adult|infant|neonatal)\b"):
-        a, b = re.search(pattern, left), re.search(pattern, right)
-        if a and b:
-            av, bv = a.group(), b.group()
-            av = "pediatric" if av == "peds" else av
-            bv = "pediatric" if bv == "peds" else bv
-            if av != bv:
-                return False
-    return True
-
-
-def _pn_duplicate_indexes(orders: list[dict], medications) -> set[int]:
-    """Suppress only matching products or a uniquely resolvable generic PN.
-
-    Hidden medication entries still participate so a dietary copy cannot undo
-    a user's visibility choice. Distinct formulations and lipid brands remain.
-    """
-    medication_keys = {(_pn_key(row.get("name", "")), parenteral_kind(row.get("name", "")))
-                       for row in medications if parenteral_kind(row.get("name", ""))}
-    order_keys = {(_pn_key(row["name"]), parenteral_kind(row["name"])) for row in orders}
-    duplicated = set()
-    for index, row in enumerate(orders):
-        key, kind = _pn_key(row["name"]), parenteral_kind(row["name"])
-        if (key, kind) in medication_keys:
-            duplicated.add(index)
-            continue
-        if kind != "pn":
-            continue
-        candidates = {other for other, other_kind in medication_keys
-                      if other_kind == "pn" and (_generic_pn(key) or _generic_pn(other))
-                      and _pn_compatible(key, other)}
-        if len(candidates) != 1:
-            continue
-        candidate = next(iter(candidates))
-        reverse = {other for other, other_kind in order_keys if other_kind == "pn"
-                   and (other == candidate or _generic_pn(candidate) or _generic_pn(other))
-                   and _pn_compatible(candidate, other)}
-        if len(reverse) == 1:
-            duplicated.add(index)
-    return duplicated
 
 
 def _compatible_route(ordered: str, recorded: str) -> bool:
@@ -327,9 +254,9 @@ def nutrition_sections(diet: dict | None, feeds: dict | None = None, medications
                        rich: bool = False, esc=escape) -> list[str]:
     """Return oral, ordered/recorded tube feeding, and diet-only PN sections.
 
-    Medication PN remains in the normal medication renderer. Any corresponding
-    medication PN, including a deliberately hidden entry, suppresses the diet
-    duplicate. Lipids are distinct from PN solutions.
+    Only the latest selected PN and lipid orders appear. Medication PN remains
+    in the normal medication renderer unless dated source information establishes
+    that a dietary order is newer. Hidden selections still suppress old bags.
     """
     if not has_detailed_nutrition(diet):
         return []
@@ -376,13 +303,10 @@ def nutrition_sections(diet: dict | None, feeds: dict | None = None, medications
         parts.append(label("Diet:") + " " + "\n".join(encode(value) for value in content))
     if lines:
         parts.append(label("Tube feed:") + "\n" + "\n".join(encode(value) for value in lines))
-    duplicated_pn = _pn_duplicate_indexes(diet["parenteral"], medications)
-    for index, row in enumerate(diet["parenteral"]):
+    for row in dietary_rows_for_display(diet, medications, sheet):
         if not row["include"]:
             continue
         kind = parenteral_kind(row["name"])
-        if index in duplicated_pn:
-            continue
         text = _STATUS_LABELS.get(row.get("status", "active"), "") + row["name"]
         if row.get("rate", ""):
             text += " @ " + row["rate"]

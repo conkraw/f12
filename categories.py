@@ -12,12 +12,14 @@ import uuid
 from medications import DESTINATIONS, OR_PREFIX, _apply_override_default, ignored, is_override_pull, is_bupivacaine, match_name, normalized, visible
 from airway_clearance import (broad_sodium_chloride_rule_applies,
                              is_sodium_chloride_3_percent_nebulizer)
+from medication_groups import FIXED_HANDOFF_GROUPS, fixed_handoff_group
 
 SETTINGS_KEYS = {"medication_categories", "medication_category_rules"}
 CATEGORY_SYSTEMS = tuple(x for x in DESTINATIONS if x not in ("Labs", "Ignore"))
 # These built-ins were introduced without changing the saved archive schema.
 BACKFILLED_BUILTIN_IDS = ("group:epidural", "group:chemotherapy", "group:leukotriene_receptor_antagonist",
-                          "gi:probiotic", "group:adh_analog", "group:airway_clearance")
+                          "gi:probiotic", "group:adh_analog", "group:airway_clearance") + tuple(
+                              "group:" + group for group in FIXED_HANDOFF_GROUPS)
 
 
 def default_categories() -> list[dict]:
@@ -292,6 +294,7 @@ def apply_category_rules(rows: list[dict], settings: dict) -> list[dict]:
             row["category_path"] = target_snapshot(target, items)
             continue
         saline_nebulizer = is_sodium_chloride_3_percent_nebulizer(row)
+        requested_group = fixed_handoff_group(row)
         exact_restore = bool(target and target != "system:Ignore" and any(
             rule["match"] == "exact" and rule["target"] == target
             and rule["name"] == match_name(row.get("name", ""))
@@ -299,7 +302,7 @@ def apply_category_rules(rows: list[dict], settings: dict) -> list[dict]:
             and (not rule["frequency"] or rule["frequency"] == normalized(row.get("frequency", "")))
             for rule in settings.get("medication_category_rules", [])))
         if (target == "system:Ignore" or (not target and (ignored(row) or (rejected_broad_rule and was_ignored)))
-                or (saline_nebulizer and was_ignored and not override and not exact_restore)):
+                or ((saline_nebulizer or requested_group) and was_ignored and not override and not exact_restore)):
             row["section"] = "Ignore"
             row["category_path"] = target_snapshot("system:Ignore", items)
             continue
@@ -314,6 +317,12 @@ def apply_category_rules(rows: list[dict], settings: dict) -> list[dict]:
             # sodium-chloride mappings must not place it with enteral/IV salts.
             row["section"] = "Respiratory"
             row["category_path"] = target_snapshot("group:airway_clearance", default_categories())
+            continue
+        if requested_group:
+            # Fixed handoff headings apply to both new imports and previously
+            # saved mappings, without rewriting the user's rule definitions.
+            row["category_path"] = target_snapshot("group:" + requested_group, default_categories())
+            row["section"] = row["category_path"]["section"]
             continue
         if (not target and rejected_broad_rule and row.get("section") == "Respiratory"
                 and (old_path is None or old_path["id"] == "system:Respiratory"
@@ -341,6 +350,9 @@ def placement(row: dict) -> dict:
         return target_snapshot("group:epidural", default_categories())
     if is_sodium_chloride_3_percent_nebulizer(row):
         return target_snapshot("group:airway_clearance", default_categories())
+    requested_group = fixed_handoff_group(row)
+    if requested_group:
+        return target_snapshot("group:" + requested_group, default_categories())
     if row.get("category_path") is not None:
         return row["category_path"]
     target = legacy_target(row)
@@ -390,17 +402,20 @@ def _display_root_key(path: dict):
     # orders. Share its visible root without rewriting either category ID.
     if path["section"] == "Respiratory" and normalized(root_name) == "airway clearance":
         return "fixed:airway_clearance"
-    if ident in {"group:epidural", "group:airway_clearance"}:
+    if ident in {"group:epidural", "group:airway_clearance", *("group:" + group for group in FIXED_HANDOFF_GROUPS)}:
         return ident, root_name
     return ident
 
 
-def medication_blocks(section: str, notes: str, rows: list[dict], sheet: dict | None = None) -> list[tuple]:
+def medication_blocks(section: str, notes: str, rows: list[dict], sheet: dict | None = None,
+                      *, diet: dict | None = None) -> list[tuple]:
     """One emitted entry per visible source order, never one per matching rule."""
     from fen_gi import effective_section
     from infusions import is_infusion, supports_infusion_display
     from medication_groups import group_for
-    meds = [r for r in rows if visible(r) and effective_section(r) == section]
+    from pn_orders import medication_rows_for_display
+    display_rows = medication_rows_for_display(rows, sheet, diet)
+    meds = [r for r in display_rows if visible(r) and effective_section(r) == section]
     paths = {r["id"]: placement(r) for r in meds}
     # An Or refers to its preceding source order, not whichever drug happens
     # to sort before it. Keep visible alternatives together only within the

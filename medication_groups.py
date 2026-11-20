@@ -11,7 +11,11 @@ from chemotherapy import is_chemotherapy
 from airway_clearance import is_sodium_chloride_3_percent_nebulizer
 
 ID_GROUPS = ("antibiotic", "antifungal", "antiviral")
-HEME_GROUPS = ("dvt", "antiplatelet", "gcsf", "chemotherapy")
+FIXED_NEURO_GROUPS = ("eye_care_lubricants", "neurorecovery_neurostimulant",
+                      "neurorecovery_supplement", "antiepileptic_adjunct", "nsaids")
+FIXED_HEME_GROUPS = ("iron_deficiency_anemia", "sickle_cell_anemia")
+FIXED_HANDOFF_GROUPS = FIXED_NEURO_GROUPS + FIXED_HEME_GROUPS
+HEME_GROUPS = ("dvt", "antiplatelet", "gcsf", "chemotherapy") + FIXED_HEME_GROUPS
 CV_GROUPS = ("antiarrhythmic", "antihypertensive", "inotrope", "vasopressor", "adrenocortical", "vasodilator")
 RESP_GROUPS = ("airway_clearance", "airway_cerebral_steroid", "airway_tone", "antisialorrhea", "beta_agonist",
                "anticholinergic", "methylxanthine", "corticosteroid", "inhaled_corticosteroid",
@@ -19,11 +23,11 @@ RESP_GROUPS = ("airway_clearance", "airway_cerebral_steroid", "airway_tone", "an
                "leukotriene_receptor_antagonist")
 # These groups follow the bedside sedation/PRN/paralytic blocks alphabetically.
 NEURO_OTHER_GROUPS = ("adh_analog", "antiepileptic", "antispasmodic",
-                      "epidural", "fever", "insomnia", "neuromodulation")
+                      "epidural", "fever", "insomnia", "neuromodulation") + FIXED_NEURO_GROUPS
 NEURO_PRIORITY_GROUPS = ("sedative_prn", "paralytic_infusion", "paralytic_prn")
 MODES = (("auto", "dvt", "fever", "sedative_prn", "paralytic_prn", "antiepileptic",
           "insomnia", "antispasmodic", "neuromodulation", "epidural", "adh_analog",
-          "paralytic_infusion") + RESP_GROUPS + CV_GROUPS + ID_GROUPS + ("antiplatelet", "gcsf", "chemotherapy", "other",))
+          "paralytic_infusion") + RESP_GROUPS + CV_GROUPS + ID_GROUPS + FIXED_HANDOFF_GROUPS + ("antiplatelet", "gcsf", "chemotherapy", "other",))
 MODE_LABELS = {
     "auto": "Automatic", "dvt": "DVT Prophylaxis",
     "chemotherapy": "Chemotherapy",
@@ -36,6 +40,13 @@ MODE_LABELS = {
     "neuromodulation": "Neuromodulation",
     "epidural": "Epidural",
     "adh_analog": "ADH Analog",
+    "eye_care_lubricants": "Eye Care/Lubricants",
+    "neurorecovery_neurostimulant": "Neurorecovery/Neurostimulant",
+    "neurorecovery_supplement": "Neurorecovery Supplement",
+    "antiepileptic_adjunct": "Antiepileptic Adjunct",
+    "nsaids": "NSAIDS",
+    "iron_deficiency_anemia": "Iron Deficiency Anemia",
+    "sickle_cell_anemia": "Sickle Cell Anemia",
     "beta_agonist": "Beta-Agonist", "anticholinergic": "Anticholinergic",
     "leukotriene_receptor_antagonist": "Leukotriene receptor antagonist",
     "methylxanthine": "Methylxanthine", "corticosteroid": "Corticosteroid",
@@ -83,6 +94,47 @@ def _route(row: dict) -> str:
     return normalized(row.get("route", "")).replace("-", " ")
 
 
+def fixed_handoff_group(row: dict) -> str:
+    """The user's requested medication placement, without inferring diagnoses.
+
+    These headings supersede older saved category assignments. A caller still
+    honors Ignore, hidden and excluded orders before presenting a medication.
+    Enteral fish oil is deliberately distinct from intravenous lipid products.
+    """
+    name = match_name(row.get("name", ""))
+    route = _route(row)
+    if _starts(name, ("ocular lubricant", "artificial tears", "refresh pf")):
+        return "eye_care_lubricants"
+    if _starts(name, ("amantadine", "amantidine", "symmetrel")):
+        return "neurorecovery_neurostimulant"
+    if _starts(name, ("the very finest fish oil", "fish oil")):
+        enteral_route = (not route or route in {"oral", "po", "enteral"}
+                         or bool(re.search(r"\b(?:tube|gt|ng|nj|nd|jt|peg|pej|g tube|j tube|g\s*/\s*j)\b", route)))
+        injectable = bool(re.search(r"\b(?:infusion|injection|injectable|emulsion|intravenous|smoflipid|omegaven)\b", name))
+        if enteral_route and not injectable:
+            return "neurorecovery_supplement"
+    if _starts(name, ("ferrous sulfate", "ferrous sulphate")):
+        return "iron_deficiency_anemia"
+    if _starts(name, ("hydroxyurea", "hydroxycarbamide", "hydrea", "siklos", "droxia")):
+        return "sickle_cell_anemia"
+    if _starts(name, ("pyridoxine", "p`yridoxine", "vitamin b-6", "vitamin b6", "vitamin b 6")):
+        return "antiepileptic_adjunct"
+    nsaids = ("naproxen", "ibuprofen", "ketorolac", "indomethacin", "celecoxib",
+              "meloxicam", "diclofenac", "etodolac", "ketoprofen", "nabumetone",
+              "piroxicam", "sulindac", "flurbiprofen", "mefenamic acid", "oxaprozin",
+              "naprosyn", "aleve", "motrin", "advil", "toradol", "sprix", "indocin",
+              "celebrex", "mobic", "voltaren")
+    if _starts(name, nsaids):
+        local_route = re.search(r"topical|ophthalm|opthalm|otic|\beyes?\b|dermal|cutaneous|external", route)
+        local_form = re.search(r"\b(?:cream|gel|ointment|patch|ophthalmic|opthalmic|otic|eye\s+drops?)\b", name)
+        # Intranasal ketorolac (Sprix) is a systemic NSAID. Its nasal route
+        # does not make it an ophthalmic or topical preparation.
+        local_nasal = re.search(r"nasal|nostril", route) and not _starts(name, ("ketorolac", "sprix"))
+        if not local_route and not local_form and not local_nasal:
+            return "nsaids"
+    return ""
+
+
 def _continuous_iv(row: dict) -> bool:
     # No drug in a local-anesthetic mixture, no rescue bolus, no nebulized dose.
     if _route(row) not in IV_ROUTES or is_prn(row):
@@ -108,6 +160,9 @@ def automatic_system_group(row: dict) -> str:
         return "epidural"
     if is_sodium_chloride_3_percent_nebulizer(row):
         return "airway_clearance"
+    requested = fixed_handoff_group(row)
+    if requested:
+        return requested
     # User-requested display placement, regardless of indication.
     if _starts(name, ("desmopressin", "ddavp")):
         return "adh_analog"
@@ -221,7 +276,7 @@ def automatic_group(row: dict) -> str:
         # Keep exact units. A numeric value or range must occur in Dose.
         if re.search(r"(?<![\w/])\d+(?:\.\d+)?(?:\s*[-–]\s*\d+(?:\.\d+)?)?\s*units?\s*/\s*kg\s*/\s*(?:hr|h|hour)(?![\w/])", dose):
             return "dvt"
-    if re.match(r"^(?:acetaminophen|ibuprofen)\b", name):
+    if re.match(r"^acetaminophen\b", name):
         return "fever"
     if re.match(r"^(?:phenytoin|fosphenytoin|phenobarbital|clobazam|clobozam|levetiracetam|valproic acid|pentobarbital)\b", name):
         return "antiepileptic"
@@ -242,6 +297,9 @@ def group_for(row: dict) -> str:
         return "epidural"
     if is_sodium_chloride_3_percent_nebulizer(row):
         return "airway_clearance"
+    requested = fixed_handoff_group(row)
+    if requested:
+        return requested
     mode = row.get("group_mode", "auto")
     # An explicit GI override wins over automatic defaults, not over an explicit
     # special-group choice. UI callbacks clear the competing explicit choice.

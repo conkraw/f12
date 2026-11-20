@@ -9,13 +9,14 @@ SECTION_NAMES = {
     "a": "Diagnoses", "b": "Medications", "c": "Invasive Ventilation",
     "d": "Non-invasive Ventilation", "e": "VITALS", "f": "CULTURES",
     "g": "LABS", "h": "INTAKE/OUTPUT", "i": "NUTRITION", "j": "Wound Review",
-    "k": "Target Arousal Level", "l": "WAT Score", "m": "ICP Trends", "n": "Date of Admission", "o": "Respiratory Viral Panel", "p": "Blood Gas", "q": "Complete Blood Count", "r": "Orders Placed This Encounter", "s": "Intake / Output totals", "t": "Feeds", "u": "Devices", "v": "Intracranial Pressure Monitor", "w": "Pacemaker", "x": "Diet", "y": "CAPD", "z": "ECG", "ab": "Dietary Orders", "ac": "Stool / bowel movement", "ad": "ECLS settings",
+    "k": "Target Arousal Level", "l": "WAT Score", "m": "ICP Trends", "n": "Date of Admission", "o": "Respiratory Viral Panel", "p": "Blood Gas", "q": "Complete Blood Count", "r": "Orders Placed This Encounter", "s": "Intake / Output totals", "t": "Feeds", "u": "Devices", "v": "Intracranial Pressure Monitor", "w": "Pacemaker", "x": "Diet", "y": "CAPD", "z": "ECG", "ab": "Dietary Orders", "ac": "Stool / bowel movement", "ad": "ECLS settings", "ae": "Code Status",
 }
 MAX_PASTE = 150_000
 DIVIDER = re.compile(r"^([a-z])\1{7,}$", re.I)
 DIETARY_DIVIDER = re.compile(r"^(?:ab){4,}a?$", re.I)
 STOOL_DIVIDER = re.compile(r"^(?:ac){4,}a?$", re.I)
 ECLS_DIVIDER = re.compile(r"^(?:ad){4,}a?$", re.I)
+CODE_STATUS_DIVIDER = re.compile(r"^(?:ae){4,}a?$", re.I)
 NUMBER_OR_BULLET = re.compile(r"^\s*(?:\d+[.)]\s+|[•\-]\s+)")
 
 
@@ -27,6 +28,8 @@ def _heading(line: str) -> str | None:
         return "x"
     if re.match(r"^date of admission\s*:", text):
         return "n"
+    if re.match(r"^code\s+status(?:\s*:|$)", text):
+        return "ae"
     if re.match(r"^(?:capd|cornell assessment of pediatric delirium)(?:\b|:)", text):
         return "y"
     if (text in ("ecg", "ekg", "electrocardiogram")
@@ -55,7 +58,7 @@ class ParseResult:
 
 
 def parse_smartphrase(text: str) -> ParseResult:
-    """Accept a..z dividers and alternating ab dietary, ac stool, ad ECLS dividers.
+    """Accept a..z and alternating ab dietary, ac stool, ad ECLS, ae status dividers.
 
     Ambiguous/missing/duplicate boundaries fail closed for that section.
     Issues in a later section do not invalidate a complete, unambiguous a block.
@@ -79,8 +82,9 @@ def parse_smartphrase(text: str) -> ParseResult:
         dietary_marker = DIETARY_DIVIDER.fullmatch(line)
         stool_marker = STOOL_DIVIDER.fullmatch(line)
         ecls_marker = ECLS_DIVIDER.fullmatch(line)
-        if marker or dietary_marker or stool_marker or ecls_marker:
-            key = "ad" if ecls_marker else "ac" if stool_marker else "ab" if dietary_marker else marker.group(1).lower()
+        code_status_marker = CODE_STATUS_DIVIDER.fullmatch(line)
+        if marker or dietary_marker or stool_marker or ecls_marker or code_status_marker:
+            key = "ae" if code_status_marker else "ad" if ecls_marker else "ac" if stool_marker else "ab" if dietary_marker else marker.group(1).lower()
             if active == key:
                 seen[key] = seen.get(key, 0) + 1
                 if seen[key] > 1:
@@ -102,6 +106,19 @@ def parse_smartphrase(text: str) -> ParseResult:
                     result.invalid.add(active)
                     result.issues.append(f"{SECTION_NAMES[active]} is missing its closing divider before line {n}.")
                 active, buffer = key, []
+            continue
+        # A mistyped AE boundary must not turn code status into another field.
+        near_code_status_marker = (
+            len(line) >= 8 and line.isalpha()
+            and re.search(r"(?:ae){3,}", line, re.I)
+            and sum(char.casefold() == ("a" if index % 2 == 0 else "e")
+                    for index, char in enumerate(line)) / len(line) >= 0.75
+        )
+        if near_code_status_marker:
+            result.invalid.add("ae")
+            if active:
+                result.invalid.add(active)
+            result.issues.append(f"Malformed divider on line {n}. Use an uninterrupted alternating ae line for Code Status.")
             continue
         # Never absorb a mistyped AD boundary into the preceding patient section.
         near_ecls_marker = (

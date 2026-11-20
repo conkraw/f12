@@ -1,4 +1,4 @@
-"""PICU SmartPhrase v6.88: clear the complete login view before loading."""
+"""PICU SmartPhrase v6.89: medication categories, code status and latest PN."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,
@@ -59,6 +59,7 @@ from vitals import validate_vitals, text_by_system
 from lab_layout import laboratory_html
 from observations import NEURO_SECTIONS, validate_neuro, validate_nutrition, format_nutrition
 from demographics import validate_dosing_weight, validate_admission_date, demographic_weight_text
+from code_status import MAX_CODE_STATUS, validate_code_status, code_status_text
 from mrsa import mrsa_screen_text
 from clinical_style import clinical_markup
 from anthropometrics import empty_anthropometrics, clean_field, validate_anthropometrics, measurements_text, FIELDS as ANTHRO_FIELDS
@@ -354,10 +355,15 @@ def editor_snapshot(room: str) -> dict:
             value = clean_field(field, ss[key])
             if value or "anthropometrics" in sheet:
                 sheet.setdefault("anthropometrics", empty_anthropometrics())[field] = value
-    for field in ("admission_date", "dosing_weight"):
+    for field in ("admission_date", "dosing_weight", "code_status"):
         key = "demo_" + sheet["id"] + "_" + field
         if key in ss:
-            sheet[field] = ss[key].strip()
+            value = ss[key].strip()
+            if field == "code_status":
+                validate_code_status(value)
+                if value != sheet.get(field, ""):
+                    sheet["import_warnings"].pop("ae", None)
+            sheet[field] = value
     if sheet["ventilation"] is not None:
         for index, label in enumerate(LABELS):
             key = "vent_" + sheet["id"] + "_" + str(index)
@@ -588,15 +594,18 @@ def anthropometric_change(room: str, field: str, key: str) -> None:
 def demographic_change(room: str, field: str, key: str) -> None:
     if not require_session() or room != st.session_state.get("current_room"):
         return
-    validators = {"dosing_weight": validate_dosing_weight, "admission_date": validate_admission_date}
+    validators = {"dosing_weight": validate_dosing_weight, "admission_date": validate_admission_date,
+                  "code_status": validate_code_status}
     if field not in validators:
         return
     ss = st.session_state
-    old = ss["drafts"][room][field]
+    old = ss["drafts"][room].get(field, "")
     value = ss[key].strip()
     try:
         validators[field](value)
         ss["drafts"][room][field] = value
+        if field == "code_status":
+            ss["drafts"][room]["import_warnings"].pop("ae", None)
     except ValueError as exc:
         ss[key] = old
         note(str(exc), "error")
@@ -841,6 +850,13 @@ def neuro_weight_editor(sheet: dict) -> None:
         st.session_state[key] = sheet[field]
     st.text_input("Date of admission", key=key, max_chars=32,
                   on_change=demographic_change, args=(sheet["room"], field, key))
+    field = "code_status"
+    key = "demo_" + sheet["id"] + "_" + field
+    if key not in st.session_state:
+        st.session_state[key] = sheet.get(field, "")
+    st.text_input("Code Status", key=key, max_chars=MAX_CODE_STATUS,
+                  on_change=demographic_change, args=(sheet["room"], field, key),
+                  help="Imported from AE. Preserve the documented status, including No Order. Blank omits the line.")
     attributes = sheet.get("anthropometrics", empty_anthropometrics())
     with st.expander("Age, sex, BMI, height and BSA", expanded=True):
         st.caption("Age and sex print directly below the room. The combined Epic line Age: 6 y.o. Sex: female is accepted in A, I, or N. For BMI percentile, supply age AT THE BMI MEASUREMENT in months or years and months, plus growth-chart sex. Only explicit Age: and Sex: labels are read, not clinical diagnoses or weight-chart footnotes. BMI and BMI percentile are hidden from handoff output below age 2, or until age is documented. Imported values stay editable.")
@@ -1898,7 +1914,7 @@ def main() -> None:
         return
     with st.sidebar:
         st.header("PICU Handoff")
-        st.caption("Version 6.88 | Smooth sign in")
+        st.caption("Version 6.89 | Medication categories and code status")
         # Retire the old instructions workspace without discarding room drafts.
         if st.session_state.get("page") == "Instructions / SmartPhrase":
             st.session_state["page"] = "Handoff"
@@ -2187,6 +2203,8 @@ def handoff_notes(sheet: dict) -> None:
                     st.text(observed_vitals[section] + "\n-----")
             if section == "Demographics / Weight" and sheet["admission_date"]:
                 st.text("Admission: " + sheet["admission_date"])
+            if section == "Demographics / Weight" and code_status_text(sheet):
+                st.markdown('<div style="white-space:pre-wrap">' + clinical_markup(code_status_text(sheet)) + '</div>', unsafe_allow_html=True)
             if section == "Demographics / Weight" and mrsa_screen_text(sheet):
                 st.markdown('<div style="white-space:pre-wrap">' + clinical_markup(mrsa_screen_text(sheet)) + '</div>', unsafe_allow_html=True)
             if section == "Infectious Disease" and id_summary(sheet):
@@ -3299,8 +3317,9 @@ def group_admin(store: GitHubVault | None) -> None:
         st.button("Load / refresh public CDC BMI reference", on_click=install_bmi_reference)
         st.file_uploader("Or upload CDC bmi-age-2022.csv (public reference only)", type=["csv"], key="bmi_public_reference_upload", on_change=upload_bmi_reference)
     with st.expander("Medication subgroup choices", expanded=False):
-        st.caption("DVT Prophylaxis: enoxaparin, cangrelor and heparin with an explicit Units/kg/hr Dose. Fever Control: acetaminophen and ibuprofen. PRN: the requested sedative PRNs. Paralytic PRN: rocuronium, cisatracurium and vecuronium PRNs.")
+        st.caption("DVT Prophylaxis: enoxaparin and heparin with an explicit Units/kg/hr Dose. Fever Control: acetaminophen. NSAIDS: systemic ibuprofen, naproxen and related medications. Aspirin and cangrelor remain under Antiplatelet Therapy. PRN: the requested sedative PRNs. Paralytic PRN: rocuronium, cisatracurium and vecuronium PRNs.")
         st.caption("Neurologic: melatonin/trazodone under Insomnia, baclofen under Antispasmodic, and gabapentin/pregabalin under Neuromodulation. Infusions, PRN and paralytic groups come first after observations; other category headings are alphabetical.")
+        st.caption("Neurologic also includes ocular lubricants under Eye Care/Lubricants, amantadine under Neurorecovery/Neurostimulant, enteral fish oil under Neurorecovery Supplement, and pyridoxine under Antiepileptic Adjunct. Hematology includes ferrous sulfate under Iron Deficiency Anemia and hydroxyurea under Sickle Cell Anemia.")
         st.caption("Respiratory: Airway/Cerebral Steroids, Beta-Agonist, Anticholinergic, Methylxanthine, Corticosteroid, Airway Tone Modulator, Inhaled Corticosteroids, Pulmonary Hypertension, and Antisialorrhea Agents. Cardiovascular: Antiarrhythmics, Antihypertensives, Inotrope Infusions, Vasopressors, Adrenocortical Support, and Vasodilators. Lidocaine is automatic only for an IV infusion. Endocrine Medications is in FEN/GI display choices.")
         st.caption("These are user-defined display labels, not inferred indications or a determination that a dose is prophylactic. Original orders and hidden-medication choices are preserved. Overrides use the formulation, route and frequency.")
         rules = [r for r in st.session_state["vault"]["settings"]["medication_groups"] if r.get("match") != "prefix"]
@@ -3336,7 +3355,8 @@ def import_review_editor(sheet: dict, compact: bool = False) -> None:
             if not compact:
                 for item in items:
                     st.text(diagnostic_text(item))
-            label = ("Acknowledge current-shift issue" if section == 'h' else
+            label = ("Acknowledge code-status issue" if section == 'ae' else
+                     "Acknowledge current-shift issue" if section == 'h' else
                      "Use retained orders after checking Epic" if section == 'r' else
                      "Use retained diet after checking Epic" if section in ("x", "ab") and any(i["action"] == "diet_hidden" for i in items) else
                      "Use retained feeds after checking Epic" if section == 't' and any(i['action'] == 'feeds_hidden' for i in items) else
