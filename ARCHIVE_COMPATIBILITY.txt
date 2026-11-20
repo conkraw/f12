@@ -1,23 +1,16 @@
-PICU Handoff 6.87 archive compatibility
+PICU Handoff 6.88 archive compatibility
 
-Baseline: delivered version 6.86.
-The archive schema remains 34. No data migration is required.
-Dependencies, configuration and encryption requirements are unchanged.
+Baseline: delivered version 6.87.
+The archive schema remains 34. No data migration or handoff re-paste is required.
+Dependencies, configuration, passwords and encryption requirements are unchanged.
 
-Lysis Labs is derived for display from the existing G-section laboratory rows.
-No separate lysis archive field or cached selection is stored. Original source
-components, values, units, flags and dates remain unchanged. The current
-Eastern display or print clock determines the rolling 24-hour window.
+This update changes only how the existing login view is grouped and cleared
+before app initialization. It adds no stored handoff field, authentication
+flag, cookie, password rule or patient-data transformation.
 
-Saved handoffs with supported HGBFREE, LDH or uric acid rows can use the new
-Hematology display immediately. Re-paste a current complete SmartPhrase to
-update the underlying results. The existing full replacement workflow clears
-prior results when a new room paste omits G and preserves other rooms.
+All clinical parsers, calculations, display functions and export modules are
+unchanged from version 6.87. The ECLS, AED and Lysis Labs behavior is retained.
+Existing archives can be used directly after updating and restarting the app.
 
-Version 6.86 can read the same archive fields but does not provide the new
-Hematology lysis trends. The centered login, ECLS, AED and NAVA data formats
-remain compatible with their respective earlier versions. Versions before
-6.84 do not recognize the optional ECLS field or AD review flags.
-
-No patient identifiers, source patient paste or production credentials are
-added to this delivery package.
+The diagnostic application version is updated to 6.88. No production
+credentials or supplied patient paste are included in this package.

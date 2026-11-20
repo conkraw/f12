@@ -1,25 +1,18 @@
-PICU Handoff 6.87
-Baseline: 6.86
+PICU Handoff 6.88
+Baseline: 6.87
 
-Required runtime files to replace or add together:
+Required runtime files to replace together:
 app.py
-lysis_labs.py
-labs.py
-lab_windows.py
-models.py
-exports.py
-clinical_style.py
 error_store.py
 
-lysis_labs.py is a new module. Include it beside app.py.
-Extract PICU687.zip and copy the contents of PICU_Handoff_v6_87_Lysis_Labs
-into the existing app repository root, without an extra folder level.
+Extract PICU688.zip. Copy these files from PICU_Handoff_v6_88_Login_Transition
+into the existing app repository root beside app.py. The complete package
+also contains all prior modules if a full folder replacement is preferred.
 Restart Streamlit and confirm:
-Version 6.87 | Hematology lysis lab trends
+Version 6.88 | Smooth sign in
 
-Re-paste the current complete SmartPhrase to load current laboratory results.
-Saved supported G rows can also use the Lysis Labs display immediately.
-No new dependencies, configuration changes or data migration are required.
-Keep existing Streamlit Secrets, encryption keys, archives and saved mappings.
+This fixes the login transition only. No handoff re-paste, data migration,
+new dependencies or configuration changes are required. Keep existing
+Streamlit Secrets, encryption keys, archives and saved mappings.
 
 This package is ready to install and has not been deployed.

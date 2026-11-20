@@ -1,29 +1,26 @@
-# PICU Handoff 6.87 verification
+# PICU Handoff 6.88 verification
 
 ## Results
 
-All 630 executed checks passed.
+All 64 executed checks passed.
 
 | Check group | Passed | Coverage |
 | --- | ---: | --- |
-| Existing regression checks | 516 | Anti-Xa, Heme infusions, DVT grouping, lab routing, lactate trends, AED selection and exports, ECLS exports, PDF cache and UI smoke checks |
-| Lysis Labs selection checks | 97 | Supported assays, latest two results, time windows, source ordering, single results, flags, units and unchanged source rows |
-| Lysis Labs integration checks | 17 | G imports, Heme-only placement, text and HTML, single and batch PDFs, cache aging, failed imports and room replacement |
+| Existing login, startup and UI checks | 60 | Masked entry, correct and incorrect passwords, cooldown, password cleanup, logout, startup choices and existing UI workflows |
+| Actual-main transition checks | 4 | Login subtree removal before archive loading, successful and failed loading, logout and idle-session expiry |
 
-The supplied complete SmartPhrase imported without errors. Its only available lysis assay was correctly displayed as a single HGBFREE result with its less-than symbol and source date. No missing LDH or uric acid value was invented. The supplied patient paste was processed in memory and is excluded from the package.
+The existing UI test stub was extended to support Streamlit placeholders and containers. No existing assertions were weakened. The 630 clinical and export checks reported in version 6.87 belong to that baseline and were not repeated for this presentation-only fix.
 
-## Selection and placement
+## Transient behavior
 
-The checks confirm that each supported assay uses the latest two eligible measurements rather than the earliest and latest when there are more than two. The displayed arrow runs from older to newer. A single result has no arrow. Missing or unusable assays have no placeholder line, and an empty group has no heading.
+The new tests run the real app.main() through Streamlit AppTest and capture actual ForwardMsg deltas. They verify that the login styling, marker, heading, password field and Sign in button share one clearable subtree.
 
-The time window and date-only overlap convention match lactate. Tests cover the exact 24-hour boundary, future and malformed dates, same-day source ordering, zero values, explicit status messages, excluded rows and failed G imports. Source values, units and flags remain unchanged. CBC HGB, lactate, urine uric acid and LDH isoenzymes are kept separate.
+At the fake archive loader's entry point, before the loader returns or raises, the tests confirm that the first emitted delta has already cleared that entire subtree. This checks the transient rendering order that a final-page-only test would miss. Separate cases cover successful archive loading and a storage error without blocking sleeps or production data.
 
-All export formats show the block once in Hematology before existing body content. Recognized lysis assays are not duplicated in lower Labs or CV. Cached PDFs are rebuilt when the current time changes result eligibility. A new complete paste without G removes prior lysis results for that room, with other rooms preserved.
+Logout and idle expiry restore the styled login in the same replaceable region. Existing login checks retain failed-password and cooldown coverage.
 
-## Visual review
+## Change scope
 
-A two-page synthetic PDF was rendered to PNG with Poppler and visually inspected. The first page shows a single HGBFREE result. The second shows separate HGBFREE, LDH and uric acid trend lines. The bold heading, labels, flags and dates are readable in the Heme column. Long lines wrap within the existing column at the existing font size. No clipping or overlap was seen.
+Only app.py and the diagnostic version in error_store.py changed among runtime files. Authentication, session clearing, session guards, configuration loading and idle-guard functions were compared structurally and remain unchanged. The centered login module, clinical modules, exports and dependency requirements are byte-identical to version 6.87.
 
-## Scope
-
-The package retains the centered login and the previous ECLS and AED formatting. No dependencies or archive schema changes were needed. Existing pytest and pypdf deprecation warnings did not affect the checks. Verification used synthetic fixtures and local imports, without a live deployment or production credentials.
+Verification uses actual Streamlit messages and final AppTest state. No new live-browser visual recording was performed, so these checks do not claim a recorded browser frame-by-frame demonstration. No live deployment or production credentials were used.

@@ -1,0 +1,23 @@
+{
+  "version": "6.88",
+  "baseline": "6.87",
+  "source_zip_sha256": "770a31619e6f1ef88fac6a7eca2dac724c1354f445ffd01397252b6561fea236",
+  "runtime_files": [
+    "app.py",
+    "error_store.py"
+  ],
+  "new_runtime_files": [],
+  "schema": 34,
+  "dependencies_changed": false,
+  "authentication_rules_changed": false,
+  "login_transition": "One replaceable login subtree cleared before startup and archive loading",
+  "clinical_modules_changed": false,
+  "deployed": false,
+  "verification": {
+    "existing_login_startup_ui_checks": 60,
+    "actual_main_transition_checks": 4,
+    "total_distinct_checks": 64,
+    "status": "passed",
+    "browser_visual_recording": false
+  }
+}

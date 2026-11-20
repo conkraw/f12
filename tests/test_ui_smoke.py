@@ -43,6 +43,8 @@ def equip(app,monkeypatch):
     for name in ['text_input','text_area','selectbox','radio','checkbox','file_uploader','number_input']:
         setattr(st,name,control)
     st.expander=lambda *a,**k:Panel(st)
+    st.empty=lambda *a,**k:Panel(st)
+    st.container=lambda *a,**k:Panel(st)
     st.form=lambda *a,**k:Panel(st)
     st.popover=lambda *a,**k:Panel(st)
     st.columns=lambda n,*a,**k:[Panel(st) for _ in range(n if isinstance(n,int) else len(n))]

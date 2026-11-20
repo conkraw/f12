@@ -3,28 +3,25 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>PICU Handoff 6.87</title>
+<title>PICU Handoff 6.88</title>
 <style>body{font:17px/1.6 system-ui,sans-serif;max-width:850px;margin:48px auto;padding:0 24px;color:#172d3b}h1,h2{color:#146c76}code,pre{background:#eef5f6;padding:5px 8px}pre{padding:16px;white-space:pre-wrap}h2{margin-top:28px}@media(max-width:600px){body{margin:24px auto;padding:0 18px}}</style>
 </head>
 <body>
-<h1>PICU Handoff 6.87</h1>
-<p>This update adds Lysis Labs to Hematology. HGBFREE, LDH and uric acid each get a separate line when a result is available. The two latest eligible results are shown older to newer with an arrow. A single result appears without an arrow. This version builds on 6.86.</p>
+<h1>PICU Handoff 6.88</h1>
+<p>This update fixes the brief plain password-form flash after sign in. The entire centered login view now clears together before the app loads saved handoffs. It builds on version 6.87 and includes the existing ECLS, AED and Lysis Labs updates.</p>
 <h2>Install</h2>
-<p>Extract <code>PICU687.zip</code>. Copy the contents of <code>PICU_Handoff_v6_87_Lysis_Labs</code> into the root of your existing app repository, beside <code>app.py</code>. Replace matching files and include all listed modules. Do not add an extra folder level.</p>
-<p>For an update from 6.86, upload these application files together:</p>
+<p>Extract <code>PICU688.zip</code>. Copy the contents of <code>PICU_Handoff_v6_88_Login_Transition</code> into the root of your existing app repository, beside <code>app.py</code>. Replace matching files and include all listed modules. Do not add an extra folder level.</p>
+<p>For an update from 6.87, upload these application files together:</p>
 <pre>app.py
-lysis_labs.py
-labs.py
-lab_windows.py
-models.py
-exports.py
-clinical_style.py
 error_store.py</pre>
 <p>Keep your existing Streamlit Secrets and encryption key. Dependencies and configuration are unchanged. Archive schema 34 remains in use.</p>
-<p>Restart Streamlit. Confirm the sidebar reads <code>Version 6.87 | Hematology lysis lab trends</code>.</p>
-<p>Re-paste the current complete SmartPhrase to refresh the settings and results. Supported lysis results already saved in section G also use the new display.</p>
+<p>Restart Streamlit. Confirm the sidebar reads <code>Version 6.88 | Smooth sign in</code>.</p>
+<p>This display fix needs no handoff re-paste or data migration. The complete package retains all existing clinical modules.</p>
+<h2>Sign-in transition</h2>
+<p>The entire login view now clears together before saved handoffs begin loading. This prevents the password form from briefly appearing without its centered-card styling.</p>
+<p>The password, encryption key, retry delay, session limits and logout behavior are unchanged. No extra delay or rerun has been added. Updating from 6.87 requires only the two files listed above, followed by a Streamlit restart.</p>
 <h2>Lysis Labs in Hematology</h2>
-<p>Include the new <code>lysis_labs.py</code> module beside <code>app.py</code>. HGBFREE, LDH and uric acid results from section G now appear under a bold Lysis Labs: heading at the top of Hematology. Each available test has its own line.</p>
+<p>The included <code>lysis_labs.py</code> module remains beside <code>app.py</code>. HGBFREE, LDH and uric acid results from section G now appear under a bold Lysis Labs: heading at the top of Hematology. Each available test has its own line.</p>
 <pre><b>Lysis Labs:</b>
 HGBFREE: &lt;8 [11/20/2026]
 LDH: 180 -&gt; 220 [11/20/2026]
@@ -48,7 +45,7 @@ FiO₂: 40%</pre>
 <p>The window uses the current Eastern time. A date without a time qualifies for Neuro only when the beginning of that date is within the past 24 hours. At 08:00 on November 20, a result dated only November 19 therefore stays in Labs with its recorded date.</p>
 <p>A complete replacement paste without G clears prior drug levels for that room. A replacement paste without AD clears prior ECLS settings. Other rooms stay separate.</p>
 <h2>Verification and compatibility</h2>
-<p>All 630 executed checks passed. The two-page synthetic PDF confirmed the single-result and two-value Lysis Labs layouts in Hematology at the existing font size. The centered login, ECLS settings and AED display carry forward from the prior package.</p>
+<p>All 64 executed checks passed for version 6.88. Four transition checks inspect the actual Streamlit update sequence before archive loading returns or fails. The remaining 60 checks cover existing login, startup and UI behavior. Clinical modules carry forward from the verified 6.87 package.</p>
 <p><a href="README.md">README.md</a> includes field mapping, date handling and installation details. <a href="TEST_REPORT.md">TEST_REPORT.md</a> records verification. <a href="ARCHIVE_COMPATIBILITY.txt">ARCHIVE_COMPATIBILITY.txt</a> describes saved handoff compatibility.</p>
 <p>This package is ready to install. It has not been deployed to the live application.</p>
 </body>

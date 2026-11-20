@@ -1,29 +1,31 @@
-# PICU Handoff 6.87
+# PICU Handoff 6.88
 
-This update adds Lysis Labs to Hematology. HGBFREE, LDH and uric acid each get a separate line when a result is available. The two latest eligible results are shown older to newer with an arrow. A single result appears without an arrow. This version builds on 6.86.
+This update fixes the brief plain password-form flash after sign in. The entire centered login view now clears together before the app loads saved handoffs. It builds on version 6.87 and includes the existing ECLS, AED and Lysis Labs updates.
 
 ## Install
 
-Extract PICU687.zip. Copy the contents of PICU_Handoff_v6_87_Lysis_Labs into the root of your existing app repository, where app.py is located. Replace matching application files and include all listed modules. Do not add an extra folder level.
+Extract PICU688.zip. Copy the contents of PICU_Handoff_v6_88_Login_Transition into the root of your existing app repository, where app.py is located. Replace matching application files and include all listed modules. Do not add an extra folder level.
 
-When updating from version 6.86, upload these application files together:
+When updating from version 6.87, upload these application files together:
 
     app.py
-    lysis_labs.py
-    labs.py
-    lab_windows.py
-    models.py
-    exports.py
-    clinical_style.py
     error_store.py
 
 Keep your existing Streamlit Secrets and encryption key. Dependencies and configuration are unchanged. The archive schema remains 34. Restart Streamlit, then confirm the sidebar reads:
 
-    Version 6.87 | Hematology lysis lab trends
+    Version 6.88 | Smooth sign in
 
-Include the new lysis_labs.py module beside app.py. Re-paste the current complete SmartPhrase to load current results. Saved handoffs with supported G-section results can use the new Lysis Labs display without a data migration.
+When updating from 6.87, replace app.py and error_store.py together. The full package includes every existing module. Restart Streamlit after updating. This display fix needs no data migration or handoff re-paste.
 
 This package is ready to install. It has not been deployed to the live application.
+
+## Sign-in transition
+
+The login styling and password card previously occupied separate Streamlit elements. During a successful sign-in rerun, the idle-session container could replace the styling element before the remaining login form was removed. Archive loading could make that unstyled form visible briefly.
+
+The complete login view now occupies one replaceable placeholder. The app clears that region before configuration, the idle-session check and archive loading. The CSS, marker, heading, password field and Sign in button therefore leave together. The centered design, masked field and Enter-to-submit behavior are retained.
+
+Password verification, retry delay, session limits and logout behavior are unchanged. The fix adds no delay, extra rerun or new authentication setting. No password or encryption-key change is required.
 
 ## Lysis Labs in Hematology
 
@@ -106,6 +108,6 @@ An invalid AD block does not carry forward previous circuit settings. If section
 
 The centered password screen from version 6.84 is unchanged, including masked entry, Enter to submit, retry delay, session expiry and logout. The invasive NAVA implementation and existing mapping, I/O and room replacement workflows remain in place.
 
-All 630 executed checks passed: 516 existing regression checks, 97 Lysis Labs selection checks and 17 Lysis Labs integration checks. A two-page synthetic PDF was rendered and visually checked for single-result and two-value trend layouts. TEST_REPORT.md records the verification scope. No supplied patient paste or production credentials are included in this package.
+All 64 executed checks passed for version 6.88: 60 existing login, startup and UI checks, plus four actual-main transition checks. The transition checks inspect Streamlit update messages before archive loading completes, including its failure path. The 630 clinical and export checks belong to the version 6.87 baseline. TEST_REPORT.md records the current verification scope. No supplied patient paste or production credentials are included in this package.
 
 ARCHIVE_COMPATIBILITY.txt describes saved handoff compatibility.

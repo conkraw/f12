@@ -1,4 +1,4 @@
-"""PICU SmartPhrase v6.87: Hematology Lysis Labs with recent two-value trends."""
+"""PICU SmartPhrase v6.88: clear the complete login view before loading."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,
@@ -1870,12 +1870,16 @@ def patient_list_startup(store: GitHubVault | None) -> bool:
 
 
 def main() -> None:
+    # One replaceable region keeps the login styling and form together.
+    # Clear it before startup work so a stale, unstyled form cannot linger.
+    login_view = st.empty()
     app, store = load_config()
     now = time.monotonic()
     if st.session_state.get("authenticated") and (now - st.session_state.get("last_activity", now) > app["idle_minutes"] * 60 or now - st.session_state.get("login_at", now) > 8 * 3600):
         clear_session()
     if not st.session_state.get("authenticated"):
-        render_login(st, app["password_hash"], authenticate)
+        with login_view.container():
+            render_login(st, app["password_hash"], authenticate)
         return
     st.session_state["last_activity"] = now
     st.session_state["idle_seconds"] = app["idle_minutes"] * 60
@@ -1894,7 +1898,7 @@ def main() -> None:
         return
     with st.sidebar:
         st.header("PICU Handoff")
-        st.caption("Version 6.87 | Hematology lysis lab trends")
+        st.caption("Version 6.88 | Smooth sign in")
         # Retire the old instructions workspace without discarding room drafts.
         if st.session_state.get("page") == "Instructions / SmartPhrase":
             st.session_state["page"] = "Handoff"
