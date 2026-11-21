@@ -1,0 +1,33 @@
+PICU Handoff 6.89
+Baseline: 6.88
+
+Required application files to upload together:
+app.py
+batching.py
+categories.py
+clinical_style.py
+code_status.py
+diet.py
+fen_gi.py
+import_review.py
+importing.py
+medication_groups.py
+models.py
+nutrition_display.py
+parser.py
+pn_orders.py
+
+New modules: code_status.py and pn_orders.py
+
+Extract PICU689.zip. Copy the files from
+PICU_Handoff_v6_89_Medications_Code_Status into the existing
+app repository root, beside app.py. The full package includes
+all previous application modules. Restart Streamlit.
+
+Sidebar: Version 6.89 | Medication categories and code status
+
+Keep existing Streamlit Secrets, encryption keys and saved archives.
+No application dependency or archive schema change is required.
+Re-paste a current SmartPhrase to import AE into older saved handoffs.
+
+Ready to install. Not deployed to the live application.

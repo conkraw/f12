@@ -1,0 +1,13 @@
+PICU Handoff 6.89
+Baseline: 6.88
+
+Final combined regression: 1,805 passed, zero failures, zero errors.
+Synthetic PDF inspected: one page, existing 8-point font, no clipping.
+
+Changed runtime files and their hashes are recorded in BUILD_MANIFEST_689.json.
+SHA256SUMS.txt lists package-file hashes.
+
+No uploaded patient source examples, local caches, runtime credentials or
+production archive data are included in this release.
+
+Ready to install. Not deployed to the live application.

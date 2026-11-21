@@ -1,4 +1,4 @@
-"""PICU SmartPhrase v6.89: medication categories, code status and latest PN."""
+"""PICU SmartPhrase v6.90: latest ventilator mode and other reported modes."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,
@@ -7,6 +7,7 @@ from empty_groups import refresh_empty_group_layout
 from categories import apply_category_rules, set_category_rule, theophylline_anchor, matching_target
 from category_ui import placement_picker, category_admin, local_target
 from html import escape
+from hashlib import sha256
 from pathlib import Path
 import time
 import json
@@ -25,7 +26,8 @@ from models import (MAX_FIELD, SYSTEMS, ValidationError, new_sheet, new_vault,
 from infusion_rates import ADMIN_FIELDS, ADMIN_STATUSES, ADMIN_STATUS_LABELS, continuous_order, merge_admin_edits
 from medications import (DESTINATIONS, format_medication, suggested_key, upsert_rule,
                          remap, rule_for_inline_mapping, validate_medication, visible, hidden_for, set_visibility_rule, ignored, explicit_ignore_mapping)
-from ventilation import LABELS, format_ventilation, validate_ventilation
+from ventilation import LABELS, format_ventilation, validate_ventilation, mode_rule
+from ventilator_modes import display_mode, key as ventilator_mode_key
 from noninvasive import DEVICE_FIELDS, format_noninvasive, validate_noninvasive
 from importing import import_replacement, SUPPORTED_SECTIONS
 from batching import available_handoffs
@@ -365,18 +367,41 @@ def editor_snapshot(room: str) -> dict:
                     sheet["import_warnings"].pop("ae", None)
             sheet[field] = value
     if sheet["ventilation"] is not None:
+        mode_changed = False
         for index, label in enumerate(LABELS):
             key = "vent_" + sheet["id"] + "_" + str(index)
             if key not in ss:
                 continue
             value = ss[key].strip()
             if index == 0:
+                previous_mode = sheet["ventilation"]["mode"]
                 sheet["ventilation"]["mode"] = value
+                mode_changed = mark_ventilator_mode_edited(sheet["ventilation"], previous_mode)
                 sheet["sbs_vent_mode"] = value
+            elif mode_changed:
+                continue
             elif value:
                 sheet["ventilation"]["values"][label] = value
             else:
                 sheet["ventilation"]["values"].pop(label, None)
+        if mode_changed:
+            validate_ventilation(sheet["ventilation"])
+            sync_ventilation_widgets(sheet["id"], sheet["ventilation"])
+        for item in sheet["ventilation"].get("mode_history", {}).get("other_modes", []):
+            include_key = ventilation_history_widget_key(sheet["id"], item["mode"], "include")
+            if include_key in ss:
+                item["include"] = bool(ss[include_key])
+            if mode_rule(item["mode"]) != "included":
+                continue
+            for index, label in enumerate(LABELS[1:], start=1):
+                key = ventilation_history_widget_key(sheet["id"], item["mode"], str(index))
+                if key not in ss:
+                    continue
+                value = ss[key].strip()
+                if value:
+                    item["values"][label] = value
+                else:
+                    item["values"].pop(label, None)
     for device in sheet["noninvasive"]:
         for index, label in enumerate(DEVICE_FIELDS[device["device"]]):
             key = "niv_" + sheet["id"] + "_" + device["device"] + "_" + str(index)
@@ -1581,6 +1606,46 @@ def medication_row_change(room: str, row_id: str, field: str, widget_key: str, s
         note(str(exc) + " The change was not saved.", "error")
 
 
+def ventilation_history_widget_key(sheet_id: str, mode: str, field: str) -> str:
+    token = sha256(ventilator_mode_key(display_mode(mode)).encode("utf-8")).hexdigest()[:16]
+    return "vent_history_" + sheet_id + "_" + token + "_" + field
+
+
+def sync_ventilation_widgets(sheet_id: str, data: dict) -> None:
+    history_prefix = "vent_history_" + sheet_id + "_"
+    for key in list(st.session_state):
+        if key.startswith(history_prefix):
+            st.session_state.pop(key, None)
+    for index, label in enumerate(LABELS):
+        key = "vent_" + sheet_id + "_" + str(index)
+        if key in st.session_state:
+            st.session_state[key] = data["mode"] if index == 0 else data["values"].get(label, "")
+
+
+def mark_ventilator_mode_edited(data: dict, previous_mode: str) -> bool:
+    history = data.get("mode_history")
+    if not history or ventilator_mode_key(display_mode(data["mode"])) == ventilator_mode_key(display_mode(previous_mode)):
+        return False
+    former_primary = {"mode": previous_mode, "values": deepcopy(data["values"]),
+                      "reported_at": history["reported_at"]}
+    current = ventilator_mode_key(display_mode(data["mode"]))
+    matching = next((item for item in history["other_modes"]
+                     if ventilator_mode_key(display_mode(item["mode"])) == current), None)
+    data["values"] = deepcopy(matching["values"]) if matching else {}
+    other_modes = [item for item in history["other_modes"]
+                   if ventilator_mode_key(display_mode(item["mode"])) != current]
+    previous = ventilator_mode_key(display_mode(previous_mode))
+    if not any(ventilator_mode_key(display_mode(item["mode"])) == previous for item in other_modes):
+        other_modes.append(former_primary)
+    history["other_modes"] = sorted(other_modes, key=lambda item: item["reported_at"], reverse=True)
+    history["reported_at"] = ""
+    history["latest_confirmed"] = False
+    note_text = "The first mode was edited after import. Verify the displayed order against the current settings."
+    if note_text not in history["notes"]:
+        history["notes"].append(note_text)
+    return True
+
+
 def ventilation_change(room: str, label: str, key: str) -> None:
     if not require_session() or room != st.session_state.get("current_room") or key not in st.session_state:
         return
@@ -1590,8 +1655,10 @@ def ventilation_change(room: str, label: str, key: str) -> None:
         return
     updated = deepcopy(old)
     value = ss[key].strip()
+    mode_changed = False
     if label == "Vent Mode":
         updated["mode"] = value
+        mode_changed = mark_ventilator_mode_edited(updated, old["mode"])
     elif value:
         updated["values"][label] = value
     else:
@@ -1605,6 +1672,43 @@ def ventilation_change(room: str, label: str, key: str) -> None:
     ss["drafts"][room]["ventilation"] = updated
     if label == "Vent Mode":
         ss["drafts"][room]["sbs_vent_mode"] = updated["mode"]
+        if mode_changed:
+            sync_ventilation_widgets(ss["drafts"][room]["id"], updated)
+
+
+def ventilation_history_change(room: str, index: int, label: str, key: str) -> None:
+    if not require_session() or room != st.session_state.get("current_room") or key not in st.session_state:
+        return
+    ss = st.session_state
+    old = ss["drafts"][room]["ventilation"]
+    if old is None:
+        return
+    history = old.get("mode_history", {}).get("other_modes", [])
+    if type(index) is not int or not 0 <= index < len(history):
+        return
+    if label != "__include__" and (label not in LABELS[1:] or mode_rule(history[index]["mode"]) != "included"):
+        return
+    field = "include" if label == "__include__" else str(LABELS.index(label))
+    expected_key = ventilation_history_widget_key(ss["drafts"][room]["id"], history[index]["mode"], field)
+    if key != expected_key:
+        return
+    updated = deepcopy(old)
+    item = updated["mode_history"]["other_modes"][index]
+    if label == "__include__":
+        item["include"] = bool(ss[key])
+    else:
+        value = ss[key].strip()
+        if value:
+            item["values"][label] = value
+        else:
+            item["values"].pop(label, None)
+    try:
+        validate_ventilation(updated)
+    except ValueError as exc:
+        ss[key] = history[index].get("include", True) if label == "__include__" else history[index]["values"].get(label, "")
+        note(str(exc), "error")
+        return
+    ss["drafts"][room]["ventilation"] = updated
 
 
 def clear_ventilation() -> None:
@@ -1914,7 +2018,7 @@ def main() -> None:
         return
     with st.sidebar:
         st.header("PICU Handoff")
-        st.caption("Version 6.89 | Medication categories and code status")
+        st.caption("Version 6.90 | Latest ventilator mode and settings")
         # Retire the old instructions workspace without discarding room drafts.
         if st.session_state.get("page") == "Instructions / SmartPhrase":
             st.session_state["page"] = "Handoff"
@@ -2026,6 +2130,32 @@ def invasive_editor(sheet: dict) -> None:
             st.text_input(label, key=key, max_chars=500, on_change=ventilation_change,
                           args=(sheet["room"], label, key))
         st.button("Clear ventilator block", on_click=clear_ventilation)
+    other_modes = data.get("mode_history", {}).get("other_modes", [])
+    if other_modes:
+        with st.expander("Review other recorded vent modes"):
+            st.caption("Each recorded mode appears once. Settings come from the matching section of this paste. The mode times do not establish when those settings were recorded.")
+            for mode_index, item in enumerate(other_modes):
+                title = display_mode(item["mode"])
+                include_key = ventilation_history_widget_key(sheet["id"], item["mode"], "include")
+                if include_key not in st.session_state:
+                    st.session_state[include_key] = item.get("include", True)
+                st.checkbox("Include " + title, key=include_key,
+                            on_change=ventilation_history_change,
+                            args=(sheet["room"], mode_index, "__include__", include_key))
+                if mode_rule(item["mode"]) != "included":
+                    st.caption("This mode is retained as reported. No settings were assigned automatically.")
+                    continue
+                if not item["values"]:
+                    st.caption("No settings were supplied for this mode. Verified details can be added to Respiratory notes.")
+                for index, label in enumerate(LABELS[1:], start=1):
+                    if label not in item["values"]:
+                        continue
+                    key = ventilation_history_widget_key(sheet["id"], item["mode"], str(index))
+                    if key not in st.session_state:
+                        st.session_state[key] = item["values"].get(label, "")
+                    st.text_input(title + ": " + label, key=key, max_chars=500,
+                                  on_change=ventilation_history_change,
+                                  args=(sheet["room"], mode_index, label, key))
 
 
 

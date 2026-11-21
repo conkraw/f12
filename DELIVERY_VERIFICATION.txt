@@ -1,13 +1,13 @@
-PICU Handoff 6.89
-Baseline: 6.88
+PICU Handoff 6.90
 
-Final combined regression: 1,805 passed, zero failures, zero errors.
-Synthetic PDF inspected: one page, existing 8-point font, no clipping.
+Based on the complete 6.89 package.
+Four application files changed: app.py, ventilation.py, noninvasive.py, error_store.py.
+No new runtime modules or dependencies.
+All other existing application modules are byte-identical to the retrieved 6.89 package.
 
-Changed runtime files and their hashes are recorded in BUILD_MANIFEST_689.json.
-SHA256SUMS.txt lists package-file hashes.
+1,291 unique selected regression checks verified after correcting one outdated version assertion.
+22 new core tests and 21 new integration tests are included.
+The two synthetic PDF pages were rendered and visually reviewed.
+The three uploaded examples were checked locally and are not included.
 
-No uploaded patient source examples, local caches, runtime credentials or
-production archive data are included in this release.
-
-Ready to install. Not deployed to the live application.
+Ready to install. No live deployment performed.

@@ -7,6 +7,7 @@ substituted for a C-block setting. AVAPS targets retain their own source fields.
 """
 from __future__ import annotations
 from dataclasses import dataclass, field
+from datetime import datetime
 import re
 from ventilator_modes import spec, display_mode, control_family, strip_setting_marker
 
@@ -41,6 +42,8 @@ LABELS = (
     "EDI min",
     "Resp Rate Observed",
     "Apnea Interval (sec)",
+    "Weaning Tidal Volume",
+    "Weaning Tolerance",
 )
 
 
@@ -73,7 +76,7 @@ def mode_rule(mode: str) -> str:
 def validate_ventilation(data: dict | None) -> None:
     if data is None:
         return
-    if not isinstance(data, dict) or set(data) != {"mode", "values"}:
+    if not isinstance(data, dict) or set(data) not in ({"mode", "values"}, {"mode", "values", "mode_history"}):
         raise ValueError("The saved ventilation block has an invalid structure.")
     if not isinstance(data["mode"], str) or not data["mode"].strip() or len(data["mode"]) > 500 or "\n" in data["mode"] or "\r" in data["mode"]:
         raise ValueError("The ventilation mode is empty or too long.")
@@ -85,6 +88,56 @@ def validate_ventilation(data: dict | None) -> None:
     for value in values.values():
         if not isinstance(value, str) or len(value) > 500 or "\n" in value or "\r" in value:
             raise ValueError("A ventilation value is invalid or too long.")
+    if "mode_history" not in data:
+        return
+    history = data["mode_history"]
+    if not isinstance(history, dict) or set(history) != {"reported_at", "other_modes", "latest_confirmed", "notes"}:
+        raise ValueError("The ventilation mode history has an invalid structure.")
+    _validate_mode_time(history["reported_at"])
+    if type(history["latest_confirmed"]) is not bool:
+        raise ValueError("The ventilation mode history certainty flag is invalid.")
+    if not isinstance(history["notes"], list) or len(history["notes"]) > 24:
+        raise ValueError("The ventilation mode history notes are invalid.")
+    if any(not isinstance(note, str) or len(note) > 500 or "\n" in note or "\r" in note for note in history["notes"]):
+        raise ValueError("A ventilation mode history note is invalid.")
+    records = history["other_modes"]
+    if not isinstance(records, list) or len(records) > 64:
+        raise ValueError("The ventilation mode history is too long or invalid.")
+    seen = {_mode_identity(data["mode"])}
+    for record in records:
+        if not isinstance(record, dict) or set(record) not in ({"mode", "values", "reported_at"}, {"mode", "values", "reported_at", "include"}):
+            raise ValueError("A prior ventilation mode has an invalid structure.")
+        mode = record["mode"]
+        if not isinstance(mode, str) or not mode.strip() or len(mode) > 500 or "\n" in mode or "\r" in mode:
+            raise ValueError("A prior ventilation mode is invalid.")
+        identity = _mode_identity(mode)
+        if identity in seen:
+            raise ValueError("The ventilation history repeats a mode.")
+        seen.add(identity)
+        _validate_mode_time(record["reported_at"])
+        if "include" in record and type(record["include"]) is not bool:
+            raise ValueError("A prior ventilation mode visibility flag is invalid.")
+        if mode_rule(mode) == "included":
+            validate_ventilation({"mode": mode, "values": record["values"]})
+        elif mode_rule(mode) == "unknown" and record["values"] == {}:
+            pass
+        else:
+            raise ValueError("A prior mode cannot contain unsupported or non-invasive settings.")
+
+
+def _validate_mode_time(value: str) -> None:
+    if not isinstance(value, str) or (value and not re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}", value)):
+        raise ValueError("A ventilation mode timestamp is invalid.")
+    if value:
+        try:
+            datetime.fromisoformat(value)
+        except ValueError as exc:
+            raise ValueError("A ventilation mode timestamp is invalid.") from exc
+
+
+def _mode_identity(mode: str) -> str:
+    """Deduplicate display aliases, never merge distinct control-family modes."""
+    return normalize(display_mode(mode)).replace("–", "-").replace("—", "-")
 
 
 def _clean_output(value: str) -> str:
@@ -181,8 +234,7 @@ def home_vent(data: dict | None) -> bool:
     return bool(re.match(r"^[+]?(?:\d+(?:\.\d*)?|\.\d+)(?:\s|cm|$)", value, re.I))
 
 
-def format_ventilation(data: dict | None) -> str:
-    validate_ventilation(data)
+def _format_single_ventilation(data: dict | None) -> str:
     if data is None:
         return ""
     values = data["values"]
@@ -256,6 +308,45 @@ def format_ventilation(data: dict | None) -> str:
         add("FiO2 set (%)", "FiO2", "%")
     else:
         add("FiO2 (%)", "FiO2", "%")
+    if family == "PS":
+        if is_present(values.get("Weaning Tidal Volume", "")):
+            lines.append("Weaning TV: " + _nava_observed(values["Weaning Tidal Volume"], "mL"))
+        add("Weaning Tolerance", "Weaning Tolerance")
+    return "\n".join(lines)
+
+
+def _display_mode_time(value: str) -> str:
+    return datetime.fromisoformat(value).strftime("%m/%d/%y %H:%M") if value else ""
+
+
+def format_ventilation(data: dict | None) -> str:
+    validate_ventilation(data)
+    if data is None:
+        return ""
+    history = data.get("mode_history")
+    if history is None:
+        return _format_single_ventilation(data)
+    when = _display_mode_time(history["reported_at"])
+    heading = "Latest reported mode" if history["latest_confirmed"] else "Reported mode (latest uncertain)"
+    if when:
+        heading += " (" + when + ")"
+    lines = [heading, _format_single_ventilation(data)]
+    if not data["values"]:
+        lines.append("Settings not available for this mode in the paste.")
+    records = [record for record in history["other_modes"] if record.get("include", True)]
+    if records:
+        lines.extend(["", "Other reported modes", "Other settings are reported values without setting timestamps."])
+        for record in records:
+            lines.extend(["", _format_single_ventilation(record)])
+            previous_time = _display_mode_time(record["reported_at"])
+            if previous_time:
+                lines.append("Last reported mode: " + previous_time)
+            else:
+                lines.append("Mode time unavailable.")
+            if not record["values"]:
+                lines.append("Settings not available for this mode in the paste.")
+    if history["notes"]:
+        lines.extend(["", "Mode history review: " + " ".join(history["notes"])])
     return "\n".join(lines)
 
 
@@ -286,6 +377,9 @@ WRAPPERS = {
     "observed tidal volume": "Vt (observed, mL)",
     "observed respiratory rate": "Resp Rate Observed",
     "apnea time": "Apnea Interval (sec)",
+    "weaning tidal volumes": "Weaning Tidal Volume",
+    "weaning tidal volume": "Weaning Tidal Volume",
+    "weaning tolerance": "Weaning Tolerance",
 }
 
 # Typography aliases do not change a field's meaning or unit. Include them
@@ -357,12 +451,12 @@ def unwrap_vent_line(raw: str) -> str:
         line = target + ": " + content
         break
     stats = re.match(r"^(.+?)\s+((?:Avg|Min|Max)\s*:.*)$", line, re.I)
-    if stats and normalize(stats.group(1)) in {normalize(x) for x in ("PIP Observed (cm H2O)", "Vt Insp ml", "Vt Exp ml", "Vt (observed, mL)", "Vti", "Vte", "EDI peak", "EDI min", "Resp Rate Observed")}:
+    if stats and normalize(stats.group(1)) in {normalize(x) for x in ("PIP Observed (cm H2O)", "Vt Insp ml", "Vt Exp ml", "Vt (observed, mL)", "Vti", "Vte", "EDI peak", "EDI min", "Resp Rate Observed", "Weaning Tidal Volume")}:
         line = stats.group(1).strip() + ": " + stats.group(2)
     return line
 
 
-def select_ventilation_source(block: str) -> str:
+def _select_legacy_source(block: str) -> str:
     """Scope dedicated NAVA values before either C-block field reader runs.
 
     Only a documented invasive NAVA mode selects this subsection. Its fields
@@ -420,7 +514,233 @@ class VentilationResult:
     error: str = ""
 
 
-def parse_ventilation(block: str) -> VentilationResult:
+def _split_ventilation_sections(block: str) -> dict:
+    """Retain source boundaries before reading any repeated SmartLink fields."""
+    sections: dict[str, list[str]] = {"main": []}
+    controls: list[str] = []
+    modes: list[str] = []
+    history: list[str] = []
+    history_present = False
+    scope = "main"
+    for raw in block.replace("\r\n", "\n").replace("\r", "\n").splitlines():
+        line = strip_setting_marker(raw).strip()
+        heading = normalize(line.rstrip(":"))
+        if heading == "all vent modes":
+            history_present = True
+            scope = "history"
+            continue
+        section = {
+            "invasive ventilation": "main", "vent information": "main", "settings": "main",
+            "home ventilator settings": "home",
+            "average volume-assured pressure support settings": "avaps", "avaps settings": "avaps",
+            "nava ventilator settings": "nava", "nava settings": "nava",
+            "cpap trial settings": "ps_cpap", "ps-cpap settings": "ps_cpap",
+            "pressure support - continuous positive airway pressure settings": "ps_cpap",
+        }.get(heading)
+        if section is None:
+            explicit = re.fullmatch(r"(.+?)\s+(?:ventilator\s+)?settings", heading, re.I)
+            if explicit and mode_rule(explicit[1]) == "included":
+                section = "mode:" + _mode_identity(explicit[1])
+            elif explicit:
+                section = "unmapped:" + heading
+        if section is not None:
+            scope = section
+            sections.setdefault(scope, [])
+            continue
+        if heading in {"non-invasive ventilation", "noninvasive ventilation"} or re.fullmatch(r"([a-zA-Z])\1{7,}", line):
+            scope = "ignore"
+            continue
+        if scope == "history":
+            history.append(raw)
+            continue
+        if scope == "ignore":
+            continue
+        unwrapped = unwrap_vent_line(raw)
+        label, separator, value = unwrapped.partition(":")
+        if separator and normalize(label) in {"vent mode", "ventilator on"}:
+            controls.append(raw)
+            if normalize(label) == "vent mode" and is_present(value):
+                modes.append(value.strip())
+            continue
+        sections.setdefault(scope, []).append(raw)
+    return {"sections": sections, "controls": controls, "modes": modes,
+            "history": history, "history_present": history_present}
+
+
+def _read_mode_history(lines: list[str]) -> tuple[list[dict], list[str]]:
+    """Read only mode names and times. Never retain charting-author suffixes."""
+    entries: dict[str, dict] = {}
+    invalid_time = False
+    malformed = False
+    for raw in lines:
+        line = unwrap_vent_line(raw)
+        label, separator, value = line.partition(":")
+        if not separator or normalize(label) != "vent mode":
+            if re.search(r"\bvent\s+mode\b", line, re.I):
+                malformed = True
+            continue
+        value = strip_setting_marker(value).strip()
+        if not is_present(value):
+            continue
+        mode, when = value, ""
+        # The parenthesis is a chart record, not part of the mode name.
+        suffix = re.search(r"\s*\(([^()]*)\)\s*$", value)
+        embedded_date = re.search(r"\d{1,2}/\d{1,2}/\d{2,4}", value)
+        if suffix and (":" in suffix[1] or re.search(r"\d{1,2}/\d{1,2}", suffix[1])
+                       or re.search(r",\s*(?:RN|RRT|MD|DO|PA-C|APRN)\b", suffix[1], re.I)):
+            mode = value[:suffix.start()].strip()
+            stamp = re.match(r"\s*(\d{1,2}/\d{1,2}/\d{2,4})\s+(\d{1,2}:?\d{2})(?:\s*([AP]M))?(?:\s*:.*)?\s*$", suffix[1], re.I)
+            if stamp:
+                clock = stamp[2].replace(":", "").zfill(4)
+                year_format = "%Y" if len(stamp[1].rsplit("/", 1)[1]) == 4 else "%y"
+                try:
+                    parsed = datetime.strptime(stamp[1] + " " + clock + (" " + stamp[3].upper() if stamp[3] else ""),
+                                               "%m/%d/" + year_format + " " + ("%I%M %p" if stamp[3] else "%H%M"))
+                    when = parsed.isoformat(timespec="minutes")
+                except ValueError:
+                    pass
+        elif embedded_date:
+            # Missing/adjacent parentheses and unparenthesized chart entries
+            # still must not persist the timestamp's author suffix.
+            mode = value[:embedded_date.start()].rstrip(" (")
+        elif "(" in value and value.count("(") != value.count(")"):
+            mode = value.split("(", 1)[0].strip()
+        # A colon is not part of a supported mode label. Keep a safe prefix
+        # even when an unrecognized charting suffix has no valid timestamp.
+        mode = mode.split(":", 1)[0].strip()
+        mode = re.sub(r"\s+", " ", mode)
+        if not mode or len(mode) > 500:
+            malformed = True
+            continue
+        if not when:
+            invalid_time = True
+        identity = _mode_identity(mode)
+        existing = entries.get(identity)
+        if existing is None or when > existing["reported_at"]:
+            entries[identity] = {"mode": mode, "reported_at": when}
+    notes = []
+    if invalid_time:
+        notes.append("Some mode entries have missing or invalid times, so the latest mode cannot be confirmed.")
+    if malformed:
+        notes.append("Some mode history entries could not be read, so the latest mode cannot be confirmed.")
+    records = sorted(entries.values(), key=lambda record: (record["reported_at"], _mode_identity(record["mode"])), reverse=True)
+    return records, notes
+
+
+def _source_for_record(parts: dict, mode: str, *, allow_generic: bool) -> str:
+    sections = parts["sections"]
+    explicit = "mode:" + _mode_identity(mode)
+    known = spec(mode)
+    family = control_family(mode)
+    if explicit in sections:
+        lines = sections[explicit]
+    elif known and not known[2] and family == "NAVA" and "nava" in sections:
+        lines = sections["nava"]
+    elif _mode_identity(mode) == _mode_identity("PS-CPAP") and "ps_cpap" in sections:
+        lines = sections["ps_cpap"]
+    elif allow_generic:
+        lines = sections.get("main", []) + sections.get("home", [])
+        if family == "AVAPS":
+            lines = lines + sections.get("avaps", [])
+    elif known and not known[2] and family == "AVAPS" and "avaps" in sections:
+        lines = sections["avaps"]
+    else:
+        lines = []
+    return "\n".join(lines)
+
+
+def _history_context(block: str) -> dict | None:
+    block = block.replace("\r\n", "\n").replace("\r", "\n")
+    if not re.search(r"(?im)^[ \t]*(?:\(\s*S\s*\)\s*)*All\s+Vent\s+Modes\s*:?[ \t]*$", block):
+        return None
+    parts = _split_ventilation_sections(block)
+    records, notes = _read_mode_history(parts["history"])
+    if not records and not notes:
+        return None
+    original = parts["modes"][0] if parts["modes"] else ""
+    original_identity = _mode_identity(original) if original else ""
+    generic_ok = len({_mode_identity(mode) for mode in parts["modes"]}) <= 1
+    if not generic_ok:
+        notes.append("The initial settings contain conflicting mode labels. Generic settings were omitted.")
+    dated = [record for record in records if record["reported_at"]]
+    newest = [record for record in dated if record["reported_at"] == dated[0]["reported_at"]] if dated else []
+    confirmed = bool(newest) and not notes
+    chosen = original
+    if len(newest) > 1:
+        confirmed = False
+        notes.append("Different modes share the newest timestamp. The latest mode needs review.")
+    elif newest:
+        newest_mode = newest[0]["mode"]
+        if mode_rule(newest_mode) == "unknown":
+            confirmed = False
+            notes.append("The newest recorded mode is unrecognized. The displayed main mode may be older.")
+        else:
+            chosen = newest_mode
+    if not chosen or mode_rule(chosen) == "unknown":
+        fallback = next((record["mode"] for record in records if mode_rule(record["mode"]) == "included"), "")
+        chosen = fallback or chosen
+        confirmed = False
+    if not chosen:
+        chosen = records[0]["mode"] if records else ""
+    if original and chosen and _mode_identity(chosen) != original_identity and len(newest) == 1 and mode_rule(newest[0]["mode"]) != "unknown":
+        notes.append("The latest recorded mode differs from the initial Mode field. Only settings explicitly assigned to that mode were used.")
+    selected_identity = _mode_identity(chosen) if chosen else ""
+    selected_record = next((record for record in records if _mode_identity(record["mode"]) == selected_identity), None)
+    when = selected_record["reported_at"] if selected_record else ""
+    selected_source = _source_for_record(parts, chosen, allow_generic=generic_ok and selected_identity == original_identity)
+    controls = [line for line in parts["controls"] if normalize(unwrap_vent_line(line).partition(":")[0]) == "ventilator on"]
+    source = "\n".join((["Vent Mode: " + chosen] if chosen else []) + controls + [selected_source])
+    others = []
+    omitted_niv = False
+    for record in records:
+        if _mode_identity(record["mode"]) == selected_identity:
+            continue
+        if mode_rule(record["mode"]) == "excluded":
+            omitted_niv = True
+            continue
+        other_source = _source_for_record(parts, record["mode"], allow_generic=generic_ok and _mode_identity(record["mode"]) == original_identity)
+        others.append({**record, "source": other_source})
+    if omitted_niv:
+        notes.append("Recorded non-invasive modes were omitted from this invasive ventilation list.")
+    if len(others) > 64:
+        others = others[:64]
+        notes.append("Additional mode history exceeded the display limit and needs review.")
+    return {"source": source, "reported_at": when, "latest_confirmed": confirmed,
+            "notes": notes, "other_modes": others}
+
+
+def select_ventilation_source(block: str) -> str:
+    """Use the same current-mode source for imports, support parsing, and SBS."""
+    history = _history_context(block)
+    if history is not None:
+        return history["source"]
+    parts = _split_ventilation_sections(block)
+    # An empty history heading must not introduce extra repeated mode fields.
+    scoped_other = any(name.startswith(("mode:", "unmapped:")) for name in parts["sections"])
+    if parts["history_present"] or "ps_cpap" in parts["sections"] or scoped_other:
+        original = parts["modes"][0] if parts["modes"] else ""
+        if "mode:" + _mode_identity(original) in parts["sections"]:
+            return "\n".join(parts["controls"] + [_source_for_record(parts, original, allow_generic=True)])
+        if _mode_identity(original) == _mode_identity("PS-CPAP") and "ps_cpap" in parts["sections"]:
+            return "\n".join(parts["controls"] + parts["sections"]["ps_cpap"])
+        reconstructed = list(parts["controls"])
+        for name, rows in parts["sections"].items():
+            if name == "ps_cpap" or name.startswith(("mode:", "unmapped:")):
+                continue
+            if name == "nava":
+                reconstructed.append("NAVA Ventilator Settings:")
+            elif name == "home":
+                reconstructed.append("Home Ventilator Settings:")
+            elif name == "avaps":
+                reconstructed.append("Average Volume-Assured Pressure Support Settings:")
+            elif name == "main":
+                reconstructed.append("Invasive Ventilation:")
+            reconstructed.extend(rows)
+        return _select_legacy_source("\n".join(reconstructed))
+    return _select_legacy_source(block)
+
+
+def _parse_single_ventilation(block: str) -> VentilationResult:
     result = VentilationResult()
     aliases = {normalize(label): label for label in LABELS}
     aliases.update(AVAPS_LABEL_ALIASES)
@@ -481,6 +801,8 @@ def parse_ventilation(block: str) -> VentilationResult:
             required.append("FiO2 (%)")
     elif family == "PC":
         required.append("PIP Set (cm H2O)")
+    elif family == "PS":
+        required = ["Pressure Support (cm H2O)", "PEEP (cm H2O)"]
     elif family == "AVAPS":
         if not is_present(entries.get("Vt Set/Target ml", "")):
             required.append("Vt (Set, mL)")
@@ -493,4 +815,44 @@ def parse_ventilation(block: str) -> VentilationResult:
         result.issues.append("Requested fields absent from C were left out: " + ", ".join(missing) + ".")
     if family == "AVAPS" and is_present(entries.get("AVAPS rate (cm H2O/min)", "")) and _avaps_rate_unit_needs_review(entries["AVAPS rate (cm H2O/min)"]):
         result.issues.append("The AVAPS rate value does not match its source field's cm H2O/min unit. The source label and value were retained for review.")
+    return result
+
+
+def parse_ventilation(block: str) -> VentilationResult:
+    """Import a current snapshot and separately scoped, deduplicated mode history."""
+    history = _history_context(block)
+    if history is None:
+        return _parse_single_ventilation(block)
+    result = _parse_single_ventilation(history["source"])
+    result.issues.extend(history["notes"])
+    if result.error or result.data is None:
+        return result
+    notes = list(history["notes"])
+    other_modes = []
+    for record in history["other_modes"]:
+        values = {}
+        if mode_rule(record["mode"]) == "included":
+            parsed = _parse_single_ventilation("Vent Mode: " + record["mode"] + "\n" + record["source"])
+            if parsed.error:
+                note = "Conflicting settings for " + display_mode(record["mode"])[:160] + " were omitted. Review its source settings."
+                notes.append(note)
+                result.issues.append(note)
+            elif parsed.data is not None:
+                values = parsed.data["values"]
+        else:
+            note = "Unrecognized recorded mode " + record["mode"][:160] + " was retained without inferred settings."
+            notes.append(note)
+            result.issues.append(note)
+        other_modes.append({"mode": record["mode"], "values": values, "reported_at": record["reported_at"]})
+    result.data["mode_history"] = {
+        "reported_at": history["reported_at"],
+        "other_modes": other_modes,
+        "latest_confirmed": history["latest_confirmed"],
+        "notes": list(dict.fromkeys(notes))[:24],
+    }
+    try:
+        validate_ventilation(result.data)
+    except ValueError as exc:
+        result.data = None
+        result.error = str(exc)
     return result

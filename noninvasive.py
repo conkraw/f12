@@ -177,7 +177,7 @@ def parse_respiratory(c_block: str | None, d_block: str | None) -> SupportResult
             if re.search(r"high[ -]?flow|nasal cannula|mask", delivered):
                 result.invasive = None
                 result.issues.append("PS-CPAP settings coexist with a non-invasive delivery label. The non-invasive display rules were used; verify any carried-forward ventilator fields.")
-        if parsed.status != "excluded" and kind is None:
+        if result.invasive is not None or (parsed.status != "excluded" and kind is None):
             result.issues.extend(parsed.issues)
     if result.invasive is not None:
         if any(present(d.get(k, "")) for k in ("ipap", "epap", "flow")) or "high flow" in normalize(d.get("delivery", "")):

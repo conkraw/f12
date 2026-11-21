@@ -1,0 +1,33 @@
+{
+  "version": "6.90",
+  "baseline": "6.89",
+  "source_zip_sha256": "b9bd6db74471994a11979b4fe01d95b849910a806aba9895c0cbc9ba8b25d107",
+  "runtime_files": [
+    "app.py",
+    "error_store.py",
+    "noninvasive.py",
+    "ventilation.py"
+  ],
+  "new_runtime_files": [],
+  "schema": 34,
+  "dependencies_changed": false,
+  "deployed": false,
+  "verification": {
+    "selected_test_modules": 25,
+    "unique_tests": 1291,
+    "new_history_tests": 43,
+    "initial_passed": 1290,
+    "outdated_version_assertions_corrected": 1,
+    "corrected_version_assertion_passed": true,
+    "unresolved_failures": 0,
+    "synthetic_pdf_visual_review": true,
+    "provided_ventilation_examples": 3,
+    "live_remote_deployment_test": false
+  },
+  "runtime_sha256": {
+    "app.py": "9274439c73f5e7d642746359807883de1542209c45f80cfaaa230f08ffc7a96c",
+    "error_store.py": "496d513cab52cd25cbb2a9a3cc2b50ff30010175ddcfb989cb75864b6798525f",
+    "noninvasive.py": "2cdca9ca631832bbfa29aa22446a9bfc30a8a13d83f526991793c8bf6ebf48f7",
+    "ventilation.py": "381af22c7df6b5022ec2153e49771b31ef920454b95eb6c81b9d7329c32b2824"
+  }
+}

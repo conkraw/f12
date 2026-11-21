@@ -1,72 +1,78 @@
-# PICU Handoff 6.89
+# PICU Handoff 6.90
 
-This update builds on 6.88 and adds the requested medication categories, code status in demographics, and one latest PN order plus one latest intravenous lipid order in the handoff.
+This update builds on 6.89 and displays the latest reported ventilator mode first, followed by the other distinct modes recorded in the new All Vent Modes section.
 
 ## Install
 
-Extract PICU689.zip. Copy all files from PICU_Handoff_v6_89_Medications_Code_Status into the root of your existing app repository, beside app.py. Replace matching application files and include the new code_status.py and pn_orders.py modules. Upload the files themselves without adding another folder level.
+Extract PICU690.zip. Copy the files inside PICU_Handoff_v6_90_Vent_Mode_History into your existing app repository, beside app.py, and replace matching files.
 
-Keep your existing Streamlit Secrets and encryption key. Restart Streamlit, then confirm the sidebar reads:
+If your app already runs 6.89, these four application files are the required update:
 
-    Version 6.89 | Medication categories and code status
+- app.py
+- ventilation.py
+- noninvasive.py
+- error_store.py
 
-UPDATE_FILES.txt lists the application files changed since 6.88. The complete package includes all prior modules, including the recent login, ECLS, AED-level and lysis-lab updates.
+The complete package includes the earlier medication, code-status, nutrition, login, ECLS, AED-level and lysis-lab changes.
+
+Keep your existing Streamlit Secrets and encryption key. Restart Streamlit and confirm that the sidebar reads:
+
+    Version 6.90 | Latest ventilator mode and settings
+
+Re-paste the complete current SmartPhrase, including All Vent Modes in the paired C section. Older saved handoffs do not contain this history, so it cannot be recovered without a new paste.
 
 This package is ready to install. It has not been deployed to your live application.
 
-## Medication categories
+## Mode ordering
 
-| Medication | Handoff section | Subcategory |
-| --- | --- | --- |
-| Ocular lubricant, Artificial Tears ointment, Refresh PF drops | Neurology | Eye Care/Lubricants |
-| Amantadine | Neurology | Neurorecovery/Neurostimulant |
-| Enteral The Very Finest Fish Oil | Neurology | Neurorecovery Supplement |
-| Pyridoxine | Neurology | Antiepileptic Adjunct |
-| Systemic naproxen, ibuprofen and related NSAIDs | Neurology | NSAIDS |
-| Ferrous sulfate | Hematology | Iron Deficiency Anemia |
-| Hydroxyurea | Hematology | Sickle Cell Anemia |
+The app compares the dates and times on every Vent Mode entry in All Vent Modes. Source order does not determine the latest mode.
 
-These requested placements apply to new imports and existing saved medication rows, including rows with older category assignments. The app continues to honor hidden, excluded and Ignore selections. Category changes do not add a diagnosis to the Problems section.
+The first block is labeled Latest reported mode. Other reported modes appear below it, ordered by their most recent recorded occurrence. The same mode is printed once even when many hourly entries or equivalent abbreviations appear.
 
-Enteral fish oil remains separate from SMOFlipid and other intravenous lipid preparations. IV PN and lipids appear under FEN/GI, in TPN. Aspirin keeps its existing antiplatelet grouping. Acetaminophen remains under Fever Control.
+PRVC-IMV, PRVC-PS, NAVA, PS-CPAP and pressure-control modes remain distinct. The existing shorthand for Epic source mode names is preserved.
 
-## Code status
+When missing, invalid, tied or unrecognized mode entries prevent a reliable latest-mode determination, the output shows that uncertainty.
 
-The app reads the paired AE section and displays the exact documented value in demographics. Both of these source layouts are supported:
+## Settings belong to their matching mode
 
-    aeaeaeaeaeaeaeae
-    Code Status: Full Code
-    aeaeaeaeaeaeaeae
+| Mode or source | Settings used |
+| --- | --- |
+| Mode matching the initial C-block mode | The main settings for that mode |
+| NAVA | NAVA Ventilator Settings |
+| PS-CPAP | CPAP Trial Settings |
+| AVAPS | Its dedicated AVAPS settings |
+| Other explicitly labeled mode settings | The matching mode settings section |
 
-    aeaeaeaeaeaeaeae
-    Code Status:
-    No Order
-    aeaeaeaeaeaeaeae
+A populated template heading does not establish that a mode was used. Supplemental modes must be present in All Vent Modes.
 
-No Order remains No Order. A missing value does not become Full Code. The imported status can be edited in Labs / Vitals under Demographics / Weight.
+A change to a different latest mode uses settings explicitly assigned to that mode. It does not relabel the initial mode's settings. FiO2, PEEP, set volumes and other settings are kept within their source sections.
 
-A complete replacement paste without AE clears the previous room's code status. Malformed or conflicting AE content clears the old status and produces an import-review message. A manually verified status can be entered in the editor.
+NAVA retains the existing Edi, observed pressure, tidal-volume and respiratory-rate ranges. PS-CPAP includes the reported weaning tidal-volume range and tolerance when supplied.
 
-Re-paste the current SmartPhrase to populate code status in an older saved handoff, because older versions did not retain AE.
+A recorded mode without matching settings remains visible with a settings-not-available note. Blank fields and No data recorded are omitted. A missing conventional Set TV is not replaced with an AVAPS target value.
 
-## Latest PN and lipid orders
+Non-invasive support retains its existing separate display rules.
 
-The handoff shows at most one selected PN order and one selected intravenous lipid order. All original medication rows remain in the editor and encrypted archive.
+## What the timestamps mean
 
-Selection uses labelled order dates or scheduled starts when available. When usable order timing is absent, it uses later source occurrence. Last Admin and Last Rate do not determine order recency. A new pending bag can be selected even when its administration and infusion-rate fields are blank.
+All Vent Modes timestamps establish when each mode was recorded. The supplied mode-specific settings blocks do not have their own timestamps.
 
-The app preserves the selected order's own dose, route, frequency and recorded rate. It does not copy an older bag's rate into a newer order. A lipid linked by And may use its paired PN's explicit scheduling information for selection.
+The handoff therefore labels the first mode as the latest reported mode and identifies the other settings as reported values without setting timestamps. It does not claim to reconstruct a complete historical settings snapshot at each mode time.
 
-Dietary and medication copies are reconciled so PN is not repeated across sections. Hiding the selected newest order does not restore an older one. Date-only and timed entries on the same day do not establish a newer bag solely because one entry contains a time. Explicitly discontinued nutrition orders are not selected. Held status remains visible on a selected held order.
+Only the mode name and parsed mode time are retained from history entries. Charting-author suffixes and the raw mode history are not saved.
 
-The supplied medication table does not contain an order-time column. Its newer unadministered PN/lipid pair therefore uses the source-order fallback. A future source with an ambiguous sequence cannot establish an actual ordering time from Last Admin.
+## Review and editing
+
+The existing primary ventilator editor remains available. Review other recorded vent modes lets you hide or edit each additional mode's supplied settings.
+
+Changing the primary mode to another mode already listed promotes that mode's matching settings and retains the former primary separately. Changing to a new mode clears the previous mode's settings. Manual mode changes remove the imported latest-time claim.
+
+A new complete SmartPhrase replaces the selected room's prior mode history and associated editor state. Other rooms follow the existing replacement rules.
 
 ## Compatibility and verification
 
-The archive schema remains 34. Existing archives without the optional code-status field remain readable. No new application dependencies, credentials or configuration settings are required.
+Existing schema-34 archives remain readable. There are no new application dependencies or configuration requirements. Install the updated application files together because older app versions do not understand the new history metadata.
 
-TEST_REPORT.md describes the executed regression and export checks. Synthetic PDF output was visually inspected. The six uploaded examples were checked locally and are not included in this package.
+TEST_REPORT.md records the executed checks. The synthetic preview in examples/vent_mode_history_preview.pdf shows the NAVA and PS-CPAP layouts. Uploaded patient examples are not included in the package.
 
-One supplied example has an AD block containing only cerebral rSO2. The existing ECLS importer continues to flag that block because it contains no supported circuit settings. Its medication, nutrition and code-status sections import independently.
-
-Prior release documentation is retained as V688 files. The older numbered notes describe their original releases.
+The previous release notes are retained in the V689 files.
