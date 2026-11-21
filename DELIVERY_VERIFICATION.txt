@@ -1,13 +1,14 @@
-PICU Handoff 6.90
+PICU Handoff 6.91
 
-Based on the complete 6.89 package.
-Four application files changed: app.py, ventilation.py, noninvasive.py, error_store.py.
-No new runtime modules or dependencies.
-All other existing application modules are byte-identical to the retrieved 6.89 package.
+Complete package based on 6.90.
+Only app.py and error_store.py changed as runtime files.
+Replace all four listed application files to ensure the earlier
+respiratory module update is installed.
 
-1,291 unique selected regression checks verified after correcting one outdated version assertion.
-22 new core tests and 21 new integration tests are included.
-The two synthetic PDF pages were rendered and visually reviewed.
-The three uploaded examples were checked locally and are not included.
+302 selected regression tests passed.
+All five source examples import respiratory support successfully.
+The older 6.89 parser reproduces the exact reported error.
+The remote deployment was not inspected or modified.
 
+No new dependencies or archive schema change.
 Ready to install. No live deployment performed.

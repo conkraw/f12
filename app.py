@@ -1,4 +1,4 @@
-"""PICU SmartPhrase v6.90: latest ventilator mode and other reported modes."""
+"""PICU SmartPhrase v6.91: verify the running respiratory importer before use."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,
@@ -1296,6 +1296,68 @@ def _finish_handoff_import(room: str, result, store: GitHubVault | None) -> None
         send_pending_errors(store)
 
 
+RESPIRATORY_UPDATE_MESSAGE = (
+    "Handoff NOT replaced. The respiratory update is incomplete in the running app. "
+    "Replace app.py, ventilation.py, noninvasive.py and error_store.py in the same app folder, "
+    "then reboot Streamlit. Your pasted text and saved handoffs are unchanged."
+)
+
+
+def respiratory_parser_ready() -> bool:
+    """Check the actual loaded import path using a small patient-free example.
+
+    A new app.py alone does not establish that its imported respiratory modules
+    understand mode history. This check has no storage or session side effects.
+    """
+    source = """cccccccc
+Invasive Ventilation:
+Mode: Vent Mode: PRVC-IMV
+Resp Rate (Set): 14
+Vt (Set, mL): 100
+PEEP (cm H2O): 5
+FiO2 set (%): 40 %
+NAVA Ventilator Settings:
+NAVA level: 2
+PEEP (cm H2O): 7
+FiO2 (%): 25 %
+CPAP Trial Settings:
+Pressure Support (cm H2O): 8
+PEEP (cm H2O): 6
+FiO2 set (%): 30 %
+All Vent Modes:
+Vent Mode: PRVC-IMV (01/01/26 0600)
+Vent Mode: NAVA (01/01/26 1300)
+Vent Mode: PS-CPAP (01/01/26 1200)
+Vent Mode: PRVC-IMV (01/01/26 1800)
+cccccccc
+"""
+    try:
+        result = import_replacement("IMPORT CHECK", source, new_vault()["settings"])
+        if result.errors or result.sheet is None:
+            return False
+        data = result.sheet.get("ventilation") or {}
+        history = data.get("mode_history") or {}
+        others = history.get("other_modes", [])
+        return bool(
+            data.get("mode") == "PRVC-IMV"
+            and data.get("values", {}).get("FiO2 set (%)") == "40 %"
+            and history.get("reported_at") == "2026-01-01T18:00"
+            and history.get("latest_confirmed") is True
+            and len(others) == 2
+            and others[0].get("mode") == "NAVA"
+            and others[0].get("values", {}).get("PEEP (cm H2O)") == "7"
+            and others[0].get("values", {}).get("FiO2 (%)") == "25 %"
+            and others[1].get("mode") == "PS-CPAP"
+            and others[1].get("values", {}).get("PEEP (cm H2O)") == "6"
+            and others[1].get("values", {}).get("FiO2 set (%)") == "30 %"
+            and result.sheet.get("sbs_vent_mode") == "PRVC-IMV"
+        )
+    except Exception:
+        # Dependency errors can contain pasted content. Show only a static
+        # incomplete-update message and never alter a room on a failed check.
+        return False
+
+
 def create_handoff(store: GitHubVault | None = None) -> None:
     """Validate a fresh record, save it, then discard the prior room draft.
 
@@ -1313,6 +1375,9 @@ def create_handoff(store: GitHubVault | None = None) -> None:
         return
     if ss.get("base_sheets", {}).get(room) != ss["vault"]["rooms"].get(room):
         note("Handoff NOT replaced. The saved room changed. Reload the saved handoff before importing again. Your pasted text is kept.", "error")
+        return
+    if not respiratory_parser_ready():
+        note(RESPIRATORY_UPDATE_MESSAGE, "error")
         return
     try:
         result = import_replacement(room, ss.get("paste", ""), ss["vault"]["settings"])
@@ -2001,6 +2066,12 @@ def main() -> None:
         with login_view.container():
             render_login(st, app["password_hash"], authenticate)
         return
+    if not respiratory_parser_ready():
+        login_view.empty()
+        st.error(RESPIRATORY_UPDATE_MESSAGE)
+        st.button("Check again", key="recheck_respiratory_update")
+        st.button("Log out", key="respiratory_update_logout", on_click=clear_session)
+        return
     st.session_state["last_activity"] = now
     st.session_state["idle_seconds"] = app["idle_minutes"] * 60
     idle_guard(app["idle_minutes"])
@@ -2018,7 +2089,8 @@ def main() -> None:
         return
     with st.sidebar:
         st.header("PICU Handoff")
-        st.caption("Version 6.90 | Latest ventilator mode and settings")
+        st.caption("Version 6.91 | Respiratory import check")
+        st.caption("Respiratory mode-history parser: ready")
         # Retire the old instructions workspace without discarding room drafts.
         if st.session_state.get("page") == "Instructions / SmartPhrase":
             st.session_state["page"] = "Handoff"

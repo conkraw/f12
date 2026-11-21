@@ -1,0 +1,26 @@
+PICU Handoff 6.90
+Baseline: 6.89
+
+Required application files to upload together:
+app.py
+ventilation.py
+noninvasive.py
+error_store.py
+
+No new application modules or dependencies.
+
+Extract PICU690.zip. Copy the files inside
+PICU_Handoff_v6_90_Vent_Mode_History into your existing
+app repository root, beside app.py. The complete package
+includes every existing application module.
+
+Restart Streamlit.
+Sidebar: Version 6.90 | Latest ventilator mode and settings
+
+Re-paste the complete current SmartPhrase, including
+All Vent Modes in the paired C section, to populate mode history.
+
+Keep existing Streamlit Secrets and the encryption key.
+Existing archives remain readable with schema 34.
+
+Ready to install. Not deployed to the live application.

@@ -1,0 +1,13 @@
+PICU Handoff 6.90
+
+Based on the complete 6.89 package.
+Four application files changed: app.py, ventilation.py, noninvasive.py, error_store.py.
+No new runtime modules or dependencies.
+All other existing application modules are byte-identical to the retrieved 6.89 package.
+
+1,291 unique selected regression checks verified after correcting one outdated version assertion.
+22 new core tests and 21 new integration tests are included.
+The two synthetic PDF pages were rendered and visually reviewed.
+The three uploaded examples were checked locally and are not included.
+
+Ready to install. No live deployment performed.

@@ -1,57 +1,51 @@
-# PICU Handoff 6.90 verification
+# PICU Handoff 6.91 verification
 
-## Result
+## Final regression result
 
-The selected regression checks covered 1,291 unique tests across 25 modules.
+302 tests passed across nine selected modules and the current-version assertion from a tenth module. There were no failures, errors or skipped tests in the final combined run.
 
-The combined run passed 1,290 tests. Its remaining test contained an outdated assertion requiring technical reports to identify the app as version 6.75. That assertion was updated to 6.90 and the affected test passed on rerun. No unresolved test failures remain. Production code did not change between that combined run and the corrected version check.
+The selection covers the loaded-parser check, mode-history parsing and integration, application callbacks, UI rendering, room replacement, saving before printing, print workflows and technical error reports.
 
-The new mode-history coverage consists of 22 core tests and 21 integration tests. These use synthetic data.
+Twelve new checks in tests/test_respiratory_update_check.py verify the incomplete-update condition and its handling.
 
-## Behavior checked
+## Exact error reproduction
 
-- Selecting the newest mode from an unordered list, including timestamps across midnight.
-- LF, Windows CRLF and CR line endings.
-- Deduplicating equivalent mode names without combining distinct PRVC subtypes.
-- Matching NAVA and PS-CPAP settings to their dedicated sections.
-- Keeping the current FiO2, pressures and volumes separate from other sections.
-- Preserving a recorded mode when its settings are unavailable.
-- Handling unknown modes, invalid times, tied newest times and malformed chart suffixes.
-- Removing charting-author text before saving or exporting mode history.
-- Applying the same current-mode selection in ventilation import, respiratory support and SBS source handling.
-- Saving and reopening the expanded data through the existing encrypted archive.
-- Replacing room data and clearing obsolete mode history and editor state.
-- Editing, hiding and promoting historical modes without reusing another mode's settings.
-- Rejecting stale callbacks after mode ordering changes.
-- Capturing a pending mode change during save or tab changes.
-- Repeatedly switching modes without stale widgets restoring an older setting.
-- Consistent text, HTML, single-patient PDF and batch export behavior.
-- Existing ventilation, AVAPS, NAVA, NIV, save, import, security, replacement and UI paths.
+Both newly uploaded SmartPhrases were checked through the full import_replacement workflow.
 
-## Provided examples
+The delivered 6.90 package imports respiratory support successfully in both. Its respiratory files were compared with the working source and match byte-for-byte.
 
-All three uploaded examples were checked locally against the final ventilation code.
+The older 6.89 parser reproduces the exact reported error in both examples. Its source selector passes timestamped mode-history lines to the current-setting reader, which rejects them as repeated Vent Mode fields.
 
-Each selects its newest PRVC-IMV entry rather than the first history line. The PS-CPAP examples retain only the documented additional mode and its own settings. The NAVA example retains both NAVA and the distinct earlier PRVC-PS entry. Because that PRVC-PS entry has no matching settings block, its settings are identified as unavailable.
+This is evidence of a likely older or mixed running module. The remote deployment was not inspected and no claim is made that its file state has been confirmed.
 
-The example with current FiO2 55% keeps that value and does not substitute the unrelated 30% NAVA or NIV value. Missing conventional Set TV remains omitted instead of taking an AVAPS target volume.
+## Runtime check
 
-The uploaded files and patient-derived output are not included in this package.
+The new check uses a small fixed synthetic example and the same loaded import function as the user's replacement workflow.
 
-## Print review
+It verifies the newest mode, parsed timestamp, two separate historical modes, deduplication and mode-specific settings. An old unscoped selector fails this check.
 
-Two synthetic handoffs were exported into examples/vent_mode_history_preview.pdf. One shows PRVC with NAVA and PRVC-PS. The other shows PRVC with PS-CPAP.
+The check runs after authentication and before archive loading. It also runs after the existing import guards and before replacing a handoff. Failure preserves the pasted text and existing records, with no archive read or write from the check itself.
 
-Both pages were rendered to PNG and visually inspected. Each handoff fits on one landscape page at the existing 8-point font size. The added mode blocks, ranges and timing notes are readable without clipping or overlap.
+Tests also verify that internal exceptions do not expose source text and that the ready label appears only when the check passes.
 
-## Review findings addressed
+## Provided sources
 
-Independent review identified and verified fixes for display-alias duplication, author text in malformed history suffixes, settings leakage from unrelated explicit headings, Windows line-ending handling, manual-mode value reassignment and stale editor callbacks.
+All five uploaded SmartPhrases were processed through the complete replacement-import workflow with the final code. Each produced ventilation data without a respiratory import warning.
 
-The reported mode times are not treated as timestamps for the individual settings. The output states this limitation.
+The two new examples remain PRVC first, followed by their recorded NAVA, PRVC-PS or PS-CPAP entries as applicable. Blank current FiO2 is not replaced with an unrelated historical NAVA value.
 
-## Dependencies and scope
+The Current Shift warning is appropriate for both new sources because the required current-shift output breakdown is absent. That calculation logic was not changed.
 
-No application dependencies changed. Existing test-plugin and PDF-cache deprecation warnings did not affect the checks.
+One source also contains an AD section with no supported ECLS settings. Its existing ECLS alert is independent of respiratory import.
 
-Validation was performed on this local application package. No live Streamlit deployment or production archive write was performed.
+Uploaded source text and patient-derived output are not included in this package.
+
+## Scope
+
+Only app.py and error_store.py changed as runtime files after 6.90. The known-working ventilation.py and noninvasive.py are included in the four-file installation instructions to resolve an incomplete earlier update.
+
+The archive schema remains 34. No application dependencies or credentials changed.
+
+Independent review found no blocking issue in the readiness probe or its placement before patient replacement. Existing dependency deprecation warnings did not affect test results.
+
+No live Streamlit deployment or production archive write was performed.
