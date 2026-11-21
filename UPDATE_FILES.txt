@@ -1,29 +1,24 @@
-PICU Handoff 6.91
-Baseline: 6.90
+PICU Handoff 6.92
+Baseline: 6.91
 
-Required files for this correction:
+From 6.91, replace these files in the existing app folder:
 app.py
 ventilation.py
-noninvasive.py
 error_store.py
 
-Replace all four in the same existing app folder.
-The working ventilation.py and noninvasive.py are included
-even though their contents have not changed since 6.90.
+Extract PICU692.zip and open
+PICU_Handoff_v6_92_Compact_Vent_Modes.
+Put the replacement files beside the app.py that Streamlit runs.
 
-Extract PICU691.zip and open
-PICU_Handoff_v6_91_Respiratory_Import_Check.
-Upload the files beside the app.py that Streamlit runs.
-Do not add another folder level.
-
-Reboot Streamlit after uploading.
-Confirm both sidebar lines:
-Version 6.91 | Respiratory import check
+Reboot Streamlit and confirm:
+Version 6.92 | Compact vent modes
 Respiratory mode-history parser: ready
 
-Then re-paste the complete current SmartPhrase.
+Open the handoff again and generate a fresh print or download.
+Existing handoffs with mode-history dates do not need to be re-imported
+for this formatting change.
 
+For an earlier app version, use the complete package contents.
 Keep existing Streamlit Secrets and the encryption key.
-No new dependencies or archive schema change.
 
 Ready to install. No live deployment performed.

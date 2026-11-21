@@ -1,0 +1,29 @@
+PICU Handoff 6.91
+Baseline: 6.90
+
+Required files for this correction:
+app.py
+ventilation.py
+noninvasive.py
+error_store.py
+
+Replace all four in the same existing app folder.
+The working ventilation.py and noninvasive.py are included
+even though their contents have not changed since 6.90.
+
+Extract PICU691.zip and open
+PICU_Handoff_v6_91_Respiratory_Import_Check.
+Upload the files beside the app.py that Streamlit runs.
+Do not add another folder level.
+
+Reboot Streamlit after uploading.
+Confirm both sidebar lines:
+Version 6.91 | Respiratory import check
+Respiratory mode-history parser: ready
+
+Then re-paste the complete current SmartPhrase.
+
+Keep existing Streamlit Secrets and the encryption key.
+No new dependencies or archive schema change.
+
+Ready to install. No live deployment performed.

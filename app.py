@@ -1,4 +1,4 @@
-"""PICU SmartPhrase v6.91: verify the running respiratory importer before use."""
+"""PICU SmartPhrase v6.92: compact ventilator modes with inline timestamps."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,
@@ -2089,7 +2089,7 @@ def main() -> None:
         return
     with st.sidebar:
         st.header("PICU Handoff")
-        st.caption("Version 6.91 | Respiratory import check")
+        st.caption("Version 6.92 | Compact vent modes")
         st.caption("Respiratory mode-history parser: ready")
         # Retire the old instructions workspace without discarding room drafts.
         if st.session_state.get("page") == "Instructions / SmartPhrase":

@@ -116,7 +116,7 @@ def test_unknown_newest_preserves_main_snapshot_with_explicit_uncertainty():
     assert result.data["mode"] == "PRVC-IMV"
     assert not result.data["mode_history"]["latest_confirmed"]
     assert result.data["mode_history"]["other_modes"][0]["values"] == {}
-    assert "latest uncertain" in format_ventilation(result.data)
+    assert "The newest recorded mode is unrecognized. The displayed main mode may be older." in format_ventilation(result.data)
     assert result.issues
 
 

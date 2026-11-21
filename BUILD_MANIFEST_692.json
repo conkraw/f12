@@ -1,0 +1,33 @@
+{
+  "version": "6.92",
+  "baseline": "6.91",
+  "source_zip_sha256": "e30a5b2efcd94e9ba8eec1c213921325226a5cb212262d8ed0f2e9e75d5896cf",
+  "runtime_files_changed": [
+    "app.py",
+    "error_store.py",
+    "ventilation.py"
+  ],
+  "required_installation_files": [
+    "app.py",
+    "ventilation.py",
+    "error_store.py"
+  ],
+  "new_runtime_files": [],
+  "schema": 34,
+  "dependencies_changed": false,
+  "deployed": false,
+  "verification": {
+    "tests": 278,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "synthetic_pdf_pages_reviewed": 2,
+    "home_vent_timestamp": "passed",
+    "live_runtime_inspected": false
+  },
+  "runtime_sha256": {
+    "app.py": "ada40cc859ba1e87f195e45064d182d0ac3e1c925febc608a25192b6019f358f",
+    "error_store.py": "f14d32ccd41fc9ff014e87dd70138fbdd3621782d29229b9cc1589ff9ab63884",
+    "ventilation.py": "61dfb48bfd5424002a9419062af6faacb742a2d04f2cdbf1465d56e440f98ce2"
+  }
+}

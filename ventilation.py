@@ -319,6 +319,16 @@ def _display_mode_time(value: str) -> str:
     return datetime.fromisoformat(value).strftime("%m/%d/%y %H:%M") if value else ""
 
 
+def _format_mode_with_time(data: dict, reported_at: str) -> str:
+    lines = _format_single_ventilation(data).splitlines()
+    when = _display_mode_time(reported_at)
+    if when:
+        lines = [line + " (" + when + ")" if line.startswith("Mode: ") else line for line in lines]
+    if not data["values"]:
+        lines.append("Settings not available for this mode in the paste.")
+    return "\n".join(lines)
+
+
 def format_ventilation(data: dict | None) -> str:
     validate_ventilation(data)
     if data is None:
@@ -326,28 +336,13 @@ def format_ventilation(data: dict | None) -> str:
     history = data.get("mode_history")
     if history is None:
         return _format_single_ventilation(data)
-    when = _display_mode_time(history["reported_at"])
-    heading = "Latest reported mode" if history["latest_confirmed"] else "Reported mode (latest uncertain)"
-    if when:
-        heading += " (" + when + ")"
-    lines = [heading, _format_single_ventilation(data)]
-    if not data["values"]:
-        lines.append("Settings not available for this mode in the paste.")
+    blocks = [_format_mode_with_time(data, history["reported_at"])]
     records = [record for record in history["other_modes"] if record.get("include", True)]
-    if records:
-        lines.extend(["", "Other reported modes", "Other settings are reported values without setting timestamps."])
-        for record in records:
-            lines.extend(["", _format_single_ventilation(record)])
-            previous_time = _display_mode_time(record["reported_at"])
-            if previous_time:
-                lines.append("Last reported mode: " + previous_time)
-            else:
-                lines.append("Mode time unavailable.")
-            if not record["values"]:
-                lines.append("Settings not available for this mode in the paste.")
+    blocks.extend(_format_mode_with_time(record, record["reported_at"]) for record in records)
+    text = "\n---\n".join(blocks)
     if history["notes"]:
-        lines.extend(["", "Mode history review: " + " ".join(history["notes"])])
-    return "\n".join(lines)
+        text += "\n\nMode history review: " + " ".join(history["notes"])
+    return text
 
 
 MISSING_VALUES = {"", "--", "-", "none", "n/a", "na", "no data recorded", "not documented", "no results found"}

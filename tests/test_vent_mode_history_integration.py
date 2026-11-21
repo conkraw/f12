@@ -105,6 +105,17 @@ def imported(c_source, d_source=D_ETT):
     return result.sheet
 
 
+def assert_compact_mode_headers(text, expected):
+    mode_lines = [line for line in text.splitlines() if line.startswith("Mode: ")]
+    assert len(mode_lines) == len(expected)
+    for line, (mode, recorded_at) in zip(mode_lines, expected):
+        assert line.startswith("Mode: " + mode)
+        assert recorded_at in line
+    assert text.splitlines().count("---") == len(expected) - 1
+    for obsolete in ("Latest reported mode", "Last reported mode", "Other reported modes", "without setting timestamps"):
+        assert obsolete not in text
+
+
 def test_unordered_history_keeps_latest_prvc_and_distinct_prior_modes():
     sheet = imported(mixed_nava_source())
     data = sheet["ventilation"]
@@ -125,6 +136,11 @@ def test_unordered_history_keeps_latest_prvc_and_distinct_prior_modes():
     assert "PS-CPAP" not in text
     assert "AVAPS" not in text
     assert "999" not in text and "998" not in text
+    assert_compact_mode_headers(text, [
+        ("PRVC-IMV", "11/20/26 18:00"),
+        ("NAVA", "11/20/26 13:00"),
+        ("PRVC-PS", "11/19/26 21:09"),
+    ])
 
 
 def test_cpap_history_uses_only_its_own_settings_and_never_nava_or_niv_values():
@@ -140,13 +156,14 @@ def test_cpap_history_uses_only_its_own_settings_and_never_nava_or_niv_values():
     assert data["values"]["FiO2 set (%)"] == "47 %"
     assert previous[0]["values"]["FiO2 set (%)"] == "62 %"
     text = format_ventilation(data)
-    first, rest = text.split("Other reported modes", 1)
+    first, rest = text.split("\n---\n", 1)
     assert "FiO2: 47 %" in first and "FiO2: 62 %" not in first
     assert "FiO2: 62 %" in rest and "FiO2: 47 %" not in rest
     assert "FiO2: 29 %" not in text and "FiO2: 33 %" not in text
     assert "NAVA" not in text
     assert "105–210 mL" in text and "Good" in text
     assert sheet["noninvasive"] == []
+    assert_compact_mode_headers(text, [("PRVC-IMV", "11/20/26 19:00"), ("PS-CPAP", "11/20/26 17:00")])
 
 
 def test_latest_ps_cpap_selects_trial_values_and_keeps_invasive_route():
@@ -166,8 +183,9 @@ def test_latest_ps_cpap_selects_trial_values_and_keeps_invasive_route():
     sheet = imported(c_source)
     assert sheet["sbs_vent_mode"] == PS_CPAP
     assert sheet["ventilation"]["values"]["Pressure Support (cm H2O)"] == "8 cm H20"
-    first = format_ventilation(sheet["ventilation"]).split("Other reported modes", 1)[0]
+    first = format_ventilation(sheet["ventilation"]).split("\n---\n", 1)[0]
     assert "Mode: PS-CPAP" in first
+    assert "11/20/26 18:00" in first.splitlines()[0]
     assert "Set RR: 21" not in first and "Set TV: 180" not in first
 
 
@@ -184,8 +202,9 @@ def test_latest_nava_uses_its_block_in_read_fields_import_and_sbs_gate():
     sheet = imported(c_source)
     assert sheet["sbs_vent_mode"] == NAVA
     assert sheet["ventilation"]["mode"] == NAVA
-    first = format_ventilation(sheet["ventilation"]).split("Other reported modes", 1)[0]
+    first = format_ventilation(sheet["ventilation"]).split("\n---\n", 1)[0]
     assert "NAVA Level: 2.8" in first and "FiO2: 33 %" in first
+    assert "11/20/26 19:00" in first.splitlines()[0]
     assert "FiO2: 47 %" not in first and "Set TV: 180" not in first
 
 
@@ -247,8 +266,10 @@ def test_unknown_newest_mode_does_not_claim_older_supported_mode_is_latest():
     assert metadata["latest_confirmed"] is False
     assert metadata["notes"]
     text = format_ventilation(sheet["ventilation"])
-    assert "Latest reported mode (" not in text
+    assert "Latest reported mode" not in text
     assert "Unlisted support" in text
+    assert "Mode history review:" in text
+    assert all(note in text for note in metadata["notes"])
 
 
 def test_history_and_other_settings_survive_encrypted_roundtrip():
@@ -266,8 +287,17 @@ def test_history_and_other_settings_survive_encrypted_roundtrip():
 def test_text_html_pdf_have_same_mode_order_and_keep_each_mode_once():
     sheet = imported(mixed_nava_source())
     pdf = PdfReader(BytesIO(handoff_pdf(sheet)))
-    pdf_text = re.sub(r"\s+", " ", " ".join(page.extract_text() for page in pdf.pages))
+    pdf_lines = "\n".join(page.extract_text() for page in pdf.pages)
+    pdf_text = re.sub(r"\s+", " ", pdf_lines)
     html_text = unescape(re.sub(r"<[^>]*>", "", handoff_html(sheet)))
+    expected = [
+        ("PRVC-IMV", "11/20/26 18:00"),
+        ("NAVA", "11/20/26 13:00"),
+        ("PRVC-PS", "11/19/26 21:09"),
+    ]
+    for content in (handoff_text(sheet), html_text):
+        assert_compact_mode_headers(content, expected)
+    assert sum(line.strip() == "---" for line in pdf_lines.splitlines()) == 2
     for content in (handoff_text(sheet), html_text, pdf_text):
         assert content.index("Mode: PRVC-IMV") < content.index("Mode: NAVA") < content.index("Mode: PRVC-PS")
         assert content.count("Mode: PRVC-IMV") == 1
@@ -275,7 +305,17 @@ def test_text_html_pdf_have_same_mode_order_and_keep_each_mode_once():
         assert content.count("Mode: PRVC-PS") == 1
         assert "FiO2: 47 %" in content and "FiO2: 33 %" in content
         assert "SYNTHETIC_AUTHOR" not in content
-        assert "without setting timestamps" in content
+        for obsolete in ("Latest reported mode", "Last reported mode", "Other reported modes", "without setting timestamps"):
+            assert obsolete not in content
+        current = content[content.index("Mode: PRVC-IMV"):content.index("Mode: NAVA")]
+        nava = content[content.index("Mode: NAVA"):content.index("Mode: PRVC-PS")]
+        for fragment, timestamp, own_fio2, other_fio2 in (
+            (current, "11/20/26 18:00", "FiO2: 47 %", "FiO2: 33 %"),
+            (nava, "11/20/26 13:00", "FiO2: 33 %", "FiO2: 47 %"),
+        ):
+            assert timestamp in fragment
+            assert fragment.index(timestamp) < fragment.index(own_fio2)
+            assert own_fio2 in fragment and other_fio2 not in fragment
     assert "3.1-11.9" in pdf_text
 
 
@@ -287,6 +327,8 @@ def test_c_update_without_history_replaces_previous_history_and_remains_legacy_c
     assert set(result.sheet["ventilation"]) == {"mode", "values"}
     text = format_ventilation(result.sheet["ventilation"])
     assert "NAVA" not in text and "Other reported modes" not in text
+    assert text.splitlines()[0] == "Mode: PRVC-IMV"
+    assert "---" not in text.splitlines()
 
 
 def test_whole_room_replacement_clears_history_when_new_patient_has_no_c_section():
@@ -341,9 +383,13 @@ def test_app_history_toggle_hides_only_that_mode_and_preserves_its_record(app):
     text = format_ventilation(data)
     assert "Mode: NAVA" not in text
     assert "Mode: PRVC-IMV" in text and "Mode: PRVC-PS" in text
+    assert text.splitlines().count("---") == 1
+    assert "11/20/26 13:00" not in text
     ss[key] = True
     app.ventilation_history_change("P4102", 0, "__include__", key)
-    assert "NAVA Level: 2.8" in format_ventilation(ss["drafts"]["P4102"]["ventilation"])
+    restored = format_ventilation(ss["drafts"]["P4102"]["ventilation"])
+    assert "NAVA Level: 2.8" in restored
+    assert restored.splitlines().count("---") == 2
 
 
 def test_app_manual_primary_mode_change_removes_imported_timestamp_claim(app):
