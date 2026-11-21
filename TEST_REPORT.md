@@ -1,54 +1,64 @@
-# PICU Handoff 6.95 verification
+# PICU Handoff 6.96 verification
 
-## Automated result
+## Final automated result
 
-718 selected tests passed with zero failures, errors or skipped tests. This includes 35 new lumbar core tests, 19 new lumbar integration tests and 664 existing regression tests.
+1,036 selected tests passed with zero failures, errors or skipped tests. This includes 108 new fluid core cases, 21 new fluid integration cases and 18 new processing-feedback cases, plus 889 existing regression tests.
 
 | Test module | Passed |
 | --- | ---: |
+| tests.test_airway_clearance_680 | 45 |
 | tests.test_batch_exports | 8 |
-| tests.test_devices | 103 |
-| tests.test_empty_groups_icp_cpp | 85 |
+| tests.test_compact_pn | 37 |
+| tests.test_dynamic_categories | 93 |
+| tests.test_fen_gi | 77 |
 | tests.test_home_navigation | 19 |
-| tests.test_import_recovery | 34 |
-| tests.test_lumbar_drain_core | 35 |
+| tests.test_iv_fluids_core | 108 |
+| tests.test_iv_fluids_integration | 21 |
+| tests.test_labels_colors_groups | 129 |
+| tests.test_latest_pn_orders_689 | 40 |
 | tests.test_lumbar_drain_integration | 19 |
-| tests.test_measurement_notes_observed_pip | 74 |
-| tests.test_neuro_groups_compact_trends | 122 |
-| tests.test_neuro_weight | 83 |
+| tests.test_measurement_notes_observed_pip | 1 |
+| tests.test_medication_doses_680 | 98 |
+| tests.test_nutrition_display | 118 |
+| tests.test_processing_feedback | 18 |
 | tests.test_respiratory_update_check | 13 |
 | tests.test_room_replacement | 82 |
+| tests.test_rooms_infusions | 69 |
 | tests.test_ui_smoke | 8 |
 | tests.test_vent_first_reported_fallback | 33 |
 
-## Lumbar drain behavior
+## IV fluid coverage
 
-The new tests cover explicit lumbar drain labels in both device blocks, the shared Epic category prefix, older Other-category records, the documented status, missing status and conflicting repeated status.
+The new core tests verify full-formulation classification, continuous IV route and frequency, standard dilute KCl bags, explicit exclusions, source-rate selection, timestamps, low-rate suppression, dosing-weight units, exact and approximate maintenance fractions, and saved category overrides.
 
-Matching device identities across U and V collapse to one Neuro line. Conflicting statuses for that identity display UNK. Distinct device identities remain separate. Unrelated drains cannot supply a status or date.
+The reference is hourly 4-2-1 using documented dosing weight, without an automatic maximum-rate cap. Rates at or below 2 mL/hr have no comparison. Missing or failed I sections cannot reuse retained dosing weight for the comparison. Invalid or ambiguous rates are withheld from the calculation.
 
-Include controls, removed-device markers and failed-section hiding prevent inappropriate output. Replacing a room with a new paste that has no lumbar drain cannot recover old lumbar details from retained widget values.
+Integration checks cover text, HTML and PDF placement, the New Bag event with an explicit Last Rate, saved encrypted reload, Include controls, full-room replacement, non-running statuses and changes to dosing weight. Changing DCW invalidates the prepared PDF and updates the displayed comparison.
 
-Lumbar punctures, culture specimen descriptions and generic surgical drains in a lumbar location do not create a lumbar drain. EVDs, ICP monitors, scalp drains and other devices retain their existing routes.
+Drug drips in a carrier stay outside the generic fluid group. Existing PN, lipids, D50, respiratory saline, medication-dose displays, saved categories and other infusion paths were covered by the regression selection. Home, room replacement, ventilator fallback and lumbar-drain integration checks also passed.
 
-## Placement, editing and persistence
+## Supplied examples
 
-Text, HTML and PDF checks verify the exact six-hyphen separator after the last visible WAT line, followed by the lumbar drain and then ICP/CPP. When WAT is absent, blank or excluded, the drain follows CAPD without creating a score.
+All eight eligible fluid rows across the six supplied sources passed the targeted classification and display checks. Four entries receive a maintenance comparison. The 1 and 2 mL/hr lines remain visible without a comparison. Two samples lack usable DCW, so their fluid rate is displayed without a ratio.
 
-Device status and Include edits reach the saved handoff. Encrypted save/reload checks preserve both current Drain records and older Other records. A handoff containing only a lumbar drain remains available in Print all.
+One supplied source has existing diagnoses and weight-section import alerts. The new fluid entry remains visible, and its unavailable dosing weight correctly prevents a calculation. These targeted checks do not claim that every unrelated source section imported without alerts.
 
-The existing Home navigation and ventilator fallback tests were included in this release's regression selection.
+No uploaded clinical source text was added to tests, fixtures or previews.
 
-## Supplied source and visual check
+## Processing and real Streamlit lifecycle
 
-The supplied source contains a lumbar drain marked Clamped, no lumbar device date and no WAT value. Its lumbar line appears in the Neuro score area with the required separator. The separate scalp drain remains in the footer. No EVD is created, no date is borrowed and the lumbar entry causes no V-section warning.
+The new processing tests cover real stage transitions, elapsed spinner options, timing estimates after successful imports, bounded anonymous timing history and cleanup on every exit. Parse or save failure cannot report completion. A confirmed save followed by PDF preparation failure retains the save and reports the existing retry behavior.
 
-The supplied clinical source was not added to fixtures or previews. The included examples/lumbar_drain_preview.pdf uses synthetic content. Its two examples cover WAT present and WAT absent. Each fits on one page at the existing 8-point font without tighter spacing. Both PDF pages were rendered to images and visually checked for placement and clipping.
+The real app passed eight Streamlit AppTest stages with zero exceptions. The run verified native spinner and progress calls, first-import feedback, estimates on a second import, failed-import cleanup, preservation of the saved handoff, and Home/Continue behavior. It used synthetic input with shared storage disabled.
 
-## Scope
+The estimates update at stage boundaries using up to five recent successful imports in that session. They are typical times, not an exact countdown. Timing history remains outside the saved patient archive.
 
-Changed runtime files: app.py, batching.py, devices.py, error_store.py, import_review.py and models.py.
+The AppTest report is included in examples/processing_feedback_check.json. AppTest checks the real Streamlit widget lifecycle and does not provide browser screenshots or a production-storage test.
 
-The archive schema remains 34. There are no new runtime files or dependencies. Independent review found no blocking issue in the lumbar routing, status handling or sample import.
+## Print and package scope
 
-Existing dependency deprecation warnings did not affect the test result. UI harness checks passed. No live Streamlit deployment or production archive write was performed.
+The two-page synthetic preview in examples/iv_fluids_preview.pdf covers a percentage comparison with a low-rate fluid and a three-quarter comparison using Last Rate. Both handoffs fit on one page each at the existing 8-point font. Both pages were rendered and visually checked for placement, wrapping and clipping.
+
+Seven runtime files changed. iv_fluids.py and processing_feedback.py are new. All runtime Python files passed syntax checks. The archive schema remains 34 and dependencies are unchanged.
+
+Independent review found no blocking issue. Existing dependency deprecation warnings did not affect the result. No live deployment or production archive write was performed.

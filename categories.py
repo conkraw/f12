@@ -18,7 +18,7 @@ SETTINGS_KEYS = {"medication_categories", "medication_category_rules"}
 CATEGORY_SYSTEMS = tuple(x for x in DESTINATIONS if x not in ("Labs", "Ignore"))
 # These built-ins were introduced without changing the saved archive schema.
 BACKFILLED_BUILTIN_IDS = ("group:epidural", "group:chemotherapy", "group:leukotriene_receptor_antagonist",
-                          "gi:probiotic", "group:adh_analog", "group:airway_clearance") + tuple(
+                          "gi:probiotic", "group:adh_analog", "group:airway_clearance", "gi:iv_fluids") + tuple(
                               "group:" + group for group in FIXED_HANDOFF_GROUPS)
 
 
@@ -43,7 +43,8 @@ def default_categories() -> list[dict]:
             order = 10 + 10 * ("antibiotic", "antifungal", "antiviral").index(key)
         result.append(dict(id="group:" + key, name=name, section=GROUP_SECTIONS[key], parent="", order=order))
     for n, (key, name) in enumerate(GI_NAMES.items()):
-        result.append(dict(id="gi:" + key, name=name, section="FEN / GI", parent="", order=10 if key == "tpn" else 20 + 10*n))
+        result.append(dict(id="gi:" + key, name=name, section="FEN / GI", parent="",
+                           order=10 if key == "tpn" else 15 if key == "iv_fluids" else 20 + 10*n))
     for key, name in INFUSION_HEADINGS.items():
         order = 10 if key == "Neurologic" else 90 if key == "Cardiovascular" else 15
         result.append(dict(id="infusion:" + key, name=name, section=key, parent="", order=order))
@@ -336,6 +337,18 @@ def apply_category_rules(rows: list[dict], settings: dict) -> list[dict]:
         if target:
             row["category_path"] = target_snapshot(target, items)
         else:
+            # Preserve an explicit legacy placement in Other Medications.
+            # Its bare section is otherwise indistinguishable from an unmapped
+            # new fluid, which now receives the automatic FEN/GI default.
+            from iv_fluids import is_iv_fluid
+            from medications import _destination_rule_matches, destination_for
+            legacy_rules = settings.get("medication_mappings", [])
+            if (is_iv_fluid(row) and row.get("gi_mode", "auto") == "auto"
+                    and any(_destination_rule_matches(row["name"], rule, row.get("route", ""))
+                            for rule in legacy_rules)
+                    and destination_for(row["name"], legacy_rules, row.get("route", "")) == "Other Medications"):
+                row["category_path"] = target_snapshot("system:Other Medications", items)
+                continue
             legacy = legacy_target(row)
             if legacy and definitions.get(legacy) != defaults.get(legacy):
                 row["category_path"] = target_snapshot(legacy, items)
@@ -408,12 +421,15 @@ def _display_root_key(path: dict):
 
 
 def medication_blocks(section: str, notes: str, rows: list[dict], sheet: dict | None = None,
-                      *, diet: dict | None = None) -> list[tuple]:
+                      *, diet: dict | None = None, dosing_weight: str | None = None) -> list[tuple]:
     """One emitted entry per visible source order, never one per matching rule."""
     from fen_gi import effective_section
     from infusions import is_infusion, supports_infusion_display
     from medication_groups import group_for
     from pn_orders import medication_rows_for_display
+    from iv_fluids import is_iv_fluid
+    fluid_context = {"dosing_weight": dosing_weight if dosing_weight is not None else (sheet or {}).get("dosing_weight", ""),
+                     "import_warnings": (sheet or {}).get("import_warnings", {})}
     display_rows = medication_rows_for_display(rows, sheet, diet)
     meds = [r for r in display_rows if visible(r) and effective_section(r) == section]
     paths = {r["id"]: placement(r) for r in meds}
@@ -517,12 +533,16 @@ def medication_blocks(section: str, notes: str, rows: list[dict], sheet: dict | 
             # helpers still receive the original name, and nothing is stored.
             rendered = (dict(row, _display_name=display_names[row["id"]])
                         if row["id"] in display_names else row)
-            if sheet is not None and not emphasize:
+            path = paths[row["id"]]
+            fluid = is_iv_fluid(row) and "gi:iv_fluids" in {path["id"], path["parent_id"]}
+            if fluid:
+                rendered = dict(rendered, _iv_fluid_context=fluid_context)
+            elif sheet is not None and not emphasize:
                 from medication_doses import dose_per_kg_annotation
                 annotation = dose_per_kg_annotation(row, sheet, paths[row["id"]])
                 if annotation:
                     rendered = dict(rendered, _dose_per_kg=annotation)
-            blocks.append(("infusion" if emphasize else "medication", rendered))
+            blocks.append(("iv_fluid" if fluid else "infusion" if emphasize else "medication", rendered))
             if row["id"] == anchor:
                 from lab_windows import theophylline_summary
                 level = theophylline_summary(sheet)

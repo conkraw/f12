@@ -1,0 +1,106 @@
+{
+  "version": "6.96",
+  "automated": {
+    "tests": 1036,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "test_modules": {
+      "tests.test_airway_clearance_680": 45,
+      "tests.test_batch_exports": 8,
+      "tests.test_compact_pn": 37,
+      "tests.test_dynamic_categories": 93,
+      "tests.test_fen_gi": 77,
+      "tests.test_home_navigation": 19,
+      "tests.test_iv_fluids_core": 108,
+      "tests.test_iv_fluids_integration": 21,
+      "tests.test_labels_colors_groups": 129,
+      "tests.test_latest_pn_orders_689": 40,
+      "tests.test_lumbar_drain_integration": 19,
+      "tests.test_measurement_notes_observed_pip": 1,
+      "tests.test_medication_doses_680": 98,
+      "tests.test_nutrition_display": 118,
+      "tests.test_processing_feedback": 18,
+      "tests.test_respiratory_update_check": 13,
+      "tests.test_room_replacement": 82,
+      "tests.test_rooms_infusions": 69,
+      "tests.test_ui_smoke": 8,
+      "tests.test_vent_first_reported_fallback": 33
+    }
+  },
+  "provided_sources": {
+    "samples": [
+      {
+        "sample": 1,
+        "fluid_rows": 1,
+        "all_fluid_checks_passed": true,
+        "maintenance_comparison_present": true,
+        "other_source_errors": 0
+      },
+      {
+        "sample": 2,
+        "fluid_rows": 2,
+        "all_fluid_checks_passed": true,
+        "maintenance_comparison_present": true,
+        "other_source_errors": 0
+      },
+      {
+        "sample": 3,
+        "fluid_rows": 1,
+        "all_fluid_checks_passed": true,
+        "maintenance_comparison_present": false,
+        "other_source_errors": 2
+      },
+      {
+        "sample": 4,
+        "fluid_rows": 2,
+        "all_fluid_checks_passed": true,
+        "maintenance_comparison_present": true,
+        "other_source_errors": 0
+      },
+      {
+        "sample": 5,
+        "fluid_rows": 1,
+        "all_fluid_checks_passed": true,
+        "maintenance_comparison_present": true,
+        "other_source_errors": 0
+      },
+      {
+        "sample": 6,
+        "fluid_rows": 1,
+        "all_fluid_checks_passed": true,
+        "maintenance_comparison_present": false,
+        "other_source_errors": 0
+      }
+    ],
+    "total_samples": 6,
+    "total_fluid_rows": 8
+  },
+  "synthetic_preview": {
+    "synthetic": true,
+    "pdf_pages": 2,
+    "fit": [
+      {
+        "page_count": 1,
+        "font_size": 8.0,
+        "fits_one_page": true,
+        "target_pages": 1,
+        "target_met": true,
+        "tight_spacing": false,
+        "balanced_columns": false
+      },
+      {
+        "page_count": 1,
+        "font_size": 8.0,
+        "fits_one_page": true,
+        "target_pages": 1,
+        "target_met": true,
+        "tight_spacing": false,
+        "balanced_columns": false
+      }
+    ]
+  },
+  "visual_pdf_review_passed": true,
+  "streamlit_apptest_stages": 8,
+  "streamlit_apptest_exceptions": 0
+}

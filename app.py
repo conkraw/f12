@@ -1,4 +1,4 @@
-"""PICU SmartPhrase v6.95: show lumbar drain status below WAT-1 in Neuro."""
+"""PICU SmartPhrase v6.96: IV fluids and visible handoff processing."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,
@@ -36,6 +36,7 @@ from handoff_reset import cleared_vault, census_was_reset
 from daily_start import start_daily_list
 from census_guard import guard_download, saved_room_version
 from pdf_cache import SessionPdfCache
+from processing_feedback import ProcessingFeedback
 from save_status import (room_save_status, saved_time_text, latest_saved_time,
                          most_recent_save_caption, save_status_table)
 from parser import MAX_PASTE, SECTION_NAMES
@@ -1409,68 +1410,72 @@ def create_handoff(store: GitHubVault | None = None) -> None:
     if ss.get("base_sheets", {}).get(room) != ss["vault"]["rooms"].get(room):
         note("Handoff NOT replaced. The saved room changed. Reload the saved handoff before importing again. Your pasted text is kept.", "error")
         return
-    first_reported_only = not respiratory_parser_ready()
-    if first_reported_only and not respiratory_fallback_ready():
-        note(RESPIRATORY_UPDATE_MESSAGE, "error")
-        return
-    try:
-        if first_reported_only:
-            result = import_replacement(room, ss.get("paste", ""), ss["vault"]["settings"],
-                                        respiratory_first_reported=True)
-        else:
-            result = import_replacement(room, ss.get("paste", ""), ss["vault"]["settings"])
-    except (ValueError, ValidationError):
-        note("Handoff NOT replaced. Check the SmartPhrase and try again. The previous handoff and pasted text are unchanged.", "error")
-        return
-    except Exception:
-        # Never expose pasted clinical text or parser exception details.
-        note("Handoff NOT replaced. The new SmartPhrase could not be processed. The previous handoff and pasted text are unchanged.", "error")
-        return
-    if result.sheet is None:
+    with ProcessingFeedback(st, ss, shared_storage=store is not None) as feedback:
+        first_reported_only = not respiratory_parser_ready()
+        if first_reported_only and not respiratory_fallback_ready():
+            note(RESPIRATORY_UPDATE_MESSAGE, "error")
+            return
+        try:
+            if first_reported_only:
+                result = import_replacement(room, ss.get("paste", ""), ss["vault"]["settings"],
+                                            respiratory_first_reported=True)
+            else:
+                result = import_replacement(room, ss.get("paste", ""), ss["vault"]["settings"])
+        except (ValueError, ValidationError):
+            note("Handoff NOT replaced. Check the SmartPhrase and try again. The previous handoff and pasted text are unchanged.", "error")
+            return
+        except Exception:
+            # Never expose pasted clinical text or parser exception details.
+            note("Handoff NOT replaced. The new SmartPhrase could not be processed. The previous handoff and pasted text are unchanged.", "error")
+            return
+        if result.sheet is None:
+            _finish_handoff_import(room, result, store)
+            note("Handoff NOT replaced. Check Alerts and paste a complete SmartPhrase. The previous handoff is unchanged.", "error")
+            return
+        feedback.step(1)
+        try:
+            candidate = save_sheet_in(ss["vault"], result.sheet)
+            commit(candidate, store)
+        except Exception:
+            # A write may have reached shared storage even if its acknowledgement
+            # was lost. Do not claim it was saved or that shared storage is unchanged.
+            result.sheet = None
+            result.imported = []
+            result.notices = []
+            message = ("Replacement was NOT confirmed. The previous local handoff is still displayed. "
+                       "Your pasted text is kept. Reload the saved archive before retrying.")
+            result.errors.append(message)
+            _finish_handoff_import(room, result, store)
+            note(message, "error")
+            return
+        previous_id = ss["drafts"][room]["id"]
+        for key in ("workspace_notices", "workspace_imports"):
+            ss.get(key, {}).pop(previous_id, None)
+        # Retire previously prepared downloads from this session. Other sessions'
+        # downloads recheck the room identity against shared storage before release.
+        download_revocation().set()
+        ss["download_revocation"] = Event()
+        if ss.get("removed_room", {}).get("room") == room:
+            ss.pop("removed_room", None)
+        result.sheet = deepcopy(candidate["rooms"][room])
+        ss.setdefault("base_sheets", {})[room] = deepcopy(result.sheet)
         _finish_handoff_import(room, result, store)
-        note("Handoff NOT replaced. Check Alerts and paste a complete SmartPhrase. The previous handoff is unchanged.", "error")
-        return
-    try:
-        candidate = save_sheet_in(ss["vault"], result.sheet)
-        commit(candidate, store)
-    except Exception:
-        # A write may have reached shared storage even if its acknowledgement
-        # was lost. Do not claim it was saved or that shared storage is unchanged.
-        result.sheet = None
-        result.imported = []
-        result.notices = []
-        message = ("Replacement was NOT confirmed. The previous local handoff is still displayed. "
-                   "Your pasted text is kept. Reload the saved archive before retrying.")
-        result.errors.append(message)
-        _finish_handoff_import(room, result, store)
-        note(message, "error")
-        return
-    previous_id = ss["drafts"][room]["id"]
-    for key in ("workspace_notices", "workspace_imports"):
-        ss.get(key, {}).pop(previous_id, None)
-    # Retire previously prepared downloads from this session. Other sessions'
-    # downloads recheck the room identity against shared storage before release.
-    download_revocation().set()
-    ss["download_revocation"] = Event()
-    if ss.get("removed_room", {}).get("room") == room:
-        ss.pop("removed_room", None)
-    result.sheet = deepcopy(candidate["rooms"][room])
-    ss.setdefault("base_sheets", {})[room] = deepcopy(result.sheet)
-    _finish_handoff_import(room, result, store)
-    pdf_ready = warm_handoff_pdf(ss["drafts"][room])
-    message = ("Room " + room + " handoff replaced and saved to shared storage. " if store else
-               "Room " + room + " handoff replaced in this session only. Shared storage is not enabled. ")
-    message += "Previous patient information and manual notes were cleared."
-    if not pdf_ready:
-        message += " PDF preparation will retry when downloaded."
-    if result.errors:
-        message += " Some sections could not be imported. Review Alerts before use."
-    fallback_note = getattr(ventilation_parser, "VENTILATION_HISTORY_FALLBACK_NOTE", "")
-    fallback_used = bool(fallback_note and fallback_note in (
-        (result.sheet.get("ventilation") or {}).get("mode_history", {}).get("notes", [])))
-    if fallback_used:
-        message += " " + fallback_note
-    note(message, "warning" if result.errors or fallback_used else "info")
+        feedback.step(2)
+        pdf_ready = warm_handoff_pdf(ss["drafts"][room])
+        message = ("Room " + room + " handoff replaced and saved to shared storage. " if store else
+                   "Room " + room + " handoff replaced in this session only. Shared storage is not enabled. ")
+        message += "Previous patient information and manual notes were cleared."
+        if not pdf_ready:
+            message += " PDF preparation will retry when downloaded."
+        if result.errors:
+            message += " Some sections could not be imported. Review Alerts before use."
+        fallback_note = getattr(ventilation_parser, "VENTILATION_HISTORY_FALLBACK_NOTE", "")
+        fallback_used = bool(fallback_note and fallback_note in (
+            (result.sheet.get("ventilation") or {}).get("mode_history", {}).get("notes", [])))
+        if fallback_used:
+            message += " " + fallback_note
+        note(message, "warning" if result.errors or fallback_used else "info")
+        feedback.finish(pdf_ready=pdf_ready, import_errors=bool(result.errors))
 
 
 def start_new_patient() -> None:
@@ -2177,7 +2182,7 @@ def main() -> None:
         st.button("Home", key="home_screen", on_click=return_home, args=(store,),
                   help="Save all open handoffs and return to the starting screen.", use_container_width=True)
         st.header("PICU Handoff")
-        st.caption("Version 6.95 | Lumbar drain display")
+        st.caption("Version 6.96 | IV fluids and processing")
         if history_ready:
             st.caption("Respiratory mode-history parser: ready")
         else:

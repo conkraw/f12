@@ -1,0 +1,113 @@
+{
+  "app": "6.96",
+  "streamlit": "1.67.0",
+  "storage": "session only",
+  "browser_used": false,
+  "steps": [
+    {
+      "step": "Initial choice screen",
+      "passed": true
+    },
+    {
+      "step": "Open handoff workspace",
+      "passed": true
+    },
+    {
+      "step": "Open synthetic room",
+      "passed": true
+    },
+    {
+      "step": "First real import with native progress and elapsed spinner",
+      "passed": true
+    },
+    {
+      "step": "Second import uses prior phase timings without widget errors",
+      "passed": true
+    },
+    {
+      "step": "Invalid import clears native progress and preserves saved handoff",
+      "passed": true
+    },
+    {
+      "step": "Home still saves and returns to choices after processing",
+      "passed": true
+    },
+    {
+      "step": "Continue preserves handoff and session timings",
+      "passed": true
+    }
+  ],
+  "exception_count": 0,
+  "result": "PASS",
+  "first_import_events": [
+    {
+      "event": "spinner_start",
+      "text": "Processing handoff",
+      "show_time": true
+    },
+    {
+      "event": "progress",
+      "value": 0.0,
+      "text": "Step 1 of 3: Reading SmartPhrase"
+    },
+    {
+      "event": "progress",
+      "value": 0.3333333333333333,
+      "text": "Step 2 of 3: Saving handoff"
+    },
+    {
+      "event": "progress",
+      "value": 0.6666666666666666,
+      "text": "Step 3 of 3: Preparing PDF"
+    },
+    {
+      "event": "progress",
+      "value": 1.0,
+      "text": "Processing finished. Handoff saved. PDF ready."
+    },
+    {
+      "event": "progress_cleared"
+    },
+    {
+      "event": "spinner_closed"
+    }
+  ],
+  "second_import_events": [
+    {
+      "event": "spinner_start",
+      "text": "Processing handoff",
+      "show_time": true
+    },
+    {
+      "event": "progress",
+      "value": 0.0,
+      "text": "Step 1 of 3: Reading SmartPhrase. Typical remaining time: less than 1 second (prior successful imports, updated at each step)"
+    },
+    {
+      "event": "progress",
+      "value": 0.3333333333333333,
+      "text": "Step 2 of 3: Saving handoff. Typical remaining time: less than 1 second (prior successful imports, updated at each step)"
+    },
+    {
+      "event": "progress",
+      "value": 0.6666666666666666,
+      "text": "Step 3 of 3: Preparing PDF. Typical remaining time: less than 1 second (prior successful imports, updated at each step)"
+    },
+    {
+      "event": "progress",
+      "value": 1.0,
+      "text": "Processing finished. Handoff saved. PDF ready."
+    },
+    {
+      "event": "progress_cleared"
+    },
+    {
+      "event": "spinner_closed"
+    }
+  ],
+  "timing_sample_count": 2,
+  "failed_import_preserved_patient": true,
+  "progress_cleared_after_each_run": true,
+  "no_timing_metadata_in_saved_vault": true,
+  "home_and_continue_preserved": true
+}

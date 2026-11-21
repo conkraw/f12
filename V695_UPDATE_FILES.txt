@@ -1,0 +1,26 @@
+PICU Handoff 6.95
+Baseline: 6.94
+
+From 6.94, replace these six files in the existing app folder:
+app.py
+batching.py
+devices.py
+error_store.py
+import_review.py
+models.py
+
+Extract PICU695.zip and open PICU_Handoff_v6_95_Lumbar_Drain.
+Place the files beside the app.py that Streamlit runs.
+Reboot Streamlit once and confirm Version 6.95.
+
+Lumbar drain status appears in Neuro below WAT-1, separated by ------.
+When WAT has no value, the drain follows CAPD in the same score area.
+The drain is not duplicated in the bottom device list.
+The status comes from the source. Missing or conflicting status displays UNK.
+
+For an earlier app version, use the complete package contents.
+Keep existing Streamlit Secrets and the encryption key.
+Home and ventilator history fallback are included.
+No archive schema or dependency change.
+
+Ready to install. No live deployment performed.

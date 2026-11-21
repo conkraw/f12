@@ -1,23 +1,29 @@
-PICU Handoff 6.95
+PICU Handoff 6.96
 
-Complete package based on 6.94.
+Complete package based on 6.95.
 Changed runtime files:
 app.py
-batching.py
-devices.py
+categories.py
 error_store.py
-import_review.py
-models.py
+fen_gi.py
+infusions.py
+iv_fluids.py
+processing_feedback.py
 
-Lumbar drain status appears in Neuro directly below WAT-1.
-A literal six-hyphen separator precedes the lumbar drain line.
-Blank WAT uses the same score area after CAPD without adding a value.
-Lumbar drains do not duplicate in the bottom device inventory.
-Other drains, EVDs and ICP monitors keep their existing routes.
+The last two files are new and must be copied beside app.py.
 
-718 selected automated tests passed, including 54 new lumbar drain tests.
-The supplied source passed the targeted lumbar import and placement check.
-Both pages of the synthetic PDF preview passed visual inspection.
-No new dependencies or archive schema change.
+Recognized continuous IV fluids appear under Intravenous Fluids in FEN/GI.
+Maintenance comparisons use the documented DCW and hourly 4-2-1 reference.
+Low rates at or below 2 mL/hr remain visible without a comparison.
+Missing or failed dosing weight prevents the comparison.
 
+Processing shows live elapsed time and progress through its actual steps.
+Later imports show typical remaining time from recent successful imports.
+
+1,036 selected automated tests passed, including 147 new cases.
+Eight real Streamlit AppTest stages passed with zero exceptions.
+Eight fluid rows across six supplied sources passed the targeted checks.
+Both synthetic PDF pages passed visual inspection.
+
+No dependency or archive schema change.
 Ready to install. No live deployment performed.

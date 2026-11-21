@@ -1,0 +1,85 @@
+{
+  "version": "6.96",
+  "baseline": "6.95",
+  "source_zip_sha256": "3e72e36a8d29f2402a97c3ad6d2e05caa70b60a7c4767d77946615a350a5b935",
+  "runtime_files_changed": [
+    "app.py",
+    "categories.py",
+    "error_store.py",
+    "fen_gi.py",
+    "infusions.py",
+    "iv_fluids.py",
+    "processing_feedback.py"
+  ],
+  "required_installation_files": [
+    "app.py",
+    "categories.py",
+    "error_store.py",
+    "fen_gi.py",
+    "infusions.py",
+    "iv_fluids.py",
+    "processing_feedback.py"
+  ],
+  "new_runtime_files": [
+    "iv_fluids.py",
+    "processing_feedback.py"
+  ],
+  "schema": 34,
+  "dependencies_changed": false,
+  "deployed": false,
+  "maintenance_reference": {
+    "formula": "hourly 4-2-1",
+    "weight_source": "documented dosing weight",
+    "maximum_rate_cap": null,
+    "omit_at_or_below_ml_hr": 2,
+    "quarter_fraction_tolerance": 0.02
+  },
+  "verification": {
+    "tests": 1036,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "new_fluid_core_tests": 108,
+    "new_fluid_integration_tests": 21,
+    "new_processing_tests": 18,
+    "test_modules": {
+      "tests.test_airway_clearance_680": 45,
+      "tests.test_batch_exports": 8,
+      "tests.test_compact_pn": 37,
+      "tests.test_dynamic_categories": 93,
+      "tests.test_fen_gi": 77,
+      "tests.test_home_navigation": 19,
+      "tests.test_iv_fluids_core": 108,
+      "tests.test_iv_fluids_integration": 21,
+      "tests.test_labels_colors_groups": 129,
+      "tests.test_latest_pn_orders_689": 40,
+      "tests.test_lumbar_drain_integration": 19,
+      "tests.test_measurement_notes_observed_pip": 1,
+      "tests.test_medication_doses_680": 98,
+      "tests.test_nutrition_display": 118,
+      "tests.test_processing_feedback": 18,
+      "tests.test_respiratory_update_check": 13,
+      "tests.test_room_replacement": 82,
+      "tests.test_rooms_infusions": 69,
+      "tests.test_ui_smoke": 8,
+      "tests.test_vent_first_reported_fallback": 33
+    },
+    "provided_source_count": 6,
+    "provided_fluid_rows_checked": 8,
+    "synthetic_pdf_pages": 2,
+    "visual_pdf_review_passed": true,
+    "streamlit_apptest_stages": 8,
+    "streamlit_apptest_exceptions": 0,
+    "live_runtime_inspected": false,
+    "production_storage_writes": false
+  },
+  "runtime_sha256": {
+    "app.py": "085cb1cfa004e3d47256a8d19886e97e252596dd16d197d5bf6451bbe24ec5b2",
+    "categories.py": "1525fcb4d5300909fbe834c3f60be4612b6b01c761f5ac9d2181af052552da5f",
+    "error_store.py": "f4c302d8f6553bbaf881b89e84325a9101ae56a5947d97a0bdfdee5dab9a037e",
+    "fen_gi.py": "2ce0b36c1477e16f94ed26552b09696ff1fd3eba6b683c9831aa3394cd88f999",
+    "infusions.py": "f0226e1fb1b1c9536a70726857a6617823d4112e94db2e711272e02276fd54b6",
+    "iv_fluids.py": "e6690dc733599b78bd7c59f0ecbe0ff2cd860700522dc22102a4f55455500d05",
+    "processing_feedback.py": "546b0bdf595b17cfef06fba39b7c2e14b1f19d44667b58ee76f2d9b05dc39d78"
+  }
+}

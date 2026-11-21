@@ -17,10 +17,11 @@ from diet import diet_text
 from nutrition_display import has_detailed_nutrition, nutrition_sections, parenteral_kind
 from medication_groups import group_for as special_group, GROUP_SECTIONS, fixed_handoff_group
 from airway_clearance import is_sodium_chloride_3_percent_nebulizer
+from iv_fluids import is_iv_fluid
 
-MODES = ("auto", "prophylaxis", "bowel", "diuretic", "antiemetic", "endocrine", "prokinetic", "tpn", "hypoglycemia", "probiotic", "other")
-MODE_LABELS = {"auto": "Automatic", "prophylaxis": "GI prophylaxis", "bowel": "Bowel Regimen", "diuretic": "Diuretics", "antiemetic": "Antiemetics", "endocrine": "Endocrine Medications", "prokinetic": "Prokinetic Agents", "tpn": "TPN", "hypoglycemia": "Hypoglycemia:", "probiotic": "Probiotic", "other": "No GI grouping"}
-GROUP_NAMES = {"prophylaxis": "GI prophylaxis", "bowel": "Bowel Regimen", "diuretic": "Diuretics", "antiemetic": "Antiemetics", "endocrine": "Endocrine Medications", "prokinetic": "Prokinetic Agents", "tpn": "TPN", "hypoglycemia": "Hypoglycemia:", "probiotic": "Probiotic"}
+MODES = ("auto", "prophylaxis", "bowel", "diuretic", "antiemetic", "endocrine", "prokinetic", "tpn", "hypoglycemia", "probiotic", "iv_fluids", "other")
+MODE_LABELS = {"auto": "Automatic", "prophylaxis": "GI prophylaxis", "bowel": "Bowel Regimen", "diuretic": "Diuretics", "antiemetic": "Antiemetics", "endocrine": "Endocrine Medications", "prokinetic": "Prokinetic Agents", "tpn": "TPN", "hypoglycemia": "Hypoglycemia:", "probiotic": "Probiotic", "iv_fluids": "Intravenous Fluids", "other": "No GI grouping"}
+GROUP_NAMES = {"prophylaxis": "GI prophylaxis", "bowel": "Bowel Regimen", "diuretic": "Diuretics", "antiemetic": "Antiemetics", "endocrine": "Endocrine Medications", "prokinetic": "Prokinetic Agents", "tpn": "TPN", "hypoglycemia": "Hypoglycemia:", "probiotic": "Probiotic", "iv_fluids": "Intravenous Fluids"}
 
 
 def automatic_group(row: dict) -> str:
@@ -43,6 +44,10 @@ def automatic_group(row: dict) -> str:
         # latest-order selector chooses the displayed bags independently.
         if normalized(row.get("route", "")) in {"", "iv", "intravenous"}:
             return "tpn"
+    if is_iv_fluid(row) and row.get("section", "Other Medications") in {"Other Medications", "FEN / GI"}:
+        # An existing explicit system placement remains authoritative. New
+        # unmapped fluids receive the requested FEN/GI display category.
+        return "iv_fluids"
     if re.match(r"^(?:levothyroxine|synthroid|levoxyl|insulin|lantus|metformin)(?=$|[\s(,])", name):
         return "endocrine"
     if re.match(r"^(?:erythromycin|prucalopride)(?=$|[\s(,])", name):
@@ -102,7 +107,7 @@ def validate_gi_rules(rules: list[dict]) -> None:
         for key in ("name", "route", "frequency"):
             if not isinstance(rule[key], str) or len(rule[key]) > 4000 or any(c in rule[key] for c in "\n\r\t"):
                 raise ValueError("A FEN/GI display rule contains invalid text.")
-        if not rule["name"] or rule["mode"] not in ("prophylaxis", "bowel", "diuretic", "antiemetic", "endocrine", "prokinetic", "tpn", "hypoglycemia", "probiotic", "other"):
+        if not rule["name"] or rule["mode"] not in (*GROUP_NAMES, "other"):
             raise ValueError("A FEN/GI display rule has an invalid choice.")
         key = (rule["name"], rule["route"], rule["frequency"])
         if key in seen:
@@ -170,7 +175,8 @@ def fen_gi_body(notes: str, rows: list[dict], intake_output: dict | None, rich: 
     from categories import medication_blocks
     from infusions import render_body_blocks
     body = render_body_blocks(medication_blocks("FEN / GI", notes, rows, sheet,
-                              diet=None if diet_failed else diet), rich, esc)
+                              diet=None if diet_failed else diet,
+                              dosing_weight=dosing_weight or None), rich, esc)
     if body:
         sections.append(body)
     return "\n-----\n".join(sections)

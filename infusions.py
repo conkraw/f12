@@ -167,7 +167,10 @@ def render_body_blocks(blocks: list[tuple[str, object]], rich: bool = False, esc
     encode = esc if rich else lambda v: v
     lines = []
     for kind, item in blocks:
-        if kind == "infusion":
+        if kind == "iv_fluid":
+            from iv_fluids import iv_fluid_entry
+            lines.append(iv_fluid_entry(item, rich=rich, esc=esc))
+        elif kind == "infusion":
             lines.append(infusion_entry(item, rich, esc, handoff_only=True))
         elif kind == "heading":
             lines.append("<b>" + encode(item) + "</b>" if rich else item)
