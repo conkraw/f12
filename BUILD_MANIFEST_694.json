@@ -1,0 +1,45 @@
+{
+  "version": "6.94",
+  "baseline": "6.93",
+  "source_zip_sha256": "9abf8aca44832e8570d5e28a2b99d1bb43fdb715e5dbcd14f1995539e5ed18fa",
+  "runtime_files_changed": [
+    "app.py",
+    "error_store.py"
+  ],
+  "required_installation_files": [
+    "app.py",
+    "error_store.py"
+  ],
+  "new_runtime_files": [],
+  "schema": 34,
+  "dependencies_changed": false,
+  "deployed": false,
+  "verification": {
+    "tests": 408,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "home_navigation_tests": 19,
+    "test_modules": {
+      "tests.test_callbacks": 13,
+      "tests.test_compact_workspace": 70,
+      "tests.test_home_navigation": 19,
+      "tests.test_measurement_notes_observed_pip": 1,
+      "tests.test_patient_list_startup": 50,
+      "tests.test_print_fit_reset": 49,
+      "tests.test_respiratory_update_check": 13,
+      "tests.test_room_replacement": 82,
+      "tests.test_save_before_print": 45,
+      "tests.test_save_status": 58,
+      "tests.test_ui_smoke": 8
+    },
+    "streamlit_apptest_stages": 23,
+    "streamlit_apptest_exceptions": 0,
+    "live_runtime_inspected": false,
+    "production_storage_writes": false
+  },
+  "runtime_sha256": {
+    "app.py": "84c258382a622ff353ad39c549ab28b2d374bf5c57f9a690768c9312856b15d7",
+    "error_store.py": "5d60d0f3d7485204baedbd1c512e44ecee44e666b6b943d594a988f74b76dc2c"
+  }
+}

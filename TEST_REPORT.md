@@ -1,52 +1,49 @@
-# PICU Handoff 6.93 verification
+# PICU Handoff 6.94 verification
 
-## Final regression result
+## Automated regression result
 
-700 tests passed with zero failures, errors or skipped tests. The final selected run covered the following modules and test:
+408 tests passed with zero failures, errors or skipped tests. This comprises 389 existing regression checks and 19 new Home navigation tests.
 
-- tests.test_avaps_integration: 12 tests
-- tests.test_avaps_settings: 78 tests
+The final selection covered:
+
 - tests.test_callbacks: 13 tests
 - tests.test_compact_workspace: 70 tests
-- tests.test_import_recovery: 34 tests
+- tests.test_home_navigation: 19 tests
 - tests.test_measurement_notes_observed_pip: 1 tests
-- tests.test_mode_specific_ventilator: 78 tests
-- tests.test_nava_settings: 54 tests
-- tests.test_noninvasive: 56 tests
+- tests.test_patient_list_startup: 50 tests
+- tests.test_print_fit_reset: 49 tests
 - tests.test_respiratory_update_check: 13 tests
 - tests.test_room_replacement: 82 tests
-- tests.test_sbs_vent_fallback: 118 tests
-- tests.test_vent_fallback_integration: 15 tests
-- tests.test_vent_first_reported_fallback: 33 tests
-- tests.test_vent_mode_history_core: 22 tests
-- tests.test_vent_mode_history_integration: 21 tests
+- tests.test_save_before_print: 45 tests
+- tests.test_save_status: 58 tests
+- tests.test_ui_smoke: 8 tests
 
-## Recovery behavior
+## Saving before Home
 
-Injected exceptions in the history parser exercise the automatic fallback through respiratory parsing, the complete replacement importer and the application save callback. The independent selector also passes tests with all normal history helpers and the normal selector disabled.
+The Home tests verify pending current-room widget edits, other changed open drafts, newly created handoffs and inline medication mapping preferences. Clean and empty lists return Home without writing or changing saved timestamps.
 
-The selected original mode and its settings come from the same new source. The SBS mode uses the successful respiratory parse's selected fields, so it does not reread the failed history or use a different mode. Replacement clears prior-room information and manual notes while preserving other rooms and reusable settings.
+Invalid editor values, known room conflicts and failed remote writes block navigation. A current-room save can succeed before a later room fails. In that case the user stays in the workspace, the confirmed save remains valid and the remaining edits are retained. No all-saved success message is shown.
 
-Missing original FiO2 or volume is not filled from NAVA, CPAP, AVAPS or the D block. Original mode and setting conflicts remain errors. The fallback also declines an unknown or noninvasive original mode, an Off flag, incompatible noninvasive delivery labels, and an original snapshot with no setting that would appear in the output.
+Home does not delete handoffs, reset the archive, reload storage or log out. It locks Admin access separately and retains main authentication. PDF warming is skipped for Home, while existing invalidation and download safeguards remain active.
 
-Fallback output has an empty timestamp, no supplemental modes, latest_confirmed set to false, and the persistent fallback note. The note appears in saved Alerts, text, HTML and PDF after encrypted save/reload. Exception details and charting author suffixes are not included in recovered output.
+## Real Streamlit lifecycle check
 
-## Runtime checks
+The actual app ran through 23 AppTest UI stages with synthetic data and shared storage disabled. All stages passed without exceptions.
 
-The full-history and independent fallback probes use fixed synthetic inputs without archive access or session changes. The fallback probe uses a newer NAVA history entry with distinct settings, while requiring the original PRVC values. This ensures a normal history import cannot pass as a verified fallback.
+Home was the first sidebar button in Handoff, Print all, Admin and Import errors. A pending manual note delivered in the same event as the Home click was captured and saved before the original choices appeared.
 
-A working fallback allows startup and import when the history probe fails. Failure of both probes preserves the pasted text and existing records, before archive loading or replacement. Authentication, room selection and concurrent-change guards remain in place.
+After three Home-screen reruns, Streamlit had removed the hidden room and paste widget keys. Continue restored the selected room, its saved note and the server-known pending paste from nonwidget session state. The paste was neither imported nor included in the saved vault. Restoration requires matching room and saved/draft sheet identities.
 
-## Supplied examples and print inspection
+The fresh-list choice displayed the existing deletion confirmation and kept the saved handoff until confirmation. Confirming cleared the census, drafts, paste and resume state. Later Home/Continue navigation did not restore any cleared patient information.
 
-All five uploaded complete sources passed the normal respiratory import without using fallback. Each also passed forced fallback. Unrelated source-specific warnings were not suppressed or changed.
+AppTest verifies the actual Streamlit widget and callback lifecycle. It is not a live browser or production storage test, and it does not capture browser screenshots. Text still held only in an unsubmitted browser form is outside the server-known paste preservation check.
 
-The synthetic normal/fallback PDF was rendered to PNG and visually inspected. Both handoffs fit on one landscape page at the normal 8-point body size. The fallback page shows the original settings and its review note without a timestamp or a latest-mode claim.
+The stage-by-stage result is included in examples/home_navigation_check.json.
 
-## Review and scope
+## Scope and review
 
-Independent review found and verified fixes for bare noninvasive delivery aliases and original records containing only irrelevant, undisplayed fields. No remaining blockers were identified.
+Only app.py and error_store.py changed as runtime files after 6.93. The archive schema remains 34. No dependencies or credentials changed. Respiratory history, its fallback and clinical parsing remain unchanged.
 
-Changed runtime files: app.py, ventilation.py, noninvasive.py, importing.py, workspace_ui.py and error_store.py. The archive schema remains 34. No dependencies or credentials changed. Existing dependency deprecation warnings did not affect test results.
+Independent review found no blocking save-loss, conflict, reset or session-state issue. Existing dependency deprecation warnings did not affect the test results.
 
-No uploaded patient source or patient-derived output was added to the tests or preview. No live Streamlit deployment or production archive write was performed.
+No live Streamlit deployment or production archive write was performed.

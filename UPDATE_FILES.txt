@@ -1,25 +1,24 @@
-PICU Handoff 6.93
-Baseline: 6.92
+PICU Handoff 6.94
+Baseline: 6.93
 
-Replace all six files in the existing app folder:
+From 6.93, replace these two files in the existing app folder:
 app.py
-ventilation.py
-noninvasive.py
-importing.py
-workspace_ui.py
 error_store.py
 
-Extract PICU693.zip and open PICU_Handoff_v6_93_Vent_Fallback.
-Put these files beside the app.py that Streamlit runs.
-Reboot Streamlit and confirm Version 6.93.
+Extract PICU694.zip and open PICU_Handoff_v6_94_Home_Button.
+Place the files beside the app.py that Streamlit runs.
+Reboot Streamlit once and confirm Version 6.94.
 
-The normal history import remains the first choice.
-If it fails, the app retries the first reported invasive settings
-from the same new paste and labels the fallback.
-If the original settings cannot be validated, the import is flagged.
+Home is the first button at the top of the left sidebar.
+It saves all open handoff edits and returns to the starting choices.
+Continue keeps the current list.
+Starting a fresh list keeps the existing confirmation before clearing patients.
 
-The fallback applies to new imports. Earlier imports are not rerun.
+After installing this update, use Home to return to the beginning.
+No website restart or logout is needed for that routine navigation.
+
 For an earlier app version, use the complete package contents.
 Keep existing Streamlit Secrets and the encryption key.
+No archive schema or dependency change.
 
 Ready to install. No live deployment performed.

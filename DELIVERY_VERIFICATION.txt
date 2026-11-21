@@ -1,16 +1,15 @@
-PICU Handoff 6.93
+PICU Handoff 6.94
 
-Complete package based on 6.92.
-Six runtime files changed as listed in UPDATE_FILES.txt.
+Complete package based on 6.93.
+Changed runtime files: app.py and error_store.py.
 
-Automatic first-reported-settings fallback when mode-history import fails.
-Uses only the new paste and retains a visible, saved fallback note.
-Does not guess missing settings or resolve conflicting original values.
+Home is the first button in the left sidebar.
+Saves all open handoff edits before returning to the original choices.
+Current patients remain until the existing fresh-list confirmation is accepted.
+Save failures keep the user in the workspace with edits available.
 
-700 selected regression tests passed.
-Five complete source examples passed normal import and forced fallback.
-Two synthetic PDF pages were rendered and visually inspected.
-Each synthetic handoff fits on one landscape page.
+408 automated tests passed, including 19 Home navigation tests.
+23 real Streamlit AppTest stages passed without exceptions.
+No new dependencies or archive schema change.
 
-No archive schema or dependency change.
 Ready to install. No live deployment performed.

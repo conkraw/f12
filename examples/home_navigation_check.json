@@ -1,0 +1,113 @@
+{
+  "app": "6.94",
+  "storage": "session only",
+  "browser_used": false,
+  "screenshots_available": false,
+  "screenshot_note": "AppTest exposes the real widget tree, not browser screenshots.",
+  "steps": [
+    {
+      "step": "Initial choice screen",
+      "passed": true
+    },
+    {
+      "step": "Continue to handoff workspace",
+      "passed": true
+    },
+    {
+      "step": "Open synthetic room P4102",
+      "passed": true
+    },
+    {
+      "step": "Render real notes editor and server-known pending paste",
+      "passed": true
+    },
+    {
+      "step": "Home captures pending note edit and opens choices",
+      "passed": true
+    },
+    {
+      "step": "Home screen rerun 1",
+      "passed": true
+    },
+    {
+      "step": "Home screen rerun 2",
+      "passed": true
+    },
+    {
+      "step": "Home screen rerun 3",
+      "passed": true
+    },
+    {
+      "step": "Continue restores original room, pending paste, and saved note",
+      "passed": true
+    },
+    {
+      "step": "Return Home before fresh-list choice",
+      "passed": true
+    },
+    {
+      "step": "Fresh-list choice displays deletion warning before clearing",
+      "passed": true
+    },
+    {
+      "step": "Confirmed fresh list removes saved room, draft, and resume backup",
+      "passed": true
+    },
+    {
+      "step": "Home after reset",
+      "passed": true
+    },
+    {
+      "step": "Continue after reset cannot restore prior room or paste",
+      "passed": true
+    },
+    {
+      "step": "Print all keeps Home first in sidebar",
+      "passed": true
+    },
+    {
+      "step": "Home from Print all opens choices",
+      "passed": true
+    },
+    {
+      "step": "Continue from Print all returns to Handoff",
+      "passed": true
+    },
+    {
+      "step": "Admin keeps Home first in sidebar",
+      "passed": true
+    },
+    {
+      "step": "Home from Admin opens choices",
+      "passed": true
+    },
+    {
+      "step": "Continue from Admin returns to Handoff",
+      "passed": true
+    },
+    {
+      "step": "Import errors keeps Home first in sidebar",
+      "passed": true
+    },
+    {
+      "step": "Home from Import errors opens choices",
+      "passed": true
+    },
+    {
+      "step": "Continue from Import errors returns to Handoff",
+      "passed": true
+    }
+  ],
+  "exception_count": 0,
+  "saved_note_captured_in_home_callback": true,
+  "pending_paste_not_imported_or_saved": true,
+  "hidden_widget_keys_after_home_reruns": {
+    "room_choice": false,
+    "paste": false
+  },
+  "continue_restores_server_known_paste": true,
+  "reset_confirmation_preserved": true,
+  "reset_cannot_restore_previous_backup": true,
+  "home_first_in_all_workspaces": true,
+  "result": "PASS"
+}

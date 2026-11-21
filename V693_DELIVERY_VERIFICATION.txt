@@ -1,0 +1,16 @@
+PICU Handoff 6.93
+
+Complete package based on 6.92.
+Six runtime files changed as listed in UPDATE_FILES.txt.
+
+Automatic first-reported-settings fallback when mode-history import fails.
+Uses only the new paste and retains a visible, saved fallback note.
+Does not guess missing settings or resolve conflicting original values.
+
+700 selected regression tests passed.
+Five complete source examples passed normal import and forced fallback.
+Two synthetic PDF pages were rendered and visually inspected.
+Each synthetic handoff fits on one landscape page.
+
+No archive schema or dependency change.
+Ready to install. No live deployment performed.

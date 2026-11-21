@@ -1,4 +1,4 @@
-"""PICU SmartPhrase v6.93: recover first reported settings if vent history fails."""
+"""PICU SmartPhrase v6.94: save open handoffs and return Home without restarting."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,
@@ -424,7 +424,7 @@ def editor_snapshot(room: str) -> dict:
     return sheet
 
 
-def autosave_before_room_change(store: GitHubVault | None, *, for_print: bool = False) -> bool:
+def autosave_before_room_change(store: GitHubVault | None, *, for_print: bool = False, for_home: bool = False) -> bool:
     ss = st.session_state
     room = ss.get("current_room")
     ss.pop("airway_update_pending", None)  # Obsolete pre-6.62 prompt state.
@@ -433,7 +433,8 @@ def autosave_before_room_change(store: GitHubVault | None, *, for_print: bool = 
     try:
         draft = editor_snapshot(room)
     except (ValueError, TypeError, KeyError) as exc:
-        note("The current room was not saved or changed. Correct the highlighted editor value before " + ("opening Print all. " if for_print else "switching rooms. ") + str(exc), "error")
+        destination = "returning Home. " if for_home else "opening Print all. " if for_print else "switching rooms. "
+        note("The current room was not saved or changed. Correct the highlighted editor value before " + destination + str(exc), "error")
         return False
     # Keep the original draft and all widgets until the write is confirmed.
     # A retry captures the same values, including pending mapping changes.
@@ -486,8 +487,9 @@ def autosave_before_room_change(store: GitHubVault | None, *, for_print: bool = 
     ss.setdefault("base_sheets", {})[room] = deepcopy(saved)
     if changed_rules:
         reapply_open_mappings()
-    warm_handoff_pdf(ss["drafts"][room])
-    message = (("Handoff automatically saved before Print all." if for_print else "Previous room automatically saved to shared storage.") if store else
+    if not for_home:
+        warm_handoff_pdf(ss["drafts"][room])
+    message = (("Handoff automatically saved before returning Home." if for_home else "Handoff automatically saved before Print all." if for_print else "Previous room automatically saved to shared storage.") if store else
                "Handoff saved in this session only. Shared storage is not enabled.")
     note(message + " Last saved: " + saved_time_text(saved["updated_at"]),
          "success" if store else "info")
@@ -1545,7 +1547,7 @@ def commit(candidate: dict, store: GitHubVault | None) -> None:
     st.session_state["vault"] = candidate
 
 
-def save_rooms(store: GitHubVault | None, rooms: list[str]) -> bool:
+def save_rooms(store: GitHubVault | None, rooms: list[str], *, prepare_pdf: bool = True) -> bool:
     if not require_session():
         return False
     ss = st.session_state
@@ -1573,7 +1575,8 @@ def save_rooms(store: GitHubVault | None, rooms: list[str]) -> bool:
         saved = deepcopy(candidate["rooms"][room])
         ss["drafts"][room] = saved
         ss.setdefault("base_sheets", {})[room] = deepcopy(saved)
-        warm_handoff_pdf(saved)
+        if prepare_pdf:
+            warm_handoff_pdf(saved)
     message = ("Handoffs saved to shared storage." if store else
                "Saved in this session only. Shared storage is not enabled.")
     stamp = latest_saved_time({room: candidate["rooms"][room] for room in rooms})
@@ -1960,6 +1963,39 @@ def patient_list_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def return_home(store: GitHubVault | None = None) -> bool:
+    """Save every open handoff before returning to the existing list choices."""
+    if not require_session():
+        return False
+    ss = st.session_state
+    if not ss.get("patient_list_ready"):
+        return True
+    if not autosave_before_print_all(store, for_home=True):
+        return False
+    room = ss.get("current_room")
+    draft = ss.get("drafts", {}).get(room)
+    # Home does not render the room/paste widgets. Keep received form text in
+    # nonwidget session state so Streamlit cleanup cannot erase it. Raw paste
+    # is never added to the saved archive or imported by this navigation action.
+    if draft is not None:
+        ss["home_resume_state"] = {"room": room, "sheet_id": draft["id"],
+                                   "paste": ss.get("paste", "")}
+    else:
+        ss.pop("home_resume_state", None)
+    discard_editor_widget_values()
+    for key in ("daily_start_preview", "patient_list_start_attempt", "patient_list_start_confirmation"):
+        ss.pop(key, None)
+    ss["patient_list_ready"] = False
+    ss["page"] = ss["active_workspace"] = "Handoff"
+    ss["handoff_tab"] = ss["handoff_active_tab"] = "Preview / print"
+    lock_admin(ss)
+    if store is not None:
+        note("All handoff changes are saved to shared storage. Choose how to continue.", "success")
+    else:
+        note("All handoff changes are saved in this session. Shared storage is not enabled. Choose how to continue.", "info")
+    return True
+
+
 def continue_patient_list(store: GitHubVault | None = None) -> None:
     """Keep the list intact, reconciling an unconfirmed start before opening it."""
     if not require_session():
@@ -1979,6 +2015,14 @@ def continue_patient_list(store: GitHubVault | None = None) -> None:
     ss.pop("patient_list_start_attempt", None)
     ss.pop("patient_list_start_confirmation", None)
     ss.setdefault("page", "Handoff")
+    resume = ss.pop("home_resume_state", None)
+    if resume:
+        room = resume["room"]
+        draft = ss.get("drafts", {}).get(room)
+        saved = ss.get("vault", {}).get("rooms", {}).get(room)
+        if draft and saved and draft["id"] == saved["id"] == resume["sheet_id"]:
+            ss["current_room"] = ss["room_choice"] = room
+            ss["paste"] = resume["paste"]
 
 
 def prepare_rounds_handoff(store: GitHubVault | None = None) -> None:
@@ -2129,8 +2173,10 @@ def main() -> None:
     if not patient_list_startup(store):
         return
     with st.sidebar:
+        st.button("Home", key="home_screen", on_click=return_home, args=(store,),
+                  help="Save all open handoffs and return to the starting screen.", use_container_width=True)
         st.header("PICU Handoff")
-        st.caption("Version 6.93 | Vent import fallback")
+        st.caption("Version 6.94 | Home navigation")
         if history_ready:
             st.caption("Respiratory mode-history parser: ready")
         else:
@@ -2145,7 +2191,7 @@ def main() -> None:
         st.button("Log out", on_click=clear_session)
         if st.session_state.get("pending_error_events"):
             st.caption("Unsaved technical reports: see Alerts or Import errors.")
-        st.caption("Room changes and Print all save your handoff automatically. Use Save before logout.")
+        st.caption("Home saves all open handoffs. Room changes and Print all also save your work. Use Save before logout.")
     st.session_state["active_workspace"] = page
     if "notice" in st.session_state:
         kind, text = st.session_state.pop("notice")
@@ -2788,7 +2834,8 @@ def discard_all_handoff_state() -> None:
                 "medication_pending", "removed_room", "print_rooms", "print_room_options",
                 "custom_room_remove_choice", "room_print_target", "all_print_target",
                 "workspace_notices", "workspace_imports", "handoff_tab", "handoff_active_tab",
-                "workspace_room_print_target", "workspace_all_print_target", "airway_update_pending"):
+                "workspace_room_print_target", "workspace_all_print_target", "airway_update_pending",
+                "home_resume_state"):
         ss.pop(key, None)
     ss["drafts"] = {}
     ss["base_sheets"] = {}
@@ -3746,7 +3793,7 @@ def lock_admin_page() -> None:
     st.session_state.pop("admin_login_error", None)
 
 
-def autosave_before_print_all(store: GitHubVault | None) -> bool:
+def autosave_before_print_all(store: GitHubVault | None, *, for_home: bool = False) -> bool:
     """Save current editor values before Streamlit removes the editor widgets.
 
     The existing guarded room-save path preserves inline mapping behavior.
@@ -3756,11 +3803,11 @@ def autosave_before_print_all(store: GitHubVault | None) -> bool:
     if not require_session():
         return False
     ss = st.session_state
-    if not autosave_before_room_change(store, for_print=True):
+    if not autosave_before_room_change(store, for_print=not for_home, for_home=for_home):
         return False
     changed = [room for room, draft in ss.get("drafts", {}).items()
                if draft != ss["vault"]["rooms"].get(room)]
-    if changed and not save_rooms(store, changed):
+    if changed and not save_rooms(store, changed, prepare_pdf=not for_home):
         return False
     return True
 
