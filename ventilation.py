@@ -11,6 +11,10 @@ from datetime import datetime
 import re
 from ventilator_modes import spec, display_mode, control_family, strip_setting_marker
 
+VENTILATION_HISTORY_FALLBACK_NOTE = (
+    "Mode history unavailable. Showing first reported settings from this paste. Latest mode unconfirmed."
+)
+
 LABELS = (
     "Vent Mode",
     "Resp Rate (Set)",
@@ -509,6 +513,100 @@ class VentilationResult:
     error: str = ""
 
 
+def has_ventilation_history(block: str | None) -> bool:
+    """Detect the history boundary without invoking the mode-history parser."""
+    return any(normalize(strip_setting_marker(line).rstrip(":")) == "all vent modes"
+               for line in (block or "").replace("\r\n", "\n").replace("\r", "\n").splitlines())
+
+
+def _check_first_reported_conflicts(lines: list[str]) -> None:
+    """Do not hide contradictory original fields behind a dedicated subsection."""
+    aliases = {normalize(label): label for label in LABELS}
+    aliases.update(AVAPS_LABEL_ALIASES)
+    aliases.update(OBSERVED_VOLUME_ALIASES)
+    aliases["ventilator on"] = "Ventilator On"
+    entries: dict[str, str] = {}
+    for raw in lines:
+        label, separator, value = unwrap_vent_line(raw).partition(":")
+        label = aliases.get(normalize(label.replace("₂", "2")))
+        if not separator or label is None or not is_present(value):
+            continue
+        value = normalize(strip_setting_marker(value))
+        if len(value) > 500:
+            raise ValueError("A requested ventilation value is too long. Nothing was imported.")
+        if label in entries and entries[label] != value:
+            raise ValueError("The C block contains conflicting repeated ventilation fields. Nothing was imported.")
+        entries[label] = value
+
+
+def select_first_reported_ventilation_source(block: str) -> str:
+    """Read only the original snapshot, independently of all history helpers.
+
+    Stop at the history boundary. Keep original control lines so a conflicting
+    mode or an Off flag cannot disappear during fallback source selection.
+    """
+    sections: dict[str, list[str]] = {"main": []}
+    controls: list[str] = []
+    first_mode = ""
+    scope = "main"
+    started = False
+    for raw in block.replace("\r\n", "\n").replace("\r", "\n").splitlines():
+        line = strip_setting_marker(raw).strip()
+        heading = normalize(line.rstrip(":"))
+        if heading in {"all vent modes", "non-invasive ventilation", "noninvasive ventilation"}:
+            break
+        if re.fullmatch(r"([a-zA-Z])\1{7,}", line):
+            if started:
+                break
+            continue
+        if line:
+            started = True
+        section = {
+            "invasive ventilation": "main", "vent information": "main", "settings": "main",
+            "home ventilator settings": "home",
+            "average volume-assured pressure support settings": "avaps", "avaps settings": "avaps",
+            "nava ventilator settings": "nava", "nava settings": "nava",
+            "cpap trial settings": "ps_cpap", "ps-cpap settings": "ps_cpap",
+            "pressure support - continuous positive airway pressure settings": "ps_cpap",
+        }.get(heading)
+        if section is None:
+            explicit = re.fullmatch(r"(.+?)\s+(?:ventilator\s+)?settings", heading, re.I)
+            if explicit:
+                section = ("mode:" + normalize(display_mode(explicit[1]))
+                           if mode_rule(explicit[1]) == "included" else "unused:" + heading)
+        if section is not None:
+            scope = section
+            sections.setdefault(scope, [])
+            continue
+        label, separator, value = unwrap_vent_line(raw).partition(":")
+        label = normalize(label)
+        if separator and label in {"vent mode", "ventilator on"}:
+            controls.append(raw)
+            if label == "vent mode" and not first_mode and is_present(value):
+                first_mode = value.strip()
+            continue
+        sections.setdefault(scope, []).append(raw)
+    # Contradictions inside the first snapshot must still block fallback even
+    # if a dedicated NAVA/CPAP subsection would otherwise replace these fields.
+    _check_first_reported_conflicts(controls + sections.get("main", []))
+    identity = normalize(display_mode(first_mode))
+    known = spec(first_mode)
+    family = control_family(first_mode)
+    if "mode:" + identity in sections:
+        selected = sections["mode:" + identity]
+    elif known and not known[2] and family == "NAVA" and "nava" in sections:
+        selected = sections["nava"]
+    elif identity == normalize(display_mode("PS-CPAP")) and "ps_cpap" in sections:
+        selected = sections["ps_cpap"]
+    else:
+        selected = sections.get("main", []) + sections.get("home", [])
+        if known and not known[2] and family == "AVAPS":
+            selected = selected + sections.get("avaps", [])
+    source_lines = controls + selected
+    _check_first_reported_conflicts(source_lines)
+    return "\n".join(source_lines)
+
+
 def _split_ventilation_sections(block: str) -> dict:
     """Retain source boundaries before reading any repeated SmartLink fields."""
     sections: dict[str, list[str]] = {"main": []}
@@ -706,7 +804,7 @@ def _history_context(block: str) -> dict | None:
 
 def select_ventilation_source(block: str) -> str:
     """Use the same current-mode source for imports, support parsing, and SBS."""
-    history = _history_context(block)
+    history = _history_context(block) if has_ventilation_history(block) else None
     if history is not None:
         return history["source"]
     parts = _split_ventilation_sections(block)
@@ -735,7 +833,7 @@ def select_ventilation_source(block: str) -> str:
     return _select_legacy_source(block)
 
 
-def _parse_single_ventilation(block: str) -> VentilationResult:
+def _parse_single_ventilation(block: str, *, source_is_selected: bool = False) -> VentilationResult:
     result = VentilationResult()
     aliases = {normalize(label): label for label in LABELS}
     aliases.update(AVAPS_LABEL_ALIASES)
@@ -745,7 +843,7 @@ def _parse_single_ventilation(block: str) -> VentilationResult:
         return normalize(label.replace("₂", "2"))
     entries: dict[str, str] = {}
     meaningful = []
-    source = select_ventilation_source(block)
+    source = block if source_is_selected else select_ventilation_source(block)
     for raw in source.replace("\r\n", "\n").replace("\r", "\n").splitlines():
         line = unwrap_vent_line(raw)
         if not line or normalize(line.rstrip(":")) in ("invasive ventilation", "vent information", "settings", "home ventilator settings", "average volume-assured pressure support settings", "avaps settings"):
@@ -815,7 +913,7 @@ def _parse_single_ventilation(block: str) -> VentilationResult:
 
 def parse_ventilation(block: str) -> VentilationResult:
     """Import a current snapshot and separately scoped, deduplicated mode history."""
-    history = _history_context(block)
+    history = _history_context(block) if has_ventilation_history(block) else None
     if history is None:
         return _parse_single_ventilation(block)
     result = _parse_single_ventilation(history["source"])
@@ -850,4 +948,36 @@ def parse_ventilation(block: str) -> VentilationResult:
     except ValueError as exc:
         result.data = None
         result.error = str(exc)
+    return result
+
+
+def parse_first_reported_ventilation(block: str) -> VentilationResult:
+    """Fallback to supported first settings in this paste, without history work."""
+    try:
+        source = select_first_reported_ventilation_source(block)
+    except ValueError as exc:
+        return VentilationResult(error=str(exc))
+    for raw in source.splitlines():
+        label, separator, value = unwrap_vent_line(raw).partition(":")
+        if separator and normalize(label) == "ventilator on" and normalize(strip_setting_marker(value)) in {"no", "off", "false"}:
+            return VentilationResult(status="excluded", error="The first reported settings mark the ventilator Off. No invasive fallback was added.")
+    result = _parse_single_ventilation(source, source_is_selected=True)
+    if result.error:
+        return result
+    if result.data is None or result.status != "included":
+        result.error = "No supported initial invasive mode was available for the first reported settings fallback."
+        result.data = None
+        return result
+    displayed_settings = [line for line in _format_single_ventilation(result.data).splitlines()
+                          if line and not line.startswith(("Mode:", "Device:"))]
+    if not result.data["values"] or not displayed_settings:
+        result.error = "No first reported ventilator settings were available in this paste."
+        result.data = None
+        return result
+    result.data["mode_history"] = {
+        "reported_at": "", "other_modes": [], "latest_confirmed": False,
+        "notes": [VENTILATION_HISTORY_FALLBACK_NOTE],
+    }
+    result.issues.append(VENTILATION_HISTORY_FALLBACK_NOTE)
+    validate_ventilation(result.data)
     return result

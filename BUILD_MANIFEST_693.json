@@ -1,0 +1,61 @@
+{
+  "version": "6.93",
+  "baseline": "6.92",
+  "source_zip_sha256": "f8ab2fab86d95ea4bad475521c3e81c48970ab5137e204de33b12e3e43b9cf9e",
+  "runtime_files_changed": [
+    "app.py",
+    "error_store.py",
+    "importing.py",
+    "noninvasive.py",
+    "ventilation.py",
+    "workspace_ui.py"
+  ],
+  "required_installation_files": [
+    "app.py",
+    "ventilation.py",
+    "noninvasive.py",
+    "importing.py",
+    "workspace_ui.py",
+    "error_store.py"
+  ],
+  "new_runtime_files": [],
+  "schema": 34,
+  "dependencies_changed": false,
+  "deployed": false,
+  "verification": {
+    "tests": 700,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "test_modules": {
+      "tests.test_avaps_integration": 12,
+      "tests.test_avaps_settings": 78,
+      "tests.test_callbacks": 13,
+      "tests.test_compact_workspace": 70,
+      "tests.test_import_recovery": 34,
+      "tests.test_measurement_notes_observed_pip": 1,
+      "tests.test_mode_specific_ventilator": 78,
+      "tests.test_nava_settings": 54,
+      "tests.test_noninvasive": 56,
+      "tests.test_respiratory_update_check": 13,
+      "tests.test_room_replacement": 82,
+      "tests.test_sbs_vent_fallback": 118,
+      "tests.test_vent_fallback_integration": 15,
+      "tests.test_vent_first_reported_fallback": 33,
+      "tests.test_vent_mode_history_core": 22,
+      "tests.test_vent_mode_history_integration": 21
+    },
+    "supplied_source_examples": 5,
+    "forced_fallback_source_examples": 5,
+    "synthetic_pdf_pages_reviewed": 2,
+    "live_runtime_inspected": false
+  },
+  "runtime_sha256": {
+    "app.py": "e3c3a018c7f9e2bd0626df4a46ac6eb9b8a29c2117f748a8d212ec457e22eb06",
+    "error_store.py": "c90dd4d51f1511c8b4afbbe1cd4a183b574d36338a59dcb4c0c5836151a67b73",
+    "importing.py": "bf99769900931ff55f94a79b753131661a50672183973d0acc714a99b5736a9d",
+    "noninvasive.py": "72df5b31db10aed036140a069f8578c25d1037d27ebe470bae9bdec1b05c5759",
+    "ventilation.py": "a45fbff5729df152587ede9c9de9d4a1142dca479a479d86952347d92da30e0e",
+    "workspace_ui.py": "24b99d8d48a54d907b334aa78e583f9767396c1af53090b9bf36bbbdfdad60c2"
+  }
+}

@@ -8,7 +8,7 @@ from models import new_sheet, validate_sheet, apply_diagnoses, apply_medications
 from parser import parse_smartphrase, SECTION_NAMES, MAX_PASTE
 from medications import parse_medications
 from infusions import apply_infusion_rules
-from noninvasive import parse_respiratory, read_fields
+from noninvasive import parse_respiratory
 from labs import parse_labs, is_lactate, is_numeric_lactate
 from vitals import parse_vitals
 from observations import parse_neuro, parse_nutrition
@@ -67,7 +67,7 @@ def _attach_current_feeds(diet: dict, feeds: dict | None, *, refine_routes: bool
             order['method'] = recorded['method']
 
 
-def import_sections(sheet: dict, text: str, settings: dict) -> ImportResult:
+def import_sections(sheet: dict, text: str, settings: dict, *, respiratory_first_reported: bool = False) -> ImportResult:
     out = ImportResult()
     if not isinstance(text, str) or not text.strip():
         out.errors.append("Paste the SmartPhrase first.")
@@ -166,12 +166,13 @@ def import_sections(sheet: dict, text: str, settings: dict) -> ImportResult:
                     continue  # C and D are interpreted together, once.
                 if set("cd") & parsed.invalid:
                     continue  # The invalid divider is reported by the loop.
-                vent = parse_respiratory(parsed.blocks.get("c"), parsed.blocks.get("d"))
+                vent = parse_respiratory(parsed.blocks.get("c"), parsed.blocks.get("d"),
+                                         first_reported_only=respiratory_first_reported)
                 if vent.error:
                     out.errors.append(vent.error)
                     continue
                 candidate = apply_respiratory(candidate, vent.invasive, vent.devices)
-                source_fields = read_fields(parsed.blocks.get('c'), 'C')
+                source_fields = vent.source_fields
                 candidate['sbs_vent_mode'] = ('' if source_fields.get('on', '').casefold() in ('no', 'off', 'false')
                                               else source_fields.get('mode', ''))
                 out.notices.extend(vent.issues)
@@ -423,7 +424,7 @@ def import_sections(sheet: dict, text: str, settings: dict) -> ImportResult:
     return out
 
 
-def import_replacement(room: str, text: str, settings: dict) -> ImportResult:
+def import_replacement(room: str, text: str, settings: dict, *, respiratory_first_reported: bool = False) -> ImportResult:
     """Build a whole-room replacement using only the new source and settings.
 
     The application must use this entry point, not import_sections(existing,
@@ -432,7 +433,8 @@ def import_replacement(room: str, text: str, settings: dict) -> ImportResult:
     A fresh sheet identity also prevents prior editor widgets and problem-review
     decisions from being applied to the newly imported record.
     """
-    result = import_sections(new_sheet(room), text, settings)
+    result = import_sections(new_sheet(room), text, settings,
+                             respiratory_first_reported=respiratory_first_reported)
     if result.sheet is None:
         return result
     if not result.imported:

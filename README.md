@@ -1,50 +1,58 @@
-# PICU Handoff 6.92
+# PICU Handoff 6.93
 
-Ventilator modes now show their date and time on the same line as the mode name. Each mode keeps its own settings, with a line containing three hyphens between mode blocks.
+This version adds automatic recovery when the ventilator mode-history import fails.
 
-## Display
+## Normal operation
 
-Synthetic example:
+The app continues to put the latest confirmed mode first, followed by the other modes and their own settings. Dates stay beside each mode name and three hyphens separate mode blocks.
 
-    Mode: PRVC-IMV (11/20/26 20:00)
-    Set RR: 21
-    Set TV: 180 mL
-    Set PEEP: 6 cm H2O
-    ---
-    Mode: PS-CPAP (11/20/26 17:00)
-    Set PEEP: 9 cm H2O
-    Pressure Support: 8 cm H2O
+## If mode history fails
 
-The newest confirmed mode stays first. The extra Latest reported mode, Last reported mode and Other reported modes labels are removed, along with the routine sentence about settings without timestamps.
+The app retries using the original single-mode approach. It reads the first reported mode and its corresponding settings from the same new SmartPhrase, leaving out All Vent Modes.
 
-The date and time belong to the mode entry. An unavailable date is left out. Existing review notes for ambiguous source data and missing settings remain available.
+A successful fallback shows this note in Alerts and in the handoff:
 
-This layout is used by the handoff text, HTML and PDF. A Home Vent device line remains separate from its dated Mode line.
+    Mode history unavailable. Showing first reported settings from this paste. Latest mode unconfirmed.
 
-## Install from 6.91
+The note is saved with the handoff and survives reopening, text/HTML/PDF export and encrypted save/reload. A fallback has no inferred timestamp and does not claim that the first mode is the latest.
 
-Extract PICU692.zip and open PICU_Handoff_v6_92_Compact_Vent_Modes.
+The fallback cannot recover a missing or unusable original settings block. Conflicting original fields, an unknown or noninvasive original mode, an explicit ventilator Off status, or an incompatible noninvasive delivery label still prevent an invasive fallback. Unavailable settings are not filled from another mode or from another handoff.
 
-Replace these files beside the app.py that Streamlit runs:
+Whole-room replacement continues to use only the new paste. The fallback does not restore the previous patient's information or manual notes, and other rooms remain unchanged.
+
+## Runtime availability
+
+The app still checks the loaded history importer with a synthetic example. If that check fails, it checks the independent first-settings importer before allowing work to continue.
+
+If only the fallback is available, the sidebar says:
+
+    Respiratory parser: first reported settings only
+
+If both checks fail, the existing incomplete-update message appears before the archive is opened or a handoff is replaced.
+
+## Install from 6.92
+
+Extract PICU693.zip and open PICU_Handoff_v6_93_Vent_Fallback. Replace all six files beside the app.py that Streamlit runs:
 
 - app.py
 - ventilation.py
+- noninvasive.py
+- importing.py
+- workspace_ui.py
 - error_store.py
 
-Reboot Streamlit and confirm Version 6.92 in the sidebar. Open the handoff again and generate a fresh print or download.
-
-Existing handoffs that already contain mode-history dates use the new layout when rendered again. Re-importing those handoffs is not needed for this display change.
+Reboot Streamlit and confirm Version 6.93 in the sidebar. The fallback applies automatically to new imports. It does not rerun earlier imports by itself.
 
 If you are updating from an earlier version, copy the complete package contents into the existing app folder. Keep your existing Streamlit Secrets and encryption key.
 
 ## Verification
 
-278 selected regression tests passed. The checks cover mode histories, separate mode settings, all export formats, existing ventilator formatting and the respiratory import check.
+700 selected regression tests passed. They cover deliberately broken history parsing, the fallback path, mode-specific settings, saved warnings, normal parsing, patient replacement, callbacks and imports.
 
-The two synthetic handoffs in examples/vent_mode_history_preview.pdf were regenerated and visually inspected. Each fits on one landscape page.
+All five supplied complete source examples imported respiratory support normally without fallback. Each also passed a forced fallback using its original settings.
 
-The parser, shared archive schema and dependencies are unchanged. Only ventilation.py formatting and the version labels in app.py and error_store.py changed at runtime.
+The synthetic normal and fallback examples in examples/vent_fallback_preview.pdf were rendered and visually inspected. Each fits on one landscape page. Uploaded source text and patient-derived output were not added to the package.
 
-See TEST_REPORT.md for details. The previous release notes are retained in the V691 files.
+The archive schema and dependencies are unchanged. See TEST_REPORT.md for details. Previous release notes are retained in the V692 files.
 
-Ready to install. This package has not been deployed to the live application.
+Ready to install. This package has not been deployed to your live application.

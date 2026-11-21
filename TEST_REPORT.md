@@ -1,40 +1,52 @@
-# PICU Handoff 6.92 verification
+# PICU Handoff 6.93 verification
 
-## Regression result
+## Final regression result
 
-278 selected tests passed, with zero failures, errors or skipped tests.
+700 tests passed with zero failures, errors or skipped tests. The final selected run covered the following modules and test:
 
-The final run includes:
+- tests.test_avaps_integration: 12 tests
+- tests.test_avaps_settings: 78 tests
+- tests.test_callbacks: 13 tests
+- tests.test_compact_workspace: 70 tests
+- tests.test_import_recovery: 34 tests
+- tests.test_measurement_notes_observed_pip: 1 tests
+- tests.test_mode_specific_ventilator: 78 tests
+- tests.test_nava_settings: 54 tests
+- tests.test_noninvasive: 56 tests
+- tests.test_respiratory_update_check: 13 tests
+- tests.test_room_replacement: 82 tests
+- tests.test_sbs_vent_fallback: 118 tests
+- tests.test_vent_fallback_integration: 15 tests
+- tests.test_vent_first_reported_fallback: 33 tests
+- tests.test_vent_mode_history_core: 22 tests
+- tests.test_vent_mode_history_integration: 21 tests
 
-- tests/test_vent_mode_history_core.py
-- tests/test_vent_mode_history_integration.py
-- tests/test_mode_specific_ventilator.py
-- tests/test_nava_settings.py
-- tests/test_avaps_settings.py
-- tests/test_avaps_integration.py
-- tests/test_respiratory_update_check.py
-- tests/test_measurement_notes_observed_pip.py::test_current_version_is_used_for_new_technical_reports
+## Recovery behavior
 
-The 21 mode-history integration tests now check inline mode timestamps, literal three-hyphen separators, removal of the old headings, and preservation of each mode's own settings across text, HTML and PDF. Hidden modes remove their corresponding timestamp and separator. Records without mode history retain their previous format.
+Injected exceptions in the history parser exercise the automatic fallback through respiratory parsing, the complete replacement importer and the application save callback. The independent selector also passes tests with all normal history helpers and the normal selector disabled.
 
-Actual source uncertainty notes remain present, including an unrecognized newest mode. No missing timestamps or settings are invented.
+The selected original mode and its settings come from the same new source. The SBS mode uses the successful respiratory parse's selected fields, so it does not reread the failed history or use a different mode. Replacement clears prior-room information and manual notes while preserving other rooms and reusable settings.
 
-## Visual verification
+Missing original FiO2 or volume is not filled from NAVA, CPAP, AVAPS or the D block. Original mode and setting conflicts remain errors. The fallback also declines an unknown or noninvasive original mode, an Off flag, incompatible noninvasive delivery labels, and an original snapshot with no setting that would appear in the output.
 
-examples/vent_mode_history_preview.pdf contains two synthetic examples. One shows PRVC-IMV, NAVA and PRVC-PS. The other shows PRVC-IMV followed by PS-CPAP.
+Fallback output has an empty timestamp, no supplemental modes, latest_confirmed set to false, and the persistent fallback note. The note appears in saved Alerts, text, HTML and PDF after encrypted save/reload. Exception details and charting author suffixes are not included in recovered output.
 
-Both pages were rendered to PNG and visually inspected. Mode timestamps appear on the mode line, three-hyphen separators appear between blocks, and no old history headings or routine timestamp paragraph remain. Both handoffs fit on one landscape page at the normal 8-point body size without clipping.
+## Runtime checks
 
-A separate synthetic Home Vent check confirms that the timestamp is placed on the Mode line and does not attach to Device: Home Vent.
+The full-history and independent fallback probes use fixed synthetic inputs without archive access or session changes. The fallback probe uses a newer NAVA history entry with distinct settings, while requiring the original PRVC values. This ensures a normal history import cannot pass as a verified fallback.
 
-## Scope
+A working fallback allows startup and import when the history probe fails. Failure of both probes preserves the pasted text and existing records, before archive loading or replacement. Authentication, room selection and concurrent-change guards remain in place.
 
-The runtime changes from 6.91 are ventilation.py formatting and version labels in app.py and error_store.py. Parsing, source selection, mode ordering, stored values and calculations are unchanged.
+## Supplied examples and print inspection
 
-The existing PDF cache includes rendered field text in its content signature, so this display change produces a new PDF signature without changing the cache implementation.
+All five uploaded complete sources passed the normal respiratory import without using fallback. Each also passed forced fallback. Unrelated source-specific warnings were not suppressed or changed.
 
-The archive schema remains 34. No dependencies or credentials changed. Existing dependency deprecation warnings did not affect test results.
+The synthetic normal/fallback PDF was rendered to PNG and visually inspected. Both handoffs fit on one landscape page at the normal 8-point body size. The fallback page shows the original settings and its review note without a timestamp or a latest-mode claim.
 
-Uploaded patient source text and patient-derived output are not included in this release's tests or preview.
+## Review and scope
 
-No live Streamlit deployment or production archive write was performed.
+Independent review found and verified fixes for bare noninvasive delivery aliases and original records containing only irrelevant, undisplayed fields. No remaining blockers were identified.
+
+Changed runtime files: app.py, ventilation.py, noninvasive.py, importing.py, workspace_ui.py and error_store.py. The archive schema remains 34. No dependencies or credentials changed. Existing dependency deprecation warnings did not affect test results.
+
+No uploaded patient source or patient-derived output was added to the tests or preview. No live Streamlit deployment or production archive write was performed.

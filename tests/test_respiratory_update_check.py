@@ -90,12 +90,14 @@ def test_bundled_runtime_passes_without_mutating_user_session(app):
     ss["paste"] = "SYNTHETIC_USER_PASTE_MUST_NOT_BE_READ_BY_CHECK"
     before = deepcopy(ss)
     assert app.respiratory_parser_ready() is True
+    assert app.respiratory_fallback_ready() is True
     assert ss == before
 
 
 def test_check_rejects_unscoped_legacy_selector_used_by_respiratory_reader(app, monkeypatch):
     monkeypatch.setattr(noninvasive, "select_ventilation_source", lambda source: source)
     assert app.respiratory_parser_ready() is False
+    assert app.respiratory_fallback_ready() is True
 
 
 def test_check_suppresses_exception_details_and_returns_false(app, monkeypatch, capsys, caplog):
@@ -104,16 +106,18 @@ def test_check_suppresses_exception_details_and_returns_false(app, monkeypatch, 
 
     monkeypatch.setattr(app, "import_replacement", broken_import)
     assert app.respiratory_parser_ready() is False
+    assert app.respiratory_fallback_ready() is False
     captured = capsys.readouterr()
     assert "SYNTHETIC_PRIVATE_EXCEPTION_DETAIL" not in captured.out + captured.err + caplog.text
     assert "SYNTHETIC_PRIVATE_EXCEPTION_DETAIL" not in repr(app.st.session_state)
 
 
-def test_failed_runtime_check_preserves_paste_drafts_and_archive_without_write(app, monkeypatch):
+def test_failure_of_both_runtime_checks_preserves_paste_drafts_and_archive_without_write(app, monkeypatch):
     ss = prepare_saved_room(app)
     before = {key: deepcopy(ss[key]) for key in ("paste", "vault", "drafts", "base_sheets")}
     store = NoArchiveAccess()
     monkeypatch.setattr(noninvasive, "select_ventilation_source", lambda source: source)
+    monkeypatch.setattr(app, "respiratory_fallback_ready", lambda: False)
 
     app.create_handoff(store)
 
@@ -163,6 +167,7 @@ def test_startup_stops_incomplete_update_before_opening_archive(app, monkeypatch
     errors = []
     app.st.error = lambda value, *args, **kwargs: errors.append(str(value))
     monkeypatch.setattr(app, "respiratory_parser_ready", lambda: False)
+    monkeypatch.setattr(app, "respiratory_fallback_ready", lambda: False)
 
     app.main()
 
@@ -183,6 +188,23 @@ def test_startup_shows_functional_ready_status_in_sidebar(app, monkeypatch):
     assert "Respiratory mode-history parser: ready" in captions
 
 
+def test_startup_allows_work_when_only_first_reported_settings_fallback_is_ready(app, monkeypatch):
+    main_setup(app, monkeypatch, None)
+    captions, errors, opened = [], [], []
+    app.st.caption = lambda value, *args, **kwargs: captions.append(str(value))
+    app.st.error = lambda value, *args, **kwargs: errors.append(str(value))
+    monkeypatch.setattr(app, "respiratory_parser_ready", lambda: False)
+    monkeypatch.setattr(app, "patient_list_startup", lambda store: True)
+    monkeypatch.setattr(app, "handoff_page", lambda store: opened.append(True))
+
+    app.main()
+
+    assert opened == [True]
+    assert not errors
+    assert "Respiratory mode-history parser: ready" not in captions
+    assert "Respiratory parser: first reported settings only" in captions
+
+
 @pytest.mark.parametrize("guard", ["session", "room", "concurrent-change"])
 def test_existing_import_guards_run_before_runtime_check(app, monkeypatch, guard):
     ss = prepare_saved_room(app)
@@ -199,6 +221,7 @@ def test_existing_import_guards_run_before_runtime_check(app, monkeypatch, guard
         raise AssertionError("Existing guard must return before readiness check")
 
     monkeypatch.setattr(app, "respiratory_parser_ready", must_not_check)
+    monkeypatch.setattr(app, "respiratory_fallback_ready", must_not_check)
     app.create_handoff()
 
 
@@ -213,6 +236,7 @@ def test_unauthenticated_startup_does_not_run_parser_check(app, monkeypatch):
         raise AssertionError("Parser check must follow authentication")
 
     monkeypatch.setattr(app, "respiratory_parser_ready", must_not_check)
+    monkeypatch.setattr(app, "respiratory_fallback_ready", must_not_check)
     app.main()
 
     assert logins == [True]

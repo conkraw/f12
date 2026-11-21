@@ -9,6 +9,7 @@ labels, never a numerical flow threshold. Values are not recalculated.
 from __future__ import annotations
 from dataclasses import dataclass, field
 import re
+import ventilation as ventilation_parser
 from ventilation import normalize, parse_ventilation, select_ventilation_source, unwrap_vent_line
 from ventilator_modes import spec, strip_setting_marker
 
@@ -48,9 +49,9 @@ def clean(value: str) -> str:
     return re.sub(r"\s+", " ", strip_setting_marker(value)).strip()
 
 
-def read_fields(block: str | None, block_name: str) -> dict[str, str]:
+def read_fields(block: str | None, block_name: str, *, source_is_selected: bool = False) -> dict[str, str]:
     entries = {}
-    source = select_ventilation_source(block or "") if block_name == "C" else (block or "")
+    source = select_ventilation_source(block or "") if block_name == "C" and not source_is_selected else (block or "")
     for raw in source.splitlines():
         line = unwrap_vent_line(raw) if block_name == "C" else raw
         if ":" not in line:
@@ -151,23 +152,72 @@ class SupportResult:
     devices: list[dict] = field(default_factory=list)
     issues: list[str] = field(default_factory=list)
     error: str = ""
+    source_fields: dict[str, str] = field(default_factory=dict)
+    history_fallback: bool = False
 
 
-def parse_respiratory(c_block: str | None, d_block: str | None) -> SupportResult:
+def parse_respiratory(c_block: str | None, d_block: str | None, *, first_reported_only: bool = False) -> SupportResult:
+    """Try mode history, then an independent first-settings import from this paste."""
+    has_history = ventilation_parser.has_ventilation_history(c_block)
+    if first_reported_only and has_history:
+        return _first_reported_support(c_block, d_block)
+    try:
+        result = _parse_respiratory(c_block, d_block)
+    except Exception:
+        if not has_history:
+            raise
+        # Parser exceptions may include source text. Only a static error can
+        # leave this boundary, including when the independent retry fails.
+        result = SupportResult(error="Ventilator mode history could not be processed.")
+    if result.error and has_history:
+        fallback = _first_reported_support(c_block, d_block)
+        if not fallback.error and fallback.invasive is not None:
+            return fallback
+    return result
+
+
+def _first_reported_support(c_block: str | None, d_block: str | None) -> SupportResult:
+    """Recover only a validated invasive snapshot with durable fallback labeling."""
+    try:
+        result = _parse_respiratory(c_block, d_block, first_reported_only=True)
+        if result.error:
+            return result
+        if result.invasive is None or result.devices:
+            return SupportResult(error="The first reported invasive settings could not be imported.")
+        result.history_fallback = True
+        return result
+    except Exception:
+        return SupportResult(error="The first reported invasive settings could not be imported.")
+
+
+def _parse_respiratory(c_block: str | None, d_block: str | None, *, first_reported_only: bool = False) -> SupportResult:
     """Parse this paste only. Never recover a missing mode/pressure from old data."""
     result = SupportResult()
     try:
-        c = read_fields(c_block, "C")
+        if first_reported_only:
+            source = ventilation_parser.select_first_reported_ventilation_source(c_block or "")
+            c = read_fields(source, "C", source_is_selected=True)
+        else:
+            c = read_fields(c_block, "C")
         d = read_fields(d_block, "D")
     except ValueError as exc:
         result.error = str(exc)
         return result
+    result.source_fields = c
+    if first_reported_only:
+        delivered = normalize(d.get("delivery", ""))
+        if normalize(c.get("on", "")) in ("no", "false", "off") or re.search(
+                r"high[ -]?flow|nasal cannula|\bmask\b|room air|\bhh?fnc\b|\bniv\b|"
+                r"non[ -]?invasive|\bcpap\b|bi[ -]?(?:pap|level)|continuous positive airway pressure", delivered):
+            result.error = "The first reported invasive settings conflict with the documented support status."
+            return result
     mode_present = present(c.get("mode", ""))
     kind = mode_kind(c.get("mode", "")) if mode_present else None
     # C may contain only equipment lines and FiO2 after a mode disappears.
     # That is not a malformed respiratory paste and must not block A/B/D.
     if c_block is not None and mode_present:
-        parsed = parse_ventilation(c_block)
+        parsed = (ventilation_parser.parse_first_reported_ventilation(c_block) if first_reported_only
+                  else parse_ventilation(c_block))
         if parsed.error:
             result.error = parsed.error
             return result

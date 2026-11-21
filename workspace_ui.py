@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from html import escape
+import ventilation as ventilation_parser
 from import_review import diagnostic_text
 from user_guide import DEFAULT_INSTRUCTIONS, handoff_instructions
 
@@ -101,6 +102,10 @@ def alert_rows(sheet: dict | None, session) -> list[tuple[str, str]]:
         for section, entries in sheet.get("import_warnings", {}).items():
             for entry in entries:
                 add("warning", diagnostic_text(entry))
+        fallback_note = getattr(ventilation_parser, "VENTILATION_HISTORY_FALLBACK_NOTE", "")
+        history_notes = (sheet.get("ventilation") or {}).get("mode_history", {}).get("notes", [])
+        if fallback_note and fallback_note in history_notes:
+            add("warning", fallback_note)
         imported = current_import(sheet, session)
         if imported.get("room") == sheet.get("room"):
             for text in imported.get("errors", []):

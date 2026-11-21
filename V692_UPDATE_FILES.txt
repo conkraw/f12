@@ -1,0 +1,24 @@
+PICU Handoff 6.92
+Baseline: 6.91
+
+From 6.91, replace these files in the existing app folder:
+app.py
+ventilation.py
+error_store.py
+
+Extract PICU692.zip and open
+PICU_Handoff_v6_92_Compact_Vent_Modes.
+Put the replacement files beside the app.py that Streamlit runs.
+
+Reboot Streamlit and confirm:
+Version 6.92 | Compact vent modes
+Respiratory mode-history parser: ready
+
+Open the handoff again and generate a fresh print or download.
+Existing handoffs with mode-history dates do not need to be re-imported
+for this formatting change.
+
+For an earlier app version, use the complete package contents.
+Keep existing Streamlit Secrets and the encryption key.
+
+Ready to install. No live deployment performed.

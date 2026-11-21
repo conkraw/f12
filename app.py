@@ -1,4 +1,4 @@
-"""PICU SmartPhrase v6.92: compact ventilator modes with inline timestamps."""
+"""PICU SmartPhrase v6.93: recover first reported settings if vent history fails."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,
@@ -26,6 +26,7 @@ from models import (MAX_FIELD, SYSTEMS, ValidationError, new_sheet, new_vault,
 from infusion_rates import ADMIN_FIELDS, ADMIN_STATUSES, ADMIN_STATUS_LABELS, continuous_order, merge_admin_edits
 from medications import (DESTINATIONS, format_medication, suggested_key, upsert_rule,
                          remap, rule_for_inline_mapping, validate_medication, visible, hidden_for, set_visibility_rule, ignored, explicit_ignore_mapping)
+import ventilation as ventilation_parser
 from ventilation import LABELS, format_ventilation, validate_ventilation, mode_rule
 from ventilator_modes import display_mode, key as ventilator_mode_key
 from noninvasive import DEVICE_FIELDS, format_noninvasive, validate_noninvasive
@@ -1298,18 +1299,12 @@ def _finish_handoff_import(room: str, result, store: GitHubVault | None) -> None
 
 RESPIRATORY_UPDATE_MESSAGE = (
     "Handoff NOT replaced. The respiratory update is incomplete in the running app. "
-    "Replace app.py, ventilation.py, noninvasive.py and error_store.py in the same app folder, "
+    "Replace app.py, ventilation.py, noninvasive.py, importing.py, workspace_ui.py and error_store.py in the same app folder, "
     "then reboot Streamlit. Your pasted text and saved handoffs are unchanged."
 )
 
 
-def respiratory_parser_ready() -> bool:
-    """Check the actual loaded import path using a small patient-free example.
-
-    A new app.py alone does not establish that its imported respiratory modules
-    understand mode history. This check has no storage or session side effects.
-    """
-    source = """cccccccc
+RESPIRATORY_PROBE_SOURCE = """cccccccc
 Invasive Ventilation:
 Mode: Vent Mode: PRVC-IMV
 Resp Rate (Set): 14
@@ -1331,8 +1326,12 @@ Vent Mode: PS-CPAP (01/01/26 1200)
 Vent Mode: PRVC-IMV (01/01/26 1800)
 cccccccc
 """
+
+
+def respiratory_parser_ready() -> bool:
+    """Verify the loaded history importer with a fixed, patient-free example."""
     try:
-        result = import_replacement("IMPORT CHECK", source, new_vault()["settings"])
+        result = import_replacement("IMPORT CHECK", RESPIRATORY_PROBE_SOURCE, new_vault()["settings"])
         if result.errors or result.sheet is None:
             return False
         data = result.sheet.get("ventilation") or {}
@@ -1358,6 +1357,37 @@ cccccccc
         return False
 
 
+def respiratory_fallback_ready() -> bool:
+    """Verify the independent single-mode path before allowing degraded imports."""
+    # The newest mode intentionally differs from the original settings. A
+    # history parser that ignores the fallback flag must not pass this check.
+    source = RESPIRATORY_PROBE_SOURCE.replace(
+        "Vent Mode: PRVC-IMV (01/01/26 1800)", "Vent Mode: NAVA (01/01/26 2000)")
+    try:
+        result = import_replacement("IMPORT CHECK", source, new_vault()["settings"],
+                                    respiratory_first_reported=True)
+        if result.errors or result.sheet is None:
+            return False
+        data = result.sheet.get("ventilation") or {}
+        history = data.get("mode_history") or {}
+        values = data.get("values", {})
+        return bool(
+            data.get("mode") == "PRVC-IMV"
+            and values.get("Resp Rate (Set)") == "14"
+            and values.get("Vt (Set, mL)") == "100"
+            and values.get("PEEP (cm H2O)") == "5"
+            and values.get("FiO2 set (%)") == "40 %"
+            and "NAVA level" not in values and "FiO2 (%)" not in values
+            and history.get("reported_at") == ""
+            and history.get("latest_confirmed") is False
+            and history.get("other_modes") == []
+            and ventilation_parser.VENTILATION_HISTORY_FALLBACK_NOTE in history.get("notes", [])
+            and result.sheet.get("sbs_vent_mode") == "PRVC-IMV"
+        )
+    except Exception:
+        return False
+
+
 def create_handoff(store: GitHubVault | None = None) -> None:
     """Validate a fresh record, save it, then discard the prior room draft.
 
@@ -1376,11 +1406,16 @@ def create_handoff(store: GitHubVault | None = None) -> None:
     if ss.get("base_sheets", {}).get(room) != ss["vault"]["rooms"].get(room):
         note("Handoff NOT replaced. The saved room changed. Reload the saved handoff before importing again. Your pasted text is kept.", "error")
         return
-    if not respiratory_parser_ready():
+    first_reported_only = not respiratory_parser_ready()
+    if first_reported_only and not respiratory_fallback_ready():
         note(RESPIRATORY_UPDATE_MESSAGE, "error")
         return
     try:
-        result = import_replacement(room, ss.get("paste", ""), ss["vault"]["settings"])
+        if first_reported_only:
+            result = import_replacement(room, ss.get("paste", ""), ss["vault"]["settings"],
+                                        respiratory_first_reported=True)
+        else:
+            result = import_replacement(room, ss.get("paste", ""), ss["vault"]["settings"])
     except (ValueError, ValidationError):
         note("Handoff NOT replaced. Check the SmartPhrase and try again. The previous handoff and pasted text are unchanged.", "error")
         return
@@ -1427,7 +1462,12 @@ def create_handoff(store: GitHubVault | None = None) -> None:
         message += " PDF preparation will retry when downloaded."
     if result.errors:
         message += " Some sections could not be imported. Review Alerts before use."
-    note(message, "warning" if result.errors else "info")
+    fallback_note = getattr(ventilation_parser, "VENTILATION_HISTORY_FALLBACK_NOTE", "")
+    fallback_used = bool(fallback_note and fallback_note in (
+        (result.sheet.get("ventilation") or {}).get("mode_history", {}).get("notes", [])))
+    if fallback_used:
+        message += " " + fallback_note
+    note(message, "warning" if result.errors or fallback_used else "info")
 
 
 def start_new_patient() -> None:
@@ -2066,7 +2106,8 @@ def main() -> None:
         with login_view.container():
             render_login(st, app["password_hash"], authenticate)
         return
-    if not respiratory_parser_ready():
+    history_ready = respiratory_parser_ready()
+    if not history_ready and not respiratory_fallback_ready():
         login_view.empty()
         st.error(RESPIRATORY_UPDATE_MESSAGE)
         st.button("Check again", key="recheck_respiratory_update")
@@ -2089,8 +2130,12 @@ def main() -> None:
         return
     with st.sidebar:
         st.header("PICU Handoff")
-        st.caption("Version 6.92 | Compact vent modes")
-        st.caption("Respiratory mode-history parser: ready")
+        st.caption("Version 6.93 | Vent import fallback")
+        if history_ready:
+            st.caption("Respiratory mode-history parser: ready")
+        else:
+            st.caption("Respiratory parser: first reported settings only")
+            st.warning("Mode history unavailable. New imports will use first reported settings when they can be validated.")
         # Retire the old instructions workspace without discarding room drafts.
         if st.session_state.get("page") == "Instructions / SmartPhrase":
             st.session_state["page"] = "Handoff"

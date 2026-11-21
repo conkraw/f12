@@ -1,23 +1,24 @@
-PICU Handoff 6.92
-Baseline: 6.91
+PICU Handoff 6.93
+Baseline: 6.92
 
-From 6.91, replace these files in the existing app folder:
+Replace all six files in the existing app folder:
 app.py
 ventilation.py
+noninvasive.py
+importing.py
+workspace_ui.py
 error_store.py
 
-Extract PICU692.zip and open
-PICU_Handoff_v6_92_Compact_Vent_Modes.
-Put the replacement files beside the app.py that Streamlit runs.
+Extract PICU693.zip and open PICU_Handoff_v6_93_Vent_Fallback.
+Put these files beside the app.py that Streamlit runs.
+Reboot Streamlit and confirm Version 6.93.
 
-Reboot Streamlit and confirm:
-Version 6.92 | Compact vent modes
-Respiratory mode-history parser: ready
+The normal history import remains the first choice.
+If it fails, the app retries the first reported invasive settings
+from the same new paste and labels the fallback.
+If the original settings cannot be validated, the import is flagged.
 
-Open the handoff again and generate a fresh print or download.
-Existing handoffs with mode-history dates do not need to be re-imported
-for this formatting change.
-
+The fallback applies to new imports. Earlier imports are not rerun.
 For an earlier app version, use the complete package contents.
 Keep existing Streamlit Secrets and the encryption key.
 

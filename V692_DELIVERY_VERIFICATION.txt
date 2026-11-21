@@ -1,0 +1,15 @@
+PICU Handoff 6.92
+
+Complete package based on 6.91.
+Changed runtime files: app.py, ventilation.py, error_store.py.
+
+Dates and times appear beside each mode name.
+A line containing --- separates each mode's settings.
+The extra history headings and routine timestamp paragraph are removed.
+
+278 selected regression tests passed.
+Two synthetic PDF pages were rendered and visually inspected.
+Each synthetic handoff fits on one landscape page.
+
+Parsing, calculations, archive schema and dependencies are unchanged.
+Ready to install. No live deployment performed.
