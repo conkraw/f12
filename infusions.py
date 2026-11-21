@@ -166,9 +166,12 @@ def system_body_blocks(section: str, notes: str, rows: list[dict], sheet: dict |
 def render_body_blocks(blocks: list[tuple[str, object]], rich: bool = False, esc=escape) -> str:
     encode = esc if rich else lambda v: v
     lines = []
+    previous_kind = None
     for kind, item in blocks:
         if kind == "iv_fluid":
             from iv_fluids import iv_fluid_entry
+            if previous_kind == "iv_fluid":
+                lines.append("")
             lines.append(iv_fluid_entry(item, rich=rich, esc=esc))
         elif kind == "infusion":
             lines.append(infusion_entry(item, rich, esc, handoff_only=True))
@@ -194,6 +197,7 @@ def render_body_blocks(blocks: list[tuple[str, object]], rich: bool = False, esc
             lines.append(encode(medication_output(format_medication(item))))
         else:
             lines.append(encode(item))
+        previous_kind = kind
     return "\n".join(lines)
 
 

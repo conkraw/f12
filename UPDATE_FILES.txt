@@ -1,31 +1,21 @@
-PICU Handoff 6.96
-Baseline: 6.95
+PICU Handoff 6.97
+Baseline: 6.96
 
-Extract PICU696.zip and open PICU_Handoff_v6_96_IV_Fluids_Progress.
+Extract PICU697.zip and open PICU_Handoff_v6_97_Compact_IV_Fluids.
 
-Replace these existing files:
+Replace these four files beside app.py:
 app.py
-categories.py
 error_store.py
-fen_gi.py
 infusions.py
-
-Add these two new files beside app.py:
 iv_fluids.py
-processing_feedback.py
 
-Reboot Streamlit once and confirm Version 6.96.
+Reboot Streamlit once and confirm Version 6.97.
 
-Recognized continuous IV fluids now appear under Intravenous Fluids in FEN/GI.
-The maintenance comparison uses documented dosing weight and hourly 4-2-1.
-Rates at or below 2 mL/hr remain visible without a comparison.
-Missing or failed dosing weight also withholds the comparison.
+Removes the automatic Intravenous, Continuous line from IV fluid entries.
+Adds a blank line between consecutive IV fluid orders in FEN/GI.
 
-Processing shows a spinner with elapsed time and a progress bar.
-Later imports show typical remaining time from recent successful imports.
-
-For an earlier app version, use the complete package contents.
+For an earlier version, use the complete package contents.
 Keep existing Streamlit Secrets and the encryption key.
-No archive schema or dependency change.
+No new runtime files, dependency changes or archive schema change.
 
 Ready to install. No live deployment performed.

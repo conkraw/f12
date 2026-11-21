@@ -1,0 +1,29 @@
+PICU Handoff 6.96
+
+Complete package based on 6.95.
+Changed runtime files:
+app.py
+categories.py
+error_store.py
+fen_gi.py
+infusions.py
+iv_fluids.py
+processing_feedback.py
+
+The last two files are new and must be copied beside app.py.
+
+Recognized continuous IV fluids appear under Intravenous Fluids in FEN/GI.
+Maintenance comparisons use the documented DCW and hourly 4-2-1 reference.
+Low rates at or below 2 mL/hr remain visible without a comparison.
+Missing or failed dosing weight prevents the comparison.
+
+Processing shows live elapsed time and progress through its actual steps.
+Later imports show typical remaining time from recent successful imports.
+
+1,036 selected automated tests passed, including 147 new cases.
+Eight real Streamlit AppTest stages passed with zero exceptions.
+Eight fluid rows across six supplied sources passed the targeted checks.
+Both synthetic PDF pages passed visual inspection.
+
+No dependency or archive schema change.
+Ready to install. No live deployment performed.

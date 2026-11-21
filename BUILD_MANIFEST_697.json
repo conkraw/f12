@@ -1,0 +1,44 @@
+{
+  "version": "6.97",
+  "baseline": "6.96",
+  "source_zip_sha256": "768023bb51a79d2cc1b652a41bb02b0254eb9f68af7690748eb8cb7e09c0737a",
+  "runtime_files_changed": [
+    "app.py",
+    "error_store.py",
+    "infusions.py",
+    "iv_fluids.py"
+  ],
+  "required_installation_files": [
+    "app.py",
+    "error_store.py",
+    "infusions.py",
+    "iv_fluids.py"
+  ],
+  "new_runtime_files": [],
+  "schema": 34,
+  "dependencies_changed": false,
+  "deployed": false,
+  "verification": {
+    "tests": 199,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "test_modules": {
+      "tests.test_iv_fluids_core": 108,
+      "tests.test_iv_fluids_integration": 21,
+      "tests.test_measurement_notes_observed_pip": 1,
+      "tests.test_rooms_infusions": 69
+    },
+    "new_tests": 0,
+    "synthetic_pdf_pages": 1,
+    "visual_pdf_review_passed": true,
+    "live_runtime_inspected": false,
+    "production_storage_writes": false
+  },
+  "runtime_sha256": {
+    "app.py": "d9573847c0e86eae256b282a696bb1e494a59d9a0bf347879b13a895cc151d3b",
+    "error_store.py": "d62e8dbb7908a5dbdc3fee1697880a0545aa1c804e6989d9b571ad09ffaa1e22",
+    "infusions.py": "6fc87c8adeb30b274e6772c373b183bdaab458dbab4a4b27e44c5d1f7c910e2a",
+    "iv_fluids.py": "3536d56cdd8ff7f5100b0bd1a332ed30b9def3ce42cd477831c65dcc2dbf718d"
+  }
+}

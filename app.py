@@ -1,4 +1,4 @@
-"""PICU SmartPhrase v6.96: IV fluids and visible handoff processing."""
+"""PICU SmartPhrase v6.97: compact IV fluid entries with space between orders."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,
@@ -2182,7 +2182,7 @@ def main() -> None:
         st.button("Home", key="home_screen", on_click=return_home, args=(store,),
                   help="Save all open handoffs and return to the starting screen.", use_container_width=True)
         st.header("PICU Handoff")
-        st.caption("Version 6.96 | IV fluids and processing")
+        st.caption("Version 6.97 | Compact IV fluids")
         if history_ready:
             st.caption("Respiratory mode-history parser: ready")
         else:

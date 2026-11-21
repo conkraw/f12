@@ -201,8 +201,4 @@ def iv_fluid_entry(row: dict, sheet: dict | None = None, rich: bool = False, esc
             lines.append(encode("Rate: UNK"))
         if status == "no_rate" and admin_stamp and (not recorded or admin_stamp != recorded_stamp):
             lines.append(rate_line("Last Admin", "Event without a rate", admin_stamp))
-    details = ", ".join(medication_output(row.get(key, "").strip())
-                        for key in ("route", "frequency") if row.get(key, "").strip())
-    if details:
-        lines.append(encode(details))
     return "\n".join(lines)
