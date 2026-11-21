@@ -1,0 +1,21 @@
+PICU Handoff 6.97
+Baseline: 6.96
+
+Extract PICU697.zip and open PICU_Handoff_v6_97_Compact_IV_Fluids.
+
+Replace these four files beside app.py:
+app.py
+error_store.py
+infusions.py
+iv_fluids.py
+
+Reboot Streamlit once and confirm Version 6.97.
+
+Removes the automatic Intravenous, Continuous line from IV fluid entries.
+Adds a blank line between consecutive IV fluid orders in FEN/GI.
+
+For an earlier version, use the complete package contents.
+Keep existing Streamlit Secrets and the encryption key.
+No new runtime files, dependency changes or archive schema change.
+
+Ready to install. No live deployment performed.

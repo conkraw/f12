@@ -26,13 +26,18 @@ class PreparedPdf:
     font_size: float
     tight_spacing: bool
     balanced_columns: bool
+    goals_omitted: bool = False
+    compact_secondary: bool = False
+    secondary_font_size: float = 8.0
 
     @property
     def report(self) -> dict:
         return {'page_count': self.page_count, 'font_size': self.font_size,
                 'fits_one_page': self.page_count == 1, 'target_pages': self.target_pages,
                 'target_met': self.page_count <= self.target_pages,
-                'tight_spacing': self.tight_spacing, 'balanced_columns': self.balanced_columns}
+                'tight_spacing': self.tight_spacing, 'balanced_columns': self.balanced_columns,
+                'goals_omitted': self.goals_omitted, 'compact_secondary': self.compact_secondary,
+                'secondary_font_size': self.secondary_font_size}
 
 
 class SessionPdfCache:
@@ -109,7 +114,9 @@ class SessionPdfCache:
             if not isinstance(data, bytes) or not data.startswith(b'%PDF-'):
                 raise ValueError('The patient PDF could not be prepared.')
             result = PreparedPdf(signature, data, report['page_count'], target_pages,
-                                 report['font_size'], report['tight_spacing'], report['balanced_columns'])
+                                 report['font_size'], report['tight_spacing'], report['balanced_columns'],
+                                 report['goals_omitted'], report['compact_secondary'],
+                                 report['secondary_font_size'])
             self._builds += 1
             if len(data) <= self._max_bytes:
                 while self._entries and (len(self._entries) >= self._max_entries or
@@ -122,13 +129,15 @@ class SessionPdfCache:
 
 def cached_handoffs_pdf(sheets: list[dict], cache: SessionPdfCache,
                         printed_at: datetime | None = None, *, target_pages: int = 1,
-                        save_statuses: dict | None = None) -> bytes:
+                        save_statuses: dict | None = None, on_progress=None, on_report=None) -> bytes:
     """Assemble current cached clinical pages with fresh, truthful metadata.
 
     Only newly changed/missing patient bodies invoke ReportLab's clinical
     renderer. Existing pages are copied as PDF content, not rasterized or
     reflowed. Every patient still starts on a new page. The caller retains
     authentication, cancellation, and shared-record checks before/after this.
+    Progress and fit reports contain only generic counts and layout settings.
+    A display error cannot change patient content or make the export fail.
     """
     from pypdf import PdfReader, PdfWriter
     from reportlab.pdfgen import canvas
@@ -146,8 +155,27 @@ def cached_handoffs_pdf(sheets: list[dict], cache: SessionPdfCache,
     statuses = deepcopy(save_statuses or {})
     for sheet in snapshot:
         handoff_save_caption(sheet, statuses.get(sheet['room']))
+
+    def progress(completed, stage):
+        if callable(on_progress):
+            try:
+                on_progress(completed, len(snapshot), stage)
+            except Exception:
+                pass
+
     with display_clock(printed_at) as instant:
-        prepared = [cache.prepare(sheet, instant, target_pages=target_pages) for sheet in snapshot]
+        progress(0, 'preparing')
+        prepared = []
+        for completed, sheet in enumerate(snapshot, 1):
+            body = cache.prepare(sheet, instant, target_pages=target_pages)
+            prepared.append(body)
+            if callable(on_report):
+                try:
+                    on_report(body.report)
+                except Exception:
+                    pass
+            progress(completed, 'preparing')
+        progress(len(snapshot), 'assembling')
         stamp = eastern_print_time(instant)
         metadata_bytes = BytesIO()
         c = canvas.Canvas(metadata_bytes, pagesize=(792, 612), pageCompression=1)
@@ -179,6 +207,12 @@ def cached_handoffs_pdf(sheets: list[dict], cache: SessionPdfCache,
             writer.add_metadata({'/Title': 'PICU handoffs', '/Author': ''})
             writer.compress_identical_objects(remove_identicals=True, remove_orphans=True)
             writer.write(output)
-            return output.getvalue()
+            data = output.getvalue()
+            if cache.closed:
+                raise ValueError('This print session was cleared. Prepare a new download.')
+            if not data.startswith(b'%PDF-'):
+                raise ValueError('The print packet could not be prepared.')
+            progress(len(snapshot), 'complete')
+            return data
         finally:
             writer.close()

@@ -248,9 +248,12 @@ def handoff_pdf(sheet: dict, printed_at: datetime | None = None, *, target_pages
 
 
 # Print layout is independent of persisted handoff content or encryption schema.
-# Clinical text may shrink only within this explicit, bounded range. Beyond it,
-# pagination is used. Nothing is cropped or silently left out to force one page.
+# Core clinical text may shrink only within this explicit, bounded range.
+# Secondary footer text has its own bounded size. Goals may be omitted from a
+# one-page print when needed, without changing the stored handoff. All other
+# content continues onto additional pages when the bounded layout cannot fit.
 PRINT_FONT_SIZES = (8.0, 7.5, 7.2, 7.0, 6.8, 6.5)
+SECONDARY_FONT_SIZE = 6.0
 PRINT_MARGIN = 18.0
 BAND_LABEL_HEIGHT = 10.0
 BAND_PADDING = 5.0
@@ -269,7 +272,8 @@ def _clinical_markup(text: str) -> str:
     return re.sub(r"\b(SBS|RASS)\s+([+-]?\d+(?:\.\d+)?)", r"\1&#160;\2", value)
 
 
-def _make_pdf_plan(sheet: dict, page_width: float, font_size: float, *, tight: bool = False) -> dict:
+def _make_pdf_plan(sheet: dict, page_width: float, font_size: float, *, tight: bool = False,
+                   compact_secondary: bool = False) -> dict:
     from reportlab.lib.styles import ParagraphStyle
     from reportlab.platypus import Paragraph, Spacer
     fields = display_fields(sheet, include_lab_text=False)
@@ -278,12 +282,21 @@ def _make_pdf_plan(sheet: dict, page_width: float, font_size: float, *, tight: b
     style = ParagraphStyle('compact-clinical', fontName='Times-Roman', fontSize=font_size,
                            leading=font_size + (0.25 if tight else 1), splitLongWords=True, spaceAfter=0,
                            allowWidows=1, allowOrphans=1)
+    secondary_style = (ParagraphStyle('compact-secondary', parent=style,
+                                     fontSize=SECONDARY_FONT_SIZE,
+                                     leading=SECONDARY_FONT_SIZE + .25)
+                       if compact_secondary else style)
 
-    def paragraphs(text, rich=False):
+    def paragraphs(text, rich=False, *, secondary=False, inline=False):
         if not text.strip():
             return []
-        return [Paragraph((line if rich else _clinical_markup(line)) if line else '&#160;', style)
-                for line in text.split('\n')]
+        lines = text.split('\n')
+        if inline:
+            # Keep every source word and emphasis, replacing line breaks only.
+            # A visible separator keeps adjacent orders or devices distinct.
+            lines = [' | '.join(line for line in lines if line.strip())]
+        return [Paragraph((line if rich else _clinical_markup(line)) if line else '&#160;',
+                          secondary_style if secondary else style) for line in lines]
 
     columns = [paragraphs(patient_markup(sheet, fields, _clinical_markup) if section is None else field_markup(sheet, fields, section, _clinical_markup), rich=True)
                for _, section in COLUMNS]
@@ -334,17 +347,22 @@ def _make_pdf_plan(sheet: dict, page_width: float, font_size: float, *, tight: b
     if extra:
         band_items.insert(2, ('Additional notes', extra))
     bands = [(name, (laboratory_flowables(laboratory_data(sheet), total_width-6, font_size, blood_gas=sheet['blood_gas'], cbc=sheet['cbc'])
-                    if name == 'Lab Results / Trends' else []) + paragraphs(text))
+                    if name == 'Lab Results / Trends' else []) + paragraphs(
+                        text, secondary=compact_secondary and name == 'Other Medications',
+                        inline=compact_secondary and name == 'Other Medications'))
              for name, text in band_items]
     bands = [(name, items) for name, items in bands if name != 'Lab Results / Trends' or items]
+    if compact_secondary:
+        bands = [(name, items) for name, items in bands if name != 'Other Medications' or items]
     problems = problem_text(sheet, rich=True, esc=_clinical_markup)
     if problems:
         bands.insert(0, (PROBLEM_TITLE, paragraphs('<b>' + PROBLEM_TITLE + ':</b> ' + problems, rich=True)))
     device_summary = devices_markup(sheet, _clinical_markup)
     if device_summary:
-        bands.append(('Devices', paragraphs(device_summary, rich=True)))
-    access = [(name, paragraphs(fields[name])) for name in ACCESS_FIELDS]
-    if device_summary and not any(fields[k].strip() for k in ACCESS_FIELDS):
+        bands.append(('Devices', paragraphs(device_summary, rich=True,
+                                           secondary=compact_secondary, inline=compact_secondary)))
+    access = [(name, paragraphs(fields[name], secondary=compact_secondary)) for name in ACCESS_FIELDS]
+    if (device_summary or compact_secondary) and not any(fields[k].strip() for k in ACCESS_FIELDS):
         access = []
     # On-sheet import diagnostics are omitted. The app still displays and logs them.
     banner = None
@@ -355,13 +373,16 @@ def _make_pdf_plan(sheet: dict, page_width: float, font_size: float, *, tight: b
         if access:
             manual = " | ".join(name + ": " + fields[name] for name in ACCESS_FIELDS if fields[name].strip())
             if manual:
-                bands.append(("Access / airway notes", paragraphs(manual)))
+                bands.append(("Access / airway notes", paragraphs(manual, secondary=compact_secondary)))
             access = []
         airway_style = ParagraphStyle('difficult-airway', parent=style, fontSize=max(font_size, 8),
                                       leading=max(font_size, 8) + 1)
         bands.append((AIRWAY_TITLE, [Paragraph('<b>' + AIRWAY_TITLE + ':</b> ' + airway, airway_style)]))
     return {'review_banner': banner, 'review_height': review_height,
             'font_size': font_size, 'leading': style.leading, 'width': total_width,
+            'compact_secondary': compact_secondary, 'goals_omitted': False,
+            'secondary_font_size': secondary_style.fontSize,
+            'secondary_leading': secondary_style.leading,
             'tight': tight, 'balanced': False, 'cell_padding': 2.0 if tight else 3.0,
             'band_label': 8.5 if tight else BAND_LABEL_HEIGHT,
             'band_padding': 3.5 if tight else BAND_PADDING,
@@ -370,12 +391,22 @@ def _make_pdf_plan(sheet: dict, page_width: float, font_size: float, *, tight: b
             'widths': widths, 'columns': columns, 'bands': bands, 'access': access}
 
 
+def _band_metrics(plan: dict, label: str) -> tuple[float, float, float, float]:
+    """Label height, padding, body leading and label font for one footer band."""
+    if plan.get('compact_secondary') and label in ('Other Medications', 'Devices', 'Access / airway notes'):
+        return 7.0, 2.5, plan['secondary_leading'], SECONDARY_FONT_SIZE
+    label_height = 0 if label in (PROBLEM_TITLE, AIRWAY_TITLE, 'Lab Results / Trends') else plan['band_label']
+    return label_height, plan['band_padding'], plan['leading'], 7.5
+
+
 def _plan_heights(plan: dict) -> tuple[float, list[float], float]:
     width = plan['width']
     pad = plan['cell_padding']
     main = max(20, max((_queue_height(q, w-2*pad) for q, w in zip(plan['columns'], plan['widths'])), default=0)+2*pad)
-    bands = [max(plan['empty_band'], _queue_height(q, width-6) + (0 if label in (PROBLEM_TITLE, AIRWAY_TITLE, "Lab Results / Trends") else plan['band_label']) + plan['band_padding'])
-             for label, q in plan['bands']]
+    bands = []
+    for label, q in plan['bands']:
+        label_height, padding, _, _ = _band_metrics(plan, label)
+        bands.append(max(plan['empty_band'], _queue_height(q, width-6) + label_height + padding))
     access = max(plan['access_min'], max((_queue_height(q, width/4-6) for _, q in plan['access']), default=0)+14) if plan['access'] else 0
     return main, bands, access
 
@@ -469,7 +500,42 @@ def _select_pdf_plan(sheet: dict, width: float, height: float, target_pages: int
         original['target_pages'] = target_pages
         return original, baseline_pages == 1
     plans = [original]
-    # Existing bounded font reduction is still tried first for one-page output.
+    if target_pages == 1:
+        # Save room in the secondary footer before reducing the system text.
+        # For each bounded body size, retain Goals if possible. Only remove its
+        # print band when the otherwise identical layouts still need more room.
+        for size in PRINT_FONT_SIZES:
+            compact = _make_pdf_plan(sheet, width, size, tight=True, compact_secondary=True)
+            variants = [compact]
+            plans.append(compact)
+            if _fits_one(compact, height):
+                compact.update(pages=1, target_pages=target_pages)
+                return compact, True
+            balanced = _balanced_plan(deepcopy(compact))
+            if balanced['balanced']:
+                variants.append(balanced)
+                plans.append(balanced)
+                if _fits_one(balanced, height):
+                    balanced.update(pages=1, target_pages=target_pages)
+                    return balanced, True
+            for variant in variants:
+                plan = deepcopy(variant)
+                plan['bands'] = [(label, queue) for label, queue in plan['bands']
+                                 if label != 'Goals / Follow-up']
+                plan['goals_omitted'] = True
+                plans.append(plan)
+                if _fits_one(plan, height):
+                    plan.update(pages=1, target_pages=target_pages)
+                    return plan, True
+        # Even without optional Goals, unusually long clinical content may
+        # require continuation pages. Measure it rather than cutting it off.
+        continuation_plans = [plan for plan in plans if plan['goals_omitted']]
+        for plan in continuation_plans:
+            pages = _measure_pdf_plan(sheet, plan, width, height)
+            plan.update(pages=pages, target_pages=target_pages)
+        best = min(continuation_plans, key=lambda p: (p['pages'], -p['font_size'], p['balanced']))
+        return best, best['pages'] == 1
+    # The explicit two-page option keeps its prior content-preserving behavior.
     for size in PRINT_FONT_SIZES[1:]:
         plan = _make_pdf_plan(sheet, width, size)
         plans.append(plan)
@@ -516,7 +582,9 @@ def print_fit_report(sheet: dict, target_pages: int = 1) -> dict:
     return {'page_count': pages, 'font_size': plan['font_size'],
             'fits_one_page': pages == 1, 'target_pages': target_pages,
             'target_met': pages <= target_pages,
-            'tight_spacing': plan['tight'], 'balanced_columns': plan['balanced']}
+            'tight_spacing': plan['tight'], 'balanced_columns': plan['balanced'],
+            'goals_omitted': plan['goals_omitted'], 'compact_secondary': plan['compact_secondary'],
+            'secondary_font_size': plan['secondary_font_size']}
 
 
 def draw_pdf_metadata(c, sheet: dict, width: float, height: float, position: int,
@@ -580,17 +648,17 @@ def _draw_sheet(c, sheet: dict, width: float, height: float, position: int = 1, 
     def minimum_band(label, queue):
         if not queue:
             return plan['empty_band']
-        local_label_height = 0 if label in (PROBLEM_TITLE, AIRWAY_TITLE, "Lab Results / Trends") else label_height
-        minimum = local_label_height+band_padding+2*leading
+        local_label_height, local_padding, local_leading, _ = _band_metrics(plan, label)
+        minimum = local_label_height+local_padding+2*local_leading
         if label == AIRWAY_TITLE:
-            return max(minimum, _queue_height(queue, total_width-6) + band_padding)
+            return max(minimum, _queue_height(queue, total_width-6) + local_padding)
         # A fishbone row must fit intact. Reserve its preceding short note too,
         # so a large Other Medications band cannot starve the lab row forever.
         before = 0.0
         for item in queue:
             h = item.wrap(total_width-6, 100000)[1]
             if isinstance(item, LabRow):
-                return min(195, max(minimum, before+h+local_label_height+band_padding))
+                return min(195, max(minimum, before+h+local_label_height+local_padding))
             before += h
             if before > 30:
                 break
@@ -659,12 +727,12 @@ def _draw_sheet(c, sheet: dict, width: float, height: float, position: int = 1, 
                 c.rect(margin, y-bh, total_width, bh, fill=1, stroke=0)
                 c.restoreState()
             c.rect(margin, y-bh, total_width, bh)
-            local_label_height = 0 if label in (PROBLEM_TITLE, AIRWAY_TITLE, "Lab Results / Trends") else label_height
+            local_label_height, local_padding, _, label_font = _band_metrics(plan, label)
             if label not in (PROBLEM_TITLE, AIRWAY_TITLE, "Lab Results / Trends"):
-                c.setFont('Times-Bold', 7.5)
-                c.drawString(margin+3, y-8, label + (':' if page == 1 else ' (continued):'))
+                c.setFont('Times-Bold', label_font)
+                c.drawString(margin+3, y-min(8, local_label_height-.5), label + (':' if page == 1 else ' (continued):'))
             rest = draw_queue(queue, margin+3, y-local_label_height-2,
-                              total_width-6, bh-local_label_height-band_padding)
+                              total_width-6, bh-local_label_height-local_padding)
             if label not in (PROBLEM_TITLE, AIRWAY_TITLE, "Lab Results / Trends") or rest:
                 updated_bands.append((label, rest))
             y -= bh
@@ -690,7 +758,7 @@ def _draw_sheet(c, sheet: dict, width: float, height: float, position: int = 1, 
 @stable_window_clock
 def handoff_pdf_body(sheet: dict, printed_at: datetime | None = None, *,
                      target_pages: int = 1) -> tuple[bytes, dict]:
-    """Render clinical pages once with the unchanged layout and blank metadata.
+    """Render clinical pages once using the selected layout and blank metadata.
 
     The private session cache reuses these bytes. Download-time metadata is
     applied separately, preserving current print/save times and packet order.
@@ -704,7 +772,9 @@ def handoff_pdf_body(sheet: dict, printed_at: datetime | None = None, *,
     c.setAuthor("")
     plan, _ = _select_pdf_plan(sheet, width, height, target_pages)
     report = {'font_size': plan['font_size'], 'target_pages': target_pages,
-              'tight_spacing': plan['tight'], 'balanced_columns': plan['balanced']}
+              'tight_spacing': plan['tight'], 'balanced_columns': plan['balanced'],
+              'goals_omitted': plan['goals_omitted'], 'compact_secondary': plan['compact_secondary'],
+              'secondary_font_size': plan['secondary_font_size']}
     pages = _draw_sheet(c, sheet, width, height, plan=plan, include_metadata=False)
     report.update(page_count=pages, fits_one_page=pages == 1, target_met=pages <= target_pages)
     c.save()
@@ -729,7 +799,7 @@ def pdf_content_signature(sheet: dict, printed_at: datetime | None = None, *,
     validate_sheet(sheet)
     fields = display_fields(sheet, include_lab_text=False)
     payload = {
-        'renderer': '6.87-lysis-labs-body-v1', 'target_pages': target_pages,
+        'renderer': '6.98-adaptive-one-page-v1', 'target_pages': target_pages,
         'sheet': {key: value for key, value in sheet.items()
                   if key not in ('created_at', 'updated_at')},
         'fields': fields,

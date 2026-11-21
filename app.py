@@ -1,4 +1,4 @@
-"""PICU SmartPhrase v6.97: compact IV fluid entries with space between orders."""
+"""PICU SmartPhrase v6.98: visible print preparation and compact page fitting."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,
@@ -35,8 +35,9 @@ from batching import available_handoffs
 from handoff_reset import cleared_vault, census_was_reset
 from daily_start import start_daily_list
 from census_guard import guard_download, saved_room_version
-from pdf_cache import SessionPdfCache
+from pdf_cache import SessionPdfCache, cached_handoffs_pdf
 from processing_feedback import ProcessingFeedback
+from print_feedback import PREPARATION_KEY, PrintFeedback, elapsed_text, preparation_signature
 from save_status import (room_save_status, saved_time_text, latest_saved_time,
                          most_recent_save_caption, save_status_table)
 from parser import MAX_PASTE, SECTION_NAMES
@@ -489,7 +490,7 @@ def autosave_before_room_change(store: GitHubVault | None, *, for_print: bool = 
     ss.setdefault("base_sheets", {})[room] = deepcopy(saved)
     if changed_rules:
         reapply_open_mappings()
-    if not for_home:
+    if not for_home and not for_print:
         warm_handoff_pdf(ss["drafts"][room])
     message = (("Handoff automatically saved before returning Home." if for_home else "Handoff automatically saved before Print all." if for_print else "Previous room automatically saved to shared storage.") if store else
                "Handoff saved in this session only. Shared storage is not enabled.")
@@ -1534,6 +1535,8 @@ def retire_changed_downloads(before: dict, after: dict, *, revoke: bool = True) 
         if old is not None:
             old.set()
         st.session_state["download_revocation"] = Event()
+    if changed or before.get("reset_generation") != after.get("reset_generation"):
+        st.session_state.pop(PREPARATION_KEY, None)
     cache = st.session_state.get("handoff_pdf_cache")
     if cache is not None:
         for room in changed:
@@ -1597,8 +1600,8 @@ def save_room(store: GitHubVault | None) -> None:
         save_rooms(store, [room])
 
 
-def save_all_rooms(store: GitHubVault | None) -> None:
-    save_rooms(store, list(st.session_state.get("drafts", {})))
+def save_all_rooms(store: GitHubVault | None, *, prepare_pdf: bool = True) -> None:
+    save_rooms(store, list(st.session_state.get("drafts", {})), prepare_pdf=prepare_pdf)
 
 
 def reapply_open_mappings() -> None:
@@ -2182,7 +2185,7 @@ def main() -> None:
         st.button("Home", key="home_screen", on_click=return_home, args=(store,),
                   help="Save all open handoffs and return to the starting screen.", use_container_width=True)
         st.header("PICU Handoff")
-        st.caption("Version 6.97 | Compact IV fluids")
+        st.caption("Version 6.98 | Print timer and one-page fitting")
         if history_ready:
             st.caption("Respiratory mode-history parser: ready")
         else:
@@ -2658,12 +2661,14 @@ def download_deadline() -> float:
 
 
 def handoff_download(sheets: list[dict], store: GitHubVault | None, *,
-                     target_pages: int = 1, save_statuses: dict | None = None):
+                     target_pages: int = 1, save_statuses: dict | None = None,
+                     _generate=None):
     """Check the shared list at download time without accessing UI in its worker."""
     deadline, cancelled = download_deadline(), download_revocation()
-    generate = download_payload(sheets, "pdf", deadline, target_pages=target_pages,
-                                cancelled=cancelled, save_statuses=save_statuses,
-                                pdf_cache=session_pdf_cache())
+    generate = _generate if _generate is not None else download_payload(
+        sheets, "pdf", deadline, target_pages=target_pages,
+        cancelled=cancelled, save_statuses=save_statuses,
+        pdf_cache=session_pdf_cache())
     ss = st.session_state
     expected_rooms = {}
     expected_versions = {}
@@ -2680,6 +2685,38 @@ def handoff_download(sheets: list[dict], store: GitHubVault | None, *,
                           expected_rooms=expected_rooms, expected_versions=expected_versions)
 
 
+def prepare_print_packet(sheets: list[dict], store: GitHubVault | None, *,
+                         target_pages: int, save_statuses: dict, signature: str) -> None:
+    """Prepare under visible feedback, retaining only anonymous ready metadata.
+
+    The actual download reuses the patient bodies and stamps fresh metadata,
+    with the existing before/after shared-record, reset and session checks.
+    No UI is accessed by that later download worker.
+    """
+    ss = st.session_state
+    ss.pop(PREPARATION_KEY, None)
+    snapshot, statuses = deepcopy(sheets), deepcopy(save_statuses)
+    cache = session_pdf_cache()
+    reports = []
+    with PrintFeedback(st, len(snapshot)) as feedback:
+        def generate():
+            return cached_handoffs_pdf(snapshot, cache, target_pages=target_pages,
+                                       save_statuses=statuses, on_progress=feedback.update,
+                                       on_report=reports.append)
+        checked = handoff_download(snapshot, store, target_pages=target_pages,
+                                   save_statuses=statuses, _generate=generate)
+        checked()
+        if len(reports) != len(snapshot):
+            raise ValueError("The print page counts could not be verified.")
+        elapsed = feedback.finish()
+    ss[PREPARATION_KEY] = {"signature": signature, "count": len(snapshot),
+                           "seconds": round(elapsed, 3),
+                           "pages": sum(report["page_count"] for report in reports),
+                           "overflow": sum(not report["target_met"] for report in reports),
+                           "goals_omitted": sum(report.get("goals_omitted", False) for report in reports),
+                           "compact_secondary": sum(report.get("compact_secondary", False) for report in reports)}
+
+
 def print_target_control(key: str) -> int:
     # Keep a non-widget preference so lazy-tab cleanup does not reset a user's
     # selected page target. This remains private to the current app session.
@@ -2691,6 +2728,8 @@ def print_target_control(key: str) -> int:
                           format_func=lambda n: "Auto-fit to 1 page" if n == 1 else "Auto-fit to at most 2 pages")
     selected = choice if choice in (1, 2) else 1
     ss[preference] = selected
+    if selected == 1:
+        st.caption("One-page auto-fit tightens Other Medications and Devices. Goals / Follow-up is omitted when needed for space. Saved notes are kept.")
     return selected
 
 
@@ -2700,10 +2739,14 @@ def render_print_fit(sheets: list[dict], target: int) -> None:
         report = session_pdf_cache().prepare(sheet, target_pages=target).report
         if not report["target_met"]:
             st.warning("Room " + sheet["room"] + " needs " + str(report["page_count"]) +
-                       " pages. All content is retained rather than cropped.")
+                       " pages. The remaining clinical content continues without cropping.")
         else:
             st.caption(sheet["room"] + ": " + str(report["page_count"]) +
                        (" page." if report["page_count"] == 1 else " pages."))
+        if report.get("goals_omitted"):
+            st.caption(sheet["room"] + ": Goals / Follow-up is omitted from this PDF to save space. Saved notes are kept.")
+        if report.get("compact_secondary"):
+            st.caption(sheet["room"] + ": Other Medications and Devices use compact print text.")
 
 
 def print_all_page(store: GitHubVault | None) -> None:
@@ -2718,7 +2761,8 @@ def print_all_page(store: GitHubVault | None) -> None:
         st.info("Create a handoff first. Saved handoffs will also appear here after sign-in.")
         return
     st.caption("Open handoffs are saved before printing. Current prepared PDFs are reused. Blank sheets are omitted.")
-    st.button("Save all open handoffs", on_click=save_all_rooms, args=(store,))
+    st.button("Save all open handoffs", on_click=save_all_rooms, args=(store,),
+              kwargs={"prepare_pdf": False})
     st.caption(most_recent_save_caption(ss["vault"]["rooms"], session_only=store is None))
     options = list(ready)
     # A fresh room list selects all rooms. Explicit selections survive normal reruns.
@@ -2743,8 +2787,41 @@ def print_all_page(store: GitHubVault | None) -> None:
         target = print_target_control("all_print_target")
         with st.expander("Page-fit details", expanded=False):
             if st.button("Check page count", key="check_all_page_fit"):
-                render_print_fit(selected_sheets, target)
-        st.download_button("Download all selected handoffs (PDF)", handoff_download(selected_sheets, store, target_pages=target, save_statuses=statuses), "all_handoffs.pdf", "application/pdf", type="primary", key="download_all_pdf", on_click="ignore")
+                with PrintFeedback(st, len(selected_sheets)) as feedback:
+                    for index, sheet in enumerate(selected_sheets):
+                        feedback.update(index, len(selected_sheets), "preparing")
+                        render_print_fit([sheet], target)
+                    feedback.update(len(selected_sheets), len(selected_sheets), "preparing")
+        signature = preparation_signature(selected_sheets, target, ss["vault"]["reset_generation"],
+                                          shared_storage=store is not None)
+        prepared = ss.get(PREPARATION_KEY)
+        if not isinstance(prepared, dict) or prepared.get("signature") != signature:
+            ss.pop(PREPARATION_KEY, None)
+            prepared = None
+        st.caption("Prepare the packet to see an elapsed timer and the number of handoffs ready. The timer covers PDF preparation, not the browser download or printer queue.")
+        if st.button("Prepare selected handoffs" if prepared is None else "Prepare again",
+                     key="prepare_all_pdf", type="primary" if prepared is None else "secondary"):
+            try:
+                prepare_print_packet(selected_sheets, store, target_pages=target,
+                                     save_statuses=statuses, signature=signature)
+                prepared = ss.get(PREPARATION_KEY)
+            except Exception:
+                ss.pop(PREPARATION_KEY, None)
+                prepared = None
+                st.error("The print packet was not prepared. Your saved handoffs are kept. Reload the saved archive if it changed, then prepare again.")
+        if prepared is not None:
+            st.success(str(prepared["count"]) + (" handoff prepared in " if prepared["count"] == 1 else " handoffs prepared in ") +
+                       elapsed_text(prepared["seconds"]) + ". " + str(prepared["pages"]) +
+                       (" page. Ready to download." if prepared["pages"] == 1 else " pages. Ready to download."))
+            if prepared["overflow"]:
+                st.warning(str(prepared["overflow"]) +
+                           (" handoff exceeds" if prepared["overflow"] == 1 else " handoffs exceed") +
+                           " the " + str(target) + "-page target. These continue onto extra pages to retain the remaining clinical content.")
+            if prepared["goals_omitted"]:
+                st.caption("Goals / Follow-up is omitted from " + str(prepared["goals_omitted"]) +
+                           (" printed handoff" if prepared["goals_omitted"] == 1 else " printed handoffs") +
+                           " to save space. Saved notes are kept.")
+        st.download_button("Download all selected handoffs (PDF)", handoff_download(selected_sheets, store, target_pages=target, save_statuses=statuses), "all_handoffs.pdf", "application/pdf", type="primary", key="download_all_pdf", on_click="ignore", disabled=prepared is None)
     except (ValueError, ImportError):
         st.error("The combined PDF could not be created. Check the export requirements and retry.")
     st.caption("Compact PDF is preferred for printing. Each room starts on its own page. Exceptionally long handoffs continue rather than losing content. Downloads are not encrypted.")
@@ -2841,7 +2918,7 @@ def discard_all_handoff_state() -> None:
                 "custom_room_remove_choice", "room_print_target", "all_print_target",
                 "workspace_notices", "workspace_imports", "handoff_tab", "handoff_active_tab",
                 "workspace_room_print_target", "workspace_all_print_target", "airway_update_pending",
-                "home_resume_state"):
+                "home_resume_state", PREPARATION_KEY):
         ss.pop(key, None)
     ss["drafts"] = {}
     ss["base_sheets"] = {}
@@ -3815,7 +3892,7 @@ def autosave_before_print_all(store: GitHubVault | None, *, for_home: bool = Fal
         return False
     changed = [room for room, draft in ss.get("drafts", {}).items()
                if draft != ss["vault"]["rooms"].get(room)]
-    if changed and not save_rooms(store, changed, prepare_pdf=not for_home):
+    if changed and not save_rooms(store, changed, prepare_pdf=False):
         return False
     return True
 

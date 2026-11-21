@@ -1,21 +1,24 @@
-PICU Handoff 6.97
-Baseline: 6.96
+PICU Handoff 6.98
+Baseline: 6.97
 
-Extract PICU697.zip and open PICU_Handoff_v6_97_Compact_IV_Fluids.
+Extract PICU698.zip and open PICU_Handoff_v6_98_Print_Timer_One_Page.
 
-Replace these four files beside app.py:
+Replace these four existing runtime files and add print_feedback.py:
 app.py
 error_store.py
-infusions.py
-iv_fluids.py
+exports.py
+pdf_cache.py
+print_feedback.py
 
-Reboot Streamlit once and confirm Version 6.97.
+Reboot Streamlit once and confirm Version 6.98.
 
-Removes the automatic Intravenous, Continuous line from IV fluid entries.
-Adds a blank line between consecutive IV fluid orders in FEN/GI.
+Print all: choose rooms, click Prepare selected handoffs, wait for Ready to download, then download the PDF.
+Choose Auto-fit to 1 page to use the compact layout and automatic Goals / Follow-up omission when needed.
+Saved Goals / Follow-up content is retained.
+Exceptional overflow remains visible and is reported without cutting off clinical content.
 
 For an earlier version, use the complete package contents.
 Keep existing Streamlit Secrets and the encryption key.
-No new runtime files, dependency changes or archive schema change.
+No dependency or archive schema change.
 
 Ready to install. No live deployment performed.

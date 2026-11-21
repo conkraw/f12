@@ -1,0 +1,103 @@
+{
+  "app": "6.98",
+  "streamlit": "1.67.0",
+  "storage": "session only",
+  "browser_used": false,
+  "steps": [
+    {
+      "step": "Initial choice screen",
+      "passed": true
+    },
+    {
+      "step": "Open handoff workspace",
+      "passed": true
+    },
+    {
+      "step": "Open Print all without invisible PDF preparation",
+      "passed": true
+    },
+    {
+      "step": "Prepare two handoffs with native elapsed timer and live counts",
+      "passed": true
+    },
+    {
+      "step": "Normal rerun reuses readiness without preparing again",
+      "passed": true
+    },
+    {
+      "step": "Changed room selection requires new preparation",
+      "passed": true
+    },
+    {
+      "step": "Changed page target remains unprepared",
+      "passed": true
+    },
+    {
+      "step": "Prepare changed selection and target",
+      "passed": true
+    },
+    {
+      "step": "Failed retry removes readiness and leaves saved handoffs unchanged",
+      "passed": true
+    },
+    {
+      "step": "Retry succeeds after failure without resetting the app",
+      "passed": true
+    }
+  ],
+  "exception_count": 0,
+  "result": "PASS",
+  "first_preparation_events": [
+    {
+      "event": "spinner_start",
+      "text": "Preparing print packet",
+      "show_time": true
+    },
+    {
+      "event": "progress",
+      "value": 0.0,
+      "text": "Checking saved handoffs before preparation"
+    },
+    {
+      "event": "progress",
+      "value": 0.0,
+      "text": "Preparing handoffs: 0 of 2 ready"
+    },
+    {
+      "event": "progress",
+      "value": 0.25,
+      "text": "Preparing handoffs: 1 of 2 ready"
+    },
+    {
+      "event": "progress",
+      "value": 0.5,
+      "text": "Preparing handoffs: 2 of 2 ready"
+    },
+    {
+      "event": "progress",
+      "value": 0.5,
+      "text": "Combining 2 handoffs into one PDF"
+    },
+    {
+      "event": "progress",
+      "value": 0.75,
+      "text": "Checking saved handoffs again before download"
+    },
+    {
+      "event": "progress",
+      "value": 1.0,
+      "text": "Print packet prepared in 0.1 seconds"
+    },
+    {
+      "event": "progress_cleared"
+    },
+    {
+      "event": "spinner_closed"
+    }
+  ],
+  "no_invisible_cold_preparation": true,
+  "only_anonymous_readiness_metadata": true,
+  "progress_cleared_after_each_run": true,
+  "failed_retry_preserved_handoffs": true,
+  "selection_and_target_invalidate_readiness": true
+}

@@ -1,0 +1,32 @@
+{
+  "synthetic_only": true,
+  "page_count": 1,
+  "fit": {
+    "page_count": 1,
+    "font_size": 8.0,
+    "fits_one_page": true,
+    "target_pages": 1,
+    "target_met": true,
+    "tight_spacing": true,
+    "balanced_columns": true,
+    "goals_omitted": true,
+    "compact_secondary": true,
+    "secondary_font_size": 6.0
+  },
+  "cached_fit": {
+    "page_count": 1,
+    "font_size": 8.0,
+    "fits_one_page": true,
+    "target_pages": 1,
+    "target_met": true,
+    "tight_spacing": true,
+    "balanced_columns": true,
+    "goals_omitted": true,
+    "compact_secondary": true,
+    "secondary_font_size": 6.0
+  },
+  "clinical_sentinels_preserved": true,
+  "saved_sheet_unchanged": true,
+  "goals_retained_in_html_and_text": true,
+  "cache_pixel_parity": true
+}

@@ -1,0 +1,58 @@
+{
+  "version": "6.98",
+  "baseline": "6.97",
+  "source_zip_sha256": "0b7ae524ead96c99cb4705b42aa7da9e886b025be54b6d4da2585c85634b9537",
+  "runtime_files_changed": [
+    "app.py",
+    "error_store.py",
+    "exports.py",
+    "pdf_cache.py",
+    "print_feedback.py"
+  ],
+  "required_installation_files": [
+    "app.py",
+    "error_store.py",
+    "exports.py",
+    "pdf_cache.py",
+    "print_feedback.py"
+  ],
+  "new_runtime_files": [
+    "print_feedback.py"
+  ],
+  "schema": 34,
+  "dependencies_changed": false,
+  "deployed": false,
+  "verification": {
+    "tests": 367,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "test_modules": {
+      "tests.test_adaptive_one_page": 11,
+      "tests.test_batch_exports": 8,
+      "tests.test_census_download_guard": 21,
+      "tests.test_home_navigation": 19,
+      "tests.test_iv_fluids_integration": 21,
+      "tests.test_lumbar_drain_integration": 19,
+      "tests.test_measurement_notes_observed_pip": 1,
+      "tests.test_pdf_cache": 68,
+      "tests.test_print_feedback": 23,
+      "tests.test_print_fit_reset": 49,
+      "tests.test_processing_feedback": 18,
+      "tests.test_save_before_print": 45,
+      "tests.test_workflow_print": 64
+    },
+    "synthetic_pdf_pages": 1,
+    "visual_pdf_review_passed": true,
+    "native_streamlit_apptest_passed": true,
+    "live_runtime_inspected": false,
+    "production_storage_writes": false
+  },
+  "runtime_sha256": {
+    "app.py": "597138d704ffd462ec623eafc4fada97d165c5416d068940d6c94ee85510a81d",
+    "error_store.py": "e373502c66096a6f4cc3250512af14f751a96942f5ee4a816cb98370263ac21a",
+    "exports.py": "0064e7d7ed36ac6520c68bd294ad9193dbfcd4c392e2b24fdd4f65ba78895550",
+    "pdf_cache.py": "6ac8ed49c74f7ad1667f1e0f0653acafd51396f7a80cfaa17fe1d338e4365998",
+    "print_feedback.py": "98f6dc70997041ba1a4ea9d507c6d9bb52271f70578e4b84058dbd95a1ecffef"
+  }
+}

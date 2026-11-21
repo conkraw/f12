@@ -1,0 +1,15 @@
+PICU Handoff 6.97
+
+Complete package based on 6.96.
+Changed runtime files: app.py, error_store.py, infusions.py, iv_fluids.py.
+
+The automatic route/frequency footer is removed from IV fluid entries.
+A blank line separates consecutive IV fluid orders in FEN/GI.
+Rates, timestamps and maintenance comparisons remain visible.
+
+199 existing targeted tests passed.
+Synthetic text, HTML and PDF checks passed.
+The one-page PDF preview passed visual inspection.
+No new dependencies or archive schema change.
+
+Ready to install. No live deployment performed.
