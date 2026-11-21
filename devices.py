@@ -53,6 +53,23 @@ def _value(value: str) -> str:
     return '' if _missing(value) else value
 
 
+def _lumbar_label(label: str) -> str:
+    """Remove only Epic's known shared category prefix, not anatomic prose."""
+    return re.sub(r'^Intracranial\s+Pressure\s*/\s*Ventriculostomy\b', '',
+                  _clean(label), flags=re.I).strip()
+
+
+def _has_lumbar_drain_label(label: str) -> bool:
+    # A lumbar puncture, a surgical drain in the lumbar region, or a surrounding
+    # ICP heading does not establish a lumbar CSF drain. Require its own label.
+    return bool(re.match(r'^Lumbar\s+Drain\b', _lumbar_label(label), re.I))
+
+
+def is_lumbar_drain(row: dict) -> bool:
+    """Recognize explicit current and older Other-category lumbar drain rows."""
+    return row.get('kind') in ('Drain', 'Other') and _has_lumbar_drain_label(row.get('label', ''))
+
+
 def _kind(label: str, section: str) -> str:
     """A named gastric tube under 'Endotracheal Tube' is still a feeding tube."""
     if re.match(r'^(?:ETT\b|Endotracheal\s+Tube\b)', label, re.I):
@@ -66,6 +83,8 @@ def _kind(label: str, section: str) -> str:
                       ('Urinary catheter', r'^(?:Urethral\s+Catheter|Urinary\s+Catheter|Foley|Suprapubic\s+Catheter)\b')):
         if re.search(pat, label, re.I):
             return kind
+    if _has_lumbar_drain_label(label):
+        return 'Drain'
     # A shared Epic category prefix alone is not enough to call a bolt an EVD.
     specific = re.sub(r'^Intracranial\s+Pressure\s*/\s*Ventriculostomy\b', '', label, flags=re.I).strip()
     if re.search(r'\b(?:EVD|external\s+ventricular\s+drain(?:age)?|ventricular\s+drain(?:age)?\s+catheter|ventriculostomy(?:\s+(?:drain|catheter))?)\b', specific, re.I):
@@ -221,7 +240,7 @@ def parse_devices(block: str, section: str = 'u') -> DevicesResult:
                     row[target] = 'UNK'
         if location:
             row['secured'] = ', '.join(v for v in (row['secured'], location) if v)
-        if row['kind'] == 'EVD' and not row['status']:
+        if (row['kind'] == 'EVD' or is_lumbar_drain(row)) and not row['status']:
             row['status'] = 'UNK'
             warn('device_missing_status', group['lines']['status'], 'device_status')
         rows.append(row)
@@ -309,9 +328,44 @@ def evd_text(sheet: dict) -> str:
     return '\n'.join('EVD ' + str(i) + ': ' + (r['status'] or 'UNK') + ' | ' + r['label'] for i, r in enumerate(rows, 1))
 
 
+def lumbar_drain_text(sheet: dict) -> str:
+    """Report active explicit lumbar drains without borrowing another status.
+
+    U and V may repeat a device. Consolidate only the same label, date, size,
+    and secured detail. Conflicting statuses for that identity remain unknown.
+    Distinct devices retain their own records and identifying descriptions.
+    """
+    grouped = {}
+    for row in _rows(sheet, 'u') + _rows(sheet, 'v'):
+        if not is_lumbar_drain(row):
+            continue
+        key = tuple(_clean(value).casefold() for value in (
+            _lumbar_label(row['label']), row['date'], row['size'], row['secured']))
+        group = grouped.setdefault(key, {'row': row, 'statuses': {}})
+        status = _value(row['status']) or 'UNK'
+        group['statuses'].setdefault(status.casefold(), status)
+    lines = []
+    for index, group in enumerate(grouped.values(), 1):
+        statuses = group['statuses']
+        status = next(iter(statuses.values())) if len(statuses) == 1 else 'UNK'
+        label = 'Lumbar Drain' + (' ' + str(index) if len(grouped) > 1 else '')
+        line = label + ': ' + status
+        if len(grouped) > 1:
+            row = group['row']
+            details = []
+            if _lumbar_label(row['label']).casefold() != 'lumbar drain':
+                details.append(_lumbar_label(row['label']))
+            details.extend(value for value in (row['date'], row['size'], row['secured']) if value)
+            if details:
+                line += ' (' + ', '.join(details) + ')'
+        lines.append(line)
+    return '\n'.join(lines)
+
+
 def _device_groups(sheet: dict, render) -> list[tuple[str, list[str]]]:
     groups = {name: [] for name in ('Airway', 'Vascular access', 'Tubes / drains', 'Other devices')}
-    rows = _rows(sheet, 'u') + [r for r in _rows(sheet, 'v') if r['kind'] != 'EVD']
+    rows = [r for r in _rows(sheet, 'u') if not is_lumbar_drain(r)]
+    rows += [r for r in _rows(sheet, 'v') if r['kind'] != 'EVD' and not is_lumbar_drain(r)]
     # Stable source ordering within each category. Active ETTs/trachs before history.
     rows.sort(key=lambda r: r['removed'])
     for row in rows:

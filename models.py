@@ -29,7 +29,7 @@ from cbc import validate_cbc
 from output_text import medication_output
 from recurring_orders import validate_orders, orders_text
 from feeds import validate_feeds, feeds_for_output
-from devices import validate_devices, evd_text
+from devices import validate_devices, evd_text, lumbar_drain_text
 from pacemaker import validate_pacemaker, pacemaker_text
 from diet import validate_diet, diet_for_output, diet_failed
 from ecg import validate_ecg, ecg_text
@@ -619,6 +619,16 @@ def automatic_vitals(sheet: dict) -> dict[str, str]:
     unrelated_vitals = [r for r in sheet["vitals"]
         if not re.search(r"\bSBS\b|target arousal", r["label"], re.I)]
     result = text_by_system(neuro_rows(neuro) + unrelated_vitals)
+    lumbar = lumbar_drain_text(sheet)
+    if lumbar:
+        lines = result.get("Neurologic", "").splitlines()
+        wat = [index for index, line in enumerate(lines) if re.match(r"^WAT(?:[- ]?1)?\b", line, re.I)]
+        scores = [index for index, line in enumerate(lines) if re.match(r"^(?:SBS|RASS|CAPD)\b", line, re.I)]
+        # The drain belongs directly after the last visible WAT value. When
+        # WAT is absent, use the score area without inventing a missing score.
+        position = (wat[-1] + 1) if wat else (scores[-1] + 1) if scores else 0
+        lines[position:position] = (["------"] if position else []) + lumbar.splitlines()
+        result["Neurologic"] = "\n".join(lines)
     evd = evd_text(sheet)
     if evd:
         old = result.get("Neurologic", "")

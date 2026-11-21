@@ -1,15 +1,23 @@
-PICU Handoff 6.94
+PICU Handoff 6.95
 
-Complete package based on 6.93.
-Changed runtime files: app.py and error_store.py.
+Complete package based on 6.94.
+Changed runtime files:
+app.py
+batching.py
+devices.py
+error_store.py
+import_review.py
+models.py
 
-Home is the first button in the left sidebar.
-Saves all open handoff edits before returning to the original choices.
-Current patients remain until the existing fresh-list confirmation is accepted.
-Save failures keep the user in the workspace with edits available.
+Lumbar drain status appears in Neuro directly below WAT-1.
+A literal six-hyphen separator precedes the lumbar drain line.
+Blank WAT uses the same score area after CAPD without adding a value.
+Lumbar drains do not duplicate in the bottom device inventory.
+Other drains, EVDs and ICP monitors keep their existing routes.
 
-408 automated tests passed, including 19 Home navigation tests.
-23 real Streamlit AppTest stages passed without exceptions.
+718 selected automated tests passed, including 54 new lumbar drain tests.
+The supplied source passed the targeted lumbar import and placement check.
+Both pages of the synthetic PDF preview passed visual inspection.
 No new dependencies or archive schema change.
 
 Ready to install. No live deployment performed.

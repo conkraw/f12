@@ -1,47 +1,54 @@
-# PICU Handoff 6.94
+# PICU Handoff 6.95
 
-Home is now the first button at the top of the left sidebar. It is available from Handoff, Print all, Admin and Import errors.
+Lumbar drain status now appears in Neuro directly below the last visible WAT-1 row, with six hyphens on a separate line.
 
-## What Home does
+Example layout when a WAT-1 score is supplied:
 
-Home saves current handoff edits and any other changed open handoffs, then returns to the original starting screen. You stay signed in.
+```text
+WAT-1 total score (0-12): 2
+------
+Lumbar Drain: Clamped
+```
 
-The starting screen offers the existing choices:
+The score above is illustrative. If the source has no WAT-1 value, the drain appears after CAPD in the same score area. The app does not add a WAT score.
 
-- START HERE: Create an Updated Handoff. This opens the existing confirmation before clearing the patient list.
-- Add a Patient or Print Current List. This keeps the list and returns to Handoff.
+## What appears
 
-Home itself keeps the current patients. The patient list is cleared only after choosing the fresh-list option and confirming the existing deletion message.
+An explicitly named Lumbar Drain in either device block is routed to Neuro. Its actual reported status is shown, including Clamped, Open, or another supplied status. Missing or conflicting status displays UNK.
 
-If saving fails, an editor value is invalid, or a saved room has changed, Home stays in the workspace with the edits available. It does not claim that all changes were saved.
+The lumbar drain is removed from the bottom device inventory to avoid a duplicate. Other drains, including scalp drains, keep their existing placement. A lumbar puncture or a surgical drain described only by a lumbar location does not establish a lumbar drain.
 
-Home does not prepare new PDFs, so returning to the starting screen does not wait for every open handoff to render for printing. Existing save and download safeguards remain in place.
+Identical records of the same lumbar drain in both device blocks appear once. Separate device identities retain their own status. A status or date is never copied from another device.
 
-## Returning to the same patient
+Include controls, removed-device markers and failed-section hiding also apply to lumbar drains. Older saved records categorized as Other are supported when their own label explicitly identifies a Lumbar Drain.
 
-Continue restores the selected room after Home. It also preserves pending SmartPhrase text already received by the app in session memory, without importing it or putting the raw paste into the saved archive. Text still held only in an unsubmitted browser form is not part of this saved-handoff guarantee.
+This display is included in the handoff preview, text export, PDF and Print all. Lumbar status can be edited in Devices / airway and neuro drains.
 
-A confirmed fresh list clears the previous room, drafts and pending resume state. Home cannot bring those cleared handoffs back.
+## Install from 6.94
 
-## Install from 6.93
+Extract PICU695.zip and open PICU_Handoff_v6_95_Lumbar_Drain.
 
-Extract PICU694.zip and open PICU_Handoff_v6_94_Home_Button.
-
-Replace these two files beside the app.py that Streamlit runs:
+Replace these six files beside the app.py that Streamlit runs:
 
 - app.py
+- batching.py
+- devices.py
 - error_store.py
+- import_review.py
+- models.py
 
-Reboot Streamlit once to load the update and confirm Version 6.94. After installation, use Home whenever you need the starting screen. Users do not need to restart the website or log out to make another list.
+Reboot Streamlit once to load the update and confirm Version 6.95.
 
 If updating from an earlier version, use the complete package contents. Keep existing Streamlit Secrets and the encryption key.
 
+The package includes the Home button and the ventilator history fallback from the previous releases. No archive schema or dependency update is needed.
+
 ## Verification
 
-The real Streamlit AppTest flow passed 23 stages without exceptions. It verified Home placement, saving a pending note, remaining signed in, repeated Home-screen reruns, restoring the original room on Continue, and the existing confirmed clear-list workflow.
+718 selected automated checks passed, including 54 new lumbar drain cases. The supplied source was checked for its lumbar status, Neuro placement, absence of an inferred date and separation from the scalp drain. The new lumbar entry imports without a V-section warning.
 
-Automated callback and regression checks cover multi-room saving, conflicts, failed saves, invalid editor values, inline medication mappings and the existing startup/printing behavior. See TEST_REPORT.md for counts and details.
+The synthetic preview in examples/lumbar_drain_preview.pdf contains one example with WAT-1 and one without a WAT value. Each fits on one page. Both pages were rendered and visually checked.
 
-The archive schema and dependencies are unchanged. Ventilator history and its fallback behavior remain as delivered in 6.93.
+See TEST_REPORT.md for the verification scope. Previous release notes are retained in the V694 files.
 
-Previous release notes are retained in the V693 files. This package is ready to install and has not been deployed to your live application.
+This package is ready to install and has not been deployed to the live application.

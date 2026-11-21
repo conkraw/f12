@@ -1,0 +1,24 @@
+PICU Handoff 6.94
+Baseline: 6.93
+
+From 6.93, replace these two files in the existing app folder:
+app.py
+error_store.py
+
+Extract PICU694.zip and open PICU_Handoff_v6_94_Home_Button.
+Place the files beside the app.py that Streamlit runs.
+Reboot Streamlit once and confirm Version 6.94.
+
+Home is the first button at the top of the left sidebar.
+It saves all open handoff edits and returns to the starting choices.
+Continue keeps the current list.
+Starting a fresh list keeps the existing confirmation before clearing patients.
+
+After installing this update, use Home to return to the beginning.
+No website restart or logout is needed for that routine navigation.
+
+For an earlier app version, use the complete package contents.
+Keep existing Streamlit Secrets and the encryption key.
+No archive schema or dependency change.
+
+Ready to install. No live deployment performed.

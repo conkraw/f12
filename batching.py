@@ -12,7 +12,7 @@ from fluid_balance import balance_text
 from current_shift import current_shift_text
 from bowel_movements import bowel_movement_text
 from feeds import feeds_for_output
-from devices import devices_text, evd_text
+from devices import devices_text, evd_text, lumbar_drain_text
 from pacemaker import pacemaker_text
 from ecls import ecls_text
 from code_status import code_status_text
@@ -43,6 +43,6 @@ def available_handoffs(vault: dict, drafts: dict) -> dict:
         legacy_feeds_present = not has_detailed_nutrition(dietary) and bool(nutrition_text(
             {"rows": [], "enteral": [], "parenteral": []}, feeds_for_output(sheet),
             dosing_weight=sheet["dosing_weight"], sheet=sheet))
-        if code_status_text(sheet) or ecls_text(sheet) or bowel_movement_text(sheet) or current_shift_text(sheet) or sheet.get("ecg") or sbs_display_rows(sheet) or airway_summary(sheet) or any(sheet.get("anthropometrics", {}).values()) or sheet.get("import_warnings") or any(v.strip() for v in sheet["fields"].values()) or any(visible(r) for r in sheet["medications"]) or sheet["ventilation"] or sheet["noninvasive"] or any(r["include"] for r in sheet["vitals"]) or any(r["include"] for r in sheet["labs"]["rows"]) or sheet["labs"]["notes"] or cbc_cards(sheet["labs"], sheet["cbc"]) or latest_sample(sheet["blood_gas"])[0] or any(r["include"] for rows in sheet["neuro_vitals"].values() for r in rows) or format_nutrition(sheet["nutrition"]) or sheet["dosing_weight"] or sheet["admission_date"] or viral_text(sheet["viral_panel"]) or any(r["include"] for r in sheet["cultures"]["rows"]) or selected_orders(sheet["recurring_orders"]) or balance_text(sheet["intake_output"]) or legacy_feeds_present or devices_text(sheet) or evd_text(sheet) or pacemaker_text(sheet) or nutrition_present:
+        if code_status_text(sheet) or ecls_text(sheet) or bowel_movement_text(sheet) or current_shift_text(sheet) or sheet.get("ecg") or sbs_display_rows(sheet) or airway_summary(sheet) or any(sheet.get("anthropometrics", {}).values()) or sheet.get("import_warnings") or any(v.strip() for v in sheet["fields"].values()) or any(visible(r) for r in sheet["medications"]) or sheet["ventilation"] or sheet["noninvasive"] or any(r["include"] for r in sheet["vitals"]) or any(r["include"] for r in sheet["labs"]["rows"]) or sheet["labs"]["notes"] or cbc_cards(sheet["labs"], sheet["cbc"]) or latest_sample(sheet["blood_gas"])[0] or any(r["include"] for rows in sheet["neuro_vitals"].values() for r in rows) or format_nutrition(sheet["nutrition"]) or sheet["dosing_weight"] or sheet["admission_date"] or viral_text(sheet["viral_panel"]) or any(r["include"] for r in sheet["cultures"]["rows"]) or selected_orders(sheet["recurring_orders"]) or balance_text(sheet["intake_output"]) or legacy_feeds_present or devices_text(sheet) or evd_text(sheet) or lumbar_drain_text(sheet) or pacemaker_text(sheet) or nutrition_present:
             ready[room] = sheet
     return {room: ready[room] for room in sorted(ready, key=room_order)}

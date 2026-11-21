@@ -1,0 +1,66 @@
+{
+  "version": "6.95",
+  "automated": {
+    "tests": 718,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "test_modules": {
+      "tests.test_batch_exports": 8,
+      "tests.test_devices": 103,
+      "tests.test_empty_groups_icp_cpp": 85,
+      "tests.test_home_navigation": 19,
+      "tests.test_import_recovery": 34,
+      "tests.test_lumbar_drain_core": 35,
+      "tests.test_lumbar_drain_integration": 19,
+      "tests.test_measurement_notes_observed_pip": 74,
+      "tests.test_neuro_groups_compact_trends": 122,
+      "tests.test_neuro_weight": 83,
+      "tests.test_respiratory_update_check": 13,
+      "tests.test_room_replacement": 82,
+      "tests.test_ui_smoke": 8,
+      "tests.test_vent_first_reported_fallback": 33
+    }
+  },
+  "provided_source_check": {
+    "provided_source_checked": true,
+    "lumbar_rows": 1,
+    "neuro_placement": "score area, below CAPD because WAT has no reported value",
+    "separator_hyphens": 6,
+    "status_matches_source": true,
+    "no_inferred_date": true,
+    "no_footer_duplicate": true,
+    "separate_scalp_drain_preserved": true,
+    "no_false_evd": true,
+    "no_v_section_warning": true
+  },
+  "synthetic_preview": {
+    "synthetic": true,
+    "pdf_pages": 2,
+    "examples": [
+      "WAT present",
+      "WAT absent"
+    ],
+    "fit": [
+      {
+        "page_count": 1,
+        "font_size": 8.0,
+        "fits_one_page": true,
+        "target_pages": 1,
+        "target_met": true,
+        "tight_spacing": false,
+        "balanced_columns": false
+      },
+      {
+        "page_count": 1,
+        "font_size": 8.0,
+        "fits_one_page": true,
+        "target_pages": 1,
+        "target_met": true,
+        "tight_spacing": false,
+        "balanced_columns": false
+      }
+    ]
+  },
+  "visual_pdf_review_passed": true
+}

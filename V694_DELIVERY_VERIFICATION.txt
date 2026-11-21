@@ -1,0 +1,15 @@
+PICU Handoff 6.94
+
+Complete package based on 6.93.
+Changed runtime files: app.py and error_store.py.
+
+Home is the first button in the left sidebar.
+Saves all open handoff edits before returning to the original choices.
+Current patients remain until the existing fresh-list confirmation is accepted.
+Save failures keep the user in the workspace with edits available.
+
+408 automated tests passed, including 19 Home navigation tests.
+23 real Streamlit AppTest stages passed without exceptions.
+No new dependencies or archive schema change.
+
+Ready to install. No live deployment performed.

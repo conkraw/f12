@@ -1,0 +1,62 @@
+{
+  "version": "6.95",
+  "baseline": "6.94",
+  "source_zip_sha256": "afd23dbb2d316fb28dfe7d35e1f032ccd3e73bc83154b828d75d47581fdc58b3",
+  "runtime_files_changed": [
+    "app.py",
+    "batching.py",
+    "devices.py",
+    "error_store.py",
+    "import_review.py",
+    "models.py"
+  ],
+  "required_installation_files": [
+    "app.py",
+    "batching.py",
+    "devices.py",
+    "error_store.py",
+    "import_review.py",
+    "models.py"
+  ],
+  "new_runtime_files": [],
+  "schema": 34,
+  "dependencies_changed": false,
+  "deployed": false,
+  "verification": {
+    "tests": 718,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "lumbar_core_tests": 35,
+    "lumbar_integration_tests": 19,
+    "test_modules": {
+      "tests.test_batch_exports": 8,
+      "tests.test_devices": 103,
+      "tests.test_empty_groups_icp_cpp": 85,
+      "tests.test_home_navigation": 19,
+      "tests.test_import_recovery": 34,
+      "tests.test_lumbar_drain_core": 35,
+      "tests.test_lumbar_drain_integration": 19,
+      "tests.test_measurement_notes_observed_pip": 74,
+      "tests.test_neuro_groups_compact_trends": 122,
+      "tests.test_neuro_weight": 83,
+      "tests.test_respiratory_update_check": 13,
+      "tests.test_room_replacement": 82,
+      "tests.test_ui_smoke": 8,
+      "tests.test_vent_first_reported_fallback": 33
+    },
+    "provided_source_lumbar_check": true,
+    "synthetic_pdf_pages": 2,
+    "visual_pdf_review_passed": true,
+    "live_runtime_inspected": false,
+    "production_storage_writes": false
+  },
+  "runtime_sha256": {
+    "app.py": "a20e5d98aa91d848d5eee18f30a5c89a9459cd588bd30a4e9e88272e2f5c7317",
+    "batching.py": "f78198730fcb0eb2bb8fb76bc7a1799e8f5d8d68aa920805a95dcf37f6ce259f",
+    "devices.py": "225c6baf81e718fec5cae8b0d0d725c868f331a4efd202cb32416c031aa57b20",
+    "error_store.py": "0a71e830be9f7444475aa20e205a98fbe9376bce847968ee695e64e502e6bb75",
+    "import_review.py": "84c6e33d185afc86f7a47439d789b77b687f3969b88858ded2a58a2bf9103b04",
+    "models.py": "9e1437100d2fdfc98ab8bdccb6b9fb5d0adcadac4e11c7dc107c97e147b926f4"
+  }
+}

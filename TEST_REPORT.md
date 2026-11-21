@@ -1,49 +1,54 @@
-# PICU Handoff 6.94 verification
+# PICU Handoff 6.95 verification
 
-## Automated regression result
+## Automated result
 
-408 tests passed with zero failures, errors or skipped tests. This comprises 389 existing regression checks and 19 new Home navigation tests.
+718 selected tests passed with zero failures, errors or skipped tests. This includes 35 new lumbar core tests, 19 new lumbar integration tests and 664 existing regression tests.
 
-The final selection covered:
+| Test module | Passed |
+| --- | ---: |
+| tests.test_batch_exports | 8 |
+| tests.test_devices | 103 |
+| tests.test_empty_groups_icp_cpp | 85 |
+| tests.test_home_navigation | 19 |
+| tests.test_import_recovery | 34 |
+| tests.test_lumbar_drain_core | 35 |
+| tests.test_lumbar_drain_integration | 19 |
+| tests.test_measurement_notes_observed_pip | 74 |
+| tests.test_neuro_groups_compact_trends | 122 |
+| tests.test_neuro_weight | 83 |
+| tests.test_respiratory_update_check | 13 |
+| tests.test_room_replacement | 82 |
+| tests.test_ui_smoke | 8 |
+| tests.test_vent_first_reported_fallback | 33 |
 
-- tests.test_callbacks: 13 tests
-- tests.test_compact_workspace: 70 tests
-- tests.test_home_navigation: 19 tests
-- tests.test_measurement_notes_observed_pip: 1 tests
-- tests.test_patient_list_startup: 50 tests
-- tests.test_print_fit_reset: 49 tests
-- tests.test_respiratory_update_check: 13 tests
-- tests.test_room_replacement: 82 tests
-- tests.test_save_before_print: 45 tests
-- tests.test_save_status: 58 tests
-- tests.test_ui_smoke: 8 tests
+## Lumbar drain behavior
 
-## Saving before Home
+The new tests cover explicit lumbar drain labels in both device blocks, the shared Epic category prefix, older Other-category records, the documented status, missing status and conflicting repeated status.
 
-The Home tests verify pending current-room widget edits, other changed open drafts, newly created handoffs and inline medication mapping preferences. Clean and empty lists return Home without writing or changing saved timestamps.
+Matching device identities across U and V collapse to one Neuro line. Conflicting statuses for that identity display UNK. Distinct device identities remain separate. Unrelated drains cannot supply a status or date.
 
-Invalid editor values, known room conflicts and failed remote writes block navigation. A current-room save can succeed before a later room fails. In that case the user stays in the workspace, the confirmed save remains valid and the remaining edits are retained. No all-saved success message is shown.
+Include controls, removed-device markers and failed-section hiding prevent inappropriate output. Replacing a room with a new paste that has no lumbar drain cannot recover old lumbar details from retained widget values.
 
-Home does not delete handoffs, reset the archive, reload storage or log out. It locks Admin access separately and retains main authentication. PDF warming is skipped for Home, while existing invalidation and download safeguards remain active.
+Lumbar punctures, culture specimen descriptions and generic surgical drains in a lumbar location do not create a lumbar drain. EVDs, ICP monitors, scalp drains and other devices retain their existing routes.
 
-## Real Streamlit lifecycle check
+## Placement, editing and persistence
 
-The actual app ran through 23 AppTest UI stages with synthetic data and shared storage disabled. All stages passed without exceptions.
+Text, HTML and PDF checks verify the exact six-hyphen separator after the last visible WAT line, followed by the lumbar drain and then ICP/CPP. When WAT is absent, blank or excluded, the drain follows CAPD without creating a score.
 
-Home was the first sidebar button in Handoff, Print all, Admin and Import errors. A pending manual note delivered in the same event as the Home click was captured and saved before the original choices appeared.
+Device status and Include edits reach the saved handoff. Encrypted save/reload checks preserve both current Drain records and older Other records. A handoff containing only a lumbar drain remains available in Print all.
 
-After three Home-screen reruns, Streamlit had removed the hidden room and paste widget keys. Continue restored the selected room, its saved note and the server-known pending paste from nonwidget session state. The paste was neither imported nor included in the saved vault. Restoration requires matching room and saved/draft sheet identities.
+The existing Home navigation and ventilator fallback tests were included in this release's regression selection.
 
-The fresh-list choice displayed the existing deletion confirmation and kept the saved handoff until confirmation. Confirming cleared the census, drafts, paste and resume state. Later Home/Continue navigation did not restore any cleared patient information.
+## Supplied source and visual check
 
-AppTest verifies the actual Streamlit widget and callback lifecycle. It is not a live browser or production storage test, and it does not capture browser screenshots. Text still held only in an unsubmitted browser form is outside the server-known paste preservation check.
+The supplied source contains a lumbar drain marked Clamped, no lumbar device date and no WAT value. Its lumbar line appears in the Neuro score area with the required separator. The separate scalp drain remains in the footer. No EVD is created, no date is borrowed and the lumbar entry causes no V-section warning.
 
-The stage-by-stage result is included in examples/home_navigation_check.json.
+The supplied clinical source was not added to fixtures or previews. The included examples/lumbar_drain_preview.pdf uses synthetic content. Its two examples cover WAT present and WAT absent. Each fits on one page at the existing 8-point font without tighter spacing. Both PDF pages were rendered to images and visually checked for placement and clipping.
 
-## Scope and review
+## Scope
 
-Only app.py and error_store.py changed as runtime files after 6.93. The archive schema remains 34. No dependencies or credentials changed. Respiratory history, its fallback and clinical parsing remain unchanged.
+Changed runtime files: app.py, batching.py, devices.py, error_store.py, import_review.py and models.py.
 
-Independent review found no blocking save-loss, conflict, reset or session-state issue. Existing dependency deprecation warnings did not affect the test results.
+The archive schema remains 34. There are no new runtime files or dependencies. Independent review found no blocking issue in the lumbar routing, status handling or sample import.
 
-No live Streamlit deployment or production archive write was performed.
+Existing dependency deprecation warnings did not affect the test result. UI harness checks passed. No live Streamlit deployment or production archive write was performed.

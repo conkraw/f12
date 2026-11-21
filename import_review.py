@@ -40,7 +40,7 @@ CODES = {
     'device_unrecognized': 'A device line could not be read and was omitted. Review the device summary.',
     'device_unclassified': 'A device was retained under Other devices because its type was not recognized.',
     'device_conflict': 'Conflicting or unreadable device details were not guessed. Review the entry.',
-    'device_missing_status': 'An EVD was identified without a drain status. Its status is shown as UNK.',
+    'device_missing_status': 'A neuro drain was identified without a drain status. Its status is shown as UNK.',
     'document_rejected': 'The paste could not be assigned safely to one handoff. Nothing was changed.',
 }
 FIELDS = {'', 'WBC', 'HGB', 'HGB_ISTAT', 'HCT', 'HCT_ISTAT', 'MCV', 'PLT', 'ANC', 'ALC', 'method', 'formula', 'rate', 'hours', 'daily_volume', 'caloric_density', 'additives', 'route', 'feeding_type', 'device_date', 'device_size', 'device_secured', 'device_status'}

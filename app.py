@@ -1,4 +1,4 @@
-"""PICU SmartPhrase v6.94: save open handoffs and return Home without restarting."""
+"""PICU SmartPhrase v6.95: show lumbar drain status below WAT-1 in Neuro."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,
@@ -72,7 +72,8 @@ from viral import validate_viral_panel, viral_text
 from microbiology_display import culture_markup, viral_markup
 from pacemaker import (validate_pacemaker, format_pacemaker, pacemaker_text,
                        EDIT_FIELDS as PACER_FIELDS, STATUSES as PACER_STATUSES, normalize_mode, normalize_rate)
-from devices import validate_devices, EDIT_FIELDS as DEVICE_EDIT_FIELDS, device_line, devices_markup, evd_text
+from devices import (validate_devices, EDIT_FIELDS as DEVICE_EDIT_FIELDS, device_line,
+                     devices_markup, evd_text, lumbar_drain_text, is_lumbar_drain)
 from diet import validate_diet, diet_text, diet_for_output, diet_failed
 from nutrition_display import has_detailed_nutrition, nutrition_text
 from feeds import METHODS as FEED_METHODS, validate_feeds, feeds_for_output
@@ -2176,7 +2177,7 @@ def main() -> None:
         st.button("Home", key="home_screen", on_click=return_home, args=(store,),
                   help="Save all open handoffs and return to the starting screen.", use_container_width=True)
         st.header("PICU Handoff")
-        st.caption("Version 6.94 | Home navigation")
+        st.caption("Version 6.95 | Lumbar drain display")
         if history_ready:
             st.caption("Respiratory mode-history parser: ready")
         else:
@@ -3421,13 +3422,15 @@ def pacemaker_editor(sheet: dict) -> None:
 
 
 def devices_editor(sheet: dict) -> None:
-    with st.expander("Devices / airway and EVD", expanded=False):
-        st.caption("U adds the bottom device inventory. V adds EVD status to Neurologic. Removed ETTs are airway history, not a current airway. Other removed devices are excluded.")
+    with st.expander("Devices / airway and neuro drains", expanded=False):
+        st.caption("U adds the bottom device inventory. V adds EVD status to Neurologic. Lumbar drain status appears below WAT-1 in Neurologic. Removed ETTs are airway history, not a current airway. Other removed devices are excluded.")
         st.caption("Vascular line days use today's Eastern date, with the insertion date counted as Day 1.")
         if devices_markup(sheet):
             st.markdown('<div style="white-space:pre-wrap">' + devices_markup(sheet) + '</div>', unsafe_allow_html=True)
         if evd_text(sheet):
             st.text(evd_text(sheet))
+        if lumbar_drain_text(sheet):
+            st.text(lumbar_drain_text(sheet))
         fields = (("label", "Device / location"), ("date", "Device date (as documented)"),
                   ("size", "Airway size"), ("secured", "Secure site / recorded depth"),
                   ("status", "Device / drain status"), ("include", "Include on handoff"))
@@ -3443,7 +3446,7 @@ def devices_editor(sheet: dict) -> None:
                         continue
                     if field == "secured" and row["kind"] not in ("ETT", "Feeding tube") and not row["secured"]:
                         continue
-                    if field == "status" and row["kind"] not in ("EVD", "ICP monitor", "Trach", "Drain") and not row["status"]:
+                    if field == "status" and row["kind"] not in ("EVD", "ICP monitor", "Trach", "Drain") and not is_lumbar_drain(row) and not row["status"]:
                         continue
                     key = "device_" + row["id"] + "_" + field
                     if key not in st.session_state:
