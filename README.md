@@ -1,43 +1,33 @@
-# PICU Handoff 6.99.2
+# PICU Handoff 6.100
 
-## Import-warning fix
+## Automatic paralytic PRN counts
 
-Version 6.99.1 could raise ValueError while recording an import warning because the technical journal accepted only two numeric version components. Its own version had three. The validator now accepts both two-component versions such as 6.99 and three-component versions such as 6.99.2, with each component bounded to three digits. Older encrypted technical records remain readable. Malformed versions remain invalid.
+The handoff now counts only vecuronium and rocuronium automatically. Paste the complete SmartPhrase as usual. The PRN review form and confirmation step have been removed.
 
-The sidebar reads the same version constant used by the journal. The previous PRN preview and timestamp-validation corrections are included.
+Each positive dated Volume (mL) entry for either medication contributes one count. Exact duplicate entries are included once, and zero-volume entries do not contribute. A dated explicitly administered PRN entry also contributes one. The presence of a paralytic infusion does not suppress the count.
 
-## Update an installed 6.99.1 app
+Analgesic and sedative entries are ignored, including malformed entries in those columns beside valid paralytic records. The imported AF records contain only the two supported paralytics. Existing medication orders continue to be displayed through their normal mappings.
 
-Extract PICU6992.zip and open PICU_Handoff_v6_99_2_Import_Warning_Fix. Replace app.py and error_store.py beside the app.py that Streamlit runs. Commit the replacements and reboot Streamlit once. The sidebar should show Version 6.99.2. Reopen the handoff and check its saved status and Alerts.
+The count window starts at the most recent 7 a.m. Eastern and ends at the time the handoff is generated or printed. For a 4 a.m. handoff, the window starts at 7 a.m. on the preceding day. At 7 a.m., it switches to the new day automatically. Future entries are excluded until their administration time arrives.
 
-If updating directly from 6.99, also replace prn_counts.py from this package. For 6.98 or an earlier version, use the complete package's application files. Keep the current Streamlit Secrets and encryption key. Dependencies and archive schema 34 are unchanged.
+The number appears after PRN on the first visible Neurologic PRN order for that medication, for example PRN × 3. The count adds no administration dates or times. A valid AF block with no qualifying entries gives zero for the ordered paralytic. A missing or unreadable AF block does not invent a count.
 
-The reported exception was reached after the handoff commit step. It did not itself undo a completed save. Reopen the room and check the saved handoff instead of assuming it was lost.
+PDF generation, combined PDFs, PDF caching, and HTML printing use the same counting rules. HTML refreshes at printing, on focus, when visible, and every minute. It uses the timestamped entries contained in that export. New source records become available after a new paste.
 
 ## CPAP trial display
 
-A reported Pressure Support - Continuous Positive Airway Pressure mode, including PS-CPAP, now displays the heading CPAP Trial Data. The CPAP block omits the duplicate respiratory rate. Other modes keep their own settings, and a historical PS-CPAP block receives its own trial heading. An unused CPAP template does not establish that a trial occurred.
+A reported Pressure Support - Continuous Positive Airway Pressure mode, including PS-CPAP, displays CPAP Trial Data. The CPAP block omits the duplicate respiratory rate. Other modes keep their own settings, and historical PS-CPAP blocks receive their own trial headings.
 
-## PRN counts in Neurologic
+## Install from 6.99, 6.99.1, or 6.99.2
 
-The AF section, enclosed by alternating af dividers, supports hydromorphone, morphine, fentanyl, midazolam, ketamine, pentobarbital, vecuronium, and rocuronium. Familiar brand aliases are recognized.
+Extract PICU6100.zip and open PICU_Handoff_v6_100_Automatic_Paralytic_Counts. Replace app.py, categories.py, error_store.py, exports.py, importing.py, prn_counts.py, and prn_html.py beside the app.py that Streamlit runs. Commit the replacements and reboot Streamlit once. Confirm Version 6.100 in the sidebar, then paste the complete SmartPhrase as usual.
 
-A confirmed medication total appears after its PRN wording, for example q1h PRN × 4. The number appears once per medication, on its first visible Neurologic PRN order. It does not annotate a continuous infusion or a scheduled order. Administration dates and times are not added to the printed PRN entry.
+For 6.98 or an earlier version, use the complete package's application files. Keep the current Streamlit Secrets and encryption key. Dependencies and archive schema 34 are unchanged. Existing eight-drug PRN records remain readable, but only the two paralytics receive automatic counts. Legacy review signatures do not gate the count.
 
-The count window begins at the most recent 7 a.m. Eastern and ends when the handoff is generated. At 4 a.m. on November 22, that means November 21 at 7 a.m. through November 22 at 4 a.m. At or after 7 a.m., the new reporting day starts. Individual and combined PDFs use the same clock, and cached PDFs refresh when the displayed count changes. HTML exports recalculate their existing confirmed count data before printing and remove an expired count after the next 7 a.m.
+## Verification
 
-## Review the volume source
+462 targeted tests passed, including the full Streamlit import and save flow, absence of PRN review controls, the prior import-warning regression, mixed medication data, both paralytics, infusion coexistence, exact duplicates, print windows, automatic 7 a.m. rollover, daylight saving transitions, encrypted archive round trips, CPAP output, and PDF caching. The 22 Node tests exercise HTML count refresh. The three native Streamlit tests exercise actual runtime interactions.
 
-Generic Volume (mL) records do not establish the number of PRN administrations. They can include continuous infusions, combine multiple doses, or omit actual administrations. The supplied example contains hourly hydromorphone volumes and administration times that are absent from the matching volume-table rows. This version does not convert those volumes into guessed dose counts.
+The supplied example imported without an AF warning and produced a vecuronium count of 5 at the requested 4 a.m. cutoff. Only aggregate results were reported. No supplied patient source is included in this package.
 
-Open Medications > PRN counts after importing the complete SmartPhrase. Choose a medication and check its entries against the MAR. Enter the actual administration date and time. Enter 0 for an infusion or another non-PRN entry, or the verified number of PRN doses. Add missing administrations as new rows. Leave uncertain entries blank until resolved.
-
-Click Confirm [medication] PRN count to validate and save that medication's review through the existing handoff save workflow. A blank count remains unknown. A verified zero is allowed. Doses at the same administration time should be combined in one row, with duplicate volume rows set to 0. Reviews for other medications are preserved.
-
-A complete replacement paste clears previous PRN entries and review decisions along with the rest of the room's old handoff. A changed medication record invalidates that medication's confirmation. The next 7 a.m. requires a new review. Counts use the administrations present in the pasted and reviewed data. New Epic administrations require a fresh paste or a new verified entry.
-
-## Verification of this fix
-
-469 targeted tests passed. A full Streamlit AppTest first reproduced the exact callback traceback with a synthetic import that produced an AF warning. After the fix, that same flow records the technical event, reaches the preview, and saves the handoff. Tests also check encrypted legacy and patch-version journal round trips, failed log writes, room replacement, PRN output, and PDF caching.
-
-These are local runtime and automated tests. No live app or production archive was accessed. The package contains no supplied patient source. See TEST_REPORT.md for details and the V6991 files for the prior release notes.
+These are local runtime and automated tests. No live app deployment or production archive write was performed. See TEST_REPORT.md for details and the V6992 files for prior release notes.

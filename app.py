@@ -1,4 +1,4 @@
-"""PICU SmartPhrase v6.99.2: import-error journal version fix."""
+"""PICU SmartPhrase v6.100: automatic vecuronium and rocuronium counts."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,
@@ -11,7 +11,6 @@ from hashlib import sha256
 from pathlib import Path
 import time
 import json
-import re
 from threading import Event
 from datetime import datetime, timezone
 
@@ -66,7 +65,6 @@ from lab_layout import laboratory_html
 from observations import NEURO_SECTIONS, validate_neuro, validate_nutrition, format_nutrition
 from demographics import validate_dosing_weight, validate_admission_date, demographic_weight_text
 from code_status import MAX_CODE_STATUS, validate_code_status, code_status_text
-from prn_counts import canonical_medication, prn_counts, prn_window, validate_prn
 from mrsa import mrsa_screen_text
 from clinical_style import clinical_markup
 from anthropometrics import empty_anthropometrics, clean_field, validate_anthropometrics, measurements_text, FIELDS as ANTHRO_FIELDS
@@ -2187,7 +2185,7 @@ def main() -> None:
         st.button("Home", key="home_screen", on_click=return_home, args=(store,),
                   help="Save all open handoffs and return to the starting screen.", use_container_width=True)
         st.header("PICU Handoff")
-        st.caption(f"Version {APP_VERSION} | Import warning fix")
+        st.caption(f"Version {APP_VERSION} | Automatic paralytic PRN counts")
         if history_ready:
             st.caption("Respiratory mode-history parser: ready")
         else:
@@ -2218,30 +2216,6 @@ def main() -> None:
         print_all_page(store)
     else:
         handoff_page(store)
-
-
-def apply_prn_review(room: str, sheet_id: str, data: dict, store: GitHubVault | None = None,
-                     *, expected_prn: dict | None) -> None:
-    """Accept a reviewed current-room snapshot and use the normal guarded save."""
-    if not require_session():
-        raise ValueError("The session expired. Sign in and review the current handoff again.")
-    ss = st.session_state
-    before = ss.get("drafts", {}).get(room)
-    if room != ss.get("current_room") or not before or before.get("id") != sheet_id:
-        raise ValueError("The room or handoff changed. Open its current PRN review again.")
-    if before.get("prn") != expected_prn:
-        raise ValueError("The PRN records changed while this review was open. Reopen the current review.")
-    validate_prn(data)
-    candidate = editor_snapshot(room)
-    candidate["prn"] = deepcopy(data)
-    # This explicit review replaces a failed AF import with verified entries.
-    # Other medications remain withheld unless separately confirmed.
-    candidate["import_warnings"].pop("af", None)
-    validate_sheet(candidate)
-    retire_changed_downloads({"rooms": {room: before}}, {"rooms": {room: candidate}})
-    ss["drafts"][room] = candidate
-    if not save_rooms(store, [room], prepare_pdf=False):
-        raise ValueError("The reviewed counts remain in this draft, but the handoff was not saved. Check the save message and try again.")
 
 
 def medication_editor(rows: list[dict], room: str, store: GitHubVault | None) -> None:
@@ -2481,14 +2455,6 @@ def handoff_alerts(sheet: dict) -> None:
 def room_preview(sheet: dict, store: GitHubVault | None = None) -> None:
     """Build the inexpensive screen preview, not a PDF, when this tab is open."""
     import streamlit.components.v1 as components
-    if sheet.get("prn"):
-        counts = prn_counts(sheet)
-        supported = {canonical_medication(row.get("name", ""))
-                     for row in sheet["medications"]
-                     if visible(row) and effective_section(row) == "Neurologic"
-                     and re.search(r"\bPRN\b|\bas needed\b", row.get("frequency", ""), re.I)} - {""}
-        if supported - counts.keys():
-            st.caption("Some PRN counts need review. Open Medications > PRN counts. Unconfirmed counts are omitted from the handoff.")
     statuses = {sheet["room"]: display_room_save_status(
         sheet["room"], session_only=not st.session_state.get("workspace_shared_storage", False))}
     left, right = st.columns([3, 1])
@@ -2662,10 +2628,6 @@ def handoff_page(store: GitHubVault | None) -> None:
             if label == "Preview / print":
                 room_preview(sheet, store)
             elif label == "Medications":
-                from prn_ui import render_prn_editor
-                prn_snapshot = deepcopy(sheet.get("prn"))
-                render_prn_editor(sheet, lambda data: apply_prn_review(room, sheet["id"], data, store,
-                                                                      expected_prn=prn_snapshot))
                 st.caption("Choose one destination per order. Mapping changes are remembered.")
                 active = [row for row in sheet["medications"] if not row["hidden"] and not ignored(row)]
                 hidden = [row for row in sheet["medications"] if row["hidden"] or ignored(row)]

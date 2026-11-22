@@ -1,14 +1,15 @@
-"""PRN event and reporting-window checks with synthetic records only."""
+"""Automatic paralytic counts and timestamp checks with synthetic records."""
 from copy import deepcopy
-from datetime import datetime, timezone
+from datetime import timezone
 import json
 
 import pytest
 
 from lab_windows import display_clock
 from prn_counts import (
-    EASTERN, MEDICATIONS, canonical_medication, clear_review, confirm_review,
-    empty_prn, event_time, parse_prn, prn_counts, prn_window, validate_prn,
+    COUNTED_MEDICATIONS, MEDICATIONS, automatic_prn_events, canonical_medication,
+    clear_review, confirm_review, empty_prn, event_time, parse_prn, prn_counts,
+    prn_window, validate_prn,
 )
 
 
@@ -17,6 +18,7 @@ def moment(text):
 
 
 NOW = moment("2026-11-22 04:00")
+ZERO = {"vecuronium": 0, "rocuronium": 0}
 
 
 def volume(drug, stamp="11/22/26 0141", amount="1"):
@@ -28,10 +30,15 @@ def manual(drug, stamp, doses):
             "volume_ml": None, "dose_count": doses, "source": "manual"}
 
 
-def reviewed(events, medications, at=NOW):
-    data = empty_prn()
-    data["events"] = events
-    return confirm_review(data, medications, at)
+def source_event(drug, stamp, amount=1, legacy_doses=None):
+    return {"medication": drug, "timestamp": moment(stamp).isoformat(),
+            "volume_ml": amount, "dose_count": legacy_doses, "source": "volume"}
+
+
+def data(*events):
+    result = empty_prn()
+    result["events"] = list(events)
+    return result
 
 
 @pytest.mark.parametrize("name,drug", [
@@ -41,7 +48,7 @@ def reviewed(events, medications, at=NOW):
     ("Nembutal", "pentobarbital"), ("Norcuron", "vecuronium"),
     ("Zemuron", "rocuronium"),
 ])
-def test_all_requested_drugs_and_aliases(name, drug):
+def test_alias_recognition_retains_legacy_archive_support(name, drug):
     assert canonical_medication(name) == drug
 
 
@@ -50,140 +57,155 @@ def test_whole_name_and_single_drug_required(name):
     assert canonical_medication(name) == ""
 
 
-def test_volume_records_remain_unresolved_without_guessing_from_rate_or_volume():
-    source = "TIME\tANALGESIA\tSEDATIVES\tPARALYTICS\n"
-    source += "0100\t" + volume("Hydromorphone", "11/22/26 0100", "0.89") + "\t\t\n"
-    source += "0141\t" + volume("Hydromorphone", amount="1.05") + "\t" + volume("Midazolam", amount="2") + "\t"
-    result = parse_prn(source)
-    assert not result.error
-    assert len(result.data["events"]) == 3
-    assert all(event["dose_count"] is None for event in result.data["events"])
-    assert prn_counts({"prn": result.data}, NOW) == {}
-    with pytest.raises(ValueError, match="Resolve every"):
-        confirm_review(result.data, ["hydromorphone"], NOW)
+def test_mixed_table_keeps_only_paralytics_and_needs_no_confirmation():
+    text = "TIME\tANALGESIA\tSEDATIVES\tPARALYTICS\n"
+    text += "0100\t" + volume("Hydromorphone", "invalid", "0.89") + "\t@FLOWDATETIME(broken)@\t"
+    text += volume("Vecuronium", "11/22/26 0100", "0.89") + "\n"
+    text += "0141\tMorphine malformed entry\t" + volume("Midazolam", amount="bad") + "\t"
+    text += volume("Rocuronium", amount="2")
+    result = parse_prn(text)
+    assert not result.error and not result.issues
+    assert len(result.data["events"]) == 2
+    assert result.data["reviewed"] == {}
+    assert prn_counts({"prn": result.data}, NOW) == {"vecuronium": 1, "rocuronium": 1}
     saved = json.dumps(result.data)
     assert "PRIVATE_CLINICIAN_SENTINEL" not in saved
-    assert "Volume" not in saved
+    assert "Hydromorphone" not in saved and "Midazolam" not in saved
+
+
+@pytest.mark.parametrize("drug", [drug for drug in MEDICATIONS if drug not in COUNTED_MEDICATIONS])
+def test_analgesics_and_sedatives_are_ignored_even_when_malformed(drug):
+    result = parse_prn(volume(drug, "invalid date", "bad") + "\n" + drug + " PRN given without a date")
+    assert not result.error and not result.issues
+    assert result.data["events"] == []
+    assert prn_counts({"prn": result.data}, NOW) == ZERO
+
+
+@pytest.mark.parametrize("target_first", [False, True])
+def test_excluded_malformed_volume_does_not_hide_target_in_same_cell(target_first):
+    entries = [volume("Midazolam", "bad", "bad"), volume("Norcuron")]
+    if target_first:
+        entries.reverse()
+    result = parse_prn(" ".join(entries))
+    assert not result.error
+    assert prn_counts({"prn": result.data}, NOW) == {"vecuronium": 1, "rocuronium": 0}
+
+
+def test_unknown_outside_list_volume_and_explicit_other_medication_are_ignored():
+    result = parse_prn(volume("Dexmedetomidine", "bad", "bad") +
+                       "\nAcetaminophen PRN given: malformed source\n" + volume("Zemuron"))
+    assert not result.error and not result.issues
+    assert prn_counts({"prn": result.data}, NOW) == {"vecuronium": 0, "rocuronium": 1}
 
 
 def test_exact_repeated_source_entry_is_not_double_counted():
-    record = volume("Morphine")
+    record = volume("Vecuronium")
     result = parse_prn("0141\t" + record + "\n0141\t" + record)
     assert not result.error
     assert len(result.data["events"]) == 1
-    result.data["events"][0]["dose_count"] = 1
-    data = confirm_review(result.data, ["morphine"], NOW)
-    assert prn_counts({"prn": data}, NOW) == {"morphine": 1}
+    assert prn_counts({"prn": result.data}, NOW) == {"vecuronium": 1, "rocuronium": 0}
 
 
-def test_explicit_prn_record_is_one_dose_but_capture_still_requires_review():
-    result = parse_prn("Fentanyl PRN administered: 10 mcg (11/22/26 0141 : Chart May, RN)")
+def test_different_volume_entries_at_same_time_are_distinct_source_records():
+    result = parse_prn(volume("Rocuronium", amount="1") + " " + volume("Rocuronium", amount="2"))
     assert not result.error
-    assert result.data["events"][0]["dose_count"] == 1
+    assert prn_counts({"prn": result.data}, NOW) == {"vecuronium": 0, "rocuronium": 2}
+
+
+def test_explicit_paralytic_administration_is_one_without_review():
+    result = parse_prn("Vecuronium PRN administered: 1 mg (11/22/26 0141 : Chart May, RN)")
+    assert not result.error and not result.issues
     assert result.data["events"][0]["source"] == "explicit_prn"
-    assert prn_counts({"prn": result.data}, NOW) == {}
-    data = confirm_review(result.data, "fentanyl", NOW)
-    assert prn_counts({"prn": data}, NOW) == {"fentanyl": 1}
+    assert prn_counts({"prn": result.data}, NOW) == {"vecuronium": 1, "rocuronium": 0}
 
 
-@pytest.mark.parametrize("source", [
-    "Fentanyl bolus: 10 mcg (11/22/26 0141 : Chart Author)",
-    "Fentanyl PRN not given (11/22/26 0141 : Chart Author)",
-    "Fentanyl PRN given x2 (11/22/26 0141 : Chart Author)",
-    "Fentanyl PRN given if agitated (11/22/26 0141 : Chart Author)",
-    "Fentanyl PRN administered yesterday",
+@pytest.mark.parametrize("text", [
+    "Vecuronium bolus: 1 mg (11/22/26 0141 : Chart Author)",
+    "Vecuronium PRN not given (11/22/26 0141 : Chart Author)",
+    "Vecuronium PRN given x2 (11/22/26 0141 : Chart Author)",
+    "Rocuronium PRN given if needed (11/22/26 0141 : Chart Author)",
+    "Vecuronium PRN administered yesterday",
     "@FLOWDATETIME(1234:0141)@",
+    "Volume (mL) Vecuronium: bad mL (11/22/26 0141)",
+    "Volume (mL) Vecuronium / Rocuronium: 1 mL (11/22/26 0141)",
 ])
-def test_bolus_order_negation_aggregate_and_unresolved_links_are_not_counts(source):
-    result = parse_prn(source)
-    assert result.error
-    assert result.data is None
+def test_unreadable_or_uncertain_paralytic_entries_do_not_make_partial_counts(text):
+    result = parse_prn(volume("Vecuronium") + "\n" + text)
+    assert result.error and result.data is None
 
 
-@pytest.mark.parametrize("source", ["", "\n\t", "No data recorded", "TIME\tANALGESIA\tSEDATIVES\tPARALYTICS\n0000\t\t\t"])
-def test_empty_source_does_not_make_zero_counts(source):
-    result = parse_prn(source)
+@pytest.mark.parametrize("text", ["", "\n\t", "No data recorded", "TIME\tANALGESIA\tSEDATIVES\tPARALYTICS\n0000\t\t\t"])
+def test_valid_empty_af_means_zero_but_missing_af_has_no_count(text):
+    result = parse_prn(text)
     assert not result.error
-    assert prn_counts({"prn": result.data}, NOW) == {}
+    assert prn_counts({"prn": result.data}, NOW) == ZERO
     assert prn_counts({}, NOW) == {}
-    data = confirm_review(result.data, ["rocuronium"], NOW)
-    assert prn_counts({"prn": data}, NOW) == {"rocuronium": 0}
+    assert prn_counts({"prn": None}, NOW) == {}
 
 
-def test_zero_volume_requires_review_and_resolved_zero_is_not_an_administration():
-    result = parse_prn(volume("Ketamine", amount="0"))
+def test_zero_volume_is_not_counted_and_positive_volume_is_one_not_milliliters():
+    result = parse_prn(volume("Vecuronium", amount="0") + "\n" + volume("Rocuronium", amount="20"))
     assert not result.error
-    assert result.data["events"][0]["dose_count"] is None
-    result.data["events"][0]["dose_count"] = 0
-    data = confirm_review(result.data, ["ketamine"], NOW)
-    assert prn_counts({"prn": data}, NOW) == {"ketamine": 0}
+    assert prn_counts({"prn": result.data}, NOW) == {"vecuronium": 0, "rocuronium": 1}
 
 
-def test_4am_window_includes_7am_and_current_minute_but_excludes_old_and_future():
-    events = [manual("morphine", stamp, 1) for stamp in (
+def test_4am_window_includes_7am_and_now_but_excludes_old_and_future():
+    records = data(*(source_event("vecuronium", stamp) for stamp in (
         "2026-11-21 06:59", "2026-11-21 07:00", "2026-11-21 23:59",
-        "2026-11-22 00:00", "2026-11-22 04:00", "2026-11-22 04:01",
-    )]
-    data = reviewed(events, ["morphine"])
+        "2026-11-22 00:00", "2026-11-22 04:00", "2026-11-22 04:01")))
     start, end = prn_window(NOW)
-    assert start == moment("2026-11-21 07:00")
-    assert end == NOW
-    assert prn_counts({"prn": data}, NOW) == {"morphine": 4}
+    assert start == moment("2026-11-21 07:00") and end == NOW
+    assert prn_counts({"prn": records}, NOW) == {"vecuronium": 4, "rocuronium": 0}
 
 
-def test_exactly_7am_resets_review_and_moves_start_to_today():
-    events = [manual("midazolam", stamp, 1) for stamp in (
-        "2026-11-22 06:59", "2026-11-22 07:00", "2026-11-22 07:01")]
-    before = moment("2026-11-22 06:59")
-    data = reviewed(events, ["midazolam"], before)
-    assert prn_counts({"prn": data}, before) == {"midazolam": 1}
+def test_exactly_7am_rolls_over_automatically_and_future_entries_enter_later():
+    records = data(*(source_event("rocuronium", stamp) for stamp in (
+        "2026-11-22 06:59", "2026-11-22 07:00", "2026-11-22 07:01")))
+    assert prn_counts({"prn": records}, moment("2026-11-22 06:59"))["rocuronium"] == 1
     seven = moment("2026-11-22 07:00")
     assert prn_window(seven)[0] == seven
-    assert prn_counts({"prn": data}, seven) == {}
-    data = confirm_review(data, ["midazolam"], seven)
-    assert prn_counts({"prn": data}, seven) == {"midazolam": 1}
-    assert prn_counts({"prn": data}, moment("2026-11-22 08:00")) == {"midazolam": 2}
+    assert prn_counts({"prn": records}, seven)["rocuronium"] == 1
+    assert prn_counts({"prn": records}, moment("2026-11-22 08:00"))["rocuronium"] == 2
+    assert prn_counts({"prn": records}, moment("2026-11-23 08:00")) == ZERO
 
 
-def test_review_is_invalidated_by_edit_missing_dose_addition_and_next_day():
-    data = reviewed([manual("vecuronium", "2026-11-22 01:00", 1)], ["vecuronium"])
-    assert prn_counts({"prn": data}, NOW) == {"vecuronium": 1}
-    edited = deepcopy(data)
-    edited["events"][0]["dose_count"] = 2
-    assert prn_counts({"prn": edited}, NOW) == {}
-    edited = deepcopy(data)
-    edited["events"].append(manual("vecuronium", "2026-11-22 02:00", 1))
-    assert prn_counts({"prn": edited}, NOW) == {}
-    assert prn_counts({"prn": data}, moment("2026-11-23 04:00")) == {}
-    assert prn_counts({"prn": clear_review(data, "vecuronium")}, NOW) == {}
+def test_no_review_or_infusion_gate_and_old_volume_decisions_do_not_override_counts():
+    records = data(source_event("vecuronium", "2026-11-22 01:00", legacy_doses=0),
+                   source_event("vecuronium", "2026-11-22 02:00", legacy_doses=None))
+    sheet = {"prn": records, "medications": [{"name": "vecuronium infusion", "frequency": "Continuous"}]}
+    before = deepcopy(sheet)
+    assert prn_counts(sheet, NOW) == {"vecuronium": 2, "rocuronium": 0}
+    assert sheet == before and records["reviewed"] == {}
 
 
-def test_unresolved_future_entry_becomes_visible_before_count_can_advance():
-    data = reviewed([
-        manual("pentobarbital", "2026-11-22 02:00", 1),
-        manual("pentobarbital", "2026-11-22 05:00", None),
-    ], ["pentobarbital"])
-    assert prn_counts({"prn": data}, NOW) == {"pentobarbital": 1}
-    assert prn_counts({"prn": data}, moment("2026-11-22 05:00")) == {}
+def test_old_eight_drug_archives_open_but_only_paralytics_are_counted():
+    records = data(*(manual(drug, "2026-11-22 01:00", 3) for drug in MEDICATIONS))
+    records = confirm_review(records, MEDICATIONS, NOW)
+    validate_prn(records)
+    assert prn_counts({"prn": records}, NOW) == {"vecuronium": 3, "rocuronium": 3}
+    assert prn_counts({"prn": clear_review(records)}, NOW) == {"vecuronium": 3, "rocuronium": 3}
+    assert prn_counts({"prn": records, "import_warnings": {"af": []}}, NOW) == {}
 
 
-def test_approval_for_one_drug_does_not_resolve_another():
-    data = reviewed([
-        manual("fentanyl", "2026-11-22 02:00", 2),
-        manual("ketamine", "2026-11-22 02:01", None),
-    ], ["fentanyl"])
-    assert prn_counts({"prn": data}, NOW) == {"fentanyl": 2}
-    assert prn_counts({"prn": data, "import_warnings": {"af": []}}, NOW) == {}
+def test_shared_helper_keeps_full_timeline_dedupes_and_does_not_mutate():
+    first = source_event("vecuronium", "2026-11-21 01:00")
+    records = data(source_event("vecuronium", "2026-11-22 05:00"), first,
+                   dict(first, dose_count=0), manual("vecuronium", "2026-11-22 02:00", 2),
+                   source_event("midazolam", "2026-11-22 01:00"))
+    before = deepcopy(records)
+    assert automatic_prn_events(records, "Norcuron") == [
+        (moment("2026-11-21 01:00"), 1), (moment("2026-11-22 02:00"), 2),
+        (moment("2026-11-22 05:00"), 1)]
+    assert automatic_prn_events(records, "midazolam") == []
+    assert records == before
 
 
-def test_export_context_clock_controls_counts_and_other_drugs_can_be_confirmed_zero():
-    data = reviewed([manual("morphine", "2026-11-22 01:00", 1)], MEDICATIONS)
+def test_export_context_clock_controls_counts_without_new_confirmation():
+    records = data(source_event("vecuronium", "2026-11-22 01:00"))
     with display_clock(NOW):
-        counts = prn_counts({"prn": data})
-        assert counts["morphine"] == 1
-        assert counts["rocuronium"] == 0
+        assert prn_counts({"prn": records}) == {"vecuronium": 1, "rocuronium": 0}
     with display_clock(moment("2026-11-22 07:00")):
-        assert prn_counts({"prn": data}) == {}
+        assert prn_counts({"prn": records}) == ZERO
 
 
 @pytest.mark.parametrize("value", [
@@ -201,19 +223,18 @@ def test_unrepresentable_timezone_conversion_is_a_validation_error(value):
         event_time(value)
 
 
-def test_explicit_offsets_disambiguate_fall_dst_and_window_uses_local_7am():
+def test_fall_dst_offsets_remain_distinct_and_window_uses_local_7am():
     first = moment("2026-11-01T01:30:00-04:00")
     second = moment("2026-11-01T01:30:00-05:00")
     assert (second.astimezone(timezone.utc) - first.astimezone(timezone.utc)).total_seconds() == 3600
     now = moment("2026-11-01 06:59")
-    data = reviewed([
-        manual("morphine", first.isoformat(), 1),
-        manual("morphine", second.isoformat(), 1),
-    ], ["morphine"], now)
+    records = data(source_event("vecuronium", second.isoformat()), source_event("vecuronium", first.isoformat()))
     start, end = prn_window(now)
     assert start == moment("2026-10-31 07:00")
     assert (end.astimezone(timezone.utc) - start.astimezone(timezone.utc)).total_seconds() == 89940
-    assert prn_counts({"prn": data}, now) == {"morphine": 2}
+    assert prn_counts({"prn": records}, now) == {"vecuronium": 2, "rocuronium": 0}
+    assert [value.astimezone(timezone.utc) for value, _ in automatic_prn_events(records, "vecuronium")] == [
+        first.astimezone(timezone.utc), second.astimezone(timezone.utc)]
 
 
 def test_spring_dst_window_keeps_previous_local_7am_without_forcing_24_hours():
@@ -223,9 +244,8 @@ def test_spring_dst_window_keeps_previous_local_7am_without_forcing_24_hours():
 
 
 @pytest.mark.parametrize("stamp", ["11/22/26", "99/22/26 0141", "11/22/26 2460", "11/01/26 0130"])
-def test_bad_source_date_rejects_entire_block_without_partial_count(stamp):
-    source = volume("Morphine") + "\n" + volume("Morphine", stamp)
-    result = parse_prn(source)
+def test_bad_target_source_date_rejects_entire_block_without_partial_count(stamp):
+    result = parse_prn(volume("Vecuronium") + "\n" + volume("Vecuronium", stamp))
     assert result.error and result.data is None
 
 
@@ -236,27 +256,25 @@ def test_bad_source_date_rejects_entire_block_without_partial_count(stamp):
     ("timestamp", "2026-11-22 01:00"),
 ])
 def test_saved_invalid_values_raise_and_count_display_fails_closed(field, value):
-    data = reviewed([manual("morphine", "2026-11-22 01:00", 1)], ["morphine"])
-    data["events"][0][field] = value
+    records = data(manual("vecuronium", "2026-11-22 01:00", 1))
+    records["events"][0][field] = value
     with pytest.raises(ValueError):
-        validate_prn(data)
-    assert prn_counts({"prn": data}, NOW) == {}
+        validate_prn(records)
+    assert prn_counts({"prn": records}, NOW) == {}
 
 
 def test_raw_source_fields_and_names_cannot_enter_persisted_schema():
-    data = empty_prn()
-    data["events"].append(manual("morphine", "2026-11-22 01:00", 1))
-    data["events"][0]["clinician"] = "PRIVATE_CLINICIAN_SENTINEL"
+    records = data(manual("vecuronium", "2026-11-22 01:00", 1))
+    records["events"][0]["clinician"] = "PRIVATE_CLINICIAN_SENTINEL"
     with pytest.raises(ValueError):
-        validate_prn(data)
+        validate_prn(records)
 
 
 def test_af_marker_pair_and_record_limit():
     marker = "af" * 16
-    result = parse_prn(marker + "\n" + volume("Morphine") + "\n" + marker)
+    result = parse_prn(marker + "\n" + volume("Vecuronium") + "\n" + marker)
     assert not result.error and len(result.data["events"]) == 1
-    assert parse_prn(marker + "\n" + volume("Morphine")).error
-    data = empty_prn()
-    data["events"] = [manual("morphine", "2026-11-22 01:00", 1)] * 4097
+    assert parse_prn(marker + "\n" + volume("Vecuronium")).error
+    records = data(*([source_event("vecuronium", "2026-11-22 01:00")] * 4097))
     with pytest.raises(ValueError):
-        validate_prn(data)
+        validate_prn(records)

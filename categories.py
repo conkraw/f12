@@ -431,7 +431,7 @@ def medication_blocks(section: str, notes: str, rows: list[dict], sheet: dict | 
     fluid_context = {"dosing_weight": dosing_weight if dosing_weight is not None else (sheet or {}).get("dosing_weight", ""),
                      "import_warnings": (sheet or {}).get("import_warnings", {})}
     display_rows = medication_rows_for_display(rows, sheet, diet)
-    # Counts are computed from confirmed, timestamped PRN administrations at
+    # Paralytic counts are computed automatically from timestamped records at
     # the active export clock. They never alter medication orders or mappings.
     from prn_counts import canonical_medication, prn_counts
     counts = prn_counts(sheet) if sheet is not None and section == "Neurologic" else {}

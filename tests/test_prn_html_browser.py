@@ -84,11 +84,9 @@ def millis(value):
     return int(datetime.fromisoformat(value).timestamp() * 1000)
 
 
-def payload(start, events):
+def payload(events):
     return {
-        "version": 1,
-        "window_start_ms": millis(start),
-        "window_date": start[:10],
+        "version": 2,
         "events": [[millis(stamp), doses] for stamp, doses in events],
     }
 
@@ -112,7 +110,7 @@ def run_script(payloads, *, now, steps, initial=None, host_tz="UTC"):
 
 @pytest.mark.parametrize("host_tz", ["UTC", "America/Los_Angeles", "Asia/Tokyo"])
 def test_4am_print_uses_previous_7am_and_inclusive_cutoff(host_tz):
-    data = payload("2026-11-21T07:00:00-05:00", [
+    data = payload([
         ("2026-11-21T06:59:59-05:00", 100),
         ("2026-11-21T07:00:00-05:00", 1),
         ("2026-11-21T23:55:00-05:00", 2),
@@ -125,41 +123,44 @@ def test_4am_print_uses_previous_7am_and_inclusive_cutoff(host_tz):
     assert result["snapshots"] == [[" × 99"], [" × 5"]]
 
 
-def test_script_does_not_immediately_override_server_clock_and_registers_refreshes():
-    data = payload("2026-11-21T07:00:00-05:00", [])
-    result = run_script([data], now="2027-01-01T12:00:00Z", steps=[], initial=[" × 0"])
+def test_script_preserves_initial_server_clock_and_registers_refreshes():
+    result = run_script([payload([])], now="2027-01-01T12:00:00Z", steps=[], initial=[" × 0"])
     assert result["snapshots"] == [[" × 0"]]
     assert set(result["windowEvents"]) >= {"beforeprint", "focus"}
     assert "visibilitychange" in result["documentEvents"]
     assert result["intervals"] == [60000]
 
 
-def test_7am_rollover_suppresses_previous_confirmation_without_reusing_zero():
-    data = payload("2026-11-21T07:00:00-05:00", [("2026-11-21T12:00:00-05:00", 3)])
+def test_7am_rollover_counts_new_reporting_day_automatically():
+    data = payload([
+        ("2026-11-21T12:00:00-05:00", 3),
+        ("2026-11-22T07:00:00-05:00", 1),
+        ("2026-11-22T08:30:00-05:00", 1),
+    ])
     result = run_script([data], now="2026-11-22T06:59:59-05:00", steps=[
         {"now": "2026-11-22T06:59:59-05:00", "event": "beforeprint"},
         {"now": "2026-11-22T07:00:00-05:00", "event": "beforeprint"},
         {"now": "2026-11-22T09:00:00-05:00", "event": "interval"},
     ])
-    assert result["snapshots"] == [[" × 99"], [" × 3"], [""], [""]]
+    assert result["snapshots"] == [[" × 99"], [" × 3"], [" × 1"], [" × 2"]]
 
 
-def test_future_events_enter_count_and_unresolved_events_suppress_it():
-    data = payload("2026-11-22T07:00:00-05:00", [
+def test_future_events_enter_count_without_confirmation():
+    data = payload([
         ("2026-11-22T07:30:00-05:00", 1),
         ("2026-11-22T08:10:00-05:00", 1),
-        ("2026-11-22T08:15:00-05:00", None),
+        ("2026-11-22T08:15:00-05:00", 1),
     ])
     result = run_script([data], now="2026-11-22T08:00:00-05:00", steps=[
         {"now": "2026-11-22T08:00:00-05:00", "event": "beforeprint"},
         {"now": "2026-11-22T08:10:00-05:00", "event": "focus"},
         {"now": "2026-11-22T08:15:00-05:00", "event": "interval"},
     ])
-    assert result["snapshots"] == [[" × 99"], [" × 1"], [" × 2"], [""]]
+    assert result["snapshots"] == [[" × 99"], [" × 1"], [" × 2"], [" × 3"]]
 
 
 def test_visibility_refresh_occurs_only_when_page_is_visible():
-    data = payload("2026-11-21T07:00:00-05:00", [("2026-11-22T03:00:00-05:00", 2)])
+    data = payload([("2026-11-22T03:00:00-05:00", 2)])
     result = run_script([data], now="2026-11-22T04:00:00-05:00", steps=[
         {"now": "2026-11-22T04:00:00-05:00", "event": "visibilitychange", "hidden": True},
         {"now": "2026-11-22T04:00:00-05:00", "event": "visibilitychange", "hidden": False},
@@ -167,48 +168,61 @@ def test_visibility_refresh_occurs_only_when_page_is_visible():
     assert result["snapshots"] == [[" × 99"], [" × 99"], [" × 2"]]
 
 
-@pytest.mark.parametrize("start,now,reset,events", [
+@pytest.mark.parametrize("now,reset,events", [
     (
-        "2026-10-31T07:00:00-04:00", "2026-11-01T06:30:00-05:00", "2026-11-01T07:00:00-05:00",
+        "2026-11-01T06:30:00-05:00", "2026-11-01T07:00:00-05:00",
         [("2026-10-31T07:00:00-04:00", 1), ("2026-11-01T01:30:00-04:00", 1),
          ("2026-11-01T01:30:00-05:00", 1)],
     ),
     (
-        "2026-03-07T07:00:00-05:00", "2026-03-08T06:30:00-04:00", "2026-03-08T07:00:00-04:00",
+        "2026-03-08T06:30:00-04:00", "2026-03-08T07:00:00-04:00",
         [("2026-03-07T07:00:00-05:00", 1), ("2026-03-08T01:30:00-05:00", 1),
          ("2026-03-08T03:30:00-04:00", 1)],
     ),
     (
-        "2025-12-31T07:00:00-05:00", "2026-01-01T06:30:00-05:00", "2026-01-01T07:00:00-05:00",
+        "2026-01-01T06:30:00-05:00", "2026-01-01T07:00:00-05:00",
         [("2025-12-31T08:00:00-05:00", 1), ("2025-12-31T23:00:00-05:00", 1),
          ("2026-01-01T04:00:00-05:00", 1)],
     ),
 ])
-def test_dst_and_calendar_rollovers_use_eastern_day(start, now, reset, events):
-    result = run_script([payload(start, events)], now=now, host_tz="Pacific/Honolulu", steps=[
+def test_dst_and_calendar_rollovers_use_eastern_day(now, reset, events):
+    result = run_script([payload(events)], now=now, host_tz="Pacific/Honolulu", steps=[
         {"now": now, "event": "beforeprint"}, {"now": reset, "event": "beforeprint"},
     ])
-    assert result["snapshots"] == [[" × 99"], [" × 3"], [""]]
+    assert result["snapshots"] == [[" × 99"], [" × 3"], [" × 0"]]
 
 
 def test_multiple_rooms_refresh_independently_and_malformed_data_fails_closed():
-    current = payload("2026-11-21T07:00:00-05:00", [("2026-11-21T10:00:00-05:00", 4)])
-    zero = payload("2026-11-21T07:00:00-05:00", [])
-    old = payload("2026-11-20T07:00:00-05:00", [("2026-11-20T10:00:00-05:00", 8)])
+    current = payload([("2026-11-21T10:00:00-05:00", 4)])
+    zero = payload([])
+    old = payload([("2026-11-20T10:00:00-05:00", 8)])
     result = run_script([current, zero, old, "{not JSON"], now="2026-11-22T04:00:00-05:00", steps=[
         {"now": "2026-11-22T04:00:00-05:00", "event": "beforeprint"},
     ])
-    assert result["snapshots"][1] == [" × 4", " × 0", "", ""]
+    assert result["snapshots"][1] == [" × 4", " × 0", " × 0", ""]
 
 
 @pytest.mark.parametrize("bad", [
-    {"version": 99, "window_start_ms": 1795262400000, "window_date": "2026-11-21", "events": []},
-    {"version": 1, "window_start_ms": "bad", "window_date": "2026-11-21", "events": []},
-    {"version": 1, "window_start_ms": 1795262400000, "window_date": "2026-11-21", "events": [[1795273200000, -1]]},
-    {"version": 1, "window_start_ms": 1795262400000, "window_date": "2026-11-21", "events": [[1795273200000, "2"]]},
+    {"version": 99, "events": []},
+    {"version": 1, "window_start_ms": 1795262400000, "window_date": "2026-11-21", "events": []},
+    {"version": 2, "events": [[1795273200000, -1]]},
+    {"version": 2, "events": [[1795273200000, "2"]]},
+    {"version": 2, "events": [[1795273200000, None]]},
+    {"version": 2, "events": [[1795273200000, 1.5]]},
+    {"version": 2, "events": [[1795273200000, 101]]},
+    {"version": 2, "events": [["not a timestamp", 1]]},
+    {"version": 2, "events": [[1e30, 1]]},
+    {"version": 2, "events": "not a list"},
 ])
 def test_invalid_payload_fields_suppress_count(bad):
     result = run_script([bad], now="2026-11-22T04:00:00-05:00", steps=[
         {"now": "2026-11-22T04:00:00-05:00", "event": "beforeprint"},
+    ])
+    assert result["snapshots"][1] == [""]
+
+
+def test_invalid_browser_clock_does_not_leave_a_stale_count():
+    result = run_script([payload([])], now="2026-11-22T04:00:00-05:00", steps=[
+        {"now": "invalid", "event": "beforeprint"},
     ])
     assert result["snapshots"][1] == [""]

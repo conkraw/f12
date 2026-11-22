@@ -1,18 +1,18 @@
-PICU Handoff 6.99.2
-Complete package based on PICU6991.zip, version 6.99.1.
+PICU Handoff 6.100
+Complete package based on PICU6992.zip, version 6.99.2.
 
-Runtime changes: app.py and error_store.py.
-The journal accepts bounded two-component and three-component versions.
-The sidebar uses the journal's APP_VERSION constant.
+Automatic vecuronium and rocuronium counts. No PRN review form or confirmation.
+Analgesic and sedative records are excluded from counts.
+Paralytic infusions do not hide the counts.
+Latest 7 a.m. Eastern through print time, with automatic rollover.
+Only the number is added after PRN in Neurologic.
 
-The full native Streamlit import reproduced the exact reported callback
-traceback before the fix. After the fix, the warning is recorded and the
-handoff preview and save flow complete.
-469 targeted tests passed, including 12 native Streamlit cases.
-The 15 HTML refresh-script cases also passed.
-Encrypted journal round trips pass for 6.98, 6.99, 6.99.1, and 6.99.2.
-Malformed versions remain rejected.
+462 targeted tests passed, including 3 native Streamlit runtime tests and
+22 Node checks of HTML refresh. The previous import-warning and error-version
+regressions pass with the current version constant.
+
+The supplied example imported without an AF warning and gave vecuronium 5
+at 04:00 on November 22, 2026. No supplied patient source is packaged.
 
 Archive schema 34 and dependencies are unchanged.
-No supplied patient source is included.
 No live deployment or production storage writes were performed.

@@ -1,22 +1,18 @@
-# PICU Handoff 6.99.2 verification
+# PICU Handoff 6.100 verification
 
-## Exact reproduction
+462 tests passed with zero failures or errors in the final regression run.
 
-A full Streamlit AppTest ran the actual app.py entry point, selected a room, and submitted a synthetic SmartPhrase whose AF section required an import warning. Before the correction, Streamlit raised the redacted ValueError with the same callback path reported by the user: create_handoff, _finish_handoff_import, new_error_event, and validate_event. The exception was the technical error version validation.
+## Current behavior
 
-The new focused journal tests also failed for current-release event creation and patch-version encrypted round trips before the correction. The validator previously accepted only two numeric components while APP_VERSION was 6.99.1.
+Core tests cover automatic counts for both paralytics without review, exclusion of analgesics and sedatives, malformed ignored columns and cells, exact duplicates, distinct source entries, positive and zero volumes, infusion coexistence, missing and failed AF data, midnight, inclusive print cutoffs, future records, 7 a.m. rollover, and both daylight saving changes. Existing archive schemas and legacy records remain validated.
 
-## Corrected behavior
+Integration tests check text, HTML, individual PDF, combined PDF, dynamic PDF cache signatures, count placement once per medication, hidden orders, encrypted round trips, mapping preservation, and full-room replacement. Analgesic and sedative suffixes are absent even in archived data that was previously reviewed.
 
-The journal accepts two or three numeric version components, bounded to one through three digits each. Native import with a warning now records a valid sanitized technical event, retains the section warning, renders the HTML handoff preview, and allows Save handoff to complete. The test verifies the imported session archive and confirms that synthetic diagnosis and medication source text do not appear in the technical record.
+Three native Streamlit tests run the actual app. They verify automatic counts immediately after a synthetic import, saving, absence of the retired PRN editor and confirmation controls on the Medications tab, and successful logging and preview when a malformed paralytic entry produces an import warning.
 
-The journal tests cover encrypted round trips for 6.98, 6.99, 6.99.1, and 6.99.2. They reject malformed, overlong, and nonstring version values. Existing tests also confirm that failed journal writes keep the handoff available and that session-only logging does not claim remote storage.
+The 22 Node tests execute HTML refresh across print, focus, visibility, interval, 7 a.m. rollover, future-entry, daylight saving, timezone, and malformed-payload scenarios. The HTML payload contains sanitized epoch/count pairs only. Markup tests preserve custom text and keep browser metadata out of text and PDF output.
 
-The sidebar uses the same APP_VERSION constant as the journal. An older version-report assertion was updated to check the current constant rather than a stale 6.98 literal.
-
-## Final regression run
-
-469 tests passed with zero failures or errors. These include 12 native Streamlit cases and 15 Node checks of the HTML count-refresh script.
+## Final regression modules
 
 | Test module | Passed |
 | --- | ---: |
@@ -26,17 +22,21 @@ The sidebar uses the same APP_VERSION constant as the journal. An older version-
 | test_import_recovery | 34 |
 | test_measurement_notes_observed_pip | 1 |
 | test_pdf_cache | 68 |
-| test_prn_counts_core | 59 |
-| test_prn_html_browser | 15 |
-| test_prn_html_markup | 7 |
+| test_prn_counts_core | 71 |
+| test_prn_html_browser | 22 |
+| test_prn_html_markup | 9 |
 | test_prn_integration | 24 |
-| test_prn_preview_native | 2 |
-| test_prn_ui | 19 |
-| test_prn_ui_native | 10 |
+| test_prn_preview_native | 3 |
 | test_room_replacement | 82 |
 | test_ui_smoke | 8 |
 | test_workflow_print | 64 |
 
-The final run includes error journaling, import recovery, full-room replacement, source review, PRN windows, CPAP output, HTML and PDF output, PDF caching, and save callbacks.
+## Supplied example
 
-Existing anyio and pypdf deprecation warnings were reported. No dependencies changed for this release. These are local runtime and automated tests, not a live deployment inspection. No production archive was accessed or written. The supplied clinical source is not packaged. Prior release verification is retained in V6991_TEST_REPORT.md.
+The supplied sample imported without an AF warning. Six paralytic records were retained. With an explicit 04:00 Eastern cutoff on November 22, 2026, the current window contained five vecuronium entries and no rocuronium entries. Analgesic and sedative records were excluded. No source text or patient identifiers are included in this package.
+
+## Scope
+
+Existing anyio and pypdf deprecation warnings were reported. No application dependencies changed. Tests ran locally and used synthetic records except for the aggregate check of the supplied example. No live deployment or production archive write occurred.
+
+The retired PRN review UI and its obsolete manual-review UI tests were removed. Current core, integration, and native tests cover their replacement behavior. Historical release reports remain in the V6992 files.

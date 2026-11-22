@@ -1,4 +1,5 @@
-"""Full Streamlit import, preview, and save regression with synthetic PRN data."""
+"""Full Streamlit automatic paralytic import, preview, and save regressions."""
+from contextvars import ContextVar
 from copy import deepcopy
 from pathlib import Path
 import json
@@ -7,20 +8,27 @@ import time
 import pytest
 from streamlit.testing.v1 import AppTest
 
+import lab_windows
 from security import hash_password
 from error_store import APP_VERSION, validate_event
-from test_prn_integration import source
+from prn_counts import prn_counts
+from test_prn_integration import NOW, source
 
 
 APP_PATH = Path(__file__).parents[1] / "app.py"
 SYNTHETIC_IMPORT = source(af=(
     "TIME\tANALGESIA\tSEDATIVES\tPARALYTICS\n"
     "0141\tVolume (mL) Hydromorphone: 1.05 mL "
-    "(11/22/26 0141 : SYNTHETIC_CLINICIAN, RN)\t\t\n"))
+    "(11/22/26 0141 : SYNTHETIC_CLINICIAN, RN)\t"
+    "Volume (mL) Midazolam: 1 mL (11/22/26 0141 : SYNTHETIC_CLINICIAN, RN)\t"
+    "Volume (mL) Vecuronium: 2 mL (11/22/26 0141 : SYNTHETIC_CLINICIAN, RN)\n"
+    "0230\t\t\tVolume (mL) Rocuronium: 1 mL (11/22/26 0230 : SYNTHETIC_CLINICIAN, RN)"))
 
 
 @pytest.fixture
-def native_app():
+def native_app(monkeypatch):
+    # AppTest runs on its own thread, so give the display clock a fixed default.
+    monkeypatch.setattr(lab_windows, "_WINDOW_TIME", ContextVar("native_prn_clock", default=NOW))
     at = AppTest.from_file(str(APP_PATH), default_timeout=30)
     at.secrets["app"] = {"password_hash": hash_password("synthetic-preview-test-password")}
     now = time.monotonic()
@@ -34,20 +42,29 @@ def native_app():
     return at
 
 
-def test_native_full_import_with_prns_renders_preview_and_saves(native_app):
-    at = native_app
-    at.text_area(key="paste").set_value(SYNTHETIC_IMPORT)
+def import_source(at, text=SYNTHETIC_IMPORT):
+    at.text_area(key="paste").set_value(text)
     next(button for button in at.button if button.label == "Replace room handoff").click().run()
-    assert not at.exception
+    assert not at.exception, [item.message for item in at.exception]
     assert not at.error, [item.value for item in at.error]
+
+
+def test_native_full_import_counts_paralytics_without_review_and_saves(native_app):
+    at = native_app
+    import_source(at)
     sheet = deepcopy(at.session_state["drafts"]["P4102"])
-    assert len(sheet["prn"]["events"]) == 1
-    assert sheet["prn"]["events"][0]["dose_count"] is None
+    assert len(sheet["prn"]["events"]) == 2
+    assert {event["medication"] for event in sheet["prn"]["events"]} == {"vecuronium", "rocuronium"}
+    assert sheet["prn"]["reviewed"] == {}
+    assert prn_counts(sheet, NOW) == {"vecuronium": 1, "rocuronium": 1}
     assert at.session_state["vault"]["rooms"]["P4102"] == sheet
     assert at.session_state["paste"] == ""
-    assert any("Some PRN counts need review" in caption.value for caption in at.caption)
+    assert not any("PRN counts need review" in caption.value for caption in at.caption)
+    assert not any("Confirm" in button.label and "PRN" in button.label for button in at.button)
     assert any(item.proto.label == "Download this handoff (PDF)" for item in at.get("download_button"))
-    assert any("Synthetic PRN print example" in item.proto.srcdoc for item in at.get("iframe"))
+    preview = next(item.proto.srcdoc for item in at.get("iframe") if "Synthetic PRN print example" in item.proto.srcdoc)
+    assert preview.count('data-prn-count="') == 2
+    assert preview.count(" × 1</span>") == 2
 
     next(button for button in at.button if button.label == "Save handoff").click().run()
     assert not at.exception and not at.error
@@ -55,13 +72,24 @@ def test_native_full_import_with_prns_renders_preview_and_saves(native_app):
     assert at.session_state["vault"]["rooms"]["P4102"]["prn"] == sheet["prn"]
 
 
+def test_native_medications_tab_has_no_prn_review_or_confirmation_controls(native_app):
+    at = native_app
+    import_source(at)
+    at.session_state["handoff_tab"] = "Medications"
+    at.run()
+    assert not at.exception and not at.error
+    assert any("Choose one destination per order" in caption.value for caption in at.caption)
+    assert not any("PRN review" in item.label for item in at.selectbox)
+    assert not any("Confirm" in button.label and "PRN" in button.label for button in at.button)
+    assert not any("PRN counts" == item.label for item in at.expander)
+    assert not at.data_editor
+    assert not any("Verify actual administration" in caption.value for caption in at.caption)
+
+
 def test_native_import_warning_is_recorded_without_blocking_preview_or_save(native_app):
     at = native_app
-    malformed = source(af="Volume (mL) Hydromorphone: 1 mL (missing date)")
-    at.text_area(key="paste").set_value(malformed)
-    next(button for button in at.button if button.label == "Replace room handoff").click().run()
-    assert not at.exception, [item.message for item in at.exception]
-    assert not at.error, [item.value for item in at.error]
+    malformed = source(af="Volume (mL) Vecuronium: 1 mL (missing date)")
+    import_source(at, malformed)
     sheet = deepcopy(at.session_state["drafts"]["P4102"])
     assert sheet["fields"]["Diagnoses"] == "Synthetic PRN print example"
     assert sheet.get("prn") is None
@@ -75,7 +103,7 @@ def test_native_import_warning_is_recorded_without_blocking_preview_or_save(nati
     assert record["app_version"] == APP_VERSION
     assert record["diagnostics"]
     assert "Synthetic PRN print example" not in json.dumps(record)
-    assert "Hydromorphone" not in json.dumps(record)
+    assert "Vecuronium" not in json.dumps(record)
     assert any("Synthetic PRN print example" in item.proto.srcdoc for item in at.get("iframe"))
 
     next(button for button in at.button if button.label == "Save handoff").click().run()

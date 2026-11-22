@@ -1,13 +1,11 @@
-"""Refresh confirmed PRN suffixes when a downloaded HTML handoff is printed.
+"""Refresh automatic paralytic PRN counts when an HTML handoff is printed.
 
-The document carries only sanitized epoch/count pairs for already reviewed
-medications. The browser cannot approve a new reporting day, infer a dose from
-a volume, or retrieve new administrations. Unresolved entries and a changed
-7am day remove the numeric suffix until a newly reviewed export is generated.
+The document carries only sanitized epoch/count pairs from imported vecuronium
+and rocuronium records. Every refresh uses the current Eastern reporting day,
+starting at the most recent 7am, without a separate confirmation step.
 """
 from __future__ import annotations
 
-from datetime import datetime, time, timedelta, timezone
 from html import escape
 import json
 import re
@@ -23,21 +21,14 @@ def _without_counts(blocks: list[tuple]) -> list[tuple]:
 
 
 def _count_payload(data: dict, medication: str) -> dict:
-    from prn_counts import EASTERN, event_time
-    start = event_time(data["reviewed"][medication]["window_start"])
-    following = datetime.combine(start.date() + timedelta(days=1), time(7), EASTERN)
-    start_utc, following_utc = start.astimezone(timezone.utc), following.astimezone(timezone.utc)
-    events = []
-    for event in data["events"]:
-        if event["medication"] != medication:
-            continue
-        instant = event_time(event["timestamp"]).astimezone(timezone.utc)
-        if start_utc <= instant < following_utc:
-            # Fractional milliseconds keep subsecond events on the correct
-            # side of the cutoff even though browser clocks have ms precision.
-            events.append([instant.timestamp() * 1000, event["dose_count"]])
-    return {"version": 1, "window_start_ms": start_utc.timestamp() * 1000,
-            "window_date": start.date().isoformat(), "events": events}
+    from prn_counts import automatic_prn_events
+    # Keep available future and next-day entries so a later print can refresh
+    # its window without requiring another review or approving a new day.
+    # Fractional milliseconds preserve subsecond cutoff comparisons.
+    return {"version": 2, "events": [
+        [instant.timestamp() * 1000, count]
+        for instant, count in automatic_prn_events(data, medication)
+    ]}
 
 
 def mark_live_prn_counts(sheet: dict, body_markup: str, blocks: list[tuple], esc=escape) -> str:
@@ -79,7 +70,7 @@ def mark_live_prn_counts(sheet: dict, body_markup: str, blocks: list[tuple], esc
             medication = canonical_medication(item.get("name", ""))
             count = item["_prn_count"]
             if type(count) is not int or medication not in counts or counts[medication] != count:
-                raise ValueError("The reviewed PRN count changed.")
+                raise ValueError("The automatic PRN count changed.")
             plain_row = {key: value for key, value in item.items() if key != "_prn_count"}
             plain = esc(medication_output(format_medication(plain_row)))
             suffix = esc(" \u00d7 " + str(count))
@@ -113,26 +104,22 @@ PRN_PRINT_SCRIPT = """<script>
       hour: get('hour'), minute: get('minute'), second: get('second')};
   }
   function dateKey(parts, previousDay) {
-    return new Date(Date.UTC(parts.year, parts.month - 1,
-      parts.day - (previousDay ? 1 : 0))).toISOString().slice(0, 10);
+    const day = new Date(0);
+    day.setUTCFullYear(parts.year, parts.month - 1,
+      parts.day - (previousDay ? 1 : 0));
+    return day.toISOString().slice(0, 10);
   }
   function countText(payload, now, reportingDay) {
-    if (!payload || payload.version !== 1 ||
-        typeof payload.window_start_ms !== 'number' || !Number.isFinite(payload.window_start_ms) ||
-        payload.window_start_ms % 1000 !== 0 ||
-        typeof payload.window_date !== 'string' || !/^\\d{4}-\\d{2}-\\d{2}$/.test(payload.window_date) ||
-        payload.window_date !== reportingDay || !Array.isArray(payload.events) ||
+    if (!Number.isFinite(now) || !reportingDay || !payload || payload.version !== 2 ||
+        !Array.isArray(payload.events) ||
         payload.events.length > 4096) return '';
-    const start = localParts(payload.window_start_ms);
-    if (dateKey(start, false) !== payload.window_date || start.hour !== 7 ||
-        start.minute !== 0 || start.second !== 0 || payload.window_start_ms > now) return '';
     let count = 0;
     for (const event of payload.events) {
       if (!Array.isArray(event) || event.length !== 2 ||
           typeof event[0] !== 'number' || !Number.isFinite(event[0]) ||
-          (event[1] !== null && (!Number.isInteger(event[1]) || event[1] < 0 || event[1] > 100))) return '';
-      if (event[0] >= payload.window_start_ms && event[0] <= now) {
-        if (event[1] === null) return '';
+          !Number.isInteger(event[1]) || event[1] < 0 || event[1] > 100) return '';
+      const local = localParts(event[0]);
+      if (event[0] <= now && dateKey(local, local.hour < 7) === reportingDay) {
         count += event[1];
       }
     }

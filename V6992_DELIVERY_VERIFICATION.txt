@@ -1,0 +1,18 @@
+PICU Handoff 6.99.2
+Complete package based on PICU6991.zip, version 6.99.1.
+
+Runtime changes: app.py and error_store.py.
+The journal accepts bounded two-component and three-component versions.
+The sidebar uses the journal's APP_VERSION constant.
+
+The full native Streamlit import reproduced the exact reported callback
+traceback before the fix. After the fix, the warning is recorded and the
+handoff preview and save flow complete.
+469 targeted tests passed, including 12 native Streamlit cases.
+The 15 HTML refresh-script cases also passed.
+Encrypted journal round trips pass for 6.98, 6.99, 6.99.1, and 6.99.2.
+Malformed versions remain rejected.
+
+Archive schema 34 and dependencies are unchanged.
+No supplied patient source is included.
+No live deployment or production storage writes were performed.

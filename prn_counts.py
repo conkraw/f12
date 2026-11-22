@@ -1,11 +1,9 @@
-"""Count reviewed PRN administrations in the current 7am reporting window.
+"""Count vecuronium and rocuronium entries automatically from the latest 7am.
 
-Epic's generic Volume (mL) rows can include continuous infusions, split volume
-chartings, and missing administrations. A volume is never converted into a
-dose count. Each imported volume starts unresolved, and a reviewer must confirm
-complete administration capture for each medication before a number is shown.
-Only sanitized medication keys, timestamps, volumes, counts, and review hashes
-are stored. Source text and clinician names are deliberately discarded.
+Each positive imported volume entry for either paralytic contributes one count.
+No review or infusion check is required. Other medications are not counted.
+The existing eight-drug storage schema and review fields remain readable for
+older archives. Source text and clinician names are never retained.
 """
 from __future__ import annotations
 
@@ -26,6 +24,7 @@ MEDICATIONS = (
     "hydromorphone", "morphine", "fentanyl", "midazolam", "ketamine",
     "pentobarbital", "vecuronium", "rocuronium",
 )
+COUNTED_MEDICATIONS = ("vecuronium", "rocuronium")
 LABELS = {medication: medication.capitalize() for medication in MEDICATIONS}
 ALIASES = {
     "hydromorphone": ("hydromorphone", "dilaudid"),
@@ -221,7 +220,7 @@ def _timestamp_from_source(text: str) -> str:
 
 def _volume_event(match: re.Match) -> dict | None:
     drug = canonical_medication(match.group("drug"))
-    if not drug:
+    if drug not in COUNTED_MEDICATIONS:
         return None
     volume = float(match.group("volume"))
     if not math.isfinite(volume) or not 0 <= volume <= 1_000_000:
@@ -246,19 +245,31 @@ def _explicit_event(cell: str) -> dict | None:
     if not _PRN_POSITIVE.search(description) or _PRN_UNCERTAIN.search(description):
         raise ValueError("A PRN administration entry contains an uncertain or multiple-dose status. Review it in the source record.")
     drug = canonical_medication(description)
-    if not drug:
+    if drug not in COUNTED_MEDICATIONS:
         raise ValueError("A PRN administration entry does not identify one supported medication.")
     # The time may appear inside a clinician annotation. Never retain that text.
     return {"medication": drug, "timestamp": event_time(stamps[0].group(0).strip()).isoformat(),
             "volume_ml": None, "dose_count": 1, "source": "explicit_prn"}
 
 
-def parse_prn(text: str) -> PRNResult:
-    """Parse an AF block, retaining volume records as unresolved review rows.
+def _mentions_counted(text: str) -> bool:
+    return any(re.search(r"\b" + re.escape(alias) + r"\b", text, re.I)
+               for drug in COUNTED_MEDICATIONS for alias in ALIASES[drug])
 
-    Missing or malformed supported entries fail closed, so a partially parsed
-    table cannot appear to be complete. Paired AF markers are accepted for
-    callers that supply the entire block. Empty rows never create zero counts.
+
+def _known_excluded(text: str) -> bool:
+    return not _mentions_counted(text) and any(
+        re.search(r"\b" + re.escape(alias) + r"\b", text, re.I)
+        for drug in MEDICATIONS if drug not in COUNTED_MEDICATIONS
+        for alias in ALIASES[drug])
+
+
+def parse_prn(text: str) -> PRNResult:
+    """Retain only dated paralytic entries from the AF block.
+
+    Analgesic and sedative cells are ignored even when their contents are
+    malformed. Malformed paralytic entries still reject the block rather than
+    turning an incomplete import into a count. Empty valid AF blocks mean zero.
     """
     out = PRNResult()
     if not isinstance(text, str) or len(text) > MAX_TEXT:
@@ -273,47 +284,67 @@ def parse_prn(text: str) -> PRNResult:
         lines = lines[markers[0] + 1:markers[1]]
     data = empty_prn()
     seen = set()
-    ignored = False
     duplicates = False
+    excluded_columns = set()
     try:
         for raw in lines:
             line = raw.strip()
-            if not line or re.fullmatch(r"TIME\s+ANALGESIA\s+SEDATIVES\s+PARALYTICS", line, re.I):
+            if not line:
+                continue
+            headings = [cell.strip().upper() for cell in raw.split("\t")]
+            if headings and headings[0] == "TIME" and "PARALYTICS" in headings:
+                excluded_columns = {index for index, label in enumerate(headings)
+                                    if label in {"ANALGESIA", "SEDATIVES"}}
+                continue
+            if re.fullmatch(r"TIME\s+ANALGESIA\s+SEDATIVES\s+PARALYTICS", line, re.I):
                 continue
             if re.fullmatch(r"(?:PRNs?|PRN\s+(?:administrations?|medications?|events?))\s*:?", line, re.I):
                 continue
+            invalid_row_time = False
+            cells = raw.split("\t")
             if re.match(r"^\d{4}(?:\s|$)", line):
                 row_time = line[:4]
-                if int(row_time[:2]) > 23 or int(row_time[2:]) > 59:
-                    raise ValueError("A PRN table row contains an invalid clock time.")
+                invalid_row_time = int(row_time[:2]) > 23 or int(row_time[2:]) > 59
                 line = line[4:].strip()
+                cells[0] = re.sub(r"^\s*\d{4}(?=\s|$)", "", cells[0], count=1)
             if not line or line.casefold() in {"no data recorded", "no results found", "none", "-", "--"}:
                 continue
             # Each tab cell may contain several exported Volume entries.
-            for cell in re.split(r"\t+", line):
+            for column, cell in enumerate(cells):
                 cell = cell.strip()
-                if not cell or cell.casefold() in {"no data recorded", "none", "-", "--"}:
+                if column in excluded_columns and not _mentions_counted(cell):
+                    continue
+                if not cell or cell.casefold() in {"no data recorded", "no results found", "none", "-", "--"}:
                     continue
                 records = []
                 starts = list(_VOLUME_START.finditer(cell))
                 if starts:
-                    matches = list(_VOLUME.finditer(cell))
-                    if len(matches) != len(starts):
-                        raise ValueError("A PRN volume entry is missing a readable medication, volume, date, or time.")
-                    remaining = _VOLUME.sub("", cell).strip(" ,|\n")
-                    if remaining:
+                    prefix = cell[:starts[0].start()].strip(" ,|\n")
+                    if prefix and not _known_excluded(prefix):
                         raise ValueError("A PRN volume cell includes unrecognized content. Review the source record.")
-                    for match in matches:
+                    for index, start in enumerate(starts):
+                        end = starts[index + 1].start() if index + 1 < len(starts) else len(cell)
+                        entry = cell[start.start():end].strip(" ,|\n")
+                        drug_text = cell[start.end():end].split(":", 1)[0]
+                        if not _mentions_counted(drug_text):
+                            continue
+                        if canonical_medication(drug_text) not in COUNTED_MEDICATIONS:
+                            raise ValueError("A PRN volume entry does not identify one supported medication.")
+                        match = _VOLUME.fullmatch(entry)
+                        if not match:
+                            raise ValueError("A PRN volume entry is missing a readable medication, volume, date, or time.")
                         event = _volume_event(match)
                         if event is not None:
                             records.append(event)
-                        else:
-                            ignored = True
                 else:
+                    if _known_excluded(cell) or (not _mentions_counted(cell) and _PRN_POSITIVE.search(cell)):
+                        continue
                     event = _explicit_event(cell)
                     if event is None:
                         raise ValueError("A PRN entry is not a dated volume or an explicitly administered PRN dose.")
                     records.append(event)
+                if records and invalid_row_time:
+                    raise ValueError("A PRN table row contains an invalid clock time.")
                 for event in records:
                     key = json.dumps(event, sort_keys=True, separators=(",", ":"))
                     if key in seen:
@@ -328,10 +359,6 @@ def parse_prn(text: str) -> PRNResult:
     except (ValueError, OverflowError) as exc:
         out.error = str(exc)
         return out
-    if data["events"]:
-        out.issues.append("PRN counts require verification against medication administrations. Volume entries may include infusions or omit doses.")
-    if ignored:
-        out.issues.append("Volume entries for medications outside the selected PRN list were ignored.")
     if duplicates:
         out.issues.append("Identical repeated PRN source entries were included only once.")
     out.data = data
@@ -365,11 +392,9 @@ def clear_review(data: dict, medications=None) -> dict:
 
 
 def confirm_review(data: dict, medications, as_of: datetime | None = None) -> dict:
-    """Explicitly attest complete capture after resolving doses and missing rows.
+    """Maintain legacy review records for compatibility with older workflows.
 
-    This function must be called only following the user's review action, never
-    automatically after import. A selected medication with no events becomes
-    an explicitly confirmed zero for this reporting window.
+    Current automatic paralytic counting does not call or require this helper.
     """
     validate_prn(data)
     if data is None:
@@ -393,8 +418,43 @@ def confirm_review(data: dict, medications, as_of: datetime | None = None) -> di
     return updated
 
 
+def automatic_prn_events(data: dict | None, medication: str) -> list[tuple[datetime, int]]:
+    """Return unique positive target entries, without applying a date window.
+
+    Python exports and live HTML use this same normalization. Positive source
+    volumes count once regardless of a legacy manual review decision. Explicit
+    administrations count once, and positive legacy manual totals are retained.
+    The input is never mutated and old confirmation signatures are not needed.
+    """
+    validate_prn(data)
+    drug = canonical_medication(medication)
+    if data is None or drug not in COUNTED_MEDICATIONS:
+        return []
+    result = []
+    seen = set()
+    for event in data["events"]:
+        if event["medication"] != drug:
+            continue
+        instant = event_time(event["timestamp"])
+        if event["source"] == "volume":
+            volume = event["volume_ml"]
+            count = int(volume is not None and volume > 0)
+            identity = (instant.astimezone(timezone.utc), "volume", volume)
+        elif event["source"] == "explicit_prn":
+            count = 1
+            identity = (instant.astimezone(timezone.utc), "explicit_prn")
+        else:
+            count = event["dose_count"] or 0
+            identity = (instant.astimezone(timezone.utc), "manual", count)
+        if not count or identity in seen:
+            continue
+        seen.add(identity)
+        result.append((instant, count))
+    return sorted(result, key=lambda event: event[0].astimezone(timezone.utc))
+
+
 def prn_counts(sheet: dict, as_of: datetime | None = None) -> dict[str, int]:
-    """Return only current-window, completely reviewed administration counts."""
+    """Return automatic paralytic counts from the latest 7am through printing."""
     if not isinstance(sheet, dict) or "af" in sheet.get("import_warnings", {}):
         return {}
     data = sheet.get("prn")
@@ -403,15 +463,9 @@ def prn_counts(sheet: dict, as_of: datetime | None = None) -> dict[str, int]:
         if data is None:
             return {}
         start, end = prn_window(as_of)
-        counts = {}
-        for drug in MEDICATIONS:
-            review = data["reviewed"].get(drug)
-            if not review or review["window_start"] != start.isoformat() or review["signature"] != review_signature(data, drug):
-                continue
-            rows = [event for event in data["events"] if event["medication"] == drug and _within(event, start, end)]
-            if any(event["dose_count"] is None for event in rows):
-                continue
-            counts[drug] = sum(event["dose_count"] for event in rows)
-        return counts
+        start_utc, end_utc = start.astimezone(timezone.utc), end.astimezone(timezone.utc)
+        return {drug: sum(count for instant, count in automatic_prn_events(data, drug)
+                          if start_utc <= instant.astimezone(timezone.utc) <= end_utc)
+                for drug in COUNTED_MEDICATIONS}
     except (ValueError, TypeError, KeyError, OverflowError):
         return {}

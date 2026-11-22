@@ -1,31 +1,33 @@
-<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>PICU Handoff 6.99.2</title><style>body{font:16px/1.6 system-ui,sans-serif;max-width:900px;margin:40px auto;padding:0 24px;color:#22313b}h1,h2{color:#153f53}pre{white-space:pre-wrap;background:#f2f5f7;padding:18px}li{margin:6px 0}</style><h1>PICU Handoff 6.99.2</h1><p>Fix for the technical error version exception.</p><h2>Install</h2><pre>PICU Handoff 6.99.2
-Baseline: 6.99.1
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>PICU Handoff 6.100</title><style>body{font:16px/1.6 system-ui,sans-serif;max-width:900px;margin:40px auto;padding:0 24px;color:#22313b}h1,h2{color:#153f53}pre{white-space:pre-wrap;background:#f2f5f7;padding:18px}li{margin:6px 0}</style><h1>PICU Handoff 6.100</h1><p>Automatic vecuronium and rocuronium PRN counts.</p><h2>Install</h2><pre>PICU Handoff 6.100
+Baseline: 6.99.2
 
-Extract PICU6992.zip and open PICU_Handoff_v6_99_2_Import_Warning_Fix.
+Extract PICU6100.zip and open PICU_Handoff_v6_100_Automatic_Paralytic_Counts.
 
-If version 6.99.1 is installed, replace these files beside the app.py that
-Streamlit runs:
+Replace these seven files beside the app.py that Streamlit runs:
 app.py
+categories.py
 error_store.py
+exports.py
+importing.py
+prn_counts.py
+prn_html.py
 
 Commit the replacements and reboot Streamlit once.
-Confirm Version 6.99.2 in the sidebar.
-Reopen the handoff and check its saved status and Alerts.
+Confirm Version 6.100 in the sidebar.
+Paste the complete SmartPhrase as usual. Paralytic counts are automatic.
+There is no PRN review form or confirmation step.
 
-If updating directly from 6.99, also replace prn_counts.py from this package.
-For version 6.98 or earlier, upload the complete package&#x27;s application files.
-Use the original deployment setup instructions for a new installation.
+Only vecuronium and rocuronium are counted. Each positive dated volume entry
+contributes one count, with exact duplicate entries counted once.
+Analgesic and sedative entries are ignored.
+The count is still shown when a paralytic infusion is also present.
+The window starts at the most recent 7 a.m. Eastern and ends at print time.
+The count appears after PRN in Neurologic, without administration dates or times.
+
+The same seven-file update works from 6.99 and 6.99.1.
+For 6.98 or earlier, use the complete package&#x27;s application files.
 Keep the existing Streamlit Secrets and encryption key.
 
-This release fixes the technical error journal&#x27;s version validator. It now
-accepts both legacy versions such as 6.99 and patch versions such as 6.99.2.
-Import warnings can be recorded without the version-validation exception.
-The sidebar uses the same version constant as the technical journal.
-
-This exception happened after the handoff commit step. It did not itself
-undo a completed save. Check the saved handoff instead of assuming data loss.
-
-469 targeted tests passed, including the exact native import-warning path.
-Dependencies and archive schema 34 are unchanged.
+462 targeted tests passed. Dependencies and archive schema 34 are unchanged.
 Ready to install. No live deployment was performed.
-</pre><h2>Details</h2><p>See README.md for PRN review, ARCHIVE_COMPATIBILITY.txt for saved-data handling, and TEST_REPORT.md for verification.</p></html>
+</pre><h2>Details</h2><p>See README.md for counting behavior, ARCHIVE_COMPATIBILITY.txt for saved-data handling, and TEST_REPORT.md for verification.</p></html>

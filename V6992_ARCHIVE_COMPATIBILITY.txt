@@ -1,0 +1,17 @@
+PICU Handoff 6.99 archive compatibility
+
+Archive schema remains 34. The optional prn field is a versioned, validated
+record of medication keys, timestamps, volumes, dose counts, and per-medication
+review metadata. Raw SmartPhrase text and clinician names are not stored in it.
+
+Existing archives without this field remain valid. Mapping synchronization
+continues to require the same archive schema and does not copy PRN records or
+other patient data between repositories. The mapping preservation check passes.
+
+New PRN data follows the existing encrypted save workflow. A complete room
+replacement uses only the new SmartPhrase. Missing or failed AF data cannot
+restore old patient PRN records or old review decisions.
+
+Prior app versions may reject the new optional field. Install all required
+runtime files together and use the current app version for these records.
+Keep current credentials, encryption keys, and repository settings.

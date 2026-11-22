@@ -365,7 +365,7 @@ def import_sections(sheet: dict, text: str, settings: dict, *, respiratory_first
                     continue
                 candidate["prn"] = prn.data
                 out.notices.extend(prn.issues)
-                out.imported.append("PRN records for review" if prn.data else "PRN display cleared")
+                out.imported.append("Automatic paralytic PRN counts" if prn.data else "PRN display cleared")
             elif letter == "z":
                 ecg = parse_ecg(parsed.blocks[letter])
                 if ecg.error:
