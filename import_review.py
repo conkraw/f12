@@ -10,7 +10,7 @@ SECTIONS = {
     'e': 'Vitals', 'f': 'Cultures', 'g': 'Labs', 'h': 'Current Shift', 'i': 'Weight / measurements',
     'k': 'Arousal target', 'l': 'WAT', 'm': 'ICP / CPP', 'n': 'Admission',
     'o': 'Viral panel', 'p': 'Blood gas', 'q': 'CBC', 'r': 'Orders',
-    's': 'Intake / output', 't': 'Feeds', 'u': 'Devices', 'v': 'Neuro devices', 'w': 'Pacemaker', 'x': 'Diet', 'y': 'CAPD', 'z': 'ECG / QTc', 'ab': 'Dietary orders', 'ac': 'BM status (24 hours)', 'ad': 'ECLS settings', 'ae': 'Code Status', 'document': 'Paste',
+    's': 'Intake / output', 't': 'Feeds', 'u': 'Devices', 'v': 'Neuro devices', 'w': 'Pacemaker', 'x': 'Diet', 'y': 'CAPD', 'z': 'ECG / QTc', 'ab': 'Dietary orders', 'ac': 'BM status (24 hours)', 'ad': 'ECLS settings', 'ae': 'Code Status', 'af': 'PRN administrations', 'document': 'Paste',
 }
 CODES = {
     'ecls_incomplete': 'An ECLS setting is missing, conflicting or unreadable. Unavailable values are shown as UNK. Review the current circuit settings.',
@@ -44,7 +44,7 @@ CODES = {
     'document_rejected': 'The paste could not be assigned safely to one handoff. Nothing was changed.',
 }
 FIELDS = {'', 'WBC', 'HGB', 'HGB_ISTAT', 'HCT', 'HCT_ISTAT', 'MCV', 'PLT', 'ANC', 'ALC', 'method', 'formula', 'rate', 'hours', 'daily_volume', 'caloric_density', 'additives', 'route', 'feeding_type', 'device_date', 'device_size', 'device_secured', 'device_status'}
-ACTIONS = {'not_imported', 'not_updated', 'orders_hidden', 'cell_omitted', 'row_omitted', 'nothing_changed', 'field_unknown', 'feeds_hidden', 'devices_hidden', 'neuro_devices_hidden', 'pacemaker_hidden', 'diet_hidden', 'ecg_hidden', 'current_shift_hidden', 'bowel_movement_hidden', 'ecls_hidden', 'code_status_hidden'}
+ACTIONS = {'not_imported', 'not_updated', 'orders_hidden', 'cell_omitted', 'row_omitted', 'nothing_changed', 'field_unknown', 'feeds_hidden', 'devices_hidden', 'neuro_devices_hidden', 'pacemaker_hidden', 'diet_hidden', 'ecg_hidden', 'current_shift_hidden', 'bowel_movement_hidden', 'ecls_hidden', 'code_status_hidden', 'prn_hidden'}
 
 
 def diagnostic(section: str, code: str, *, line: int = 0, column: int = 0,
@@ -90,6 +90,8 @@ def diagnostic_text(item: dict) -> str:
         return SECTIONS[item['section']] + position + ': ECLS settings could not be imported. Prior circuit settings were cleared. Paste a complete current AD block.'
     if item['action'] == 'code_status_hidden':
         return SECTIONS[item['section']] + position + ': Code status could not be imported. The prior status was cleared. Paste a complete current AE block.'
+    if item['action'] == 'prn_hidden':
+        return SECTIONS[item['section']] + position + ': PRN records could not be imported. Prior records and counts were cleared. Paste a complete current AF block.'
     return SECTIONS[item['section']] + field + position + ': ' + CODES[item['code']] + (' Previous automatic orders are hidden from print.' if item['action'] == 'orders_hidden' and item['code'] != 'orders_skipped' else '') + (' Previous automatic feeds are hidden from print.' if item['action'] == 'feeds_hidden' else '') + (' Previous automatic device details are hidden from print.' if item['action'] in ('devices_hidden', 'neuro_devices_hidden') else '') + (' Previous automatic pacemaker settings are hidden from print.' if item['action'] == 'pacemaker_hidden' else '') + (' Previous automatic diet details are hidden from print.' if item['action'] == 'diet_hidden' else '') + (' Previous QTc and its automatic problem are hidden from print.' if item['action'] == 'ecg_hidden' else '') + (' Prior BM status was cleared. No Yes/No is printed until a valid AC block is supplied.' if item['action'] == 'bowel_movement_hidden' else '')
 
 
@@ -107,6 +109,8 @@ def review_summary(sheet: dict) -> str:
                     else 'incomplete settings, review values shown as UNK')
         elif section == 'ae':
             note = 'not updated; prior code status cleared'
+        elif section == 'af':
+            note = 'not imported; prior PRN records and counts cleared'
         elif section == 'h':
             note = 'not updated; previous shift cleared' if any(i['action'] == 'current_shift_hidden' for i in items) else 'incomplete; unavailable rates withheld'
         elif section == 'r':

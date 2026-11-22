@@ -1,6 +1,36 @@
-<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PICU Handoff 6.98</title><style>body{font:17px/1.6 system-ui,sans-serif;color:#173044;background:#f3f6f8;margin:0}main{max-width:800px;margin:48px auto;padding:40px;background:white;border:1px solid #d8e1e7;border-radius:14px}h1{line-height:1.2}h2{font-size:22px;margin-top:32px}code,pre{background:#eef3f6;padding:3px 6px;border-radius:4px}pre{padding:16px;white-space:pre-wrap}a{color:#0c6480}.version{color:#4c6b7d;font-size:14px;letter-spacing:1px}</style></head><body><main><p class="version">PICU HANDOFF / VERSION 6.98</p><h1>Print timer and one-page fitting</h1><p>Print all now shows a live elapsed timer and counts prepared handoffs. Click Prepare selected handoffs, wait for Ready to download, then download the PDF.</p><p>Choose Auto-fit to 1 page. When needed, the print layout uses compact medication and device text and omits Goals / Follow-up. Saved notes remain intact. Exceptionally long clinical content continues onto another page and is reported.</p><h2>Install from 6.97</h2><p>Extract <code>PICU698.zip</code> and open <code>PICU_Handoff_v6_98_Print_Timer_One_Page</code>. Replace the existing files below and add <code>print_feedback.py</code>:</p><pre>app.py
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>PICU Handoff 6.99</title><style>body{font:16px/1.6 system-ui,sans-serif;max-width:900px;margin:40px auto;padding:0 24px;color:#22313b}h1,h2{color:#153f53}pre{white-space:pre-wrap;background:#f2f5f7;padding:18px}li{margin:6px 0}</style><h1>PICU Handoff 6.99</h1><p>CPAP Trial Data and verified PRN counts.</p><h2>Install</h2><pre>PICU Handoff 6.99
+Baseline: 6.98
+
+Extract PICU699.zip and open PICU_Handoff_v6_99_CPAP_PRN.
+
+Replace these existing files:
+app.py
+categories.py
+clinical_style.py
 error_store.py
 exports.py
-pdf_cache.py
-print_feedback.py</pre><p>Reboot Streamlit once and confirm <code>Version 6.98</code>.</p><p>For an earlier version, use the complete package contents. Keep your existing Streamlit Secrets and encryption key.</p><p><a href="examples/adaptive_one_page_preview.pdf">Synthetic print preview</a> &middot; <a href="README.md">Release notes</a> &middot; <a href="TEST_REPORT.md">Verification</a></p><p>367 targeted tests passed. Ready to install. This package has not been deployed to the live application.</p></main></body></html>
+import_review.py
+importing.py
+medications.py
+models.py
+parser.py
+ventilation.py
+
+Add these new files beside app.py:
+prn_counts.py
+prn_html.py
+prn_ui.py
+
+Reboot Streamlit and confirm Version 6.99.
+Paste the complete SmartPhrase to import the AF section.
+Open Medications &gt; PRN counts and verify administration times and doses against the MAR.
+Confirm the count for each medication you want displayed.
+
+The printed count runs from the most recent 7 a.m. Eastern through handoff generation.
+Only the number is added after PRN. Unconfirmed counts are omitted.
+Generic infusion volumes are not automatically treated as PRN doses.
+
+Keep current Streamlit Secrets, the encryption key, and repository settings.
+Dependencies and archive schema 34 are preserved.
+Ready to install. No live deployment performed.
+</pre><h2>Details</h2><p>See README.md for the PRN review workflow, ARCHIVE_COMPATIBILITY.txt for saved-data handling, and TEST_REPORT.md for verification.</p></html>

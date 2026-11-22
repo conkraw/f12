@@ -114,13 +114,17 @@ def infusion_section_prefix(sheet: dict, section: str, has_body: bool) -> str:
     return prefix
 
 
-def field_markup(sheet: dict, fields: dict, section: str, esc=escape) -> str:
+def field_markup(sheet: dict, fields: dict, section: str, esc=escape, *, live_prn_counts: bool = False) -> str:
     """Escape source text while emphasizing generated headings, names and doses."""
     text = fields[section]
     if section == "FEN / GI":
         return fen_gi_body(sheet["fields"][section], sheet["medications"], sheet["intake_output"], True, esc, feeds=feeds_for_output(sheet), feeds_failed=False, diet=diet_for_output(sheet), diet_failed=False, dosing_weight=sheet["dosing_weight"] if "i" not in sheet["import_warnings"] else "", sheet=sheet)
     if section in INFUSION_SECTIONS:
-        body = render_body_blocks(system_body_blocks(section, sheet["fields"][section], sheet["medications"], sheet), True, esc)
+        blocks = system_body_blocks(section, sheet["fields"][section], sheet["medications"], sheet)
+        body = render_body_blocks(blocks, True, esc)
+        if live_prn_counts and section == "Neurologic":
+            from prn_html import mark_live_prn_counts
+            body = mark_live_prn_counts(sheet, body, blocks, esc)
         prefix = observation_markup(infusion_section_prefix(sheet, section, bool(body.strip())), esc)
         if section == "Respiratory":
             prefix = re.sub(r"(?m)^Vent Settings$", "<b>Vent Settings</b>", prefix)
@@ -167,9 +171,10 @@ def _save_markup(sheet: dict, save_statuses: dict | None = None) -> str:
 
 @stable_window_clock
 def handoff_html(sheet: dict, printed_at: datetime | None = None, *, save_statuses: dict | None = None) -> str:
+    from prn_html import PRN_PRINT_SCRIPT
     fields = display_fields(sheet, include_lab_text=False)
     headers = ''.join('<th>' + escape(label) + '</th>' for label, _ in COLUMNS)
-    cells = ''.join('<td><div class="content">' + (patient_markup(sheet, fields) if section is None else field_markup(sheet, fields, section)) + '</div></td>' for _, section in COLUMNS)
+    cells = ''.join('<td><div class="content">' + (patient_markup(sheet, fields) if section is None else field_markup(sheet, fields, section, live_prn_counts=True)) + '</div></td>' for _, section in COLUMNS)
     cols = ''.join(f'<col style="width:{w*100:.1f}%">' for w in WIDTHS)
     bands = []
     problems = problem_text(sheet, rich=True)
@@ -209,7 +214,7 @@ footer{font:6.1pt/1.2 Arial,sans-serif;margin-top:4px}
 </style></head><body><main><div class="meta"><span><span data-print-label>Print prepared: </span><span data-print-time>''' + escape(eastern_print_time(printed_at)) + '''</span> | Room ''' + escape(sheet['room']) + '''</span><span>Reference ''' + escape(sheet['id'][:8]) + ' | PICU HANDOFF' + '</span></div>' + '<div class="save-meta">' + _save_markup(sheet, save_statuses) + '</div>' + '''
 <table class="systems"><colgroup>''' + cols + '</colgroup><thead><tr>' + headers + '</tr></thead><tbody><tr>' + cells + '</tr></tbody></table>' + ''.join(bands) + access_table + airway_band + '''
 <footer>Confirm the current patient in Epic. Blank sections are not confirmed normal. Downloaded copies are not encrypted. Infusion rates reflect the source Last Rate, not a live feed. Lab windows evaluated: ''' + escape(eastern_print_time(window_clock())) + '''. Download again to refresh filtered results.</footer>
-</main>''' + PRINT_TIME_SCRIPT + '</body></html>'
+</main>''' + PRINT_TIME_SCRIPT + PRN_PRINT_SCRIPT + '</body></html>'
 
 
 def _pdf_text(text: str) -> str:
@@ -799,7 +804,7 @@ def pdf_content_signature(sheet: dict, printed_at: datetime | None = None, *,
     validate_sheet(sheet)
     fields = display_fields(sheet, include_lab_text=False)
     payload = {
-        'renderer': '6.98-adaptive-one-page-v1', 'target_pages': target_pages,
+        'renderer': '6.99-cpap-prn-v1', 'target_pages': target_pages,
         'sheet': {key: value for key, value in sheet.items()
                   if key not in ('created_at', 'updated_at')},
         'fields': fields,
@@ -822,6 +827,7 @@ def pdf_content_signature(sheet: dict, printed_at: datetime | None = None, *,
 
 @stable_window_clock
 def handoffs_html(sheets: list[dict], printed_at: datetime | None = None, *, save_statuses: dict | None = None) -> str:
+    from prn_html import PRN_PRINT_SCRIPT
     if not sheets or len(sheets) > 100:
         raise ValueError("Select between 1 and 100 handoffs to print.")
     if len({s["room"] for s in sheets}) != len(sheets):
@@ -836,7 +842,7 @@ main{margin-bottom:24px}.printbar{font:15px Arial,sans-serif;max-width:11in;marg
 @media print{.printbar{display:none}main{break-after:page;margin:0}main:last-child{break-after:auto}}
 </style></head>"""
     pages = ["<main>" + doc.split("<main>", 1)[1].split("</main>", 1)[0] + "</main>" for doc in docs]
-    return head + '<body><div class="printbar"><button onclick="window.print()">Print all handoffs</button> Landscape Letter. Each room starts on a new page.</div>' + "".join(pages) + PRINT_TIME_SCRIPT + "</body></html>"
+    return head + '<body><div class="printbar"><button onclick="window.print()">Print all handoffs</button> Landscape Letter. Each room starts on a new page.</div>' + "".join(pages) + PRINT_TIME_SCRIPT + PRN_PRINT_SCRIPT + "</body></html>"
 
 
 def download_payload(sheets: list[dict], kind: str, expires_at: float | None = None, *, target_pages: int = 1, cancelled=None, save_statuses: dict | None = None, pdf_cache=None):

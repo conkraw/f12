@@ -1,35 +1,26 @@
-# PICU Handoff 6.98 verification
+# PICU Handoff 6.99 verification
 
-367 unique targeted tests passed in their final results with zero unresolved failures, errors or skipped tests. One new assertion was adjusted to account for a legitimate PDF line wrap, and its targeted retry passed.
+908 distinct targeted tests passed in the final verification set. The most recent result for every test is passing.
 
-| Test module | Passed |
-| --- | ---: |
-| tests.test_adaptive_one_page | 11 |
-| tests.test_batch_exports | 8 |
-| tests.test_census_download_guard | 21 |
-| tests.test_home_navigation | 19 |
-| tests.test_iv_fluids_integration | 21 |
-| tests.test_lumbar_drain_integration | 19 |
-| tests.test_measurement_notes_observed_pip | 1 |
-| tests.test_pdf_cache | 68 |
-| tests.test_print_feedback | 23 |
-| tests.test_print_fit_reset | 49 |
-| tests.test_processing_feedback | 18 |
-| tests.test_save_before_print | 45 |
-| tests.test_workflow_print | 64 |
+The final broad run passed 907 tests. Its new mapping-preservation test initially used the wrong synthetic mapping key. Correcting the test fixture to the application's existing destination field produced a passing rerun. No production code change was required for that correction.
 
-## Print preparation and download
+## Coverage
 
-The checks cover elapsed feedback, actual completed-handoff counts, cleanup after errors, preparation failure and current saved-record guards. Readiness is reached only after the final archive check. Actual downloads retain room identity, content version, reset, cancellation and session expiry checks. Anonymous preparation metadata stays in the current session and is not saved in the archive.
+- AF boundaries, incomplete blocks, replacement imports, source normalization, and removal of clinician names.
+- All eight medications and brand aliases, confirmed zero, unresolved values, duplicate charting, and missing-dose review.
+- Most recent 7 a.m. through print time, midnight, exact boundaries, future records, and both daylight saving changes.
+- Current and historical PS-CPAP headings, omitted duplicate rate, preserved other modes, and fallback requirements.
+- Text, HTML, individual PDF, combined PDF, and cached PDF output.
+- Browser HTML print refresh, including multiple rooms and invalid metadata.
+- Eight real Streamlit AppTest form cases, including rejection of fractional counts without truncation.
+- Guarded saves, stale callbacks, room replacement, encrypted archive round trips, and mapping-only synchronization.
 
-Native Streamlit AppTest checks passed without exceptions. They exercise the Prepare button, disabled and enabled Download states, readiness invalidation, failure handling and navigation. These are local interface checks, not live deployment or physical printer tests.
+## Visual and source checks
 
-## Adaptive print layout
+A synthetic PDF was rendered and visually inspected. It has one page, one CPAP Trial Data heading, no CPAP rate duplication, and PRN counts next to the expected medication orders.
 
-Checks cover normal one-page output, optional Goals / Follow-up omission, the explicit two-page setting, exceptionally long continuation output, bounded font sizes, saved-record immutability, cache parity and PDF page boundaries. Clinical columns, Other Medications, Devices, labs, airway details and additional notes remain present. Saved Goals / Follow-up content remains in HTML and text output.
+The uploaded example imports without section errors. Its AF block contains 44 sanitized volume records. No unreviewed numeric PRN count is emitted. The real source is not included in this package.
 
-The dense synthetic preview fits one page at 8-point main text and 6-point secondary text. It passed visual inspection and matched the cached PDF pixel for pixel. Its synthetic clinical sentinels remained present. No uploaded clinical source or patient-derived PDF is included.
+An older continuation-page test used 150 short secondary-band lines, which already fit on one page in the unchanged 6.98 baseline. Its fixture now uses 600 bounded synthetic lines to continue testing warning suppression on actual continuation pages.
 
-Private source verification found a one-page result at 7.5-point main text in this version, compared with 7 points in the prior one-page fitter. The prior normal 8-point layout already used two pages when the two-page option was selected. Local timing improved, but production preparation speed is not guaranteed.
-
-Five runtime files changed, including the new print_feedback.py. Python syntax checks passed. There are no dependency or saved-data schema changes. No live deployment or production archive write was performed.
+Existing pypdf and pytest-plugin deprecation warnings do not change the passing results. No live app or production archive was accessed for these checks.

@@ -431,6 +431,10 @@ def medication_blocks(section: str, notes: str, rows: list[dict], sheet: dict | 
     fluid_context = {"dosing_weight": dosing_weight if dosing_weight is not None else (sheet or {}).get("dosing_weight", ""),
                      "import_warnings": (sheet or {}).get("import_warnings", {})}
     display_rows = medication_rows_for_display(rows, sheet, diet)
+    # Counts are computed from confirmed, timestamped PRN administrations at
+    # the active export clock. They never alter medication orders or mappings.
+    from prn_counts import canonical_medication, prn_counts
+    counts = prn_counts(sheet) if sheet is not None and section == "Neurologic" else {}
     meds = [r for r in display_rows if visible(r) and effective_section(r) == section]
     paths = {r["id"]: placement(r) for r in meds}
     # An Or refers to its preceding source order, not whichever drug happens
@@ -525,6 +529,7 @@ def medication_blocks(section: str, notes: str, rows: list[dict], sheet: dict | 
                     order=path["order"], rows=[])) if path["parent_id"] else root)
                 bucket.setdefault("observations", []).append(("observation", bm))
     anchor = theophylline_anchor(sheet) if sheet else ""
+    counted_medications = set()
     def entries(items):
         blocks = []
         for row in items:
@@ -542,6 +547,11 @@ def medication_blocks(section: str, notes: str, rows: list[dict], sheet: dict | 
                 annotation = dose_per_kg_annotation(row, sheet, paths[row["id"]])
                 if annotation:
                     rendered = dict(rendered, _dose_per_kg=annotation)
+            medication = canonical_medication(row.get("name", ""))
+            if (medication in counts and medication not in counted_medications and not emphasize
+                    and re.search(r"\bPRN\b|\bas needed\b", row.get("frequency", ""), re.I)):
+                rendered = dict(rendered, _prn_count=counts[medication])
+                counted_medications.add(medication)
             blocks.append(("iv_fluid" if fluid else "infusion" if emphasize else "medication", rendered))
             if row["id"] == anchor:
                 from lab_windows import theophylline_summary

@@ -75,6 +75,8 @@ def value_markup(text: str, esc=escape) -> str:
 
 def clinical_runs(text: str) -> list[tuple[str, bool, str]]:
     """Plain text segments with bold/color metadata, for vector drawing."""
+    if text.strip() == "CPAP Trial Data":
+        return [(text, True, "")]
     label, colon, rest = text.partition(":")
     if (colon and label.strip().casefold() == "qtc"
             and re.fullmatch(r"\s+\d+(?:\.\d+)? msec(?: \[[^]\r\n]+\])? \(!\)\s*", rest)):

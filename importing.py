@@ -29,11 +29,12 @@ from diet import parse_diet
 from ecg import parse_ecg
 from ecls import parse_ecls
 from code_status import parse_code_status
+from prn_counts import parse_prn
 from fen_gi import apply_gi_rules
 from medication_groups import apply_group_rules
 from import_review import diagnostic, diagnostic_text
 
-SUPPORTED_SECTIONS = tuple("abcdefghiklmnopqrstuvwxyz") + ("ab", "ac", "ad", "ae")
+SUPPORTED_SECTIONS = tuple("abcdefghiklmnopqrstuvwxyz") + ("ab", "ac", "ad", "ae", "af")
 
 
 @dataclass
@@ -78,7 +79,7 @@ def import_sections(sheet: dict, text: str, settings: dict, *, respiratory_first
     parsed = parse_smartphrase(text)
     relevant = set(SUPPORTED_SECTIONS) & (set(parsed.blocks) | parsed.invalid)
     if not relevant:
-        out.errors.append("No supported block was found. Use paired A, B, C, D, E, F, G, H, I, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, AB, AC, AD or AE dividers.")
+        out.errors.append("No supported block was found. Use paired A, B, C, D, E, F, G, H, I, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, AB, AC, AD, AE or AF dividers.")
         return out
     # Repeated paired sections can mean two patients were pasted together.
     # That document-wide identity ambiguity cannot be repaired by partial import.
@@ -113,8 +114,10 @@ def import_sections(sheet: dict, text: str, settings: dict, *, respiratory_first
         if group == 'ae':
             # A failed status import must not present a prior resuscitation order.
             candidate['code_status'] = ''
+        if group == 'af':
+            candidate['prn'] = None
         item = diagnostic(group, code,
-                          action='code_status_hidden' if group == 'ae' else 'ecls_hidden' if group == 'ad' else 'bowel_movement_hidden' if group == 'ac' else 'current_shift_hidden' if group == 'h' else 'orders_hidden' if group == 'r' else 'feeds_hidden' if group == 't' else 'devices_hidden' if group == 'u' else 'neuro_devices_hidden' if group == 'v' else 'pacemaker_hidden' if group == 'w' else 'diet_hidden' if group in ('x', 'ab') else 'ecg_hidden' if group == 'z' else 'not_updated', line=line)
+                          action='prn_hidden' if group == 'af' else 'code_status_hidden' if group == 'ae' else 'ecls_hidden' if group == 'ad' else 'bowel_movement_hidden' if group == 'ac' else 'current_shift_hidden' if group == 'h' else 'orders_hidden' if group == 'r' else 'feeds_hidden' if group == 't' else 'devices_hidden' if group == 'u' else 'neuro_devices_hidden' if group == 'v' else 'pacemaker_hidden' if group == 'w' else 'diet_hidden' if group in ('x', 'ab') else 'ecg_hidden' if group == 'z' else 'not_updated', line=line)
         candidate['import_warnings'][group] = [item]
         out.diagnostics.append(item)
         if group not in out.skipped:
@@ -355,6 +358,14 @@ def import_sections(sheet: dict, text: str, settings: dict, *, respiratory_first
                     continue
                 candidate["code_status"] = status.value
                 out.imported.append("code status" if status.value else "code status cleared")
+            elif letter == "af":
+                prn = parse_prn(parsed.blocks[letter])
+                if prn.error:
+                    out.errors.append(prn.error)
+                    continue
+                candidate["prn"] = prn.data
+                out.notices.extend(prn.issues)
+                out.imported.append("PRN records for review" if prn.data else "PRN display cleared")
             elif letter == "z":
                 ecg = parse_ecg(parsed.blocks[letter])
                 if ecg.error:
@@ -447,7 +458,7 @@ def import_replacement(room: str, text: str, settings: dict, *, respiratory_firs
     omitted_actions = {"not_updated", "orders_hidden", "feeds_hidden",
                        "devices_hidden", "neuro_devices_hidden", "pacemaker_hidden",
                        "diet_hidden", "ecg_hidden", "current_shift_hidden",
-                       "bowel_movement_hidden", "ecls_hidden", "code_status_hidden"}
+                       "bowel_movement_hidden", "ecls_hidden", "code_status_hidden", "prn_hidden"}
     for entries in result.sheet.get("import_warnings", {}).values():
         for item in entries:
             if item["section"] in result.skipped and item["action"] in omitted_actions:

@@ -184,8 +184,9 @@ def test_latest_ps_cpap_selects_trial_values_and_keeps_invasive_route():
     assert sheet["sbs_vent_mode"] == PS_CPAP
     assert sheet["ventilation"]["values"]["Pressure Support (cm H2O)"] == "8 cm H20"
     first = format_ventilation(sheet["ventilation"]).split("\n---\n", 1)[0]
+    assert first.splitlines()[0] == "CPAP Trial Data"
     assert "Mode: PS-CPAP" in first
-    assert "11/20/26 18:00" in first.splitlines()[0]
+    assert "11/20/26 18:00" in next(line for line in first.splitlines() if line.startswith("Mode:"))
     assert "Set RR: 21" not in first and "Set TV: 180" not in first
 
 

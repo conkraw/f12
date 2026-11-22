@@ -182,7 +182,9 @@ def test_warnings_stay_in_app_not_html_text_pdf_or_continuation_pages():
     pdf = PdfReader(BytesIO(handoff_pdf(sheet)))
     assert 'IMPORT REVIEW' not in pdf.pages[0].extract_text()
     assert '29.4' not in ''.join(p.extract_text() for p in pdf.pages)
-    sheet['fields']['Other Medications'] = '\n'.join('Extra example medication ' + str(i) for i in range(150))
+    # The 6.98 compact secondary band can fit 150 short lines on one page.
+    # Keep this a real continuation-page check with a larger bounded fixture.
+    sheet['fields']['Other Medications'] = '\n'.join('Extra example medication ' + str(i) for i in range(600))
     pdf = PdfReader(BytesIO(handoff_pdf(sheet)))
     assert len(pdf.pages) > 1
     assert all('IMPORT REVIEW' not in p.extract_text() for p in pdf.pages)

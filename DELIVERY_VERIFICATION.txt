@@ -1,18 +1,14 @@
-PICU Handoff 6.98
+PICU Handoff 6.99
+Complete package based on PICU698.zip, version 6.98.
 
-Complete package based on 6.97.
-Changed runtime files: app.py, error_store.py, exports.py, pdf_cache.py, print_feedback.py.
-New runtime file: print_feedback.py.
+CPAP Trial Data heading with duplicate CPAP respiratory rate omitted.
+AF PRN event import and explicit source review for all eight requested drugs.
+Confirmed counts use the most recent 7 a.m. through print preparation.
+No PRN event dates or times are added to printed medication entries.
+PDF cache and HTML print-time refresh account for the changing window.
 
-Visible elapsed timer and completed handoff counts during Print all preparation.
-Download becomes ready only after packet preparation and final verification.
-Compact one-page PDF fitting omits Goals / Follow-up when needed without changing saved notes.
-Other Medications and Devices use 6-point text in the compact layout.
-All remaining clinical content is preserved, including continuation pages when required.
-
-367 targeted tests passed.
-Native Streamlit interface checks passed without exceptions.
-Synthetic one-page PDF passed visual inspection and cache pixel comparison.
-No new dependencies or archive schema change.
-
-Ready to install. No live deployment performed.
+908 targeted checks passed after final fixture corrections.
+Synthetic one-page PDF was visually inspected.
+Archive schema 34 and dependencies are preserved.
+No supplied patient source is included.
+No live deployment or production storage writes were performed.

@@ -14,6 +14,7 @@ from ventilator_modes import spec, display_mode, control_family, strip_setting_m
 VENTILATION_HISTORY_FALLBACK_NOTE = (
     "Mode history unavailable. Showing first reported settings from this paste. Latest mode unconfirmed."
 )
+CPAP_TRIAL_TITLE = "CPAP Trial Data"
 
 LABELS = (
     "Vent Mode",
@@ -246,7 +247,10 @@ def _format_single_ventilation(data: dict | None) -> str:
     if family == "NAVA":
         return _format_nava(data)
     home = home_vent(data)
-    lines = ["Device: Home Vent"] if home else []
+    cpap_trial = _mode_identity(data["mode"]) == _mode_identity("PS-CPAP")
+    lines = [CPAP_TRIAL_TITLE] if cpap_trial else []
+    if home:
+        lines.append("Device: Home Vent")
     lines.append("Mode: " + display_mode(data["mode"], home=home))
 
     def add(source: str, label: str, unit: str = "") -> None:
@@ -254,7 +258,10 @@ def _format_single_ventilation(data: dict | None) -> str:
         if is_present(value):
             lines.append(label + ": " + _measurement(value, unit))
 
-    add("Resp Rate (Set)", "Set RR")
+    # The general respiratory observations already report the rate. Keep
+    # the stored source value but omit the duplicate from a PS-CPAP trial.
+    if not cpap_trial:
+        add("Resp Rate (Set)", "Set RR")
     if family == "AVAPS":
         # Epic's AVAPS rate field explicitly uses pressure/time units. Keep
         # it distinct from an actual recorded respiratory-rate setting.
@@ -969,7 +976,8 @@ def parse_first_reported_ventilation(block: str) -> VentilationResult:
         result.data = None
         return result
     displayed_settings = [line for line in _format_single_ventilation(result.data).splitlines()
-                          if line and not line.startswith(("Mode:", "Device:"))]
+                          if line and line != CPAP_TRIAL_TITLE
+                          and not line.startswith(("Mode:", "Device:"))]
     if not result.data["values"] or not displayed_settings:
         result.error = "No first reported ventilator settings were available in this paste."
         result.data = None

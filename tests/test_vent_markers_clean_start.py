@@ -97,7 +97,11 @@ def test_all_named_modes_classify_and_abbreviate_with_marker(mode,definition,mar
 def test_supported_short_and_generic_modes_keep_meaning(mode,expected):
     r=parse_ventilation('Vent Mode: (S) '+mode+'\nResp Rate (Set): (S) 12')
     assert r.data is not None and not r.error
-    assert format_ventilation(r.data).startswith('Mode: '+expected+'\nSet RR: 12')
+    if expected == 'PS-CPAP':
+        assert format_ventilation(r.data).startswith('CPAP Trial Data\nMode: PS-CPAP')
+        assert 'Set RR' not in format_ventilation(r.data)
+    else:
+        assert format_ventilation(r.data).startswith('Mode: '+expected+'\nSet RR: 12')
 
 
 @pytest.mark.parametrize('marker',['(S)','( S )','(s)(S)'])

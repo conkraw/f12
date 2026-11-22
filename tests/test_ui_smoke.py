@@ -42,6 +42,17 @@ def equip(app,monkeypatch):
         setattr(st,name,lambda *args,**kwargs:None)
     for name in ['text_input','text_area','selectbox','radio','checkbox','file_uploader','number_input']:
         setattr(st,name,control)
+    def data_editor(data, **kwargs):
+        key=kwargs.get('key')
+        if key:
+            assert key not in keys, 'Duplicate widget key: '+key
+            keys.add(key)
+        # Rendering a table without a submitted edit must not mutate its data.
+        return data.copy(deep=True)
+    st.data_editor=data_editor
+    st.column_config=types.SimpleNamespace(
+        TextColumn=lambda *args,**kwargs:dict(kwargs),
+        NumberColumn=lambda *args,**kwargs:dict(kwargs))
     st.expander=lambda *a,**k:Panel(st)
     st.empty=lambda *a,**k:Panel(st)
     st.container=lambda *a,**k:Panel(st)

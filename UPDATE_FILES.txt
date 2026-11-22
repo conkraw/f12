@@ -1,24 +1,35 @@
-PICU Handoff 6.98
-Baseline: 6.97
+PICU Handoff 6.99
+Baseline: 6.98
 
-Extract PICU698.zip and open PICU_Handoff_v6_98_Print_Timer_One_Page.
+Extract PICU699.zip and open PICU_Handoff_v6_99_CPAP_PRN.
 
-Replace these four existing runtime files and add print_feedback.py:
+Replace these existing files:
 app.py
+categories.py
+clinical_style.py
 error_store.py
 exports.py
-pdf_cache.py
-print_feedback.py
+import_review.py
+importing.py
+medications.py
+models.py
+parser.py
+ventilation.py
 
-Reboot Streamlit once and confirm Version 6.98.
+Add these new files beside app.py:
+prn_counts.py
+prn_html.py
+prn_ui.py
 
-Print all: choose rooms, click Prepare selected handoffs, wait for Ready to download, then download the PDF.
-Choose Auto-fit to 1 page to use the compact layout and automatic Goals / Follow-up omission when needed.
-Saved Goals / Follow-up content is retained.
-Exceptional overflow remains visible and is reported without cutting off clinical content.
+Reboot Streamlit and confirm Version 6.99.
+Paste the complete SmartPhrase to import the AF section.
+Open Medications > PRN counts and verify administration times and doses against the MAR.
+Confirm the count for each medication you want displayed.
 
-For an earlier version, use the complete package contents.
-Keep existing Streamlit Secrets and the encryption key.
-No dependency or archive schema change.
+The printed count runs from the most recent 7 a.m. Eastern through handoff generation.
+Only the number is added after PRN. Unconfirmed counts are omitted.
+Generic infusion volumes are not automatically treated as PRN doses.
 
+Keep current Streamlit Secrets, the encryption key, and repository settings.
+Dependencies and archive schema 34 are preserved.
 Ready to install. No live deployment performed.

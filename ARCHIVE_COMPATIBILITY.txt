@@ -1,18 +1,17 @@
-PICU Handoff 6.89 archive compatibility
+PICU Handoff 6.99 archive compatibility
 
-Archive schema remains 34. code_status is an optional, validated text field.
-Existing archives without this field remain valid. Failed or absent AE in
-a complete replacement paste cannot preserve an earlier patient status.
+Archive schema remains 34. The optional prn field is a versioned, validated
+record of medication keys, timestamps, volumes, dose counts, and per-medication
+review metadata. Raw SmartPhrase text and clinician names are not stored in it.
 
-New medication groups are backfilled into older category catalogs during
-reads. Requested fixed placements apply without rewriting saved category
-definitions. Hidden, excluded and Ignore choices retain their effect.
+Existing archives without this field remain valid. Mapping synchronization
+continues to require the same archive schema and does not copy PRN records or
+other patient data between repositories. The mapping preservation check passes.
 
-Original PN and lipid medication rows remain stored. The latest-order
-filter changes handoff display only. Dietary scheduling data uses the
-existing source field and does not require a schema migration.
+New PRN data follows the existing encrypted save workflow. A complete room
+replacement uses only the new SmartPhrase. Missing or failed AF data cannot
+restore old patient PRN records or old review decisions.
 
-Keep existing encrypted archives, passwords, encryption keys and repository
-settings. This package does not contain production credentials or uploaded
-patient source examples. Prior app versions may reject the new optional
-code-status field, so use the updated application files together.
+Prior app versions may reject the new optional field. Install all required
+runtime files together and use the current app version for these records.
+Keep current credentials, encryption keys, and repository settings.
