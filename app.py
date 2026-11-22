@@ -1,4 +1,4 @@
-"""PICU SmartPhrase v6.99: CPAP trial labels and reviewed PRN counts."""
+"""PICU SmartPhrase v6.99.2: import-error journal version fix."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,
@@ -11,6 +11,7 @@ from hashlib import sha256
 from pathlib import Path
 import time
 import json
+import re
 from threading import Event
 from datetime import datetime, timezone
 
@@ -18,7 +19,7 @@ import streamlit as st
 from cryptography.fernet import Fernet
 from exports import handoff_html, handoff_text, handoff_pdf, handoffs_pdf, handoffs_html, print_layout_info, print_fit_report, download_payload
 from github_store import GitHubConfig, GitHubVault, StorageError
-from error_store import ErrorJournal, new_error_event
+from error_store import APP_VERSION, ErrorJournal, new_error_event
 from import_review import review_summary, diagnostic_text, SECTIONS as REVIEW_SECTIONS
 from models import (MAX_FIELD, SYSTEMS, ValidationError, new_sheet, new_vault,
                     normalize_room, save_sheet_in, validate_vault, validate_sheet,
@@ -2186,7 +2187,7 @@ def main() -> None:
         st.button("Home", key="home_screen", on_click=return_home, args=(store,),
                   help="Save all open handoffs and return to the starting screen.", use_container_width=True)
         st.header("PICU Handoff")
-        st.caption("Version 6.99 | CPAP trial data and PRN counts")
+        st.caption(f"Version {APP_VERSION} | Import warning fix")
         if history_ready:
             st.caption("Respiratory mode-history parser: ready")
         else:

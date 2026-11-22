@@ -1,35 +1,30 @@
-PICU Handoff 6.99
-Baseline: 6.98
+PICU Handoff 6.99.2
+Baseline: 6.99.1
 
-Extract PICU699.zip and open PICU_Handoff_v6_99_CPAP_PRN.
+Extract PICU6992.zip and open PICU_Handoff_v6_99_2_Import_Warning_Fix.
 
-Replace these existing files:
+If version 6.99.1 is installed, replace these files beside the app.py that
+Streamlit runs:
 app.py
-categories.py
-clinical_style.py
 error_store.py
-exports.py
-import_review.py
-importing.py
-medications.py
-models.py
-parser.py
-ventilation.py
 
-Add these new files beside app.py:
-prn_counts.py
-prn_html.py
-prn_ui.py
+Commit the replacements and reboot Streamlit once.
+Confirm Version 6.99.2 in the sidebar.
+Reopen the handoff and check its saved status and Alerts.
 
-Reboot Streamlit and confirm Version 6.99.
-Paste the complete SmartPhrase to import the AF section.
-Open Medications > PRN counts and verify administration times and doses against the MAR.
-Confirm the count for each medication you want displayed.
+If updating directly from 6.99, also replace prn_counts.py from this package.
+For version 6.98 or earlier, upload the complete package's application files.
+Use the original deployment setup instructions for a new installation.
+Keep the existing Streamlit Secrets and encryption key.
 
-The printed count runs from the most recent 7 a.m. Eastern through handoff generation.
-Only the number is added after PRN. Unconfirmed counts are omitted.
-Generic infusion volumes are not automatically treated as PRN doses.
+This release fixes the technical error journal's version validator. It now
+accepts both legacy versions such as 6.99 and patch versions such as 6.99.2.
+Import warnings can be recorded without the version-validation exception.
+The sidebar uses the same version constant as the technical journal.
 
-Keep current Streamlit Secrets, the encryption key, and repository settings.
-Dependencies and archive schema 34 are preserved.
-Ready to install. No live deployment performed.
+This exception happened after the handoff commit step. It did not itself
+undo a completed save. Check the saved handoff instead of assuming data loss.
+
+469 targeted tests passed, including the exact native import-warning path.
+Dependencies and archive schema 34 are unchanged.
+Ready to install. No live deployment was performed.

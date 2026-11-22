@@ -1,4 +1,18 @@
-# PICU Handoff 6.99
+# PICU Handoff 6.99.2
+
+## Import-warning fix
+
+Version 6.99.1 could raise ValueError while recording an import warning because the technical journal accepted only two numeric version components. Its own version had three. The validator now accepts both two-component versions such as 6.99 and three-component versions such as 6.99.2, with each component bounded to three digits. Older encrypted technical records remain readable. Malformed versions remain invalid.
+
+The sidebar reads the same version constant used by the journal. The previous PRN preview and timestamp-validation corrections are included.
+
+## Update an installed 6.99.1 app
+
+Extract PICU6992.zip and open PICU_Handoff_v6_99_2_Import_Warning_Fix. Replace app.py and error_store.py beside the app.py that Streamlit runs. Commit the replacements and reboot Streamlit once. The sidebar should show Version 6.99.2. Reopen the handoff and check its saved status and Alerts.
+
+If updating directly from 6.99, also replace prn_counts.py from this package. For 6.98 or an earlier version, use the complete package's application files. Keep the current Streamlit Secrets and encryption key. Dependencies and archive schema 34 are unchanged.
+
+The reported exception was reached after the handoff commit step. It did not itself undo a completed save. Reopen the room and check the saved handoff instead of assuming it was lost.
 
 ## CPAP trial display
 
@@ -22,33 +36,8 @@ Click Confirm [medication] PRN count to validate and save that medication's revi
 
 A complete replacement paste clears previous PRN entries and review decisions along with the rest of the room's old handoff. A changed medication record invalidates that medication's confirmation. The next 7 a.m. requires a new review. Counts use the administrations present in the pasted and reviewed data. New Epic administrations require a fresh paste or a new verified entry.
 
-## Install from 6.98
+## Verification of this fix
 
-Extract PICU699.zip and open PICU_Handoff_v6_99_CPAP_PRN. Upload the following files beside the app.py that Streamlit runs, replacing matching files and adding the three new PRN modules:
+469 targeted tests passed. A full Streamlit AppTest first reproduced the exact callback traceback with a synthetic import that produced an AF warning. After the fix, that same flow records the technical event, reaches the preview, and saves the handoff. Tests also check encrypted legacy and patch-version journal round trips, failed log writes, room replacement, PRN output, and PDF caching.
 
-- app.py
-- categories.py
-- clinical_style.py
-- error_store.py
-- exports.py
-- import_review.py
-- importing.py
-- medications.py
-- models.py
-- parser.py
-- ventilation.py
-- prn_counts.py
-- prn_html.py
-- prn_ui.py
-
-Reboot Streamlit once and confirm Version 6.99. Paste the complete SmartPhrase again to import the new AF section, then review PRN counts in Medications.
-
-For an earlier version, use the complete package. Keep the current Streamlit Secrets and encryption key. Dependencies and archive schema 34 are preserved. Use the updated application files together. Earlier app code may not recognize the new optional PRN field.
-
-The print-all timer, cached PDF preparation, compact one-page fitting, medication mappings, and full-room replacement workflow from 6.98 remain available. Prior release notes are retained in the V698 files.
-
-## Verification
-
-908 targeted checks passed across parser, source review, midnight and 7 a.m. windows, daylight saving transitions, current and historical CPAP output, all eight medications, individual and combined exports, PDF cache freshness, encrypted archive round trips, mapping synchronization, room replacement, and Streamlit callbacks. Real Streamlit form tests checked blank, zero, fractional, added, deleted, and stale entries. Node tests executed the HTML print-refresh script. A synthetic one-page PDF was rendered and visually checked.
-
-The supplied clinical example was used only for local verification and is not included in this package. The package is ready to install. No live application deployment or production archive write was performed.
+These are local runtime and automated tests. No live app or production archive was accessed. The package contains no supplied patient source. See TEST_REPORT.md for details and the V6991 files for the prior release notes.

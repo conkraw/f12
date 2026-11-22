@@ -16,7 +16,7 @@ from github_store import GitHubVault, StorageError, ConflictError
 from import_review import validate_diagnostic
 
 PREFIX = 'encrypted-data/import-errors'
-APP_VERSION = '6.99'
+APP_VERSION = '6.99.2'
 MAX_RECORD_BYTES = 100000
 NAME = re.compile(r'^\d{8}T\d{6}Z-[0-9a-f]{32}\.enc$')
 
@@ -38,7 +38,7 @@ def validate_event(event: dict) -> None:
         raise ValueError('The technical error record is invalid.')
     if event['schema'] != 1 or not isinstance(event['id'], str) or not re.fullmatch(r'[0-9a-f]{32}', event['id']):
         raise ValueError('The technical error record identifier is invalid.')
-    if not isinstance(event['app_version'], str) or not re.fullmatch(r'\d{1,3}\.\d{1,3}', event['app_version']):
+    if not isinstance(event['app_version'], str) or not re.fullmatch(r'\d{1,3}\.\d{1,3}(?:\.\d{1,3})?', event['app_version']):
         raise ValueError('The technical error version is invalid.')
     if event['status'] not in ('open', 'resolved'):
         raise ValueError('The error review status is invalid.')

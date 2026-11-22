@@ -5,6 +5,7 @@ import json
 import pytest
 import requests
 from cryptography.fernet import Fernet
+import error_store
 from error_store import ErrorJournal, new_error_event, validate_event, event_path, PREFIX
 from import_review import diagnostic
 from github_store import StorageError, ConflictError
@@ -20,6 +21,41 @@ def event():
 def encrypted_response(record, key, sha='record-sha'):
     token = Fernet(key.encode()).encrypt(json.dumps(record).encode())
     return Response(200, dict(type='file', encoding='base64', content=base64.b64encode(token).decode(), sha=sha))
+
+
+def test_current_release_version_can_create_error_event():
+    record = event()
+    assert record['app_version'] == error_store.APP_VERSION
+    validate_event(record)
+
+
+@pytest.mark.parametrize('version', ['6.98', '6.99', '6.99.1', '6.99.2'])
+def test_release_versions_survive_encrypted_journal_roundtrip(monkeypatch, version):
+    monkeypatch.setattr(error_store, 'APP_VERSION', version)
+    record = event()
+    before = deepcopy(record)
+    store, http = store_with([])
+    journal = ErrorJournal(store)
+    payload = journal._payload(record)
+    response = Response(200, dict(type='file', encoding='base64',
+                                 content=payload['content'], sha='record-sha'))
+    restored, sha = journal._decode(response, event_path(record))
+    assert restored == before == record
+    assert restored['app_version'] == version and sha == 'record-sha'
+    assert not http.calls
+
+
+@pytest.mark.parametrize('version', [
+    '', '6', '6.99.', '6..1', '6.99.1.0', '-6.99.1', '6.99.beta',
+    '6.99+1', 'v6.99.1', '6.99.1\n', '6.9999.1', '1000.1', '6.99.1000',
+    None, 6.99,
+])
+def test_invalid_release_versions_are_rejected(monkeypatch, version):
+    monkeypatch.setattr(error_store, 'APP_VERSION', '6.99')
+    record = event()
+    record['app_version'] = version
+    with pytest.raises(ValueError, match='technical error version is invalid'):
+        validate_event(record)
 
 
 def test_error_payload_encrypted_and_create_only_no_vault_overwrite():
