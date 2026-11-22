@@ -1,0 +1,52 @@
+PICU HANDOFF VERSION 6.104
+AIRWAY CLEARANCE DEVICES
+
+Prepared from conkraw/f12 version 6.103 at source commit
+4a72d0a9d2a4a117f0418008d3d261f86a4677a6.
+
+WHAT CHANGED
+The AG section, enclosed by matching agagagag dividers, now imports the
+CPT Delivery Source table. All supplied sessions are read, including
+sessions split across multiple table groups. Multiple devices within a
+single cell are separated and each device is shown once in source order.
+
+The handoff displays the recorded devices in Respiratory after ventilator
+settings and before medication or note content. The heading is:
+Airway Clearance Device: In-Exsufflator Cough Machine, HFCWO
+
+Manual and other recorded device names are supported. No session counts,
+timestamps, or 24-hour cutoff are added. Empty cells and table headers are
+omitted. An empty table leaves the subsection blank. Unreadable AG data
+clears the old device list and produces an import review message.
+
+A complete new handoff replaces the selected room as before. An old device
+list is not carried into a new handoff when AG is absent. Other rooms stay
+unchanged. Existing saved handoffs remain compatible.
+
+INSTALLATION
+Unzip this package. Upload all nine Python files at its top level into
+the root of conkraw/f12. Add airway_clearance_devices.py as a new file.
+Replace app.py, clinical_style.py, error_store.py, exports.py,
+import_review.py, importing.py, models.py and parser.py.
+Commit those files together, then reboot the Streamlit app.
+Confirm that the sidebar displays Version 6.104.
+Paste the current complete SmartPhrase again to populate the new devices.
+
+The tests folder contains automated regression checks. It is optional for
+running the app. The manifest records hashes for the delivered files.
+This package contains the changed files for the current 6.103 app.
+
+VERIFICATION
+29 focused automated checks passed, covering table parsing, duplicate
+removal, split table groups, marker boundaries, import recovery, stale
+value clearing, full room replacement, encrypted archive roundtrip,
+text/HTML/PDF output, escaping, and separate-room PDF output.
+Both supplied example files produced the expected device lists.
+After ignoring generated record identifiers, all other imported fields
+and diagnostics matched the 6.103 baseline for both examples.
+The synthetic PDF was rendered and visually checked for placement and
+readability. All local Python modules compiled and the diff check passed.
+Live Streamlit interaction was not tested in this environment.
+
+The earlier ventilator flow-table and paralytic-count changes are retained.
+No uploaded patient source files are included in this package.

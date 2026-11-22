@@ -23,7 +23,7 @@ LABEL = re.compile(
     r"ECLS settings|AED Drug Levels|Phenobarbital|Phenytoin|Lysis Labs|HGBFREE|LDH|Uric acid|SBS(?: target)?|RASS|Target Arousal Level(?: \(SBS\))?|"
     r"WAT(?:-1)?(?: total score)?(?: \(0-12\))?|CAPD|"
     r"ICP(?: Mean)?(?: \(mmHg\))?|CPP|(?:Last )?NIRS|QTc|Resp(?:iratory Rate)?|RR|"
-    r"FiO2(?:[ \t]*\(%\))?|SpO2|Pulse Ox(?:imetry)?|"
+    r"Airway Clearance Device|FiO2(?:[ \t]*\(%\))?|SpO2|Pulse Ox(?:imetry)?|"
     r"ETCO2(?:[ \t]*\(mmHg\))?|VP|Heart Rate|HR|Pulse(?: rate)?|BP|"
     r"Blood pressure|Cuff|(?:Last )?ART (?:BP|MAP)|Systolic|Diastolic|SBP|DBP|MAP(?: \(mmHg\))?|"
     r"Mean arterial pressure|ABP|Arterial(?: line)?(?: BP| pressure| blood pressure)?(?: \(mmHg\))?|"

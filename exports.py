@@ -25,6 +25,7 @@ from pacemaker import pacemaker_text
 from ecls import ecls_text
 from aed_levels import aed_summary
 from lysis_labs import lysis_summary
+from airway_clearance_devices import airway_clearance_devices_text
 from lab_layout import laboratory_flowables, laboratory_html, LabRow
 from cultures import cultures_text
 from viral import viral_text
@@ -105,9 +106,10 @@ def infusion_section_prefix(sheet: dict, section: str, has_body: bool) -> str:
         parts.append(lysis_summary(sheet))
     elif section == "Respiratory":
         support = respiratory_text(sheet)
+        clearance = airway_clearance_devices_text(sheet)
         level = "" if theophylline_anchor(sheet) else theophylline_summary(sheet)
-        parts.extend((support, level))
-        trailing_support_separator = bool(support and not level)
+        parts.extend((support, clearance, level))
+        trailing_support_separator = bool(support and not clearance and not level)
     prefix = "\n-----\n".join(v for v in parts if v.strip())
     if prefix and (has_body or trailing_support_separator):
         prefix += "\n-----" + ("\n" if has_body else "")

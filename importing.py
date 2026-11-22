@@ -30,11 +30,12 @@ from ecg import parse_ecg
 from ecls import parse_ecls
 from code_status import parse_code_status
 from prn_counts import parse_prn
+from airway_clearance_devices import parse_airway_clearance_devices
 from fen_gi import apply_gi_rules
 from medication_groups import apply_group_rules
 from import_review import diagnostic, diagnostic_text
 
-SUPPORTED_SECTIONS = tuple("abcdefghiklmnopqrstuvwxyz") + ("ab", "ac", "ad", "ae", "af")
+SUPPORTED_SECTIONS = tuple("abcdefghiklmnopqrstuvwxyz") + ("ab", "ac", "ad", "ae", "af", "ag")
 
 
 @dataclass
@@ -79,7 +80,7 @@ def import_sections(sheet: dict, text: str, settings: dict, *, respiratory_first
     parsed = parse_smartphrase(text)
     relevant = set(SUPPORTED_SECTIONS) & (set(parsed.blocks) | parsed.invalid)
     if not relevant:
-        out.errors.append("No supported block was found. Use paired A, B, C, D, E, F, G, H, I, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, AB, AC, AD, AE or AF dividers.")
+        out.errors.append("No supported block was found. Use paired A, B, C, D, E, F, G, H, I, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, AB, AC, AD, AE, AF or AG dividers.")
         return out
     # Repeated paired sections can mean two patients were pasted together.
     # That document-wide identity ambiguity cannot be repaired by partial import.
@@ -116,8 +117,11 @@ def import_sections(sheet: dict, text: str, settings: dict, *, respiratory_first
             candidate['code_status'] = ''
         if group == 'af':
             candidate['prn'] = None
+        if group == 'ag':
+            # A failed current table must not continue displaying old devices.
+            candidate['airway_clearance_devices'] = []
         item = diagnostic(group, code,
-                          action='prn_hidden' if group == 'af' else 'code_status_hidden' if group == 'ae' else 'ecls_hidden' if group == 'ad' else 'bowel_movement_hidden' if group == 'ac' else 'current_shift_hidden' if group == 'h' else 'orders_hidden' if group == 'r' else 'feeds_hidden' if group == 't' else 'devices_hidden' if group == 'u' else 'neuro_devices_hidden' if group == 'v' else 'pacemaker_hidden' if group == 'w' else 'diet_hidden' if group in ('x', 'ab') else 'ecg_hidden' if group == 'z' else 'not_updated', line=line)
+                          action='airway_clearance_devices_hidden' if group == 'ag' else 'prn_hidden' if group == 'af' else 'code_status_hidden' if group == 'ae' else 'ecls_hidden' if group == 'ad' else 'bowel_movement_hidden' if group == 'ac' else 'current_shift_hidden' if group == 'h' else 'orders_hidden' if group == 'r' else 'feeds_hidden' if group == 't' else 'devices_hidden' if group == 'u' else 'neuro_devices_hidden' if group == 'v' else 'pacemaker_hidden' if group == 'w' else 'diet_hidden' if group in ('x', 'ab') else 'ecg_hidden' if group == 'z' else 'not_updated', line=line)
         candidate['import_warnings'][group] = [item]
         out.diagnostics.append(item)
         if group not in out.skipped:
@@ -366,6 +370,13 @@ def import_sections(sheet: dict, text: str, settings: dict, *, respiratory_first
                 candidate["prn"] = prn.data
                 out.notices.extend(prn.issues)
                 out.imported.append("Automatic paralytic PRN counts" if prn.data else "PRN display cleared")
+            elif letter == "ag":
+                clearance = parse_airway_clearance_devices(parsed.blocks[letter])
+                if clearance.error:
+                    out.errors.append(clearance.error)
+                    continue
+                candidate["airway_clearance_devices"] = clearance.devices
+                out.imported.append("airway clearance devices" if clearance.devices else "airway clearance device display cleared")
             elif letter == "z":
                 ecg = parse_ecg(parsed.blocks[letter])
                 if ecg.error:
@@ -458,7 +469,8 @@ def import_replacement(room: str, text: str, settings: dict, *, respiratory_firs
     omitted_actions = {"not_updated", "orders_hidden", "feeds_hidden",
                        "devices_hidden", "neuro_devices_hidden", "pacemaker_hidden",
                        "diet_hidden", "ecg_hidden", "current_shift_hidden",
-                       "bowel_movement_hidden", "ecls_hidden", "code_status_hidden", "prn_hidden"}
+                       "bowel_movement_hidden", "ecls_hidden", "code_status_hidden", "prn_hidden",
+                       "airway_clearance_devices_hidden"}
     for entries in result.sheet.get("import_warnings", {}).values():
         for item in entries:
             if item["section"] in result.skipped and item["action"] in omitted_actions:

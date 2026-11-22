@@ -9,7 +9,7 @@ SECTION_NAMES = {
     "a": "Diagnoses", "b": "Medications", "c": "Invasive Ventilation",
     "d": "Non-invasive Ventilation", "e": "VITALS", "f": "CULTURES",
     "g": "LABS", "h": "INTAKE/OUTPUT", "i": "NUTRITION", "j": "Wound Review",
-    "k": "Target Arousal Level", "l": "WAT Score", "m": "ICP Trends", "n": "Date of Admission", "o": "Respiratory Viral Panel", "p": "Blood Gas", "q": "Complete Blood Count", "r": "Orders Placed This Encounter", "s": "Intake / Output totals", "t": "Feeds", "u": "Devices", "v": "Intracranial Pressure Monitor", "w": "Pacemaker", "x": "Diet", "y": "CAPD", "z": "ECG", "ab": "Dietary Orders", "ac": "Stool / bowel movement", "ad": "ECLS settings", "ae": "Code Status", "af": "PRN administrations",
+    "k": "Target Arousal Level", "l": "WAT Score", "m": "ICP Trends", "n": "Date of Admission", "o": "Respiratory Viral Panel", "p": "Blood Gas", "q": "Complete Blood Count", "r": "Orders Placed This Encounter", "s": "Intake / Output totals", "t": "Feeds", "u": "Devices", "v": "Intracranial Pressure Monitor", "w": "Pacemaker", "x": "Diet", "y": "CAPD", "z": "ECG", "ab": "Dietary Orders", "ac": "Stool / bowel movement", "ad": "ECLS settings", "ae": "Code Status", "af": "PRN administrations", "ag": "Airway Clearance Device",
 }
 MAX_PASTE = 150_000
 DIVIDER = re.compile(r"^([a-z])\1{7,}$", re.I)
@@ -18,6 +18,7 @@ STOOL_DIVIDER = re.compile(r"^(?:ac){4,}a?$", re.I)
 ECLS_DIVIDER = re.compile(r"^(?:ad){4,}a?$", re.I)
 CODE_STATUS_DIVIDER = re.compile(r"^(?:ae){4,}a?$", re.I)
 PRN_DIVIDER = re.compile(r"^(?:af){4,}a?$", re.I)
+AIRWAY_CLEARANCE_DIVIDER = re.compile(r"^(?:ag){4,}a?$", re.I)
 NUMBER_OR_BULLET = re.compile(r"^\s*(?:\d+[.)]\s+|[•\-]\s+)")
 
 
@@ -33,6 +34,8 @@ def _heading(line: str) -> str | None:
         return "ae"
     if text in ("prn", "prns", "prn administrations", "prn medications"):
         return "af"
+    if text in ("airway clearance device", "airway clearance devices"):
+        return "ag"
     if re.match(r"^(?:capd|cornell assessment of pediatric delirium)(?:\b|:)", text):
         return "y"
     if (text in ("ecg", "ekg", "electrocardiogram")
@@ -61,7 +64,7 @@ class ParseResult:
 
 
 def parse_smartphrase(text: str) -> ParseResult:
-    """Accept a..z and alternating ab through af dividers.
+    """Accept a..z and alternating ab through ag dividers.
 
     Ambiguous/missing/duplicate boundaries fail closed for that section.
     Issues in a later section do not invalidate a complete, unambiguous a block.
@@ -87,8 +90,9 @@ def parse_smartphrase(text: str) -> ParseResult:
         ecls_marker = ECLS_DIVIDER.fullmatch(line)
         code_status_marker = CODE_STATUS_DIVIDER.fullmatch(line)
         prn_marker = PRN_DIVIDER.fullmatch(line)
-        if marker or dietary_marker or stool_marker or ecls_marker or code_status_marker or prn_marker:
-            key = "af" if prn_marker else "ae" if code_status_marker else "ad" if ecls_marker else "ac" if stool_marker else "ab" if dietary_marker else marker.group(1).lower()
+        airway_clearance_marker = AIRWAY_CLEARANCE_DIVIDER.fullmatch(line)
+        if marker or dietary_marker or stool_marker or ecls_marker or code_status_marker or prn_marker or airway_clearance_marker:
+            key = "ag" if airway_clearance_marker else "af" if prn_marker else "ae" if code_status_marker else "ad" if ecls_marker else "ac" if stool_marker else "ab" if dietary_marker else marker.group(1).lower()
             if active == key:
                 seen[key] = seen.get(key, 0) + 1
                 if seen[key] > 1:
@@ -110,6 +114,19 @@ def parse_smartphrase(text: str) -> ParseResult:
                     result.invalid.add(active)
                     result.issues.append(f"{SECTION_NAMES[active]} is missing its closing divider before line {n}.")
                 active, buffer = key, []
+            continue
+        # Mistyped AG boundaries must not leak device rows into other sections.
+        near_airway_clearance_marker = (
+            len(line) >= 8 and line.isalpha()
+            and re.search(r"(?:ag){3,}", line, re.I)
+            and sum(char.casefold() == ("a" if index % 2 == 0 else "g")
+                    for index, char in enumerate(line)) / len(line) >= 0.75
+        )
+        if near_airway_clearance_marker:
+            result.invalid.add("ag")
+            if active:
+                result.invalid.add(active)
+            result.issues.append(f"Malformed divider on line {n}. Use an uninterrupted alternating ag line for Airway Clearance Device.")
             continue
         # A malformed AF boundary cannot attach medication events to a neighbor.
         near_prn_marker = (
@@ -209,7 +226,10 @@ def parse_smartphrase(text: str) -> ParseResult:
             r"^(?:(?:Last|Observed|Recorded|Actual)\s+)?(?:SBS\b|State\s+Behavio(?:u)?r(?:al)?\s+Scale\b)|^(?:results? from |patient vitals? for |Date(?:/Time)?\s|\d{1,2}/\d{1,2}/\d{2,4}\b)",
             nonempty[0], re.I)))
         # T contains device-prefixed lines and may have no heading at all.
-        t_start = key in ("t", "u", "v", "w", "x", "y", "z", "ac", "ad", "af")
+        t_start = key in ("t", "u", "v", "w", "x", "y", "z", "ac", "ad", "af", "ag")
+        if key == "ag" and nonempty and _heading(nonempty[0]) not in (None, "ag"):
+            result.invalid.add(key)
+            result.issues.append("Another section heading appears inside Airway Clearance Device. Check the dividers.")
         if key == "af" and nonempty and _heading(nonempty[0]) not in (None, "af"):
             result.invalid.add(key)
             result.issues.append("Another section heading appears inside PRN administrations. Check the dividers.")

@@ -1,4 +1,4 @@
-"""PICU SmartPhrase v6.103: latest ventilator mode from Epic flow tables."""
+"""PICU SmartPhrase v6.104: airway clearance devices from Epic session tables."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,
@@ -65,6 +65,7 @@ from lab_layout import laboratory_html
 from observations import NEURO_SECTIONS, validate_neuro, validate_nutrition, format_nutrition
 from demographics import validate_dosing_weight, validate_admission_date, demographic_weight_text
 from code_status import MAX_CODE_STATUS, validate_code_status, code_status_text
+from airway_clearance_devices import airway_clearance_devices_text
 from mrsa import mrsa_screen_text
 from clinical_style import clinical_markup
 from anthropometrics import empty_anthropometrics, clean_field, validate_anthropometrics, measurements_text, FIELDS as ANTHRO_FIELDS
@@ -2552,6 +2553,8 @@ def handoff_notes(sheet: dict) -> None:
             if section == "Respiratory" and respiratory_text(sheet):
                 st.text(respiratory_text(sheet) + "\n-----")
                 st.caption("Vital signs print first, then support settings. Edit support in Respiratory support above.")
+            if section == "Respiratory" and airway_clearance_devices_text(sheet):
+                st.markdown('<div style="white-space:pre-wrap">' + clinical_markup(airway_clearance_devices_text(sheet) + "\n-----") + '</div>', unsafe_allow_html=True)
             if section == "Respiratory" and theophylline_summary(sheet) and not theophylline_anchor(sheet):
                 st.text(theophylline_summary(sheet) + "\n-----")
                 st.caption("Latest included THEOPH result. Edit or exclude its original row in Labs / Vitals.")

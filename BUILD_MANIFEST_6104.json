@@ -1,0 +1,33 @@
+{
+  "version": "6.104",
+  "base_version": "6.103",
+  "base_repository": "conkraw/f12",
+  "base_commit": "4a72d0a9d2a4a117f0418008d3d261f86a4677a6",
+  "production_files": [
+    "airway_clearance_devices.py",
+    "app.py",
+    "clinical_style.py",
+    "error_store.py",
+    "exports.py",
+    "import_review.py",
+    "importing.py",
+    "models.py",
+    "parser.py"
+  ],
+  "automated_tests_passed": 29,
+  "files": {
+    "airway_clearance_devices.py": "a92f42506b52b4302c157c7e63614c17a6ff80b55bebd02ed1bff75fe7d9fa79",
+    "app.py": "e028855d2480d1e76252ec90d12b10714d1713c72353983c8a17ee189b18f575",
+    "clinical_style.py": "81fc5556f40cd0dedfc552bb2d831f0e7f3c1188281f3f2eac9280a331d55711",
+    "error_store.py": "31f3cd843725e75d315de3553902cd4a89d914ece3b19ef78db77ea02319b331",
+    "exports.py": "562aee80df9ff0131236f5e7b488982b480d5cd9e5bf8a3cc5ddb35250202c44",
+    "import_review.py": "ed89a9628f7e598faaefedde9c0287447af2cac4bc9e6465b16f1b89cec73cb4",
+    "importing.py": "459a399149eb30a510b004565ed0e7cda59ab257d3581689018ad77e0401f6a6",
+    "models.py": "3d6b72229a597360375dff4e84fe3aa948620df61faa50ab91e9f114c4bca779",
+    "parser.py": "b1c93f83b14ea3468138aac1f3ff83c2e43533bfdfb9dbe114783c5ac3a99e20",
+    "tests/test_airway_clearance_devices_parser.py": "4385e163ccb42210b07d3bacad71957070ba4fcda3d7cdaf36db38ac138846df",
+    "tests/test_airway_clearance_devices_integration.py": "e3f3d1bb44a845bf985e3fa5431cb86e8892aae935f5cf3205dddf6005b99b8f",
+    "tests/test_airway_clearance_devices_outputs.py": "a410ec276703b19cb61452c048d186bace7c71b136f5965aedbd620fcdf7c5b0",
+    "AIRWAY_CLEARANCE_DEVICES_UPDATE.txt": "a8a3157bfd2902e1fd4bca47d6be473d1810e6c44d520aa82cf6752e762d66cc"
+  }
+}

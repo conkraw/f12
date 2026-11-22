@@ -36,6 +36,7 @@ from ecg import validate_ecg, ecg_text
 from ecls import validate_ecls, ecls_text
 from code_status import validate_code_status, code_status_text
 from prn_counts import validate_prn
+from airway_clearance_devices import validate_airway_clearance_devices, airway_clearance_devices_text
 from aed_levels import aed_summary
 from lysis_labs import lysis_summary
 from fluid_balance import validate_balance
@@ -92,7 +93,7 @@ def new_vault() -> dict:
 
 
 def validate_sheet(sheet: dict) -> None:
-    if not isinstance(sheet, dict) or set(sheet) - {"anthropometrics", "problem_review", "difficult_airway", "empty_group_layout", "sbs_observations", "sbs_vent_mode", "ecg", "current_shift", "bowel_movement", "ecls", "code_status", "prn"} != {"id", "room", "created_at", "updated_at", "fields", "medications", "ventilation", "noninvasive", "vitals", "labs", "neuro_vitals", "nutrition", "cultures", "dosing_weight", "admission_date", "viral_panel", "blood_gas", "cbc", "recurring_orders", "intake_output", "feeds", "devices", "neuro_devices", "pacemaker", "diet", "import_warnings"}:
+    if not isinstance(sheet, dict) or set(sheet) - {"anthropometrics", "problem_review", "difficult_airway", "empty_group_layout", "sbs_observations", "sbs_vent_mode", "ecg", "current_shift", "bowel_movement", "ecls", "code_status", "prn", "airway_clearance_devices"} != {"id", "room", "created_at", "updated_at", "fields", "medications", "ventilation", "noninvasive", "vitals", "labs", "neuro_vitals", "nutrition", "cultures", "dosing_weight", "admission_date", "viral_panel", "blood_gas", "cbc", "recurring_orders", "intake_output", "feeds", "devices", "neuro_devices", "pacemaker", "diet", "import_warnings"}:
         raise ValidationError("The handoff structure is invalid.")
     if not isinstance(sheet["id"], str) or not re.fullmatch(r"[0-9a-f]{32}", sheet["id"]):
         raise ValidationError("The handoff identifier is invalid.")
@@ -140,6 +141,7 @@ def validate_sheet(sheet: dict) -> None:
         validate_ecls(sheet.get("ecls"))
         validate_code_status(sheet.get("code_status", ""))
         validate_prn(sheet.get("prn"))
+        validate_airway_clearance_devices(sheet.get("airway_clearance_devices", []))
         validate_anthropometrics(sheet.get("anthropometrics", empty_anthropometrics()))
         validate_import_warnings(sheet["import_warnings"])
         validate_review(sheet.get("problem_review", empty_review()))
@@ -530,6 +532,9 @@ def fields_with_medications(sheet: dict, include_lab_text: bool = True) -> dict[
     theophylline = "" if theophylline_anchor(sheet) else theophylline_summary(sheet)
     if theophylline:
         result["Respiratory"] = theophylline + ("\n-----\n" + result["Respiratory"] if result["Respiratory"].strip() else "")
+    clearance = airway_clearance_devices_text(sheet)
+    if clearance:
+        result["Respiratory"] = clearance + ("\n-----\n" + result["Respiratory"] if result["Respiratory"].strip() else "")
     vent = respiratory_text(sheet)
     if vent:
         result["Respiratory"] = vent + "\n-----" + ("\n" + result["Respiratory"] if result["Respiratory"].strip() else "")
