@@ -35,6 +35,7 @@ RULES = {
     'CALCIUM_HIGH': 'Hypercalcemia', 'PHOS_HIGH': 'Hyperphosphatemia',
     'coagulopathy': 'Coagulopathy',
     'QTC': 'Long QTc',
+    'malnutrition': 'Malnutrition',
 }
 LOW_RULES = tuple(k for k in RULES if k in ('NA','K','ALBUMIN','CO2','MG','PHOS','HGB','PLT'))
 LABELS = {'NA':'Sodium', 'K':'Potassium', 'ALBUMIN':'Albumin', 'CO2':'Serum CO2',
@@ -211,8 +212,8 @@ def suggestions(sheet: dict, as_of: datetime | None = None) -> list[dict]:
     config = sheet.get('problem_review', empty_review())
     validate_review(config)
     out = []
-    def add(key, evidence, caution, detail=None):
-        label = RULES[key]
+    def add(key, evidence, caution, detail=None, label=None):
+        label = label or RULES[key]
         fingerprint = sha256(json.dumps([key, evidence, caution, detail, sheet.get('admission_date', '')], ensure_ascii=False).encode()).hexdigest()
         decision = config['decisions'].get(key, {})
         applies = decision.get('fingerprint') == fingerprint
@@ -246,6 +247,14 @@ def suggestions(sheet: dict, as_of: datetime | None = None) -> list[dict]:
     if 'z' not in sheet.get('import_warnings', {}) and long_qtc(sheet.get('ecg')):
         add('QTC', format_ecg(sheet['ecg']) + ', above 450 msec',
             'Configured Bazett QTc cutoff is greater than 450 msec. The ECG date is retained without a recency limit.', sheet['ecg'])
+    from growth_assessment import assess_growth
+    growth = assess_growth(sheet)
+    if growth.severity:
+        add('malnutrition', growth.display_text,
+            'Single-indicator cutoffs from the supplied clinical table: mild at -1.65 to above -2, moderate at -2 to above -3, severe at -3 or lower. Verify measurement accuracy and clinical context. Weight-for-age is not used.',
+            {'metric': growth.metric, 'z_score': growth.z_score,
+             'severity': growth.severity, 'inputs': growth.inputs},
+            label=growth.severity)
     latest = _latest_rows(sheet, now)
     for key in LOW_RULES:
         row = latest.get(key)

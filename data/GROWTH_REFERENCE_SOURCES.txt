@@ -1,0 +1,47 @@
+WHO weight-for-recumbent-length reference
+Retrieved 2026-11-22
+
+The bundled who_wfl_lms.csv contains the complete sex-specific L, M and S
+parameters from the WHO Child Growth Standards expanded weight-for-length
+tables, 45.0 to 110.0 cm in 0.1 cm increments. There are 651 rows per sex.
+Sex 1 is male. Sex 2 is female. Measurements use centimeters and kilograms.
+The CSV copies the first four columns of each official Excel table and adds
+the Sex column. No parameter values are estimated or fabricated.
+
+Official source page:
+https://www.who.int/tools/child-growth-standards/standards/weight-for-length-height
+
+Boys expanded table:
+https://cdn.who.int/media/docs/default-source/child-growth/child-growth-standards/indicators/weight-for-length-height/expanded-tables/wfl-boys-zscore-expanded-table.xlsx
+
+Girls expanded table:
+https://cdn.who.int/media/docs/default-source/child-growth/child-growth-standards/indicators/weight-for-length-height/expanded-tables/wfl-girls-zscore-expanded-table.xlsx
+
+Independent official WHO implementation, confirming interpolation of LMS
+between 0.1 cm rows, valid length bounds and restricted LMS tails:
+https://github.com/WorldHealthOrganization/anthro/blob/master/R/z-score-weight-for-lenhei.R
+https://github.com/WorldHealthOrganization/anthro/blob/master/R/z-score-helper.R
+
+WHO calculation:
+For L != 0, z = ((weight / M)^L - 1) / (L * S).
+For L = 0, z = ln(weight / M) / S.
+Within -3 <= z <= 3, retain the LMS z score.
+Below -3, z = -3 + (weight - weight_at_minus3) /
+                           (weight_at_minus2 - weight_at_minus3).
+Above +3, z = 3 + (weight - weight_at_plus3) /
+                          (weight_at_plus3 - weight_at_plus2).
+Use full precision for classification. Round only for display.
+
+The caller limits this app's WFL assessment to patients under 24 months.
+The calculation needs recumbent length. Do not silently use standing height
+or adjust a measurement unless its actual measurement position is known.
+The module makes no age inference and does not calculate weight-for-age.
+No patient measurements or identifiers are stored in these reference files.
+
+CDC BMI-for-age reference is documented in BMI_REFERENCE.md.
+Official CSV retrieved during this update:
+https://www.cdc.gov/growthcharts/data/extended-bmi/bmi-age-2022.csv
+SHA256: 7f416a213157a5209bb6cbfd1b19292510248f3f31fe43c9ff63f6d8e39f7890
+
+WHO CSV SHA256:
+5ceae34815a08e10bb7bba94c21f6d373ea293a7bcd42ceba3969fe77f4e4e71

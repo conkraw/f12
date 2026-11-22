@@ -74,7 +74,9 @@ def test_i_extract_keeps_measured_and_dosing_separate():
     assert s['anthropometrics']==dict(age='5 years 2 months',sex='Female',bmi='17.14 kg/m²',height='100 cm',bsa='0.65 m²')
     text=handoff_text(s)
     assert text.index('Room: P4102') < text.index('Age: 5 years 2 months') < text.index('BMI: 17.14')
-    assert 'Weight: 10 kg\nZ-score: 0.1\nDosing weight: 8 kg' in text
+    assert 'Weight: 10 kg\nDosing weight: 8 kg' in text
+    assert 'Z-score:' not in text
+    assert s['nutrition']['z_score'] == '0.1'
 
 
 def test_no_sex_or_age_inferred_from_weight_footnote():

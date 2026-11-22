@@ -187,8 +187,10 @@ def test_complete_handoff_requested_styles_and_source_unchanged():
         html = handoff_html(s, NOW)
         pdf = handoff_pdf(s, NOW)
         text = handoff_text(s, NOW)
-    for label in LABELS:
+    for label in (name for name in LABELS if name != 'Z-score'):
         assert '<b>' + label + ':</b>' in html, label
+    assert 'Z-score:' not in html
+    assert s['nutrition']['z_score'] == '-0.50'
     assert '<b>CAPD:</b> <font color="' + HIGH_COLOR + '">11 (H)</font>' in html
     assert '<b>EVD:</b> Clamped' in html
     assert '<b>Lactate:</b> 1.0 -&gt; 1.1 [11/9/2026]' in html

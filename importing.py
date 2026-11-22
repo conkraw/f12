@@ -15,6 +15,7 @@ from observations import parse_neuro, parse_nutrition
 from cultures import parse_cultures
 from demographics import parse_admission
 from anthropometrics import empty_anthropometrics, extract_anthropometrics
+from circumferences import parse_circumferences
 from viral import parse_viral_panel
 from blood_gases import parse_gases
 from cbc import parse_cbc
@@ -120,6 +121,9 @@ def import_sections(sheet: dict, text: str, settings: dict, *, respiratory_first
         if group == 'ag':
             # A failed current table must not continue displaying old devices.
             candidate['airway_clearance_devices'] = []
+        if group == 'i':
+            # A rejected current measurement block must not keep prior girths.
+            candidate.pop('circumferences', None)
         item = diagnostic(group, code,
                           action='airway_clearance_devices_hidden' if group == 'ag' else 'prn_hidden' if group == 'af' else 'code_status_hidden' if group == 'ae' else 'ecls_hidden' if group == 'ad' else 'bowel_movement_hidden' if group == 'ac' else 'current_shift_hidden' if group == 'h' else 'orders_hidden' if group == 'r' else 'feeds_hidden' if group == 't' else 'devices_hidden' if group == 'u' else 'neuro_devices_hidden' if group == 'v' else 'pacemaker_hidden' if group == 'w' else 'diet_hidden' if group in ('x', 'ab') else 'ecg_hidden' if group == 'z' else 'not_updated', line=line)
         candidate['import_warnings'][group] = [item]
@@ -212,7 +216,8 @@ def import_sections(sheet: dict, text: str, settings: dict, *, respiratory_first
                 out.notices.extend(labs.issues)
                 out.imported.append("laboratory results")
             elif letter == "i":
-                measurements = extract_anthropometrics(parsed.blocks[letter])
+                circumferences = parse_circumferences(parsed.blocks[letter])
+                measurements = extract_anthropometrics(circumferences.remainder)
                 if measurements.error:
                     out.errors.append(measurements.error)
                     continue
@@ -230,6 +235,9 @@ def import_sections(sheet: dict, text: str, settings: dict, *, respiratory_first
                     candidate["anthropometrics"] = attrs
                 candidate["nutrition"] = nutrition.data
                 candidate["dosing_weight"] = nutrition.dosing_weight
+                if any(circumferences.data.values()) or 'circumferences' in candidate:
+                    candidate['circumferences'] = circumferences.data
+                out.notices.extend(circumferences.issues)
                 out.notices.extend(nutrition.issues)
                 out.imported.append("weight / dosing weight / Z-score" if nutrition.data or nutrition.dosing_weight else "weight display cleared")
             elif letter == "n":

@@ -85,6 +85,39 @@ def bmi_percentile(bmi: float, age_months: float, sex: str, reference: dict | No
     return percentile_from_parameters(bmi, rows[1 if sex == 'Male' else 2, math.floor(age_months) + 0.5])
 
 
+def zscore_from_parameters(bmi: float, values: dict) -> float:
+    """CDC z score without rounding or inverting a rounded low percentile.
+
+    The lower tail uses CDC 2000 LMS directly. Above P95, use the CDC 2022
+    half-normal extension, evaluating its survival probability to avoid
+    cancellation near 100 percent. No fabricated finite score on underflow.
+    """
+    if not math.isfinite(bmi) or bmi <= 0:
+        raise ValueError('BMI must be positive and finite.')
+    if bmi > values['p95']:
+        survival = 0.05 * math.erfc((bmi - values['p95']) / values['sigma'] / math.sqrt(2))
+        if survival <= 0:
+            raise ValueError('BMI is too far beyond the reference for a finite z score.')
+        return -NormalDist().inv_cdf(survival)
+    l, m, s = values['l'], values['m'], values['s']
+    try:
+        z = math.log(bmi / m) / s if l == 0 else math.expm1(l * math.log(bmi / m)) / (l * s)
+    except (OverflowError, ValueError):
+        raise ValueError('BMI is outside the calculable reference range.') from None
+    if not math.isfinite(z):
+        raise ValueError('BMI is outside the calculable reference range.')
+    return z
+
+
+def bmi_zscore(bmi: float, age_months: float, sex: str, reference: dict | None = None) -> float:
+    """Return the unrounded CDC BMI-for-age score for a documented month."""
+    if (not math.isfinite(age_months) or not 24 <= age_months < 240
+            or sex not in ('Male', 'Female')):
+        raise ValueError('CDC BMI-for-age requires age 24 to under 240 months and explicit growth-chart sex.')
+    rows = load_reference() if reference is None else reference
+    return zscore_from_parameters(bmi, rows[1 if sex == 'Male' else 2, math.floor(age_months) + 0.5])
+
+
 def bmi_percentile_summary(data: dict) -> tuple[str, str]:
     from anthropometrics import age_months, age_bounds
     if not data['bmi']:

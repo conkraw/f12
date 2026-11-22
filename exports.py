@@ -806,7 +806,7 @@ def pdf_content_signature(sheet: dict, printed_at: datetime | None = None, *,
     validate_sheet(sheet)
     fields = display_fields(sheet, include_lab_text=False)
     payload = {
-        'renderer': '6.103-vent-mode-flow-table-v1', 'target_pages': target_pages,
+        'renderer': '6.105-growth-and-circumference-v1', 'target_pages': target_pages,
         'sheet': {key: value for key, value in sheet.items()
                   if key not in ('created_at', 'updated_at')},
         'fields': fields,

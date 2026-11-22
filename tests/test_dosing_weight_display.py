@@ -30,7 +30,8 @@ def sheet(dose="11 kg", z="0.1", room="P4102"):
 def test_exact_order_and_missing_display(z, dose):
     data = nutrition(z=z)
     before = deepcopy(data)
-    assert demographic_weight_text(data, dose) == f"Weight: 12 kg\nZ-score: {z}\nDosing weight: {dose or 'none'}"
+    assert demographic_weight_text(data, dose) == f"Weight: 12 kg\nDosing weight: {dose or 'none'}"
+    assert data['z_score'] == z
     assert data == before
 
 
@@ -51,7 +52,8 @@ def test_all_single_room_exports_match_and_do_not_modify_record(dose):
     before = deepcopy(data)
     pdf = PdfReader(BytesIO(handoff_pdf(data)))
     for output in (handoff_text(data), without_style_tags(handoff_html(data)), "\n".join(p.extract_text() for p in pdf.pages)):
-        assert output.index("Weight: 12 kg") < output.index("Z-score: 0.1") < output.index("Dosing weight: " + (dose or "none"))
+        assert output.index("Weight: 12 kg") < output.index("Dosing weight: " + (dose or "none"))
+        assert 'Z-score:' not in output
         assert output.count("Dosing weight:") == 1
     assert data == before
 
@@ -63,7 +65,8 @@ def test_print_all_consistent_and_no_cross_room_reuse():
     assert len(pdf.pages) == 2
     for p in pdf.pages:
         text = p.extract_text()
-        assert text.index("Weight: 12 kg") < text.index("Z-score: 0.1") < text.index("Dosing weight:")
+        assert text.index("Weight: 12 kg") < text.index("Dosing weight:")
+        assert 'Z-score:' not in text
     assert "Dosing weight: 11 kg" in pdf.pages[0].extract_text()
     assert "Dosing weight: none" not in pdf.pages[0].extract_text()
     assert "Dosing weight: none" in pdf.pages[1].extract_text()

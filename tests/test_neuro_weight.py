@@ -198,7 +198,8 @@ def test_neuro_above_manual_notes_medications_weight_below_diagnoses():
     fields=fields_with_medications(sheet)
     text=fields['Neurologic']
     assert text.index('WAT-1') < text.index('ICP Mean') < text.index('CPP:') < text.index('Fever Control') < text.index('acetaminophen') < text.index('Manual neuro note')
-    assert fields['Diagnoses'].endswith('----\nWeight: 15.3 kg\nZ-score: 0.41\nDosing weight: none')
+    assert fields['Diagnoses'].endswith('----\nWeight: 15.3 kg\nDosing weight: none')
+    assert sheet['nutrition']['z_score'] == '0.41'
     assert 'Weight:' not in sheet['fields']['Diagnoses']
     assert fields_with_medications(sheet)==fields
 
@@ -224,16 +225,18 @@ def test_new_content_alone_is_not_omitted_from_print_all(field,body):
     assert not available_handoffs(new_vault(),{'P4102':sheet})
 
 
-def test_all_exports_preserve_values_and_omit_growth_metadata():
+def test_all_exports_preserve_observations_and_omit_untyped_growth_metadata():
     sheet=populated();sheet['fields']['Diagnoses']='Synthetic diagnosis'
     text=handoff_text(sheet)
     html=handoff_html(sheet)
     pdftext='\n'.join(p.extract_text() for p in PdfReader(BytesIO(handoff_pdf(sheet))).pages)
     for output in [text,html,pdftext]:
-        for value in ['15.3 kg','0.41','72 mmHg','5 mmHg']:
+        for value in ['15.3 kg','72 mmHg','5 mmHg']:
             assert value in output
         assert '66%' not in output and '10/31/26' not in output and 'Growth percentiles' not in output
-        assert output.index('Synthetic diagnosis')<output.index('Weight:')<output.index('Z-score:')
+        assert 'Z-score:' not in output and '0.41' not in output
+        assert output.index('Synthetic diagnosis')<output.index('Weight:')<output.index('Dosing weight:')
+    assert sheet['nutrition']['z_score'] == '0.41'
 
 
 def test_two_room_print_keeps_observed_vt_and_neuro_values_separate():
@@ -394,8 +397,10 @@ def test_long_handoff_continuation_keeps_weight_and_observations_once():
     reader=PdfReader(BytesIO(handoff_pdf(sheet)))
     text='\n'.join(p.extract_text() for p in reader.pages)
     assert len(reader.pages)>1
-    for value in ['Weight: 15.3 kg','Z-score: 0.41','CPP: 72 mmHg']:
+    for value in ['Weight: 15.3 kg','CPP: 72 mmHg']:
         assert text.count(value)==1
+    assert 'Z-score:' not in text
+    assert sheet['nutrition']['z_score'] == '0.41'
     assert 'Synthetic diagnosis line 84' in ' '.join(text.split())
 
 

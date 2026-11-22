@@ -1,55 +1,85 @@
-# CDC BMI reference setup and calculation
+# Pediatric growth reference data
 
-This app uses the CDC 2000 LMS method up to the age/sex-specific P95 and the CDC
-2022 extended method above P95. It does not extrapolate outside ages 24 to under
-240 months. It does not use the weight-for-age Z-score as a BMI percentile.
+Version 6.105 bundles both complete public reference tables. No download is
+needed during handoff creation, and no patient measurement is sent to a growth
+calculation service.
 
-Official reference:
+## Under 2 years
+
+Use WHO 2006 weight-for-recumbent-length with the included measured weight,
+recorded recumbent length, and explicit Male or Female growth-chart sex.
+Dosing weight and the score beside an Epic weight row are not used.
+
+The table covers 45 through 110 cm and both sexes. LMS parameters are
+interpolated between adjacent 0.1 cm rows. Scores beyond +/-3 use WHO's fixed
+weight distance between 2 and 3 SD. There is no length extrapolation and no
+assumed standing-height adjustment. The infant length must be recumbent.
+
+File: data/who_wfl_lms.csv
+Source: https://www.who.int/tools/child-growth-standards/standards/weight-for-length-height
+
+## Ages 2 through 19
+
+Use the recorded BMI and age at that measurement, entered as total months or
+years plus months, with explicit growth-chart sex. A whole-year age such as
+2 y.o. does not supply a precise month and does not produce a score. No date of
+birth is required or retained. Pediatric scoring stops at 240 months.
+
+The calculation preserves the app's existing monthly-bin convention. For
+example, the 48.5-month row covers age 48 to under 49 months. Below or at P95,
+use CDC 2000 LMS directly. Above P95, use the CDC 2022 extended half-normal
+method. Low z scores are never recovered from a rounded percentile.
+
+The recorded BMI remains authoritative. Editing measured weight or height does
+not recalculate that independently recorded BMI. Update the BMI field when
+those source measurements change. Missing BMI does not create a guessed score.
+
+File: data/cdc_bmi_age_2022.csv
+Sources:
 https://www.cdc.gov/growthcharts/extended-bmi-data-files.htm
-CSV:
-https://www.cdc.gov/growthcharts/data/extended-bmi/bmi-age-2022.csv
-Infant guidance:
-https://www.cdc.gov/growth-chart-training/hcp/using-growth-charts/who-using.html
+https://www.cdc.gov/growthcharts/cdc-data-files.htm
 
-## One-time setup in Admin
-Open Admin using your existing second password. Expand BMI reference data.
-Click Load / refresh public CDC BMI reference, or download the CSV above in your
-browser and upload it through that panel. Only the public CSV goes to the app.
-No patient measurements are sent to CDC, GitHub or any calculation service.
+The protected Admin BMI reference panel remains available for optional public
+table refreshes. Keeping the bundled CSV in the code repository makes the
+reference available after redeployment.
 
-The complete official CSV could not be downloaded in the build environment, so
-it is not bundled. The formula was checked against CDC's published worked examples.
-Do not create a partial or fabricated reference file. The importer requires both
-sexes and all 432 monthly rows, valid numeric parameters and known reference anchors.
+## Malnutrition rule
 
-A downloaded table is local to the hosting filesystem. A redeploy may remove it.
-To keep it across redeployments, download the official CSV and put it in your code
-repository at data/cdc_bmi_age_2022.csv. This is public reference data only. Never
-put patient data or private Secrets into that folder or repository. Once this
-file is present, the app reads it locally, without runtime downloads.
+Use only the age-appropriate calculated indicator and the clinician's supplied
+single-data-point cutoffs:
 
-## Inputs
-Use the recorded BMI with units kg/m². Provide age at the BMI measurement as total
-months or as years AND months, plus explicit Male or Female growth-chart sex.
-A whole-year age alone is sufficient for display but not a percentile. An age in
-days or weeks can identify an infant but is not silently converted to an exact
-month for the CDC table. DOB is not required or retained.
+| Calculated z score | Automatic problem |
+| --- | --- |
+| -2 < z <= -1.65 | Mild malnutrition |
+| -3 < z <= -2 | Moderate malnutrition |
+| z <= -3 | Severe malnutrition |
+| z > -1.65 | No automatic malnutrition problem |
 
-The reference uses one monthly bin: 48.5 represents 48 <= age < 49 months.
-For BMI <= P95, z = ((BMI/M)^L - 1)/(L*S), or ln(BMI/M)/S if L=0.
-Percentile = 100*Phi(z).
-For BMI > P95, percentile = 90 + 10*Phi((BMI - P95)/sigma).
-Intermediate calculations use full floating-point precision. Final display rounds
-to one decimal, with <0.1 or >99.9 for the extreme tails rather than 0 or 100.
+The supplied table requires other supporting indicators for the -1 through
+-1.64 range, so this implementation does not assign a problem from that range.
+These are the supplied workflow cutoffs, not a claim that every published
+malnutrition definition uses the same mild cutoff.
 
-Published example checks:
-Girl, age 114.5 months, BMI 21.2, L=-2.257782149, M=16.57626713,
-S=0.132796819, P95=22.3979 -> 92.2414th percentile.
-Boy, age 50.5 months, BMI 22.6, P95=17.8219, sigma=2.398288 -> 99.7683rd percentile.
+Classify the unrounded score. Display two decimals in ordinary cases and enough
+additional precision near a cutoff to avoid displaying a different category.
+The existing Problems review and dismissal controls remain available. A change
+to the supporting inputs invalidates the old decision fingerprint.
 
-The BMI itself remains displayed if percentile calculation is unavailable.
-For children younger than 2 years, CDC does not recommend BMI-for-age for clinical
-growth assessment. The app therefore does not calculate it for infants. At age 20
-or older it reports no pediatric percentile. No weight category or diagnosis is
-inferred. Measurement errors, timing mismatches and clinical context still require
-review by the treating team.
+Scores and severity are calculated from the current sheet and are not stored as
+fixed diagnoses. Missing inputs, an unsupported age or length, missing reference
+data, or unresolved demographic/Nutrition import warnings omit the calculated
+score and automatic malnutrition label. A missing score does not imply normal
+nutrition. Existing source diagnoses are not removed or rewritten.
+
+The old untyped weight-chart z score remains in the editor and encrypted record.
+It is omitted from the printed handoff, which displays the named WFL or
+BMI-for-age score instead.
+
+## Measurement and reference checks
+
+Check growth measurements in clinical context, including fluid balance and
+measurement accuracy. Head and abdominal circumference are measurements only
+and do not contribute to the malnutrition calculation.
+
+Complete source URLs, retrieval date, row counts and hashes are in
+data/GROWTH_REFERENCE_SOURCES.txt. Only public reference data belongs in data/.

@@ -93,7 +93,7 @@ def new_vault() -> dict:
 
 
 def validate_sheet(sheet: dict) -> None:
-    if not isinstance(sheet, dict) or set(sheet) - {"anthropometrics", "problem_review", "difficult_airway", "empty_group_layout", "sbs_observations", "sbs_vent_mode", "ecg", "current_shift", "bowel_movement", "ecls", "code_status", "prn", "airway_clearance_devices"} != {"id", "room", "created_at", "updated_at", "fields", "medications", "ventilation", "noninvasive", "vitals", "labs", "neuro_vitals", "nutrition", "cultures", "dosing_weight", "admission_date", "viral_panel", "blood_gas", "cbc", "recurring_orders", "intake_output", "feeds", "devices", "neuro_devices", "pacemaker", "diet", "import_warnings"}:
+    if not isinstance(sheet, dict) or set(sheet) - {"anthropometrics", "problem_review", "difficult_airway", "empty_group_layout", "sbs_observations", "sbs_vent_mode", "ecg", "current_shift", "bowel_movement", "ecls", "code_status", "prn", "airway_clearance_devices", "circumferences"} != {"id", "room", "created_at", "updated_at", "fields", "medications", "ventilation", "noninvasive", "vitals", "labs", "neuro_vitals", "nutrition", "cultures", "dosing_weight", "admission_date", "viral_panel", "blood_gas", "cbc", "recurring_orders", "intake_output", "feeds", "devices", "neuro_devices", "pacemaker", "diet", "import_warnings"}:
         raise ValidationError("The handoff structure is invalid.")
     if not isinstance(sheet["id"], str) or not re.fullmatch(r"[0-9a-f]{32}", sheet["id"]):
         raise ValidationError("The handoff identifier is invalid.")
@@ -143,6 +143,9 @@ def validate_sheet(sheet: dict) -> None:
         validate_prn(sheet.get("prn"))
         validate_airway_clearance_devices(sheet.get("airway_clearance_devices", []))
         validate_anthropometrics(sheet.get("anthropometrics", empty_anthropometrics()))
+        if 'circumferences' in sheet:
+            from circumferences import validate_circumferences
+            validate_circumferences(sheet['circumferences'])
         validate_import_warnings(sheet["import_warnings"])
         validate_review(sheet.get("problem_review", empty_review()))
         validate_airway(sheet.get("difficult_airway"))
@@ -572,6 +575,11 @@ def fields_with_medications(sheet: dict, include_lab_text: bool = True) -> dict[
     measurements = measurements_text(sheet.get("anthropometrics", empty_anthropometrics()))
     if measurements:
         result["Diagnoses"] += "\n" + measurements
+    # Measurements share the patient/demographic column in every export.
+    from growth_assessment import growth_measurements_text
+    growth_text = growth_measurements_text(sheet)
+    if growth_text:
+        result['Diagnoses'] += '\n' + growth_text
     positive = viral_text(sheet["viral_panel"])
     if positive:
         result["Diagnoses"] = result["Diagnoses"].rstrip() + ("\n" if result["Diagnoses"].strip() else "") + "----\n" + positive

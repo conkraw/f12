@@ -1,0 +1,41 @@
+PICU Handoff 6.105 validation
+
+Base: conkraw/f12 version 6.104
+Base commit: ce037d453acf06bfee8a1dd4cda91c05235dfc29
+
+The selected regression suite passed 1,329 tests and 24 subtests.
+It covered growth formulas and boundaries, import and replacement behavior,
+existing demographics and laboratory rules, Problems review, airway-clearance
+features, saved and encrypted records, editor callbacks, all export formats,
+and per-room PDF cache invalidation.
+
+After the final shared on-screen/print text helper was added, all 63 growth
+integration and UI smoke tests passed. The new screen check confirms that
+weight-for-length and circumference text appears in the live handoff render.
+UI smoke checks use the project's widget stubs, not a live deployed browser.
+
+WHO reference verification:
+- 1,302 bundled LMS rows match the official WHO anthro reference exactly.
+- All 11,718 published WHO weight cells from -4 through +4 SD were checked.
+- Maximum deviation from the integer SD labels was below 0.00305 z, consistent
+  with source weight cells rounded to 0.001 kg.
+- WHO lower and upper tail continuation is covered.
+
+CDC reference verification:
+- The complete official 2022 extended CSV is bundled.
+- Published worked examples and selected z-score columns were checked.
+- Low-tail calculations use LMS directly, avoiding rounded percentiles.
+- Age bins, pediatric age bounds and the extended high-tail branch were checked.
+
+All three layout checks produced one-page PDFs: the supplied infant example,
+the supplied adult example, and a synthetic pediatric BMI/circumference example.
+Rendered PNGs were inspected for the new labels and values. Patient source
+pastes and their generated PDFs/images are not part of this update package.
+
+Python compilation and git whitespace checks passed.
+The only test warnings were existing pypdf deprecation notices.
+No live Streamlit deployment was changed or verified during this build.
+
+Run the focused additions from the repository root after installing the
+existing requirements-dev.txt:
+python -m pytest -q tests/test_who_growth_reference.py tests/test_bmi_zscore.py tests/test_circumferences.py tests/test_growth_integration.py

@@ -1,5 +1,8 @@
-Public CDC reference data only.
+Public growth reference data only.
 
-Place the official bmi-age-2022.csv here with filename cdc_bmi_age_2022.csv
-or use protected Admin > BMI reference data to load it into the deployment.
-See ../BMI_REFERENCE.md. No patient data or private Secrets belong here.
+Version 6.105 bundles cdc_bmi_age_2022.csv and who_wfl_lms.csv. Keep both files
+in this directory when deploying. They contain reference parameters only.
+
+See ../BMI_REFERENCE.md for the calculations and GROWTH_REFERENCE_SOURCES.txt
+for official sources, dates and checksums. No patient data or private Secrets
+belong here.

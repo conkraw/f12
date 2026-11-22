@@ -203,7 +203,8 @@ def test_invalid_o_blocks_atomic_import_and_preserves_original():
 def test_summary_prints_below_weights_in_patient_column_only():
     s=imp(block('a','Diagnoses:\n1. Synthetic diagnosis')+'\n'+block('i','NUTRITION:\n01/01/26\t12 kg (Z= -0.2)*\nDosing Weight: 11 kg')+'\n'+block('o',SAMPLE))
     f=fields_with_medications(s)
-    assert f['Diagnoses']=='Synthetic diagnosis\n----\nWeight: 12 kg\nZ-score: -0.2\nDosing weight: 11 kg\n----\nRapid Viral Panel: Rhinovirus/enterovirus'
+    assert f['Diagnoses']=='Synthetic diagnosis\n----\nWeight: 12 kg\nDosing weight: 11 kg\n----\nRapid Viral Panel: Rhinovirus/enterovirus'
+    assert s['nutrition']['z_score'] == '-0.2'
     assert f['Infectious Disease'].strip('-\n')=='Cultures: None' and not f['Lab Results / Trends']
     text=patient_column(s,f)
     assert text.index('Weight:') < text.index('Rapid Viral Panel:')

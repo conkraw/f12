@@ -122,9 +122,10 @@ def test_latest_dated_dosing_not_largest():
     assert not r.error and r.dosing_weight=='66 kg'
 
 
-def test_z_score_stays_with_measured_weight_and_dosing_is_between():
+def test_source_z_score_is_retained_but_not_printed_beside_measured_weight():
     r=parse_nutrition('11/03/26 15.3 kg (66%, Z= 0.41)*\nDosing Weight: 14 kg')
-    assert demographic_weight_text(r.data,r.dosing_weight)=='Weight: 15.3 kg\nZ-score: 0.41\nDosing weight: 14 kg'
+    assert r.data['z_score'] == '0.41'
+    assert demographic_weight_text(r.data,r.dosing_weight)=='Weight: 15.3 kg\nDosing weight: 14 kg'
     r.data['include']=False
     assert demographic_weight_text(r.data,r.dosing_weight)=='Dosing weight: 14 kg'
 

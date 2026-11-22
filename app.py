@@ -70,6 +70,8 @@ from mrsa import mrsa_screen_text
 from clinical_style import clinical_markup
 from anthropometrics import empty_anthropometrics, clean_field, validate_anthropometrics, measurements_text, FIELDS as ANTHRO_FIELDS
 from bmi_reference import bmi_percentile_summary, download_reference, install_reference, REFERENCE_PATH
+from growth_assessment import assess_growth, growth_measurements_text
+from circumferences import circumferences_text
 from cultures import validate_cultures, cultures_text, compact_groups, category_for
 from viral import validate_viral_panel, viral_text
 from microbiology_display import culture_markup, viral_markup
@@ -875,7 +877,7 @@ def neuro_weight_editor(sheet: dict) -> None:
     if not present:
         st.caption("Paste K, Y, L and/or M to add recorded neurologic observations.")
     st.subheader("Demographics / Weight")
-    st.caption("Admission is shown in the patient column. Below Diagnoses: weight, Z-score when supplied, then dosing weight. A blank dosing-weight field prints Dosing weight: none. Clearing admission omits that date.")
+    st.caption("The patient column shows admission, measured weight, dosing weight and available growth measurements. A blank dosing-weight field prints Dosing weight: none. The imported weight-chart z score is kept here for reference. The handoff prints the age-appropriate weight-for-length or BMI-for-age z score.")
     field = "admission_date"
     key = "demo_" + sheet["id"] + "_" + field
     if key not in st.session_state:
@@ -890,9 +892,9 @@ def neuro_weight_editor(sheet: dict) -> None:
                   on_change=demographic_change, args=(sheet["room"], field, key),
                   help="Imported from AE. Preserve the documented status, including No Order. Blank omits the line.")
     attributes = sheet.get("anthropometrics", empty_anthropometrics())
-    with st.expander("Age, sex, BMI, height and BSA", expanded=True):
-        st.caption("Age and sex print directly below the room. The combined Epic line Age: 6 y.o. Sex: female is accepted in A, I, or N. For BMI percentile, supply age AT THE BMI MEASUREMENT in months or years and months, plus growth-chart sex. Only explicit Age: and Sex: labels are read, not clinical diagnoses or weight-chart footnotes. BMI and BMI percentile are hidden from handoff output below age 2, or until age is documented. Imported values stay editable.")
-        for field, label in (("age", "Age (for example 5 years 2 months)"), ("sex", "Sex for BMI growth chart (Male / Female, or blank)"), ("bmi", "Recorded BMI (kg/m²)"), ("height", "Recorded Height (for example 100 cm)"), ("bsa", "Recorded BSA (for example 0.65 m²)")):
+    with st.expander("Age, measurements and nutrition z scores", expanded=True):
+        st.caption("Below age 2, weight-for-length uses measured weight and recumbent length. From age 2 through 19, BMI-for-age uses the recorded BMI and age at that measurement in months or years and months. An age such as 2 y.o. needs the additional months before a BMI z score can be calculated. Growth-chart sex must be documented. No date of birth is needed.")
+        for field, label in (("age", "Age (for example 5 years 2 months)"), ("sex", "Sex for growth chart (Male / Female, or blank)"), ("bmi", "Recorded BMI (kg/m²)"), ("height", "Recorded length / height (recumbent length if under 2 years)"), ("bsa", "Recorded BSA (for example 0.65 m²)")):
             key = "anthro_" + sheet["id"] + "_" + field
             if key not in st.session_state:
                 st.session_state[key] = attributes[field]
@@ -902,11 +904,30 @@ def neuro_weight_editor(sheet: dict) -> None:
         if summary:
             st.text("BMI percentile: " + summary)
             st.caption(reason)
+        growth = assess_growth(sheet)
+        if growth.display_text:
+            st.text(growth.display_text)
+            st.caption(growth.reason)
+            if growth.severity:
+                st.text('Z-score category: ' + growth.severity)
+            else:
+                st.caption('No malnutrition problem is triggered by this z score.')
+        elif growth.reason:
+            st.caption(growth.reason)
+        st.caption('Automatic cutoffs: mild at -1.65 to above -2, moderate at -2 to above -3, severe at -3 or lower. The score beside an Epic weight is not used for these rules. Problems can be reviewed or hidden in the existing Problems controls.')
+        if 'i' not in sheet.get('import_warnings', {}) and sheet.get('circumferences'):
+            circumference_age = attributes.get('age', '')
+            if any(source in sheet.get('import_warnings', {}) for source in ('a', 'n')):
+                circumference_age = ''
+            text = circumferences_text(sheet['circumferences'], circumference_age)
+            if text:
+                st.text(text)
+                st.caption('Latest supplied measurement dates are shown when available. Re-paste Nutrition to refresh circumference measurements.')
     data = sheet["nutrition"]
     if data is None:
         st.caption("Paste the I block to add a measured weight. Dosing weight is kept separately.")
     else:
-        for field, label in (("weight", "Recorded measured weight, with unit"), ("z_score", "Recorded Z-score"), ("include", "Include measured weight and Z-score")):
+        for field, label in (("weight", "Recorded measured weight, with unit"), ("z_score", "Recorded weight-chart z score (source)"), ("include", "Include measured weight")):
             key = "weight_" + sheet["id"] + "_" + field
             if key not in st.session_state:
                 st.session_state[key] = data[field]
@@ -2212,7 +2233,7 @@ def main() -> None:
         st.button("Home", key="home_screen", on_click=return_home, args=(store,),
                   help="Save all open handoffs and return to the starting screen.", use_container_width=True)
         st.header("PICU Handoff")
-        st.caption(f"Version {APP_VERSION} | Latest ventilator mode from flow table")
+        st.caption(f"Version {APP_VERSION} | Nutrition z scores and circumference measurements")
         if history_ready:
             st.caption("Respiratory mode-history parser: ready")
         else:
@@ -2581,7 +2602,10 @@ def handoff_notes(sheet: dict) -> None:
                         st.text(format_medication(row, sheet))
             if section == "Diagnoses" and demographic_weight_text(sheet["nutrition"], sheet["dosing_weight"]):
                 st.text("----\n" + demographic_weight_text(sheet["nutrition"], sheet["dosing_weight"]))
-                st.caption("Edit measured weight, Z-score, dosing weight and admission date in Labs / Vitals.")
+                growth_text = growth_measurements_text(sheet)
+                if growth_text:
+                    st.markdown('<div style="white-space:pre-wrap">' + clinical_markup(growth_text) + '</div>', unsafe_allow_html=True)
+                st.caption("Edit measured weight, age, recorded BMI, dosing weight and admission date in Labs / Vitals. Re-paste Nutrition to refresh circumference measurements.")
 
 
 def handoff_page(store: GitHubVault | None) -> None:
@@ -3720,7 +3744,7 @@ def group_admin(store: GitHubVault | None) -> None:
         st.text_area("Additional generic names, one per line", key="antiepileptic_extra_names", max_chars=10000)
         st.button("Save Antiepileptic names", on_click=save_antiepileptic_names, args=(store,))
     with st.expander("BMI reference data", expanded=False):
-        st.caption("CDC BMI-for-age, ages 2 through 19. Reference only, no patient data. Data is local to this deployment, not stored in the patient archive.")
+        st.caption("CDC BMI-for-age, ages 2 through 19. The official table is bundled with the app. This optional refresh uses public reference data only. WHO weight-for-length data is also bundled for children under 2.")
         st.caption("Reference available" if REFERENCE_PATH.exists() else "Reference not loaded yet")
         st.button("Load / refresh public CDC BMI reference", on_click=install_bmi_reference)
         st.file_uploader("Or upload CDC bmi-age-2022.csv (public reference only)", type=["csv"], key="bmi_public_reference_upload", on_change=upload_bmi_reference)

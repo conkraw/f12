@@ -1,0 +1,74 @@
+PICU Handoff version 6.105
+Nutrition z scores and circumference measurements
+
+INSTALL
+
+This update is based on conkraw/f12 version 6.104 and retains its ventilator,
+paralytic-table and airway-clearance-device changes.
+
+1. Extract the ZIP on your computer.
+2. Open conkraw/f12 in GitHub and use Add file > Upload files.
+3. Drag the extracted contents into the repository. Replace the Python files
+   and keep the included data folder and both CSV files inside it. Do not
+   upload only app.py, and do not upload the ZIP itself as the update.
+4. Commit the files together. Reboot the Streamlit app and confirm Version
+   6.105 in the sidebar. Re-paste the complete SmartPhrase for each room.
+
+No requirements.txt change, new password, or secret is needed. A reboot alone
+cannot recover circumference values that an older import did not retain.
+
+WHAT APPEARS
+
+Head circumference is displayed only below age 2, when supplied.
+Abdominal girth is displayed at any age, when supplied.
+Each includes its latest supplied measurement date when available. A missing
+date is not replaced with an admission date, weight date or printing date.
+
+Example: Head circumference: 42.5 cm [11/20/26]
+Example: Abdominal girth: 43 cm [11/22/26]
+
+The patient/demographics column displays WHO weight-for-length z score below
+age 2, or CDC BMI-for-age z score from age 2 through 19. Both reference tables
+are included. The app reads them locally.
+
+BMI-FOR-AGE NEEDS AGE IN MONTHS
+
+An age such as 2 y.o. is not enough to calculate a precise BMI-for-age score.
+Use the existing age field in the demographics editor to enter, for example,
+26 months or 2 years 2 months, matching the age at the BMI measurement.
+Explicit Age in months: 26 in A, I or N is also accepted. No date of birth is
+required. Without the needed age, the editor explains what is missing and the
+handoff does not print a guessed score or add a new malnutrition problem.
+
+Below age 2, weight-for-length needs measured weight, recumbent length and
+growth-chart sex. It never uses the dosing weight. The supported length range
+is 45 to 110 cm. No assumed standing-to-recumbent adjustment is applied.
+
+For BMI-for-age, the recorded BMI remains the source. Changing height or weight
+does not change that independently recorded BMI. Update BMI if needed.
+
+PROBLEMS
+
+Mild malnutrition: -2 < z <= -1.65
+Moderate malnutrition: -3 < z <= -2
+Severe malnutrition: z <= -3
+
+These cutoffs come from the single-data-point table supplied for this update.
+A z score of exactly -2 adds Moderate malnutrition. A z score of exactly -3
+adds Severe malnutrition. Values above -1.65 do not automatically add a
+malnutrition problem. Only the requested WFL or BMI-for-age indicator is used.
+
+The old weight-chart z score is retained in the editor and saved record but
+removed from printed output to avoid confusing it with the calculated score.
+Existing diagnosis text is preserved. Existing Problems review/hide controls
+also apply to the new malnutrition problem.
+
+Scores and problem labels refresh from the current measurements. Replacing a
+room's handoff clears the old patient's values as before. Missing measurements
+do not become normal results or reuse an old calculated diagnosis.
+
+REFERENCE DETAILS
+
+BMI_REFERENCE.md explains the method and limits.
+data/GROWTH_REFERENCE_SOURCES.txt records the public source files and hashes.
+VALIDATION_GROWTH_6105.txt records the build checks.

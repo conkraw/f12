@@ -140,10 +140,12 @@ def separate_dosing_weight(block: str) -> DosingResult:
 
 
 def demographic_weight_text(nutrition: dict | None, dosing_weight: str) -> str:
-    """Show weight, optional Z-score, then dosing weight or the display-only 'none'.
+    """Show measured weight and dosing weight or the display-only 'none'.
 
     Missing dosing weights stay empty in storage. This label must never be used
     to infer a dose or make an otherwise blank room eligible for Print all.
+    The untyped imported weight-chart z score remains editable and stored but
+    is not printed. The patient column uses named WFL/BMI-for-age calculations.
     """
     from observations import validate_nutrition
     validate_nutrition(nutrition)
@@ -151,7 +153,5 @@ def demographic_weight_text(nutrition: dict | None, dosing_weight: str) -> str:
     rows = []
     if nutrition and nutrition["include"]:
         rows.append("Weight: " + nutrition["weight"])
-        if nutrition["z_score"]:
-            rows.append("Z-score: " + nutrition["z_score"])
     rows.append("Dosing weight: " + (dosing_weight or "none"))
     return "\n".join(rows)
