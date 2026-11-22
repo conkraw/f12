@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 import pytest
 from pypdf import PdfReader
 
-from exports import handoff_text, handoff_html, handoff_pdf, handoffs_pdf
+from exports import handoff_text, handoff_html, handoff_pdf, handoffs_pdf, handoffs_html
 from importing import import_replacement, import_sections
 from lab_windows import display_clock
 from models import new_sheet, new_vault, save_sheet_in, upgrade_vault, validate_sheet
@@ -197,21 +197,52 @@ def test_hidden_orders_do_not_gain_neuro_counts():
     assert "PRN ×" not in handoff_text(sheet, NOW)
 
 
-def test_pdf_cache_refreshes_for_new_events_and_automatic_7am_rollover():
+@pytest.mark.parametrize("render", [
+    lambda sheet, at: handoff_text(sheet, at),
+    lambda sheet, at: re.sub(r"<[^>]+>", "", handoff_html(sheet, at)),
+    lambda sheet, at: re.sub(r"<[^>]+>", "", handoffs_html([sheet], at)),
+    lambda sheet, at: text_from_pdf(handoff_pdf(sheet, at)),
+    lambda sheet, at: text_from_pdf(handoffs_pdf([sheet], at)),
+], ids=["text", "html", "combined_html", "single_pdf", "combined_pdf"])
+def test_after_7am_print_keeps_yesterday_7am_through_entire_659_minute(render):
+    sheet = imported(source(orders=[order(drug) for drug in COUNTED_MEDICATIONS]))
+    sheet["prn"] = empty_prn()
+    for drug in COUNTED_MEDICATIONS:
+        sheet["prn"]["events"].extend(volume_event(drug, stamp) for stamp in (
+            "2026-11-21T06:59:59-05:00",
+            "2026-11-21T07:00:00-05:00",
+            "2026-11-22T06:59:00-05:00",
+            "2026-11-22T06:59:59.999999-05:00",
+            "2026-11-22T07:00:00-05:00",
+            "2026-11-22T08:00:00-05:00",
+        ))
+    before = deepcopy(sheet)
+    output = render(sheet, NOW.replace(hour=8))
+    assert output.count("PRN × 3") == 2
+    assert output.count("PRN ×") == 2
+    assert sheet == before
+
+
+def test_pdf_cache_keeps_overnight_count_after_7am_and_changes_at_next_midnight():
     sheet = auto_sheet()
     cache = SessionPdfCache()
     try:
         first = cache.prepare(sheet, NOW)
         same = cache.prepare(sheet, NOW + timedelta(seconds=30))
         later = cache.prepare(sheet, NOW + timedelta(minutes=1))
-        next_day = cache.prepare(sheet, NOW.replace(hour=7))
-        next_event = cache.prepare(sheet, NOW.replace(hour=7, minute=1))
+        seven = cache.prepare(sheet, NOW.replace(hour=7))
+        after_seven = cache.prepare(sheet, NOW.replace(hour=7, minute=1))
+        eight = cache.prepare(sheet, NOW.replace(hour=8))
+        late_day = cache.prepare(sheet, NOW.replace(hour=23, minute=59))
+        next_midnight = cache.prepare(sheet, NOW.replace(hour=0) + timedelta(days=1))
         assert first.signature == same.signature
-        assert len({first.signature, later.signature, next_day.signature, next_event.signature}) == 4
+        assert later.signature == seven.signature == after_seven.signature == eight.signature == late_day.signature
+        assert len({first.signature, later.signature, next_midnight.signature}) == 3
         assert "PRN × 3" in text_from_pdf(first.data)
         assert "PRN × 4" in text_from_pdf(later.data)
-        assert text_from_pdf(next_day.data).count("PRN × 0") == 2
-        assert "PRN × 1" in text_from_pdf(next_event.data)
+        assert "PRN × 4" in text_from_pdf(eight.data) and "PRN × 2" in text_from_pdf(eight.data)
+        assert "PRN × 1" in text_from_pdf(next_midnight.data)
+        assert "PRN × 0" in text_from_pdf(next_midnight.data)
         packet = cached_handoffs_pdf([sheet, auto_sheet("P4104")], cache, NOW)
         assert text_from_pdf(packet).count("PRN × 3") == 2
     finally:

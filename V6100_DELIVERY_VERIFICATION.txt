@@ -1,0 +1,18 @@
+PICU Handoff 6.100
+Complete package based on PICU6992.zip, version 6.99.2.
+
+Automatic vecuronium and rocuronium counts. No PRN review form or confirmation.
+Analgesic and sedative records are excluded from counts.
+Paralytic infusions do not hide the counts.
+Latest 7 a.m. Eastern through print time, with automatic rollover.
+Only the number is added after PRN in Neurologic.
+
+462 targeted tests passed, including 3 native Streamlit runtime tests and
+22 Node checks of HTML refresh. The previous import-warning and error-version
+regressions pass with the current version constant.
+
+The supplied example imported without an AF warning and gave vecuronium 5
+at 04:00 on November 22, 2026. No supplied patient source is packaged.
+
+Archive schema 34 and dependencies are unchanged.
+No live deployment or production storage writes were performed.

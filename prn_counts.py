@@ -1,4 +1,4 @@
-"""Count vecuronium and rocuronium entries automatically from the latest 7am.
+"""Count paralytic entries from yesterday at 7am through today's 06:59 minute.
 
 Each positive imported volume entry for either paralytic contributes one count.
 No review or infusion check is required. Other medications are not counted.
@@ -144,10 +144,15 @@ def event_time(value: str | datetime) -> datetime:
 
 
 def prn_window(as_of: datetime | None = None) -> tuple[datetime, datetime]:
-    """Use the same fixed printing clock as the other time-windowed displays."""
-    end = clock(as_of)
-    day = end.date() - timedelta(days=1 if end.timetz().replace(tzinfo=None) < time(7) else 0)
-    return datetime.combine(day, time(7), EASTERN), end
+    """Use yesterday at 7am, capped before today's 7am or at print time.
+
+    The inclusive upper bound includes the entire 06:59 minute. Printing
+    after 7am keeps the overnight count for the current Eastern calendar date.
+    """
+    now = clock(as_of)
+    start = datetime.combine(now.date() - timedelta(days=1), time(7), EASTERN)
+    cutoff = datetime.combine(now.date(), time(7), EASTERN) - timedelta(microseconds=1)
+    return start, min(now, cutoff)
 
 
 def _within(event: dict, start: datetime, end: datetime) -> bool:
@@ -454,7 +459,7 @@ def automatic_prn_events(data: dict | None, medication: str) -> list[tuple[datet
 
 
 def prn_counts(sheet: dict, as_of: datetime | None = None) -> dict[str, int]:
-    """Return automatic paralytic counts from the latest 7am through printing."""
+    """Count yesterday-7am entries through printing, capped at today's 06:59."""
     if not isinstance(sheet, dict) or "af" in sheet.get("import_warnings", {}):
         return {}
     data = sheet.get("prn")

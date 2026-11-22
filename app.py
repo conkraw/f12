@@ -1,4 +1,4 @@
-"""PICU SmartPhrase v6.100: automatic vecuronium and rocuronium counts."""
+"""PICU SmartPhrase v6.101: previous-day 7am through 06:59 PRN counts."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,

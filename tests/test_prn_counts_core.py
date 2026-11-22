@@ -1,6 +1,6 @@
 """Automatic paralytic counts and timestamp checks with synthetic records."""
 from copy import deepcopy
-from datetime import timezone
+from datetime import timedelta, timezone
 import json
 
 import pytest
@@ -158,15 +158,54 @@ def test_4am_window_includes_7am_and_now_but_excludes_old_and_future():
     assert prn_counts({"prn": records}, NOW) == {"vecuronium": 4, "rocuronium": 0}
 
 
-def test_exactly_7am_rolls_over_automatically_and_future_entries_enter_later():
+@pytest.mark.parametrize("printed_at", [
+    "2026-11-22 07:00", "2026-11-22 08:00", "2026-11-22 12:00",
+    "2026-11-22 23:59:59.999999",
+])
+def test_after_7am_keeps_yesterday_window_and_caps_at_end_of_0659(printed_at):
     records = data(*(source_event("rocuronium", stamp) for stamp in (
-        "2026-11-22 06:59", "2026-11-22 07:00", "2026-11-22 07:01")))
-    assert prn_counts({"prn": records}, moment("2026-11-22 06:59"))["rocuronium"] == 1
-    seven = moment("2026-11-22 07:00")
-    assert prn_window(seven)[0] == seven
-    assert prn_counts({"prn": records}, seven)["rocuronium"] == 1
-    assert prn_counts({"prn": records}, moment("2026-11-22 08:00"))["rocuronium"] == 2
-    assert prn_counts({"prn": records}, moment("2026-11-23 08:00")) == ZERO
+        "2026-11-21 06:59:59.999999", "2026-11-21 07:00",
+        "2026-11-21 23:59", "2026-11-22 06:59", "2026-11-22 06:59:59.999999",
+        "2026-11-22 07:00", "2026-11-22 07:01", "2026-11-22 12:00")))
+    start, end = prn_window(moment(printed_at))
+    assert start == moment("2026-11-21 07:00")
+    assert end == moment("2026-11-22 06:59:59.999999")
+    assert prn_counts({"prn": records}, moment(printed_at)) == {"vecuronium": 0, "rocuronium": 4}
+
+
+def test_before_cutoff_uses_print_instant_and_includes_whole_0659_minute():
+    records = data(*(source_event("vecuronium", stamp) for stamp in (
+        "2026-11-21 07:00", "2026-11-22 06:59", "2026-11-22 06:59:59.999999",
+        "2026-11-22 07:00")))
+    early = moment("2026-11-22 06:59")
+    last = moment("2026-11-22 06:59:59.999999")
+    assert prn_window(early) == (moment("2026-11-21 07:00"), early)
+    assert prn_counts({"prn": records}, early)["vecuronium"] == 2
+    assert prn_window(last) == (moment("2026-11-21 07:00"), last)
+    assert prn_counts({"prn": records}, last)["vecuronium"] == 3
+
+
+def test_reporting_date_advances_at_midnight_and_excludes_future_entries():
+    records = data(*(source_event("vecuronium", stamp) for stamp in (
+        "2026-11-22 06:59", "2026-11-22 07:00", "2026-11-22 23:59",
+        "2026-11-23 00:00", "2026-11-23 00:01")))
+    assert prn_counts({"prn": records}, moment("2026-11-22 23:59:59"))["vecuronium"] == 1
+    midnight = moment("2026-11-23 00:00")
+    assert prn_window(midnight) == (moment("2026-11-22 07:00"), midnight)
+    assert prn_counts({"prn": records}, midnight)["vecuronium"] == 3
+
+
+@pytest.mark.parametrize("printed_at,start,cap,hours", [
+    ("2026-11-01 08:00", "2026-10-31T07:00:00-04:00", "2026-11-01T06:59:59.999999-05:00", 25),
+    ("2026-03-08 08:00", "2026-03-07T07:00:00-05:00", "2026-03-08T06:59:59.999999-04:00", 23),
+    ("2026-01-01 12:00", "2025-12-31T07:00:00-05:00", "2026-01-01T06:59:59.999999-05:00", 24),
+    ("2028-03-01 12:00", "2028-02-29T07:00:00-05:00", "2028-03-01T06:59:59.999999-05:00", 24),
+])
+def test_capped_window_handles_dst_year_and_leap_day_changes(printed_at, start, cap, hours):
+    left, right = prn_window(moment(printed_at))
+    assert left == moment(start) and right == moment(cap)
+    assert right.astimezone(timezone.utc) - left.astimezone(timezone.utc) == (
+        timedelta(hours=hours) - timedelta(microseconds=1))
 
 
 def test_no_review_or_infusion_gate_and_old_volume_decisions_do_not_override_counts():
@@ -205,6 +244,8 @@ def test_export_context_clock_controls_counts_without_new_confirmation():
     with display_clock(NOW):
         assert prn_counts({"prn": records}) == {"vecuronium": 1, "rocuronium": 0}
     with display_clock(moment("2026-11-22 07:00")):
+        assert prn_counts({"prn": records}) == {"vecuronium": 1, "rocuronium": 0}
+    with display_clock(moment("2026-11-23 00:00")):
         assert prn_counts({"prn": records}) == ZERO
 
 

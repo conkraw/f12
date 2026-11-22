@@ -1,16 +1,16 @@
-# PICU Handoff 6.100 verification
+# PICU Handoff 6.101 verification
 
-462 tests passed with zero failures or errors in the final regression run.
+480 tests passed with zero failures or errors in the final regression run.
 
-## Current behavior
+## Corrected reporting window
 
-Core tests cover automatic counts for both paralytics without review, exclusion of analgesics and sedatives, malformed ignored columns and cells, exact duplicates, distinct source entries, positive and zero volumes, infusion coexistence, missing and failed AF data, midnight, inclusive print cutoffs, future records, 7 a.m. rollover, and both daylight saving changes. Existing archive schemas and legacy records remain validated.
+The PRN window starts at 7 a.m. on the previous Eastern calendar day. Its upper bound is the earlier of the current print instant and today at 06:59:59.999999. Both paralytics use the same window. Printing at 7 a.m., 8 a.m., noon, or late evening keeps the overnight count. At the next Eastern midnight, the reporting dates advance.
 
-Integration tests check text, HTML, individual PDF, combined PDF, dynamic PDF cache signatures, count placement once per medication, hidden orders, encrypted round trips, mapping preservation, and full-room replacement. Analgesic and sedative suffixes are absent even in archived data that was previously reviewed.
+Ten core cases and eight HTML script cases failed under the former 7 a.m. reset behavior before the correction. The updated tests include the complete 6:59 minute and exclude entries at exactly 7 a.m. or later. They cover daylight saving transitions, year boundaries, leap day, midnight, and future entries.
 
-Three native Streamlit tests run the actual app. They verify automatic counts immediately after a synthetic import, saving, absence of the retired PRN editor and confirmation controls on the Medications tab, and successful logging and preview when a malformed paralytic entry produces an import warning.
+Cross-format integration tests verify text, single and combined HTML, and individual and combined PDF output at 8 a.m. PDF body caching retains the overnight count from 7 a.m. through late evening and updates when the reporting date changes at midnight.
 
-The 22 Node tests execute HTML refresh across print, focus, visibility, interval, 7 a.m. rollover, future-entry, daylight saving, timezone, and malformed-payload scenarios. The HTML payload contains sanitized epoch/count pairs only. Markup tests preserve custom text and keep browser metadata out of text and PDF output.
+Four native Streamlit tests run the actual app. The 8 a.m. import fixture produces different results under the old and corrected window, confirming the overnight values are retained. Import, preview, save, removal of PRN confirmation controls, and the prior import-warning logging regression pass.
 
 ## Final regression modules
 
@@ -22,21 +22,15 @@ The 22 Node tests execute HTML refresh across print, focus, visibility, interval
 | test_import_recovery | 34 |
 | test_measurement_notes_observed_pip | 1 |
 | test_pdf_cache | 68 |
-| test_prn_counts_core | 71 |
-| test_prn_html_browser | 22 |
+| test_prn_counts_core | 80 |
+| test_prn_html_browser | 25 |
 | test_prn_html_markup | 9 |
-| test_prn_integration | 24 |
-| test_prn_preview_native | 3 |
+| test_prn_integration | 29 |
+| test_prn_preview_native | 4 |
 | test_room_replacement | 82 |
 | test_ui_smoke | 8 |
 | test_workflow_print | 64 |
 
-## Supplied example
+The final set also covers automatic paralytic source counting, sedative and analgesic exclusion, infusion coexistence, encrypted journal and archive handling, room replacement, CPAP output, and PDF caching.
 
-The supplied sample imported without an AF warning. Six paralytic records were retained. With an explicit 04:00 Eastern cutoff on November 22, 2026, the current window contained five vecuronium entries and no rocuronium entries. Analgesic and sedative records were excluded. No source text or patient identifiers are included in this package.
-
-## Scope
-
-Existing anyio and pypdf deprecation warnings were reported. No application dependencies changed. Tests ran locally and used synthetic records except for the aggregate check of the supplied example. No live deployment or production archive write occurred.
-
-The retired PRN review UI and its obsolete manual-review UI tests were removed. Current core, integration, and native tests cover their replacement behavior. Historical release reports remain in the V6992 files.
+Existing anyio and pypdf deprecation warnings were reported. Application dependencies and archive schema are unchanged. These are local runtime and automated tests. No live deployment or production archive write occurred. No supplied patient source is included in the package.

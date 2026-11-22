@@ -1,8 +1,8 @@
 """Refresh automatic paralytic PRN counts when an HTML handoff is printed.
 
 The document carries only sanitized epoch/count pairs from imported vecuronium
-and rocuronium records. Every refresh uses the current Eastern reporting day,
-starting at the most recent 7am, without a separate confirmation step.
+and rocuronium records. Every refresh starts at yesterday's 7am Eastern and
+ends at the current time, capped at the end of today's 6:59am minute.
 """
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ def _without_counts(blocks: list[tuple]) -> list[tuple]:
 def _count_payload(data: dict, medication: str) -> dict:
     from prn_counts import automatic_prn_events
     # Keep available future and next-day entries so a later print can refresh
-    # its window without requiring another review or approving a new day.
+    # its window when the Eastern calendar date changes at midnight.
     # Fractional milliseconds preserve subsecond cutoff comparisons.
     return {"version": 2, "events": [
         [instant.timestamp() * 1000, count]
@@ -130,7 +130,9 @@ PRN_PRINT_SCRIPT = """<script>
     let reportingDay = '';
     try {
       const local = localParts(now);
-      reportingDay = dateKey(local, local.hour < 7);
+      // Keep yesterday's 7am-to-6:59am window throughout today's date.
+      // The event-day match excludes today's 7am and later entries.
+      reportingDay = dateKey(local, true);
     } catch (error) { /* An invalid browser clock suppresses numeric counts. */ }
     document.querySelectorAll('[data-prn-count]').forEach(node => {
       let text = '';

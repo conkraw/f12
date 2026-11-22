@@ -86,6 +86,29 @@ def test_native_medications_tab_has_no_prn_review_or_confirmation_controls(nativ
     assert not any("Verify actual administration" in caption.value for caption in at.caption)
 
 
+def test_native_8am_import_keeps_overnight_counts_and_excludes_7am_entries(native_app, monkeypatch):
+    at = native_app
+    printed_at = NOW.replace(hour=8)
+    monkeypatch.setattr(lab_windows, "_WINDOW_TIME", ContextVar("native_capped_prn_clock", default=printed_at))
+    body = "\n".join(
+        "Volume (mL) " + drug + ": 1 mL (" + stamp + " : SYNTHETIC_CLINICIAN, RN)"
+        for drug in ("Vecuronium", "Rocuronium")
+        for stamp in ("11/21/26 0700", "11/22/26 0141", "11/22/26 0659", "11/22/26 0700")
+    )
+    import_source(at, source(af=body))
+    sheet = deepcopy(at.session_state["vault"]["rooms"]["P4102"])
+    assert len(sheet["prn"]["events"]) == 8
+    assert sheet["prn"]["reviewed"] == {}
+    assert prn_counts(sheet, printed_at) == {"vecuronium": 3, "rocuronium": 3}
+    preview = next(item.proto.srcdoc for item in at.get("iframe") if "Synthetic PRN print example" in item.proto.srcdoc)
+    assert preview.count('data-prn-count="') == 2
+    assert preview.count(" × 3</span>") == 2
+    assert not any("Confirm" in button.label and "PRN" in button.label for button in at.button)
+    next(button for button in at.button if button.label == "Save handoff").click().run()
+    assert not at.exception and not at.error
+    assert at.session_state["vault"]["rooms"]["P4102"]["prn"] == sheet["prn"]
+
+
 def test_native_import_warning_is_recorded_without_blocking_preview_or_save(native_app):
     at = native_app
     malformed = source(af="Volume (mL) Vecuronium: 1 mL (missing date)")

@@ -1,0 +1,32 @@
+PICU Handoff 6.100
+Baseline: 6.99.2
+
+Extract PICU6100.zip and open PICU_Handoff_v6_100_Automatic_Paralytic_Counts.
+
+Replace these seven files beside the app.py that Streamlit runs:
+app.py
+categories.py
+error_store.py
+exports.py
+importing.py
+prn_counts.py
+prn_html.py
+
+Commit the replacements and reboot Streamlit once.
+Confirm Version 6.100 in the sidebar.
+Paste the complete SmartPhrase as usual. Paralytic counts are automatic.
+There is no PRN review form or confirmation step.
+
+Only vecuronium and rocuronium are counted. Each positive dated volume entry
+contributes one count, with exact duplicate entries counted once.
+Analgesic and sedative entries are ignored.
+The count is still shown when a paralytic infusion is also present.
+The window starts at the most recent 7 a.m. Eastern and ends at print time.
+The count appears after PRN in Neurologic, without administration dates or times.
+
+The same seven-file update works from 6.99 and 6.99.1.
+For 6.98 or earlier, use the complete package's application files.
+Keep the existing Streamlit Secrets and encryption key.
+
+462 targeted tests passed. Dependencies and archive schema 34 are unchanged.
+Ready to install. No live deployment was performed.

@@ -1,0 +1,20 @@
+PICU Handoff 6.100 archive compatibility
+
+Archive schema remains 34. The optional prn record keeps the existing version 1
+shape, including medication keys, timestamps, source volumes, dose counts, and
+legacy review metadata. Source text and clinician names are not stored.
+
+Older eight-drug records remain valid. Only vecuronium and rocuronium contribute
+to current counts. Positive volume records are counted automatically regardless
+of legacy review decisions. Positive manually entered totals for the two
+paralytics remain readable. New imports retain only the two paralytics.
+
+Existing archives without PRN data remain valid. Mapping-only synchronization
+preserves patient data locally. PRN records are not copied by mapping sync.
+
+Complete room replacement uses the new SmartPhrase. Missing or failed AF data
+cannot restore old patient records or old counts. The existing encrypted save,
+room-conflict, and download guards apply.
+
+Install the replacement runtime files together. Keep the existing credentials,
+encryption keys, and repository settings.

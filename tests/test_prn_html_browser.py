@@ -131,7 +131,7 @@ def test_script_preserves_initial_server_clock_and_registers_refreshes():
     assert result["intervals"] == [60000]
 
 
-def test_7am_rollover_counts_new_reporting_day_automatically():
+def test_after_7am_keeps_yesterdays_window_and_excludes_todays_daytime():
     data = payload([
         ("2026-11-21T12:00:00-05:00", 3),
         ("2026-11-22T07:00:00-05:00", 1),
@@ -140,23 +140,59 @@ def test_7am_rollover_counts_new_reporting_day_automatically():
     result = run_script([data], now="2026-11-22T06:59:59-05:00", steps=[
         {"now": "2026-11-22T06:59:59-05:00", "event": "beforeprint"},
         {"now": "2026-11-22T07:00:00-05:00", "event": "beforeprint"},
-        {"now": "2026-11-22T09:00:00-05:00", "event": "interval"},
+        {"now": "2026-11-22T08:00:00-05:00", "event": "focus"},
+        {"now": "2026-11-22T23:59:59-05:00", "event": "interval"},
     ])
-    assert result["snapshots"] == [[" × 99"], [" × 3"], [" × 1"], [" × 2"]]
+    assert result["snapshots"] == [[" × 99"], [" × 3"], [" × 3"], [" × 3"], [" × 3"]]
 
 
-def test_future_events_enter_count_without_confirmation():
+def test_future_overnight_entries_enter_until_the_0659_cap():
     data = payload([
-        ("2026-11-22T07:30:00-05:00", 1),
-        ("2026-11-22T08:10:00-05:00", 1),
-        ("2026-11-22T08:15:00-05:00", 1),
+        ("2026-11-22T03:30:00-05:00", 1),
+        ("2026-11-22T04:10:00-05:00", 1),
+        ("2026-11-22T06:59:59-05:00", 1),
+        ("2026-11-22T07:00:00-05:00", 50),
     ])
-    result = run_script([data], now="2026-11-22T08:00:00-05:00", steps=[
-        {"now": "2026-11-22T08:00:00-05:00", "event": "beforeprint"},
-        {"now": "2026-11-22T08:10:00-05:00", "event": "focus"},
-        {"now": "2026-11-22T08:15:00-05:00", "event": "interval"},
+    result = run_script([data], now="2026-11-22T04:00:00-05:00", steps=[
+        {"now": "2026-11-22T04:00:00-05:00", "event": "beforeprint"},
+        {"now": "2026-11-22T04:10:00-05:00", "event": "focus"},
+        {"now": "2026-11-22T06:59:59-05:00", "event": "interval"},
+        {"now": "2026-11-22T07:00:00-05:00", "event": "beforeprint"},
     ])
-    assert result["snapshots"] == [[" × 99"], [" × 1"], [" × 2"], [" × 3"]]
+    assert result["snapshots"] == [[" × 99"], [" × 1"], [" × 2"], [" × 3"], [" × 3"]]
+
+
+def test_full_0659_minute_is_included_but_exactly_0700_is_excluded():
+    data = payload([
+        ("2026-11-21T06:59:59.999-05:00", 50),
+        ("2026-11-21T07:00:00-05:00", 1),
+        ("2026-11-22T06:59:59.999-05:00", 1),
+        ("2026-11-22T07:00:00-05:00", 50),
+    ])
+    result = run_script([data], now="2026-11-22T06:59:59.998-05:00", steps=[
+        {"now": "2026-11-22T06:59:59.998-05:00", "event": "beforeprint"},
+        {"now": "2026-11-22T06:59:59.999-05:00", "event": "beforeprint"},
+        {"now": "2026-11-22T07:00:00-05:00", "event": "beforeprint"},
+        {"now": "2026-11-22T20:00:00-05:00", "event": "beforeprint"},
+    ])
+    assert result["snapshots"] == [[" × 99"], [" × 1"], [" × 2"], [" × 2"], [" × 2"]]
+
+
+def test_next_midnight_advances_previous_calendar_day_and_excludes_future():
+    data = payload([
+        ("2026-11-21T23:00:00-05:00", 3),
+        ("2026-11-22T06:59:59-05:00", 1),
+        ("2026-11-22T07:00:00-05:00", 1),
+        ("2026-11-22T23:59:59-05:00", 1),
+        ("2026-11-23T00:00:00-05:00", 1),
+        ("2026-11-23T00:00:01-05:00", 1),
+    ])
+    result = run_script([data], now="2026-11-22T23:59:59-05:00", steps=[
+        {"now": "2026-11-22T23:59:59-05:00", "event": "beforeprint"},
+        {"now": "2026-11-23T00:00:00-05:00", "event": "beforeprint"},
+        {"now": "2026-11-23T00:00:01-05:00", "event": "interval"},
+    ])
+    assert result["snapshots"] == [[" × 99"], [" × 4"], [" × 3"], [" × 4"]]
 
 
 def test_visibility_refresh_occurs_only_when_page_is_visible():
@@ -185,11 +221,26 @@ def test_visibility_refresh_occurs_only_when_page_is_visible():
          ("2026-01-01T04:00:00-05:00", 1)],
     ),
 ])
-def test_dst_and_calendar_rollovers_use_eastern_day(now, reset, events):
+def test_dst_and_calendar_rollovers_keep_yesterdays_window_after_7am(now, reset, events):
     result = run_script([payload(events)], now=now, host_tz="Pacific/Honolulu", steps=[
         {"now": now, "event": "beforeprint"}, {"now": reset, "event": "beforeprint"},
     ])
-    assert result["snapshots"] == [[" × 99"], [" × 3"], [" × 0"]]
+    assert result["snapshots"] == [[" × 99"], [" × 3"], [" × 3"]]
+
+
+def test_new_year_midnight_advances_window_by_eastern_calendar_date():
+    data = payload([
+        ("2025-12-30T12:00:00-05:00", 4),
+        ("2025-12-31T07:00:00-05:00", 1),
+        ("2025-12-31T23:59:59-05:00", 1),
+        ("2026-01-01T00:00:00-05:00", 1),
+        ("2026-01-01T00:00:01-05:00", 1),
+    ])
+    result = run_script([data], now="2025-12-31T23:59:59-05:00", host_tz="Asia/Tokyo", steps=[
+        {"now": "2025-12-31T23:59:59-05:00", "event": "beforeprint"},
+        {"now": "2026-01-01T00:00:00-05:00", "event": "beforeprint"},
+    ])
+    assert result["snapshots"] == [[" × 99"], [" × 4"], [" × 3"]]
 
 
 def test_multiple_rooms_refresh_independently_and_malformed_data_fails_closed():
