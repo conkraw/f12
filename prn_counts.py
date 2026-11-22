@@ -1,4 +1,4 @@
-"""Count paralytic entries from yesterday at 7am through today's 06:59 minute.
+"""Count vecuronium and rocuronium entries from yesterday's 7am to printing.
 
 Each positive imported volume entry for either paralytic contributes one count.
 No review or infusion check is required. Other medications are not counted.
@@ -25,6 +25,7 @@ MEDICATIONS = (
     "pentobarbital", "vecuronium", "rocuronium",
 )
 COUNTED_MEDICATIONS = ("vecuronium", "rocuronium")
+COUNT_CAP = 6
 LABELS = {medication: medication.capitalize() for medication in MEDICATIONS}
 ALIASES = {
     "hydromorphone": ("hydromorphone", "dilaudid"),
@@ -48,6 +49,10 @@ _VOLUME = re.compile(
     r"(?P<volume>[+-]?(?:\d+(?:\.\d*)?|\.\d+))\s*mL\b\s*"
     r"\((?P<stamp>[^()\r\n]*)\)", re.I,
 )
+_TABLE_LABEL = re.compile(r"Volume\s*\(\s*mL\s*\)\s*(?P<drug>[^:\r\n\t]+?)\s*:?", re.I)
+_TABLE_DATE_START = re.compile(r"(?:\d{1,2}/\d{1,2}/\d{2,4}\s|\d{4}-\d{2}-\d{2}[T ])")
+_TABLE_VOLUME = re.compile(r"(?P<volume>[+-]?(?:\d+(?:\.\d*)?|\.\d+))(?:\s*mL)?", re.I)
+_EMPTY_CELLS = {"", "no data recorded", "no results found", "none", "-", "--"}
 _LOCAL_STAMP = re.compile(
     r"(?P<date>\d{1,2}/\d{1,2}/(?:\d{4}|\d{2}))\s+"
     r"(?P<time>\d{1,2}:\d{2}(?::\d{2})?|\d{4})"
@@ -144,15 +149,17 @@ def event_time(value: str | datetime) -> datetime:
 
 
 def prn_window(as_of: datetime | None = None) -> tuple[datetime, datetime]:
-    """Use yesterday at 7am, capped before today's 7am or at print time.
+    """Start at 7am on the Eastern calendar day before the printing clock."""
+    end = clock(as_of)
+    day = end.date() - timedelta(days=1)
+    return datetime.combine(day, time(7), EASTERN), end
 
-    The inclusive upper bound includes the entire 06:59 minute. Printing
-    after 7am keeps the overnight count for the current Eastern calendar date.
-    """
-    now = clock(as_of)
-    start = datetime.combine(now.date() - timedelta(days=1), time(7), EASTERN)
-    cutoff = datetime.combine(now.date(), time(7), EASTERN) - timedelta(microseconds=1)
-    return start, min(now, cutoff)
+
+def prn_count_suffix(count: int | None) -> str:
+    """Format an exact count below the six-entry table limit, or its minimum."""
+    if type(count) is not int or count < 0:
+        return ""
+    return f" ≥{COUNT_CAP}" if count >= COUNT_CAP else f" × {count}"
 
 
 def _within(event: dict, start: datetime, end: datetime) -> bool:
@@ -269,6 +276,50 @@ def _known_excluded(text: str) -> bool:
         for alias in ALIASES[drug])
 
 
+def _expand_horizontal_tables(lines: list[str]):
+    """Normalize dated Epic column tables into the existing volume format.
+
+    Tabs, including empty cells, determine the column alignment. Repeated date
+    headers replace the active header so wrapped tables retain every event.
+    Only normalized medication, volume, and timestamp values are yielded.
+    """
+    timestamps = None
+    for raw in lines:
+        cells = [cell.strip() for cell in raw.split("\t")]
+        first = cells[0]
+        if not raw.strip():
+            continue
+        date_cells = cells[1:] if not first else cells
+        if (not first or _TABLE_DATE_START.match(first)) and any(
+                _TABLE_DATE_START.match(cell) for cell in date_cells):
+            timestamps = [event_time(cell).isoformat() if cell else None for cell in date_cells]
+            continue
+        if timestamps is not None and len(cells) == 1 and first.casefold() == "other":
+            continue
+        label = _TABLE_LABEL.fullmatch(first)
+        if label and (timestamps is not None or len(cells) > 1):
+            drug_text = label.group("drug")
+            if not _mentions_counted(drug_text):
+                continue
+            drug = canonical_medication(drug_text)
+            if drug not in COUNTED_MEDICATIONS:
+                raise ValueError("A PRN volume entry does not identify one supported medication.")
+            if timestamps is None:
+                raise ValueError("A PRN volume table requires a complete administration date and time for each column.")
+            for index, cell in enumerate(cells[1:]):
+                if cell.casefold() in _EMPTY_CELLS:
+                    continue
+                if index >= len(timestamps) or timestamps[index] is None:
+                    raise ValueError("A PRN volume table cell is missing its administration date and time.")
+                match = _TABLE_VOLUME.fullmatch(cell)
+                if not match:
+                    raise ValueError("A PRN volume table cell does not contain a readable volume in mL.")
+                yield f"Volume (mL) {drug}: {match.group('volume')} mL ({timestamps[index]})"
+            continue
+        timestamps = None
+        yield raw
+
+
 def parse_prn(text: str) -> PRNResult:
     """Retain only dated paralytic entries from the AF block.
 
@@ -292,7 +343,7 @@ def parse_prn(text: str) -> PRNResult:
     duplicates = False
     excluded_columns = set()
     try:
-        for raw in lines:
+        for raw in _expand_horizontal_tables(lines):
             line = raw.strip()
             if not line:
                 continue
@@ -459,7 +510,7 @@ def automatic_prn_events(data: dict | None, medication: str) -> list[tuple[datet
 
 
 def prn_counts(sheet: dict, as_of: datetime | None = None) -> dict[str, int]:
-    """Count yesterday-7am entries through printing, capped at today's 06:59."""
+    """Return capped paralytic counts from yesterday's 7am through printing."""
     if not isinstance(sheet, dict) or "af" in sheet.get("import_warnings", {}):
         return {}
     data = sheet.get("prn")
@@ -469,8 +520,8 @@ def prn_counts(sheet: dict, as_of: datetime | None = None) -> dict[str, int]:
             return {}
         start, end = prn_window(as_of)
         start_utc, end_utc = start.astimezone(timezone.utc), end.astimezone(timezone.utc)
-        return {drug: sum(count for instant, count in automatic_prn_events(data, drug)
-                          if start_utc <= instant.astimezone(timezone.utc) <= end_utc)
+        return {drug: min(COUNT_CAP, sum(count for instant, count in automatic_prn_events(data, drug)
+                                        if start_utc <= instant.astimezone(timezone.utc) <= end_utc))
                 for drug in COUNTED_MEDICATIONS}
     except (ValueError, TypeError, KeyError, OverflowError):
         return {}

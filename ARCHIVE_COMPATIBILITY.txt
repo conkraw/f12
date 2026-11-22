@@ -1,4 +1,4 @@
-PICU Handoff 6.101 archive compatibility
+PICU Handoff 6.102 archive compatibility
 
 Archive schema remains 34. The optional prn record keeps the existing version 1
 shape, including medication keys, timestamps, source volumes, dose counts, and
@@ -19,6 +19,7 @@ room-conflict, and download guards apply.
 Install the replacement runtime files together. Keep the existing credentials,
 encryption keys, and repository settings.
 
-This release changes only the PRN display window. Stored administration
-timestamps are preserved. The window always uses previous-day 7 a.m. through
-today at 6:59 a.m., or the earlier print time. Other display clocks are unchanged.
+This release adds horizontal AF table parsing and a six-entry display cap.
+Stored administration timestamps are preserved. The window runs from 07:00
+on the previous Eastern calendar day through printing. Other display clocks
+are unchanged. No archive migration or dependency change is required.

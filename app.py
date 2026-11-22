@@ -1,4 +1,4 @@
-"""PICU SmartPhrase v6.101: previous-day 7am through 06:59 PRN counts."""
+"""PICU SmartPhrase v6.102: dated paralytic tables with capped PRN counts."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,
@@ -2185,7 +2185,7 @@ def main() -> None:
         st.button("Home", key="home_screen", on_click=return_home, args=(store,),
                   help="Save all open handoffs and return to the starting screen.", use_container_width=True)
         st.header("PICU Handoff")
-        st.caption(f"Version {APP_VERSION} | Automatic paralytic PRN counts")
+        st.caption(f"Version {APP_VERSION} | Table paralytic PRN counts")
         if history_ready:
             st.caption("Respiratory mode-history parser: ready")
         else:

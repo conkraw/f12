@@ -1,36 +1,27 @@
-# PICU Handoff 6.101 verification
+# PICU Handoff 6.102 verification
 
-480 tests passed with zero failures or errors in the final regression run.
+467 focused automated checks passed. Tests use synthetic records. The final code is based on version 6.101 and follows the newly requested window through printing.
 
-## Corrected reporting window
+## Reporting and source behavior
 
-The PRN window starts at 7 a.m. on the previous Eastern calendar day. Its upper bound is the earlier of the current print instant and today at 06:59:59.999999. Both paralytics use the same window. Printing at 7 a.m., 8 a.m., noon, or late evening keeps the overnight count. At the next Eastern midnight, the reporting dates advance.
+The AF parser reads horizontal dated volume tables, including repeated headers and empty cells. Each positive volume contributes one record. Existing dated FLOWDATETIME inputs remain supported. Only vecuronium and rocuronium are counted.
 
-Ten core cases and eight HTML script cases failed under the former 7 a.m. reset behavior before the correction. The updated tests include the complete 6:59 minute and exclude entries at exactly 7 a.m. or later. They cover daylight saving transitions, year boundaries, leap day, midnight, and future entries.
+The window begins at 07:00 Eastern on the calendar day before printing. Both endpoints are inclusive. Today's doses after 07:00 enter the count when they are at or before the printing clock. At midnight, the start date advances. Date filtering occurs before the six-entry cap.
 
-Cross-format integration tests verify text, single and combined HTML, and individual and combined PDF output at 8 a.m. PDF body caching retains the overnight count from 7 a.m. through late evening and updates when the reporting date changes at midnight.
+Counts below six use `PRN × N`. Six or more use `PRN ≥6`. PDF output uses the equivalent `PRN >=6` for compatibility with its existing font. No count review or infusion check is required.
 
-Four native Streamlit tests run the actual app. The 8 a.m. import fixture produces different results under the old and corrected window, confirming the overnight values are retained. Import, preview, save, removal of PRN confirmation controls, and the prior import-warning logging regression pass.
+## Verification groups
 
-## Final regression modules
-
-| Test module | Passed |
+| Group | Passed |
 | --- | ---: |
-| test_callbacks | 13 |
-| test_cpap_trial_data | 9 |
-| test_error_journal | 54 |
-| test_import_recovery | 34 |
-| test_measurement_notes_observed_pip | 1 |
-| test_pdf_cache | 68 |
-| test_prn_counts_core | 80 |
-| test_prn_html_browser | 25 |
-| test_prn_html_markup | 9 |
-| test_prn_integration | 29 |
-| test_prn_preview_native | 4 |
-| test_room_replacement | 82 |
-| test_ui_smoke | 8 |
-| test_workflow_print | 64 |
+| Core parsing, counts, boundary and calendar cases | 122 |
+| HTML script and markup | 45 |
+| Import, text/HTML/PDF integration and native Streamlit flow | 53 |
+| Medication formatting and encrypted error journal regressions | 247 |
+| Total | 467 |
 
-The final set also covers automatic paralytic source counting, sedative and analgesic exclusion, infusion coexistence, encrypted journal and archive handling, room replacement, CPAP output, and PDF caching.
+Coverage includes repeated and blank table cells, exact duplicates, malformed dates, separate paralytics, ignored sedatives and analgesics, print-time inclusion, five-to-six transitions, midnight, daylight saving transitions, year and leap-day boundaries, fractional timestamps, Python/JavaScript agreement, PDF cache refresh, archive compatibility, and complete room replacement.
 
-Existing anyio and pypdf deprecation warnings were reported. Application dependencies and archive schema are unchanged. These are local runtime and automated tests. No live deployment or production archive write occurred. No supplied patient source is included in the package.
+The supplied full SmartPhrase also imported AF successfully. It produced three entries at 06:59, five at 10:30, and the capped six display at 12:02 on the printing day. A PDF generated from that input contained `PRN >=6`. No supplied patient text or output was written to the repository.
+
+Existing anyio and pypdf deprecation warnings were reported. Dependencies and archive schema 34 remain unchanged. Live deployment status is separate from these local runtime and automated checks.

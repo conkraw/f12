@@ -1,34 +1,36 @@
-PICU Handoff 6.101
-Baseline: 6.100
+PICU Handoff 6.102
+Baseline: 6.101
 
-Extract PICU6101.zip and open PICU_Handoff_v6_101_Previous_Day_PRN_Window.
-
-From 6.100, replace these files beside the app.py that Streamlit runs:
+From 6.100 or 6.101, update these files together in the application folder:
 app.py
 error_store.py
 exports.py
+medications.py
 prn_counts.py
 prn_html.py
 
-Commit the replacements and reboot Streamlit once.
-Confirm Version 6.101 in the sidebar.
+Confirm Version 6.102 in the sidebar after Streamlit reloads the source.
+If the previous version remains, reboot the app once.
 
-Both paralytic counts always start at 7 a.m. on the previous Eastern calendar
-day. Before 7 a.m. today, count through the current print time. At 7 a.m. or
-later, cap the count at the end of today's 6:59 a.m. minute. Today's doses at
-7 a.m. or later are excluded. The count does not restart at 7 a.m.
+The alternating af block accepts the dated Epic vecuronium volume table.
+Repeated header blocks form one event list. Positive volume cells count once,
+blank cells preserve their timestamp alignment, and exact repeats count once.
 
-Examples for a handoff printed today:
-4 a.m. print: yesterday 7 a.m. through today 4 a.m.
-8 a.m. print: yesterday 7 a.m. through today 6:59 a.m.
+Count from 07:00 Eastern on the calendar day before printing through the print
+preparation time, including both endpoints. Doses after today's 07:00 are
+included. The earlier 06:59 cutoff has been removed at the user's request.
 
-Vecuronium and rocuronium counts are automatic. No review or confirmation is
-required. Only the number is added after PRN. Analgesics and sedatives are not
-counted, and a paralytic infusion does not suppress the count.
+Fewer than six qualifying entries display as PRN x 5, for example.
+Six or more display as PRN >=6. HTML and text show the equivalent form, ≥6.
+The window can exceed 24 hours when printing after 07:00.
 
-From 6.99, 6.99.1, or 6.99.2, also replace categories.py and importing.py.
-From 6.98 or earlier, use the complete package's application files.
-Keep the existing Streamlit Secrets and encryption key.
+Both vecuronium and rocuronium remain supported. Sedatives and analgesics are
+not counted. No review or infusion check is required. Existing FLOWDATETIME
+input and archive schema 34 remain compatible. Keep the current Streamlit
+Secrets, encryption key, and repository settings.
 
-480 targeted tests passed. Dependencies and archive schema 34 are unchanged.
-Ready to install. No live deployment was performed.
+Only events present in the pasted source can be counted. Re-paste to include
+newly recorded administrations. PDF counts use preparation time. Downloaded
+HTML refreshes before browser printing.
+
+467 focused tests passed. See TEST_REPORT.md for verification.

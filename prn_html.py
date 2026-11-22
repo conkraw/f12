@@ -1,8 +1,8 @@
 """Refresh automatic paralytic PRN counts when an HTML handoff is printed.
 
 The document carries only sanitized epoch/count pairs from imported vecuronium
-and rocuronium records. Every refresh starts at yesterday's 7am Eastern and
-ends at the current time, capped at the end of today's 6:59am minute.
+and rocuronium records. Every refresh starts at 7am on the previous Eastern
+calendar day and ends at printing, without a separate confirmation step.
 """
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ def _without_counts(blocks: list[tuple]) -> list[tuple]:
 def _count_payload(data: dict, medication: str) -> dict:
     from prn_counts import automatic_prn_events
     # Keep available future and next-day entries so a later print can refresh
-    # its window when the Eastern calendar date changes at midnight.
+    # its window without requiring another review or approving a new day.
     # Fractional milliseconds preserve subsecond cutoff comparisons.
     return {"version": 2, "events": [
         [instant.timestamp() * 1000, count]
@@ -42,7 +42,7 @@ def mark_live_prn_counts(sheet: dict, body_markup: str, blocks: list[tuple], esc
     from infusions import render_body_blocks
     from medications import format_medication
     from output_text import medication_output
-    from prn_counts import canonical_medication, prn_counts, validate_prn
+    from prn_counts import canonical_medication, prn_count_suffix, prn_counts, validate_prn
 
     counted = [(kind, item) for kind, item in blocks
                if kind == "medication" and isinstance(item, dict) and "_prn_count" in item]
@@ -73,7 +73,7 @@ def mark_live_prn_counts(sheet: dict, body_markup: str, blocks: list[tuple], esc
                 raise ValueError("The automatic PRN count changed.")
             plain_row = {key: value for key, value in item.items() if key != "_prn_count"}
             plain = esc(medication_output(format_medication(plain_row)))
-            suffix = esc(" \u00d7 " + str(count))
+            suffix = esc(prn_count_suffix(count))
             candidates = [match.start() for match in re.finditer(re.escape(suffix), rendered)
                           if rendered[:match.start()] + rendered[match.end():]
                           in {plain, plain + esc(" | PRN")}]
@@ -119,19 +119,19 @@ PRN_PRINT_SCRIPT = """<script>
           typeof event[0] !== 'number' || !Number.isFinite(event[0]) ||
           !Number.isInteger(event[1]) || event[1] < 0 || event[1] > 100) return '';
       const local = localParts(event[0]);
-      if (event[0] <= now && dateKey(local, local.hour < 7) === reportingDay) {
+      const eventDay = dateKey(local, false);
+      if (event[0] <= now && (eventDay > reportingDay ||
+          (eventDay === reportingDay && local.hour >= 7))) {
         count += event[1];
       }
     }
-    return ' \\u00d7 ' + String(count);
+    return count >= 6 ? ' \\u22656' : ' \\u00d7 ' + String(count);
   }
   function updatePrnCounts() {
     const now = Date.now();
     let reportingDay = '';
     try {
       const local = localParts(now);
-      // Keep yesterday's 7am-to-6:59am window throughout today's date.
-      // The event-day match excludes today's 7am and later entries.
       reportingDay = dateKey(local, true);
     } catch (error) { /* An invalid browser clock suppresses numeric counts. */ }
     document.querySelectorAll('[data-prn-count]').forEach(node => {

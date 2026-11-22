@@ -804,7 +804,7 @@ def pdf_content_signature(sheet: dict, printed_at: datetime | None = None, *,
     validate_sheet(sheet)
     fields = display_fields(sheet, include_lab_text=False)
     payload = {
-        'renderer': '6.101-previous-day-paralytic-prn-v3', 'target_pages': target_pages,
+        'renderer': '6.102-table-paralytic-prn-v3', 'target_pages': target_pages,
         'sheet': {key: value for key, value in sheet.items()
                   if key not in ('created_at', 'updated_at')},
         'fields': fields,

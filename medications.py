@@ -233,13 +233,14 @@ def validate_medication(row: dict) -> None:
 
 def format_medication(row: dict, sheet: dict | None = None) -> str:
     """Use explicit dose column. Keep different formulation/ordered doses visible."""
+    from prn_counts import prn_count_suffix
+    count_suffix = prn_count_suffix(row.get("_prn_count"))
     if row.get("custom_text", "").strip():
         text = row["custom_text"].strip()
-        count = row.get("_prn_count")
-        if type(count) is int and count >= 0:
+        if count_suffix:
             if re.search(r"\bPRN\b", text, re.I):
-                return re.sub(r"\bPRN\b", lambda match: match.group() + " \u00d7 " + str(count), text, count=1, flags=re.I)
-            return text + " | PRN \u00d7 " + str(count)
+                return re.sub(r"\bPRN\b", lambda match: match.group() + count_suffix, text, count=1, flags=re.I)
+            return text + " | PRN" + count_suffix
         return text
     # Clean only the local display name. Matching, schedules and rate selection
     # below continue to receive the complete original row.
@@ -275,9 +276,8 @@ def format_medication(row: dict, sheet: dict | None = None) -> str:
         text += " | " + row["route"].strip()
     if row["frequency"].strip():
         frequency = row["frequency"].strip()
-        count = row.get("_prn_count")
-        if type(count) is int and count >= 0:
-            frequency = re.sub(r"\bPRN\b|\bas needed\b", lambda match: match.group() + " \u00d7 " + str(count), frequency, count=1, flags=re.I)
+        if count_suffix:
+            frequency = re.sub(r"\bPRN\b|\bas needed\b", lambda match: match.group() + count_suffix, frequency, count=1, flags=re.I)
         text += " | " + frequency
     return text
 
