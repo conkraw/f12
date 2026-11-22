@@ -1,36 +1,29 @@
-<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>PICU Handoff 6.99</title><style>body{font:16px/1.6 system-ui,sans-serif;max-width:900px;margin:40px auto;padding:0 24px;color:#22313b}h1,h2{color:#153f53}pre{white-space:pre-wrap;background:#f2f5f7;padding:18px}li{margin:6px 0}</style><h1>PICU Handoff 6.99</h1><p>CPAP Trial Data and verified PRN counts.</p><h2>Install</h2><pre>PICU Handoff 6.99
-Baseline: 6.98
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>PICU Handoff 6.99.1</title><style>body{font:16px/1.6 system-ui,sans-serif;max-width:900px;margin:40px auto;padding:0 24px;color:#22313b}h1,h2{color:#153f53}pre{white-space:pre-wrap;background:#f2f5f7;padding:18px}li{margin:6px 0}</style><h1>PICU Handoff 6.99.1</h1><p>Fix for the PRN preview error.</p><h2>Install</h2><pre>PICU Handoff 6.99.1
+Baseline: 6.99
 
-Extract PICU699.zip and open PICU_Handoff_v6_99_CPAP_PRN.
+Extract PICU6991.zip and open PICU_Handoff_v6_99_1_PRN_Preview_Fix.
 
-Replace these existing files:
+If version 6.99 is already installed, replace these files beside the app.py
+that Streamlit runs:
 app.py
-categories.py
-clinical_style.py
 error_store.py
-exports.py
-import_review.py
-importing.py
-medications.py
-models.py
-parser.py
-ventilation.py
-
-Add these new files beside app.py:
 prn_counts.py
-prn_html.py
-prn_ui.py
 
-Reboot Streamlit and confirm Version 6.99.
-Paste the complete SmartPhrase to import the AF section.
-Open Medications &gt; PRN counts and verify administration times and doses against the MAR.
-Confirm the count for each medication you want displayed.
+Commit the replacements and reboot Streamlit once.
+Confirm Version 6.99.1 in the sidebar.
+Reopen the handoff and check its saved status.
 
-The printed count runs from the most recent 7 a.m. Eastern through handoff generation.
-Only the number is added after PRN. Unconfirmed counts are omitted.
-Generic infusion volumes are not automatically treated as PRN doses.
+For version 6.98 or earlier, upload the complete package&#x27;s application files.
+Use the original deployment setup instructions for a new installation.
+Keep the existing Streamlit Secrets and encryption key.
 
-Keep current Streamlit Secrets, the encryption key, and repository settings.
-Dependencies and archive schema 34 are preserved.
-Ready to install. No live deployment performed.
-</pre><h2>Details</h2><p>See README.md for the PRN review workflow, ARCHIVE_COMPATIBILITY.txt for saved-data handling, and TEST_REPORT.md for verification.</p></html>
+This release fixes the PRN preview crash caused by a missing regular-expression
+import. Invalid PRN dates that overflow timezone conversion now show a form
+validation message and keep the draft instead of crashing the app.
+
+CPAP Trial Data and PRN counting from the most recent 7 a.m. Eastern remain
+included. The source-review requirements are described in README.md.
+
+Dependencies and archive schema 34 are unchanged.
+Ready to install. No live deployment was performed.
+</pre><h2>Details</h2><p>See README.md for PRN review, ARCHIVE_COMPATIBILITY.txt for saved-data handling, and TEST_REPORT.md for verification.</p></html>

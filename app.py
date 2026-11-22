@@ -1,4 +1,4 @@
-"""PICU SmartPhrase v6.99: CPAP trial labels and reviewed PRN counts."""
+"""PICU SmartPhrase v6.99.1: PRN preview and validation fixes."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,
@@ -11,6 +11,7 @@ from hashlib import sha256
 from pathlib import Path
 import time
 import json
+import re
 from threading import Event
 from datetime import datetime, timezone
 
@@ -2186,7 +2187,7 @@ def main() -> None:
         st.button("Home", key="home_screen", on_click=return_home, args=(store,),
                   help="Save all open handoffs and return to the starting screen.", use_container_width=True)
         st.header("PICU Handoff")
-        st.caption("Version 6.99 | CPAP trial data and PRN counts")
+        st.caption("Version 6.99.1 | PRN preview fix")
         if history_ready:
             st.caption("Respiratory mode-history parser: ready")
         else:

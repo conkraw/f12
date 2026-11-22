@@ -1,14 +1,15 @@
-PICU Handoff 6.99
-Complete package based on PICU698.zip, version 6.98.
+PICU Handoff 6.99.1
+Complete package based on PICU699.zip, version 6.99.
 
-CPAP Trial Data heading with duplicate CPAP respiratory rate omitted.
-AF PRN event import and explicit source review for all eight requested drugs.
-Confirmed counts use the most recent 7 a.m. through print preparation.
-No PRN event dates or times are added to printed medication entries.
-PDF cache and HTML print-time refresh account for the changing window.
+Runtime changes: app.py, error_store.py, prn_counts.py.
+Fixes the missing re import in the PRN preview.
+Converts PRN timestamp timezone overflows into form validation errors.
 
-908 targeted checks passed after final fixture corrections.
-Synthetic one-page PDF was visually inspected.
-Archive schema 34 and dependencies are preserved.
+The full native Streamlit import reproduced the exact user-reported banner
+before the fix. After the fix, the import, preview, and save path passes.
+297 targeted tests passed, including 11 native Streamlit cases.
+The 15 HTML refresh-script cases also passed.
+
+Archive schema 34 and dependencies are unchanged.
 No supplied patient source is included.
 No live deployment or production storage writes were performed.

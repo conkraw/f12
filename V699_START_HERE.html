@@ -1,0 +1,36 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>PICU Handoff 6.99</title><style>body{font:16px/1.6 system-ui,sans-serif;max-width:900px;margin:40px auto;padding:0 24px;color:#22313b}h1,h2{color:#153f53}pre{white-space:pre-wrap;background:#f2f5f7;padding:18px}li{margin:6px 0}</style><h1>PICU Handoff 6.99</h1><p>CPAP Trial Data and verified PRN counts.</p><h2>Install</h2><pre>PICU Handoff 6.99
+Baseline: 6.98
+
+Extract PICU699.zip and open PICU_Handoff_v6_99_CPAP_PRN.
+
+Replace these existing files:
+app.py
+categories.py
+clinical_style.py
+error_store.py
+exports.py
+import_review.py
+importing.py
+medications.py
+models.py
+parser.py
+ventilation.py
+
+Add these new files beside app.py:
+prn_counts.py
+prn_html.py
+prn_ui.py
+
+Reboot Streamlit and confirm Version 6.99.
+Paste the complete SmartPhrase to import the AF section.
+Open Medications &gt; PRN counts and verify administration times and doses against the MAR.
+Confirm the count for each medication you want displayed.
+
+The printed count runs from the most recent 7 a.m. Eastern through handoff generation.
+Only the number is added after PRN. Unconfirmed counts are omitted.
+Generic infusion volumes are not automatically treated as PRN doses.
+
+Keep current Streamlit Secrets, the encryption key, and repository settings.
+Dependencies and archive schema 34 are preserved.
+Ready to install. No live deployment performed.
+</pre><h2>Details</h2><p>See README.md for the PRN review workflow, ARCHIVE_COMPATIBILITY.txt for saved-data handling, and TEST_REPORT.md for verification.</p></html>
