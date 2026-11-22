@@ -1,25 +1,30 @@
-PICU Handoff 6.102 archive compatibility
+PICU Handoff 6.103 archive compatibility
 
-Archive schema remains 34. The optional prn record keeps the existing version 1
-shape, including medication keys, timestamps, source volumes, dose counts, and
-legacy review metadata. Source text and clinician names are not stored.
+Archive schema remains 34. Existing archives remain readable by version 6.103.
+Dependencies, credentials, encryption keys, and repository settings are
+unchanged. No archive migration is required.
 
-Older eight-drug records remain valid. Only vecuronium and rocuronium contribute
-to current counts. Positive volume records are counted automatically regardless
-of legacy review decisions. Positive manually entered totals for the two
-paralytics remain readable. New imports retain only the two paralytics.
+Flow-table mode entries use the existing ventilation history structure.
+The newest mode becomes primary. Earlier table modes retain their timestamps
+and start unchecked in the existing history editor. The older individual
+SmartLink format keeps its existing display behavior.
+
+A timestamped unknown primary mode may now be retained with an empty settings
+dictionary. No settings are borrowed from a known older mode. This newly
+accepted record may require the updated reader if the app is downgraded.
+Install the 6.103 runtime files together.
+
+Version 6.102 AF-table parsing and PRN records are preserved. The optional PRN
+record keeps its version 1 shape, timestamps, source volumes, dose counts, and
+legacy review metadata. Older eight-drug records remain readable, but only
+vecuronium and rocuronium receive automatic counts. Legacy review decisions
+do not gate those counts. New imports retain only the two paralytics.
+
+The count window still runs from 07:00 on the previous Eastern calendar day
+through preparation or printing. Five qualifying entries display as PRN x 5.
+Six or more display as PRN >=6. Administration timestamps are preserved.
 
 Existing archives without PRN data remain valid. Mapping-only synchronization
-preserves patient data locally. PRN records are not copied by mapping sync.
-
-Complete room replacement uses the new SmartPhrase. Missing or failed AF data
-cannot restore old patient records or old counts. The existing encrypted save,
-room-conflict, and download guards apply.
-
-Install the replacement runtime files together. Keep the existing credentials,
-encryption keys, and repository settings.
-
-This release adds horizontal AF table parsing and a six-entry display cap.
-Stored administration timestamps are preserved. The window runs from 07:00
-on the previous Eastern calendar day through printing. Other display clocks
-are unchanged. No archive migration or dependency change is required.
+preserves patient data locally and does not copy PRN records. Complete room
+replacement and the encrypted-save, conflict, and download guards are unchanged.
+No supplied patient examples are included in this release.

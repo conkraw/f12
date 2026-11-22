@@ -1,36 +1,34 @@
-PICU Handoff 6.102
-Baseline: 6.101
+PICU Handoff 6.103
+Baseline: 6.102
 
-From 6.100 or 6.101, update these files together in the application folder:
+From 6.102, update these runtime files together in the application folder:
 app.py
 error_store.py
 exports.py
-medications.py
-prn_counts.py
-prn_html.py
+ventilation.py
+ventilator_modes.py
 
-Confirm Version 6.102 in the sidebar after Streamlit reloads the source.
+Confirm Version 6.103 in the sidebar after Streamlit reloads the source.
 If the previous version remains, reboot the app once.
+From an earlier version, use the complete repository's application files.
 
-The alternating af block accepts the dated Epic vecuronium volume table.
-Repeated header blocks form one event list. Positive volume cells count once,
-blank cells preserve their timestamp alignment, and exact repeats count once.
+All Vent Modes now selects the newest timestamp across every Epic table block.
+When PS - CPAP is newest, the handoff uses CPAP Trial Settings. A newer
+conventional mode selects its corresponding settings. Previous table modes
+remain available in the history editor and are unchecked initially.
 
-Count from 07:00 Eastern on the calendar day before printing through the print
-preparation time, including both endpoints. Doses after today's 07:00 are
-included. The earlier 06:59 cutoff has been removed at the user's request.
+An empty or absent table uses the original Vent Mode field. An unknown newest
+mode retains its name without borrowing older settings. NAVA, AVAPS, NIV,
+and the older individual SmartLink history format retain their existing rules.
 
-Fewer than six qualifying entries display as PRN x 5, for example.
-Six or more display as PRN >=6. HTML and text show the equivalent form, ≥6.
-The window can exceed 24 hours when printing after 07:00.
+Version 6.102 AF-table behavior is preserved. Count only vecuronium and
+rocuronium from 07:00 Eastern on the previous calendar day through printing.
+Five qualifying entries display as PRN x 5. Six or more display as PRN >=6.
+The medications.py, prn_counts.py, and prn_html.py files match the 6.102 baseline.
 
-Both vecuronium and rocuronium remain supported. Sedatives and analgesics are
-not counted. No review or infusion check is required. Existing FLOWDATETIME
-input and archive schema 34 remain compatible. Keep the current Streamlit
-Secrets, encryption key, and repository settings.
+Keep the current Streamlit Secrets, encryption key, and repository settings.
+Dependencies and archive schema 34 are unchanged. Existing archives remain
+readable by 6.103. See ARCHIVE_COMPATIBILITY.txt for downgrade considerations.
 
-Only events present in the pasted source can be counted. Re-paste to include
-newly recorded administrations. PDF counts use preparation time. Downloaded
-HTML refreshes before browser printing.
-
-467 focused tests passed. See TEST_REPORT.md for verification.
+801 focused tests passed. See TEST_REPORT.md for verification.
+Live Streamlit deployment was not verified by these local checks.

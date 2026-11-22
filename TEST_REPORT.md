@@ -1,27 +1,23 @@
-# PICU Handoff 6.102 verification
+# PICU Handoff 6.103 verification
 
-467 focused automated checks passed. Tests use synthetic records. The final code is based on version 6.101 and follows the newly requested window through printing.
+801 focused tests passed in 15.35 seconds on the final merged code. The run reported 103 existing anyio and pypdf deprecation warnings. The baseline is version 6.102 at commit a5df0233ffb83bbda075bbb491e7bb2e51d05a61.
 
-## Reporting and source behavior
+## Latest ventilator mode
 
-The AF parser reads horizontal dated volume tables, including repeated headers and empty cells. Each positive volume contributes one record. Existing dated FLOWDATETIME inputs remain supported. Only vecuronium and rocuronium are counted.
+The new coverage includes 32 flow-table cases and one native Streamlit end-to-end test. It exercises complete timestamp selection across repeated table blocks, blank-cell alignment, PS - CPAP selection, conventional ventilation after a CPAP trial, missing original mode fields, empty-table fallback, and preservation of unknown latest mode names.
 
-The window begins at 07:00 Eastern on the calendar day before printing. Both endpoints are inclusive. Today's doses after 07:00 enter the count when they are at or before the printing clock. At midnight, the start date advances. Date filtering occurs before the six-entry cap.
+The merged regression run also covers the older mode-history format, NAVA, AVAPS, NIV, settings fallback, native import and save, individual and combined PDFs, PDF caching, and batch exports. Earlier table entries remain available in the history editor and are initially unchecked.
 
-Counts below six use `PRN × N`. Six or more use `PRN ≥6`. PDF output uses the equivalent `PRN >=6` for compatibility with its existing font. No count review or infusion check is required.
+The supplied example selected the conventional mode timestamped 11:40. A modified version with PS - CPAP as the newest entry selected the dedicated CPAP Trial Settings. The mode timestamp identifies when the mode was recorded. Numerical settings still come from the matching section of the same paste.
 
-## Verification groups
+## Version 6.102 preservation
 
-| Group | Passed |
-| --- | ---: |
-| Core parsing, counts, boundary and calendar cases | 122 |
-| HTML script and markup | 45 |
-| Import, text/HTML/PDF integration and native Streamlit flow | 53 |
-| Medication formatting and encrypted error journal regressions | 247 |
-| Total | 467 |
+medications.py, prn_counts.py, and prn_html.py exactly match the current 6.102 baseline. A separate synthetic smoke check combined a mode table with an AF paralytic table. With CPAP selected, the paralytic display remained `PRN × 5` at 10:30 and `PRN ≥6` at 12:02.
 
-Coverage includes repeated and blank table cells, exact duplicates, malformed dates, separate paralytics, ignored sedatives and analgesics, print-time inclusion, five-to-six transitions, midnight, daylight saving transitions, year and leap-day boundaries, fractional timestamps, Python/JavaScript agreement, PDF cache refresh, archive compatibility, and complete room replacement.
+The AF count window still begins at 07:00 Eastern on the day before printing and continues through preparation or printing, including both endpoints. Only vecuronium and rocuronium are counted. The six-entry cap and existing PDF-compatible `PRN >=6` display are preserved.
 
-The supplied full SmartPhrase also imported AF successfully. It produced three entries at 06:59, five at 10:30, and the capped six display at 12:02 on the printing day. A PDF generated from that input contained `PRN >=6`. No supplied patient text or output was written to the repository.
+## Compatibility and scope
 
-Existing anyio and pypdf deprecation warnings were reported. Dependencies and archive schema 34 remain unchanged. Live deployment status is separate from these local runtime and automated checks.
+Archive schema 34 and dependencies are unchanged. Existing archives remain readable by 6.103. A new timestamped unknown primary mode can be retained with an empty settings dictionary. Such a record may need the updated reader if the application is later downgraded.
+
+Included tests and fixtures use synthetic data. No supplied patient example or generated patient output is included. These checks were performed locally, including the native Streamlit test harness. Live Streamlit deployment was not verified.

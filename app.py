@@ -1,4 +1,4 @@
-"""PICU SmartPhrase v6.102: dated paralytic tables with capped PRN counts."""
+"""PICU SmartPhrase v6.103: latest ventilator mode from Epic flow tables."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,
@@ -1304,7 +1304,7 @@ def _finish_handoff_import(room: str, result, store: GitHubVault | None) -> None
 
 RESPIRATORY_UPDATE_MESSAGE = (
     "Handoff NOT replaced. The respiratory update is incomplete in the running app. "
-    "Replace app.py, ventilation.py, noninvasive.py, importing.py, workspace_ui.py and error_store.py in the same app folder, "
+    "Replace app.py, ventilation.py, ventilator_modes.py, noninvasive.py, importing.py, workspace_ui.py and error_store.py in the same app folder, "
     "then reboot Streamlit. Your pasted text and saved handoffs are unchanged."
 )
 
@@ -1342,7 +1342,7 @@ def respiratory_parser_ready() -> bool:
         data = result.sheet.get("ventilation") or {}
         history = data.get("mode_history") or {}
         others = history.get("other_modes", [])
-        return bool(
+        legacy_ready = bool(
             data.get("mode") == "PRVC-IMV"
             and data.get("values", {}).get("FiO2 set (%)") == "40 %"
             and history.get("reported_at") == "2026-01-01T18:00"
@@ -1356,6 +1356,32 @@ def respiratory_parser_ready() -> bool:
             and others[1].get("values", {}).get("FiO2 set (%)") == "30 %"
             and result.sheet.get("sbs_vent_mode") == "PRVC-IMV"
         )
+        if not legacy_ready:
+            return False
+        # Check both table transitions as well as the older SmartLink format.
+        # A partially reloaded installation must not silently use an older mode.
+        settings = RESPIRATORY_PROBE_SOURCE.split("All Vent Modes:", 1)[0]
+        for latest, peep, fio2 in (("PRVC-IMV", "5", "40 %"), ("ps- cpap", "6", "30 %")):
+            source = settings + (
+                "All Vent Modes:\n\t01/01/26 0600\t01/01/26 1200\n"
+                "Other\nVent Mode\tPRVC-IMV\tPS - CPAP\n\n"
+                "\t01/01/26 1300\t01/01/26 1800\n"
+                "Other\nVent Mode\tNAVA\t" + latest + "\ncccccccc\n"
+            )
+            result = import_replacement("IMPORT CHECK", source, new_vault()["settings"])
+            if result.errors or result.sheet is None:
+                return False
+            data = result.sheet.get("ventilation") or {}
+            history = data.get("mode_history") or {}
+            if not (data.get("mode") == latest
+                    and data.get("values", {}).get("PEEP (cm H2O)") == peep
+                    and data.get("values", {}).get("FiO2 set (%)") == fio2
+                    and history.get("reported_at") == "2026-01-01T18:00"
+                    and history.get("latest_confirmed") is True
+                    and all(record.get("include") is False for record in history.get("other_modes", []))
+                    and result.sheet.get("sbs_vent_mode") == latest):
+                return False
+        return True
     except Exception:
         # Dependency errors can contain pasted content. Show only a static
         # incomplete-update message and never alter a room on a failed check.
@@ -2185,7 +2211,7 @@ def main() -> None:
         st.button("Home", key="home_screen", on_click=return_home, args=(store,),
                   help="Save all open handoffs and return to the starting screen.", use_container_width=True)
         st.header("PICU Handoff")
-        st.caption(f"Version {APP_VERSION} | Table paralytic PRN counts")
+        st.caption(f"Version {APP_VERSION} | Latest ventilator mode from flow table")
         if history_ready:
             st.caption("Respiratory mode-history parser: ready")
         else:

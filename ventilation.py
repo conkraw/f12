@@ -85,7 +85,12 @@ def validate_ventilation(data: dict | None) -> None:
         raise ValueError("The saved ventilation block has an invalid structure.")
     if not isinstance(data["mode"], str) or not data["mode"].strip() or len(data["mode"]) > 500 or "\n" in data["mode"] or "\r" in data["mode"]:
         raise ValueError("The ventilation mode is empty or too long.")
-    if mode_rule(data["mode"]) != "included":
+    # A timestamped but unrecognized current mode may be retained as source
+    # text only. It must never inherit settings from a known, older mode.
+    unknown_snapshot = (mode_rule(data["mode"]) == "unknown" and data["values"] == {}
+                        and isinstance(data.get("mode_history"), dict)
+                        and bool(data["mode_history"].get("reported_at")))
+    if mode_rule(data["mode"]) != "included" and not unknown_snapshot:
         raise ValueError("This mode is not included by the automatic invasive-ventilation display rule.")
     values = data["values"]
     if not isinstance(values, dict) or not set(values).issubset(set(LABELS[1:])):
@@ -667,6 +672,53 @@ def _split_ventilation_sections(block: str) -> dict:
             "history": history, "history_present": history_present}
 
 
+def _expand_mode_flow_tables(lines: list[str]) -> tuple[list[str], bool]:
+    """Pair each Epic mode cell with its own timestamp, preserving empty cells.
+
+    Epic repeats a timestamp header and Vent Mode row when a flow table wraps.
+    Convert those rows to the existing history format before deduplication and
+    chronological selection. The table contains mode times, not setting times.
+    """
+    expanded: list[str] = []
+    times: list[str] | None = None
+    table_seen = False
+    date_start = re.compile(r"^\d{1,2}/\d{1,2}(?:/\d{2,4})?(?:\s|$)")
+    timestamp = re.compile(r"\d{1,2}/\d{1,2}/(?:\d{4}|\d{2})\s+\d{1,2}:?\d{2}(?:\s*[AP]M)?", re.I)
+    for raw in lines:
+        # Do not strip the raw line first: leading/trailing tabs are empty
+        # cells, and removing an interior empty cell would shift its mode.
+        cells = raw.split("\t") if "\t" in raw else re.split(r" {2,}", raw.strip())
+        cells = [strip_setting_marker(cell).strip() for cell in cells]
+        first = normalize(cells[0].rstrip(":"))
+        header = cells[1:] if first in {"", "date", "time", "date/time"} else cells
+        if header and any(date_start.match(cell) for cell in header) and (
+                first in {"", "date", "time", "date/time"} or date_start.match(cells[0])):
+            times = header
+            table_seen = True
+            continue
+        if first == "vent mode" and len(cells) > 1:
+            table_seen = True
+            values = cells[1:]
+            if not any(is_present(value) for value in values):
+                times = None
+                continue
+            if times is None or any(is_present(value) for value in values[len(times):]):
+                # An unaligned row cannot safely assign a mode to a time.
+                expanded.append("Vent Mode")
+                times = None
+                continue
+            for index, value in enumerate(values[:len(times)]):
+                if not is_present(value):
+                    continue
+                stamp = times[index]
+                suffix = " (" + stamp + ")" if timestamp.fullmatch(stamp) else ""
+                expanded.append("Vent Mode: " + value + suffix)
+            times = None
+            continue
+        expanded.append(raw)
+    return expanded, table_seen
+
+
 def _read_mode_history(lines: list[str]) -> tuple[list[dict], list[str]]:
     """Read only mode names and times. Never retain charting-author suffixes."""
     entries: dict[str, dict] = {}
@@ -754,7 +806,8 @@ def _history_context(block: str) -> dict | None:
     if not re.search(r"(?im)^[ \t]*(?:\(\s*S\s*\)\s*)*All\s+Vent\s+Modes\s*:?[ \t]*$", block):
         return None
     parts = _split_ventilation_sections(block)
-    records, notes = _read_mode_history(parts["history"])
+    history_lines, flow_table = _expand_mode_flow_tables(parts["history"])
+    records, notes = _read_mode_history(history_lines)
     if not records and not notes:
         return None
     original = parts["modes"][0] if parts["modes"] else ""
@@ -772,11 +825,15 @@ def _history_context(block: str) -> dict | None:
     elif newest:
         newest_mode = newest[0]["mode"]
         if mode_rule(newest_mode) == "unknown":
-            confirmed = False
-            notes.append("The newest recorded mode is unrecognized. The displayed main mode may be older.")
+            if flow_table:
+                chosen = newest_mode
+                notes.append("The newest recorded mode is unrecognized. Its name was retained without inferred settings.")
+            else:
+                confirmed = False
+                notes.append("The newest recorded mode is unrecognized. The displayed main mode may be older.")
         else:
             chosen = newest_mode
-    if not chosen or mode_rule(chosen) == "unknown":
+    if not chosen or (mode_rule(chosen) == "unknown" and not flow_table):
         fallback = next((record["mode"] for record in records if mode_rule(record["mode"]) == "included"), "")
         chosen = fallback or chosen
         confirmed = False
@@ -787,7 +844,9 @@ def _history_context(block: str) -> dict | None:
     selected_identity = _mode_identity(chosen) if chosen else ""
     selected_record = next((record for record in records if _mode_identity(record["mode"]) == selected_identity), None)
     when = selected_record["reported_at"] if selected_record else ""
-    selected_source = _source_for_record(parts, chosen, allow_generic=generic_ok and selected_identity == original_identity)
+    allow_generic = generic_ok and (selected_identity == original_identity or (flow_table and not original))
+    selected_source = ("" if flow_table and mode_rule(chosen) == "unknown"
+                       else _source_for_record(parts, chosen, allow_generic=allow_generic))
     controls = [line for line in parts["controls"] if normalize(unwrap_vent_line(line).partition(":")[0]) == "ventilator on"]
     source = "\n".join((["Vent Mode: " + chosen] if chosen else []) + controls + [selected_source])
     others = []
@@ -799,14 +858,14 @@ def _history_context(block: str) -> dict | None:
             omitted_niv = True
             continue
         other_source = _source_for_record(parts, record["mode"], allow_generic=generic_ok and _mode_identity(record["mode"]) == original_identity)
-        others.append({**record, "source": other_source})
+        others.append({**record, "source": other_source, **({"include": False} if flow_table else {})})
     if omitted_niv:
         notes.append("Recorded non-invasive modes were omitted from this invasive ventilation list.")
     if len(others) > 64:
         others = others[:64]
         notes.append("Additional mode history exceeded the display limit and needs review.")
     return {"source": source, "reported_at": when, "latest_confirmed": confirmed,
-            "notes": notes, "other_modes": others}
+            "notes": notes, "other_modes": others, "mode": chosen, "flow_table": flow_table}
 
 
 def select_ventilation_source(block: str) -> str:
@@ -923,7 +982,10 @@ def parse_ventilation(block: str) -> VentilationResult:
     history = _history_context(block) if has_ventilation_history(block) else None
     if history is None:
         return _parse_single_ventilation(block)
-    result = _parse_single_ventilation(history["source"])
+    if history["flow_table"] and mode_rule(history["mode"]) == "unknown" and history["reported_at"]:
+        result = VentilationResult(data={"mode": history["mode"], "values": {}}, status="unknown")
+    else:
+        result = _parse_single_ventilation(history["source"])
     result.issues.extend(history["notes"])
     if result.error or result.data is None:
         return result
@@ -943,7 +1005,8 @@ def parse_ventilation(block: str) -> VentilationResult:
             note = "Unrecognized recorded mode " + record["mode"][:160] + " was retained without inferred settings."
             notes.append(note)
             result.issues.append(note)
-        other_modes.append({"mode": record["mode"], "values": values, "reported_at": record["reported_at"]})
+        other_modes.append({"mode": record["mode"], "values": values, "reported_at": record["reported_at"],
+                            **({"include": record["include"]} if "include" in record else {})})
     result.data["mode_history"] = {
         "reported_at": history["reported_at"],
         "other_modes": other_modes,

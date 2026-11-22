@@ -18,7 +18,8 @@ def strip_setting_marker(value: str) -> str:
 
 
 def key(value: str) -> str:
-    return re.sub(r"\s+", " ", strip_setting_marker(value)).casefold().replace("–", "-").replace("—", "-")
+    text = re.sub(r"\s+", " ", strip_setting_marker(value)).casefold().replace("–", "-").replace("—", "-")
+    return re.sub(r"\s*-\s*", "-", text)
 
 
 # Source label: (printed abbreviation, control family, non-invasive label)
