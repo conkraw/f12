@@ -136,12 +136,9 @@ def event_time(value: str | datetime) -> datetime:
                 raise ValueError("A PRN timestamp is not a valid date and time.") from exc
     else:
         raise ValueError("Each PRN entry requires a complete administration date and time.")
-    try:
-        if parsed.tzinfo is None or parsed.utcoffset() is None:
-            return _localize(parsed)
-        return parsed.astimezone(EASTERN)
-    except OverflowError as exc:
-        raise ValueError("A PRN timestamp is not a valid date and time.") from exc
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        return _localize(parsed)
+    return parsed.astimezone(EASTERN)
 
 
 def prn_window(as_of: datetime | None = None) -> tuple[datetime, datetime]:

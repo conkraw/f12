@@ -195,12 +195,6 @@ def test_missing_invalid_and_uncertain_dst_timestamps_fail(value):
         event_time(value)
 
 
-@pytest.mark.parametrize("value", ["9999-12-31 23:59", "0001-01-01T00:00:00+00:00"])
-def test_unrepresentable_timezone_conversion_is_a_validation_error(value):
-    with pytest.raises(ValueError, match="not a valid date and time"):
-        event_time(value)
-
-
 def test_explicit_offsets_disambiguate_fall_dst_and_window_uses_local_7am():
     first = moment("2026-11-01T01:30:00-04:00")
     second = moment("2026-11-01T01:30:00-05:00")

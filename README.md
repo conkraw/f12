@@ -1,16 +1,4 @@
-# PICU Handoff 6.99.1
-
-## PRN preview fix
-
-Version 6.99 could display the generic unexpected-problem message immediately after importing a handoff with PRN data. The preview used re.search without importing re at module scope. This release adds the missing import.
-
-PRN dates outside Python's representable timezone-conversion range now produce the existing date-validation message in the PRN editor. The draft stays available and no review is saved for an invalid date.
-
-## Update an installed 6.99 app
-
-Extract PICU6991.zip and open PICU_Handoff_v6_99_1_PRN_Preview_Fix. Replace app.py, error_store.py, and prn_counts.py beside the app.py that Streamlit runs. Commit the replacements and reboot Streamlit once. The sidebar should show Version 6.99.1. Reopen the handoff and check its saved status.
-
-For 6.98 or an earlier version, use the complete package's application files. Keep the current Streamlit Secrets and encryption key. Dependencies and archive schema 34 are unchanged.
+# PICU Handoff 6.99
 
 ## CPAP trial display
 
@@ -34,8 +22,33 @@ Click Confirm [medication] PRN count to validate and save that medication's revi
 
 A complete replacement paste clears previous PRN entries and review decisions along with the rest of the room's old handoff. A changed medication record invalidates that medication's confirmation. The next 7 a.m. requires a new review. Counts use the administrations present in the pasted and reviewed data. New Epic administrations require a fresh paste or a new verified entry.
 
-## Verification of this fix
+## Install from 6.98
 
-297 targeted tests passed. A full Streamlit AppTest first reproduced the exact reported message while importing synthetic PRN data into the actual app. After the fix, the same flow rendered the preview, offered the PDF download, and saved the handoff without an error. Additional checks covered PRN review, invalid dates, print windows, CPAP output, PDF generation and caching, and save callbacks.
+Extract PICU699.zip and open PICU_Handoff_v6_99_CPAP_PRN. Upload the following files beside the app.py that Streamlit runs, replacing matching files and adding the three new PRN modules:
 
-These are local runtime and automated tests. No live app or production archive was accessed. The package contains no supplied patient source. See TEST_REPORT.md for the test details and V699_README.md for the prior release notes.
+- app.py
+- categories.py
+- clinical_style.py
+- error_store.py
+- exports.py
+- import_review.py
+- importing.py
+- medications.py
+- models.py
+- parser.py
+- ventilation.py
+- prn_counts.py
+- prn_html.py
+- prn_ui.py
+
+Reboot Streamlit once and confirm Version 6.99. Paste the complete SmartPhrase again to import the new AF section, then review PRN counts in Medications.
+
+For an earlier version, use the complete package. Keep the current Streamlit Secrets and encryption key. Dependencies and archive schema 34 are preserved. Use the updated application files together. Earlier app code may not recognize the new optional PRN field.
+
+The print-all timer, cached PDF preparation, compact one-page fitting, medication mappings, and full-room replacement workflow from 6.98 remain available. Prior release notes are retained in the V698 files.
+
+## Verification
+
+908 targeted checks passed across parser, source review, midnight and 7 a.m. windows, daylight saving transitions, current and historical CPAP output, all eight medications, individual and combined exports, PDF cache freshness, encrypted archive round trips, mapping synchronization, room replacement, and Streamlit callbacks. Real Streamlit form tests checked blank, zero, fractional, added, deleted, and stale entries. Node tests executed the HTML print-refresh script. A synthetic one-page PDF was rendered and visually checked.
+
+The supplied clinical example was used only for local verification and is not included in this package. The package is ready to install. No live application deployment or production archive write was performed.

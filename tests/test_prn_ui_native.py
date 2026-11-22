@@ -3,7 +3,6 @@
 AppTest reads the Arrow table and applies keyed editor state to its actual
 Streamlit widget. These are runtime tests rather than browser screenshot tests.
 """
-from copy import deepcopy
 from datetime import datetime
 
 import pytest
@@ -77,17 +76,6 @@ def test_native_fractional_count_is_not_silently_truncated(native):
     edit(native, edited={0: {"dose_count": 1.5}})
     assert native.session_state["saves"] == 0
     assert "whole number" in native.error[0].value
-
-
-@pytest.mark.parametrize("stamp", ["9999-12-31 23:59", "0001-01-01T00:00:00+00:00"])
-def test_native_unrepresentable_timestamp_keeps_draft_and_reports_validation_error(native, stamp):
-    before = deepcopy(native.session_state["sheet"])
-    old_key = native.data_editor[0].key
-    edit(native, edited={0: {"timestamp": stamp, "dose_count": 1}})
-    assert native.session_state["saves"] == 0
-    assert native.session_state["sheet"] == before
-    assert native.data_editor[0].key == old_key
-    assert native.error[0].value == "A PRN timestamp is not a valid date and time."
 
 
 def test_native_add_missing_event_and_exclude_infusion(native):
