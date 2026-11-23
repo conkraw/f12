@@ -226,10 +226,15 @@ def import_sections(sheet: dict, text: str, settings: dict, *, respiratory_first
                     out.errors.append(nutrition.error)
                     continue
                 attrs = dict(candidate.get("anthropometrics", empty_anthropometrics()))
-                # A full I import clears previous BMI/height/BSA when absent.
-                # Age/sex can be set independently in N or manually.
+                # A full I import clears previous BMI/height/BSA/BMI age when
+                # absent. An explicit BMI age in this paste's successfully
+                # imported A block is current input, not a retained old value.
+                # General age/sex can be set independently in N or manually.
                 for key in ("bmi", "height", "bsa"):
                     attrs[key] = measurements.values.get(key, "")
+                attrs.pop('bmi_age', None)
+                if 'bmi_age' in parsed.demographics and 'a' not in out.skipped:
+                    attrs['bmi_age'] = parsed.demographics['bmi_age']
                 attrs.update(measurements.values)
                 if any(attrs.values()) or "anthropometrics" in candidate:
                     candidate["anthropometrics"] = attrs

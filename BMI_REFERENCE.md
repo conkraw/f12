@@ -1,6 +1,6 @@
 # Pediatric growth reference data
 
-Version 6.105 bundles both complete public reference tables. No download is
+Version 6.106 bundles both complete public reference tables. No download is
 needed during handoff creation, and no patient measurement is sent to a growth
 calculation service.
 
@@ -20,10 +20,22 @@ Source: https://www.who.int/tools/child-growth-standards/standards/weight-for-le
 
 ## Ages 2 through 19
 
-Use the recorded BMI and age at that measurement, entered as total months or
-years plus months, with explicit growth-chart sex. A whole-year age such as
-2 y.o. does not supply a precise month and does not produce a score. No date of
-birth is required or retained. Pediatric scoring stops at 240 months.
+Use the recorded BMI and explicit BMI Age when supplied, with growth-chart
+sex. For example, BMI Age: 2 y.o. 1 m.o. means 25 months. General Age remains
+separate and stays unchanged in the patient header. BMI Age is shown beside
+BMI on the handoff so the calculation age can be reviewed.
+
+BMI Age takes priority for the BMI z score, percentile and weight category.
+Without BMI Age, general Age can be used when it supplies total months or years
+plus months. A whole-year age such as 2 y.o. is insufficient. An explicit but
+incomplete or out-of-range BMI Age does not silently fall back to another age.
+No date of birth is required or retained. Pediatric scoring stops at 240 months.
+
+Each new Nutrition import clears a prior BMI Age unless the current paste
+supplies it again. Conflicting future measurement ages and incompatible current
+age groups do not produce a BMI score. WFL and head-circumference eligibility
+continue to use general Age. BMI Age alone does not establish an infant's
+current age.
 
 The calculation preserves the app's existing monthly-bin convention. For
 example, the 48.5-month row covers age 48 to under 49 months. Below or at P95,
@@ -74,6 +86,34 @@ nutrition. Existing source diagnoses are not removed or rewritten.
 The old untyped weight-chart z score remains in the editor and encrypted record.
 It is omitted from the printed handoff, which displays the named WFL or
 BMI-for-age score instead.
+
+## High growth categories
+
+At ages 2 through 19, the existing recorded BMI is classified using the same
+CDC age/sex row as its z score and percentile. Only the highest applicable
+category is added to Problems:
+
+| Category | CDC threshold |
+| --- | --- |
+| Overweight | BMI at or above P85 and below P95 |
+| Obesity | BMI at or above P95, below severe criteria |
+| Severe obesity | BMI at or above 120% of P95, or at or above 35 kg/m² |
+
+P85 is calculated from the LMS parameters at the exact standard-normal 85th
+percentile, approximately z +1.03643. P95 is the official table value. The
+standard-normal 95th percentile is approximately z +1.64485. Comparisons use
+unrounded values. Severe obesity does not have one fixed z-score threshold.
+The classification remains available if an extreme high BMI is beyond the
+finite z-score calculation range.
+
+Below age 2, WHO WFL z above +2 adds High weight-for-length. It does not add
+pediatric BMI obesity labels. No additional Underweight problem is added,
+because the existing requested malnutrition rules cover the low growth score.
+No Healthy weight label is added to Problems.
+
+Sources:
+https://www.cdc.gov/bmi/child-teen-calculator/bmi-categories.html
+https://www.cdc.gov/growth-chart-training/hcp/using-growth-charts/who-using.html
 
 ## Measurement and reference checks
 

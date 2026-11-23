@@ -118,18 +118,52 @@ def bmi_zscore(bmi: float, age_months: float, sex: str, reference: dict | None =
     return zscore_from_parameters(bmi, rows[1 if sex == 'Male' else 2, math.floor(age_months) + 0.5])
 
 
+def bmi_weight_category(bmi: float, age_months: float, sex: str, reference: dict | None = None) -> str:
+    """Return one high-BMI category for ages 24 to under 240 months.
+
+    CDC categories use the sex/age-specific 85th and 95th BMI percentiles.
+    Severe obesity is BMI >= 120% of P95 or BMI >= 35 kg/m². Test it first
+    so only the most specific label is returned. Low BMI is assessed by the
+    app's separate malnutrition rules, with no additional underweight label.
+
+    Use the published P95 for obesity and severe obesity. Derive P85 from
+    the exact normal percentile and LMS parameters, then compare BMI directly
+    with that unrounded threshold to avoid a BMI-to-z round-trip at P85.
+    Classification never depends on the extreme-tail z-score calculation.
+    """
+    try:
+        valid = (not isinstance(bmi, bool) and math.isfinite(bmi) and bmi > 0
+                 and not isinstance(age_months, bool) and math.isfinite(age_months)
+                 and 24 <= age_months < 240 and sex in ('Male', 'Female'))
+    except (TypeError, ValueError):
+        valid = False
+    if not valid:
+        raise ValueError('CDC BMI categories require positive finite BMI, age 24 to under 240 months and explicit growth-chart sex.')
+    rows = load_reference() if reference is None else reference
+    values = rows[1 if sex == 'Male' else 2, math.floor(age_months) + 0.5]
+    p95 = values['p95']
+    if bmi >= 1.2 * p95 or bmi >= 35:
+        return 'Severe obesity'
+    if bmi >= p95:
+        return 'Obesity'
+    l, m, s = values['l'], values['m'], values['s']
+    z85 = NormalDist().inv_cdf(0.85)
+    p85 = m * math.exp(s * z85) if l == 0 else m * (1 + l * s * z85) ** (1 / l)
+    return 'Overweight' if bmi >= p85 else ''
+
+
 def bmi_percentile_summary(data: dict) -> tuple[str, str]:
-    from anthropometrics import age_months, age_bounds
+    from anthropometrics import BMI_AGE_ADULT, BMI_AGE_UNDER_TWO, resolve_bmi_age
     if not data['bmi']:
         return '', 'BMI is not supplied.'
-    bounds = age_bounds(data['age'])
-    if bounds and bounds[0] < 24 and bounds[1] <= 24:
+    months, age_reason = resolve_bmi_age(data)
+    if age_reason == BMI_AGE_UNDER_TWO:
         return 'not calculated (<2 years)', 'CDC BMI-for-age is not used here below age 2.'
-    if bounds and bounds[0] >= 240:
+    if age_reason == BMI_AGE_ADULT:
         return 'not applicable (adult)', 'CDC pediatric BMI percentiles are not used at age 20 or older.'
-    months = age_months(data['age'])
     if months is None or data['sex'] not in ('Male', 'Female'):
-        return 'unavailable (age/sex needed)', 'Supply age at BMI measurement in months or years AND months, and explicit sex for the growth chart. No DOB is required.'
+        return 'unavailable (age/sex needed)', (age_reason or
+            'Supply age at BMI measurement in months or years AND months, and explicit sex for the growth chart. No DOB is required.')
     try:
         p = bmi_percentile(float(data['bmi'].split()[0]), months, data['sex'])
     except (OSError, ValueError, KeyError):

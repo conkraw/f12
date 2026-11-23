@@ -68,7 +68,7 @@ from code_status import MAX_CODE_STATUS, validate_code_status, code_status_text
 from airway_clearance_devices import airway_clearance_devices_text
 from mrsa import mrsa_screen_text
 from clinical_style import clinical_markup
-from anthropometrics import empty_anthropometrics, clean_field, validate_anthropometrics, measurements_text, FIELDS as ANTHRO_FIELDS
+from anthropometrics import empty_anthropometrics, clean_field, validate_anthropometrics, measurements_text, EDITABLE_FIELDS as ANTHRO_FIELDS
 from bmi_reference import bmi_percentile_summary, download_reference, install_reference, REFERENCE_PATH
 from growth_assessment import assess_growth, growth_measurements_text
 from circumferences import circumferences_text
@@ -362,6 +362,10 @@ def editor_snapshot(room: str) -> dict:
         key = "anthro_" + sheet["id"] + "_" + field
         if key in ss:
             value = clean_field(field, ss[key])
+            if field == 'bmi_age' and not value:
+                if 'anthropometrics' in sheet:
+                    sheet['anthropometrics'].pop('bmi_age', None)
+                continue
             if value or "anthropometrics" in sheet:
                 sheet.setdefault("anthropometrics", empty_anthropometrics())[field] = value
     for field in ("admission_date", "dosing_weight", "code_status"):
@@ -616,12 +620,15 @@ def anthropometric_change(room: str, field: str, key: str) -> None:
     try:
         value = clean_field(field, ss[key])
         data = dict(previous)
-        data[field] = value
+        if field == 'bmi_age' and not value:
+            data.pop(field, None)
+        else:
+            data[field] = value
         validate_anthropometrics(data)
         ss["drafts"][room]["anthropometrics"] = data
         ss[key] = value
     except ValueError as exc:
-        ss[key] = previous[field]
+        ss[key] = previous.get(field, '')
         note(str(exc), "error")
 
 
@@ -893,11 +900,11 @@ def neuro_weight_editor(sheet: dict) -> None:
                   help="Imported from AE. Preserve the documented status, including No Order. Blank omits the line.")
     attributes = sheet.get("anthropometrics", empty_anthropometrics())
     with st.expander("Age, measurements and nutrition z scores", expanded=True):
-        st.caption("Below age 2, weight-for-length uses measured weight and recumbent length. From age 2 through 19, BMI-for-age uses the recorded BMI and age at that measurement in months or years and months. An age such as 2 y.o. needs the additional months before a BMI z score can be calculated. Growth-chart sex must be documented. No date of birth is needed.")
-        for field, label in (("age", "Age (for example 5 years 2 months)"), ("sex", "Sex for growth chart (Male / Female, or blank)"), ("bmi", "Recorded BMI (kg/m²)"), ("height", "Recorded length / height (recumbent length if under 2 years)"), ("bsa", "Recorded BSA (for example 0.65 m²)")):
+        st.caption("Below age 2, weight-for-length uses measured weight and recumbent length. From age 2 through 19, BMI-for-age uses the recorded BMI and BMI Age when supplied. For example, BMI Age: 2 y.o. 1 m.o. means 25 months. General Age stays unchanged in the header. Without BMI Age, an age recorded in months or years and months can still be used. Growth-chart sex must be documented.")
+        for field, label in (("age", "Age (for example 5 years 2 months)"), ("sex", "Sex for growth chart (Male / Female, or blank)"), ("bmi", "Recorded BMI (kg/m²)"), ("bmi_age", "BMI Age (for example 2 y.o. 1 m.o. or 25 months)"), ("height", "Recorded length / height (recumbent length if under 2 years)"), ("bsa", "Recorded BSA (for example 0.65 m²)")):
             key = "anthro_" + sheet["id"] + "_" + field
             if key not in st.session_state:
-                st.session_state[key] = attributes[field]
+                st.session_state[key] = attributes.get(field, '')
             st.text_input(label, key=key, max_chars=100, on_change=anthropometric_change,
                           args=(sheet["room"], field, key))
         summary, reason = bmi_percentile_summary(attributes)
@@ -914,7 +921,10 @@ def neuro_weight_editor(sheet: dict) -> None:
                 st.caption('No malnutrition problem is triggered by this z score.')
         elif growth.reason:
             st.caption(growth.reason)
+        if growth.weight_category:
+            st.text('Growth category: ' + growth.weight_category)
         st.caption('Automatic cutoffs: mild at -1.65 to above -2, moderate at -2 to above -3, severe at -3 or lower. The score beside an Epic weight is not used for these rules. Problems can be reviewed or hidden in the existing Problems controls.')
+        st.caption('For ages 2 through 19, high BMI can add Overweight, Obesity or Severe obesity using CDC criteria. Below age 2, weight-for-length above +2 adds High weight-for-length.')
         if 'i' not in sheet.get('import_warnings', {}) and sheet.get('circumferences'):
             circumference_age = attributes.get('age', '')
             if any(source in sheet.get('import_warnings', {}) for source in ('a', 'n')):
@@ -2233,7 +2243,7 @@ def main() -> None:
         st.button("Home", key="home_screen", on_click=return_home, args=(store,),
                   help="Save all open handoffs and return to the starting screen.", use_container_width=True)
         st.header("PICU Handoff")
-        st.caption(f"Version {APP_VERSION} | Nutrition z scores and circumference measurements")
+        st.caption(f"Version {APP_VERSION} | BMI Age and growth categories")
         if history_ready:
             st.caption("Respiratory mode-history parser: ready")
         else:

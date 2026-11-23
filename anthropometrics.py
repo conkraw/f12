@@ -1,7 +1,8 @@
 """Explicit demographic values. No DOB capture or age/sex inference from prose.
 
-Age is the age at the BMI measurement. A years-only display is not treated as an
-exact age in months for a BMI percentile. BMI and BSA are imported, not derived
+Age is the current patient age. Optional BMI Age identifies age at the BMI
+measurement without changing that header. A years-only display is not treated
+as an exact age in months for a BMI percentile. BMI and BSA are imported, not derived
 from weight, medication doses, or inferred height. CDC reference lookup is local.
 """
 from __future__ import annotations
@@ -10,9 +11,17 @@ from decimal import Decimal
 import re
 
 FIELDS = ('age', 'sex', 'bmi', 'height', 'bsa')
+EDITABLE_FIELDS = FIELDS + ('bmi_age',)
 MISSING = {'', 'none', 'n/a', 'na', '--', 'unknown', 'not recorded', 'not documented'}
 NUMBER = r'(?:\d+(?:\.\d+)?|\.\d+)'
-HEADER = re.compile(r'^(Age(?:\s+(?:in\s+months|at\s+(?:BMI\s+)?measurement))?|Sex(?:\s+for\s+growth\s+chart)?|BMI|Body\s+mass\s+index|Height|Length|BSA|Body\s+surface\s+area)\s*(?::|\bis\b)\s*(.*)$', re.I)
+AGE_LABEL = r'BMI\s+Age(?:\s+in\s+months)?|Age(?:\s+(?:in\s+months|at\s+(?:BMI\s+)?measurement))?'
+HEADER = re.compile(rf'^({AGE_LABEL}|Sex(?:\s+for\s+growth\s+chart)?|BMI|Body\s+mass\s+index|Height|Length|BSA|Body\s+surface\s+area)\s*(?::|\bis\b)\s*(.*)$', re.I)
+
+BMI_AGE_UNDER_TWO = 'CDC BMI-for-age is not used here below age 2.'
+BMI_AGE_ADULT = 'CDC pediatric BMI-for-age is not calculated at age 20 or older.'
+BMI_AGE_AMBIGUOUS = 'A more precise patient age is needed to select the growth chart at the 2-year boundary.'
+BMI_AGE_INCOMPLETE = 'Supply BMI age in months or years and months. A whole-year age is not precise enough. No birth date is needed.'
+BMI_AGE_CONFLICT = 'BMI age is later than the documented patient age. Verify both ages.'
 
 
 def empty_anthropometrics() -> dict:
@@ -66,6 +75,69 @@ def age_bounds(text: str) -> tuple[float, float] | None:
         total_days = number * 7 + days
         return total_days / 31, total_days / 28
     return None
+
+
+def bmi_age_text(data: dict) -> str:
+    """Prefer an explicitly recorded BMI age without changing patient age."""
+    return data.get('bmi_age') or data.get('age', '')
+
+
+def _bmi_chart_age_bounds(text: str) -> tuple[float, float] | None:
+    bounds = age_bounds(text)
+    if bounds is not None:
+        return bounds
+    # A decimal-year age still establishes a chart-age exclusion. Keep this
+    # gate separate from age_months so no extra precision is invented for BMI.
+    match = re.fullmatch(r'(\d+\.\d+)\s*(?:years?|yrs?|y)', _age_for_math(text), re.I)
+    if match:
+        months = float(Decimal(match[1]) * 12)
+        return months, months
+    return None
+
+
+def resolve_bmi_age(data: dict) -> tuple[float | None, str]:
+    """Resolve a precise BMI month while respecting the current-age chart gate.
+
+    An incomplete explicit BMI age never falls back to the general age. Older
+    measurement ages are allowed within the chart, but an age definitely later
+    than the documented patient age is contradictory and cannot be used.
+    """
+    current = data.get('age', '')
+    bounds = _bmi_chart_age_bounds(current)
+    if bounds is not None:
+        if bounds[0] >= 240:
+            return None, BMI_AGE_ADULT
+        if bounds[0] < 24 and bounds[1] <= 24:
+            return None, BMI_AGE_UNDER_TWO
+        if bounds[0] < 24:
+            return None, BMI_AGE_AMBIGUOUS
+    selected = bmi_age_text(data)
+    selected_bounds = _bmi_chart_age_bounds(selected)
+    if selected_bounds is not None:
+        if selected_bounds[0] >= 240:
+            return None, BMI_AGE_ADULT
+        if selected_bounds[0] < 24 and selected_bounds[1] <= 24:
+            return None, BMI_AGE_UNDER_TWO
+    months = age_months(selected)
+    if months is None:
+        return None, BMI_AGE_INCOMPLETE
+    if not 24 <= months < 240:
+        return None, BMI_AGE_UNDER_TWO if months < 24 else BMI_AGE_ADULT
+    if data.get('bmi_age') and bounds is not None:
+        current_months = age_months(current)
+        rounded_year = bool(re.fullmatch(r'\d+\s*(?:years?|yrs?|y)', _age_for_math(current), re.I))
+        if ((current_months is not None and months > current_months)
+                or (rounded_year and months >= bounds[1])
+                or (current_months is None and not rounded_year and months > bounds[1])):
+            return None, BMI_AGE_CONFLICT
+    return months, ''
+
+
+def _demographic_age_key(label: str) -> str:
+    name = ' '.join(label.casefold().split())
+    if name.startswith('bmi age') or name == 'age at bmi measurement':
+        return 'bmi_age'
+    return 'age' if name.startswith('age') else 'sex'
 
 
 def _height_parentheticals(suffix: str) -> list[str]:
@@ -177,7 +249,7 @@ def clean_field(key: str, value: str) -> str:
     # A copied charting note can be longer than the normalized measurement.
     if len(value) > (2000 if key == 'height' else 100):
         raise ValueError('A demographic field is too long.')
-    if key == 'age':
+    if key in ('age', 'bmi_age'):
         if not re.fullmatch(r'\d+(?:\.\d+)?\s*(?:years?|yrs?|y|months?|mos?|m|weeks?|wks?|w|days?|d)(?:\s*(?:,|and)?\s*\d+\s*(?:months?|mos?|m|days?|d))?', _age_for_math(value), re.I):
             raise ValueError('Use an age with units, for example 5 years 2 months, 14 months, or 10 days.')
         if age_months(value) is not None and age_months(value) > 1440:
@@ -204,7 +276,8 @@ def clean_field(key: str, value: str) -> str:
 
 
 def validate_anthropometrics(data: dict) -> None:
-    if not isinstance(data, dict) or set(data) != set(FIELDS):
+    if (not isinstance(data, dict) or set(FIELDS) - set(data)
+            or set(data) - set(EDITABLE_FIELDS)):
         raise ValueError('The demographic measurements have an invalid structure.')
     for key, value in data.items():
         if not isinstance(value, str) or any(c in value for c in '\n\r\t'):
@@ -221,12 +294,11 @@ class AnthropometricResult:
 
 
 AGE_SEX_LABEL = re.compile(
-    r'(?<!\w)(Age(?:\s+(?:in\s+months|at\s+(?:BMI\s+)?measurement))?'
-    r'|Sex(?:\s+for\s+growth\s+chart)?)\s*:[ \t]*', re.I)
+    rf'(?<!\w)({AGE_LABEL}|Sex(?:\s+for\s+growth\s+chart)?)\s*:[ \t]*', re.I)
 
 
 def extract_age_sex(block: str, *, allow_inline_suffix: bool = False) -> AnthropometricResult:
-    """Extract labeled patient age/sex, including one-line Epic metadata.
+    """Extract labeled patient age, BMI age, and sex from Epic metadata.
 
     A metadata line may start with either label. In a diagnosis block, a trailing
     Age AND Sex pair is also accepted, so older joined diagnosis text can be
@@ -238,9 +310,9 @@ def extract_age_sex(block: str, *, allow_inline_suffix: bool = False) -> Anthrop
     pending = None
 
     def record(label: str, raw_value: str) -> bool:
-        key = 'age' if label.lower().startswith('age') else 'sex'
+        key = _demographic_age_key(label)
         value = raw_value.strip()
-        if label.casefold() == 'age in months' and re.fullmatch(NUMBER, value):
+        if ' '.join(label.casefold().split()).endswith('age in months') and re.fullmatch(NUMBER, value):
             value += ' months'
         try:
             value = clean_field(key, value)
@@ -261,9 +333,9 @@ def extract_age_sex(block: str, *, allow_inline_suffix: bool = False) -> Anthrop
             continue
         matches = list(AGE_SEX_LABEL.finditer(raw))
         prefix = raw[:matches[0].start()] if matches else ''
-        keys = {m.group(1).split()[0].lower() for m in matches}
+        keys = {_demographic_age_key(m.group(1)) for m in matches}
         starts_line = bool(matches) and not prefix.strip()
-        suffix_pair = (allow_inline_suffix and keys == {'age', 'sex'}
+        suffix_pair = (allow_inline_suffix and ({'age', 'sex'} <= keys or {'bmi_age', 'sex'} <= keys)
                        and not re.search(r'\b(?:bone|gestational|maternal|paternal|corrected)\s*$', prefix, re.I))
         if matches and (starts_line or suffix_pair):
             pending = None
@@ -305,10 +377,10 @@ def extract_anthropometrics(block: str) -> AnthropometricResult:
         match = HEADER.match(text)
         if match:
             label, value = match.groups()
-            name = label.casefold()
-            key = ('age' if name.startswith('age') else 'sex' if name.startswith('sex') else
+            name = ' '.join(label.casefold().split())
+            key = (_demographic_age_key(label) if name.startswith(('age', 'bmi age', 'sex')) else
                    'bmi' if name in ('bmi', 'body mass index') else 'bsa' if name in ('bsa', 'body surface area') else 'height')
-            if name == 'age in months' and re.fullmatch(NUMBER, value):
+            if name.endswith('age in months') and re.fullmatch(NUMBER, value):
                 value += ' months'
             pending = key if not value else None
         elif pending and text:
@@ -340,8 +412,11 @@ def bmi_output_allowed(data: dict) -> bool:
     Missing age is not inferred from a growth-chart footnote or diagnosis.
     Retain imported BMI in the editor/storage even when it is not printed.
     """
-    bounds = age_bounds(data.get('age', ''))
-    return bounds is not None and bounds[0] >= 24
+    bounds = _bmi_chart_age_bounds(data.get('age', ''))
+    if bounds is not None:
+        return bounds[0] >= 24
+    bmi_bounds = _bmi_chart_age_bounds(data.get('bmi_age', ''))
+    return bmi_bounds is not None and bmi_bounds[0] >= 24
 
 
 def measurements_text(data: dict) -> str:
@@ -353,6 +428,8 @@ def measurements_text(data: dict) -> str:
             rows.append(label + ': ' + data[key])
     if data['bmi'] and bmi_output_allowed(data):
         rows.append('BMI: ' + data['bmi'])
+        if data.get('bmi_age'):
+            rows.append('BMI Age: ' + data['bmi_age'])
         text, _ = bmi_percentile_summary(data)
         # Missing-data messages belong to the editor, not the compact handoff.
         if text.endswith(' (CDC)'):

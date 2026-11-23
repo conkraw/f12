@@ -12,8 +12,8 @@ from decimal import Decimal
 import math
 import re
 
-from anthropometrics import age_bounds, age_months, empty_anthropometrics
-from bmi_reference import bmi_zscore
+from anthropometrics import age_bounds, empty_anthropometrics, bmi_age_text, resolve_bmi_age
+from bmi_reference import bmi_zscore, bmi_weight_category
 from who_growth_reference import weight_for_length_zscore
 
 
@@ -22,6 +22,7 @@ class GrowthAssessment:
     metric: str = ''
     z_score: float | None = None
     severity: str = ''
+    weight_category: str = ''
     display_text: str = ''
     reason: str = ''
     inputs: dict = field(default_factory=dict)
@@ -63,11 +64,13 @@ def recorded_length_cm(value: str) -> float | None:
     return _quantity(value, {'cm': '1', 'm': '100', 'in': '2.54', 'inches': '2.54'})
 
 
-def _score_text(z_score: float) -> str:
-    """Keep a displayed rounded score from implying the wrong severity band."""
+def _score_text(z_score: float, *, weight_for_length: bool = False) -> str:
+    """Keep displayed rounding from changing a malnutrition or high-WFL band."""
     for precision in (2, 3, 4, 5, 6, 10, 15):
         rendered = f'{z_score:+.{precision}f}'
-        if malnutrition_severity(float(rendered)) == malnutrition_severity(z_score):
+        displayed = float(rendered)
+        same_high_wfl = not weight_for_length or (displayed > 2) == (z_score > 2)
+        if same_high_wfl and malnutrition_severity(displayed) == malnutrition_severity(z_score):
             return rendered
     return repr(z_score)
 
@@ -81,16 +84,9 @@ def assess_growth(sheet: dict) -> GrowthAssessment:
         result.reason = 'Growth assessment is unavailable until the age/sex and Nutrition import warnings are resolved.'
         return result
     bounds = age_bounds(attrs.get('age', ''))
-    if bounds is None:
-        result.reason = 'Document age to select weight-for-length below 2 years or BMI-for-age from 2 through 19 years.'
-        return result
-    if bounds[0] >= 240:
-        result.reason = 'Pediatric growth z scores are not calculated at age 20 or older.'
-        return result
-    under_two = bounds[0] < 24 and bounds[1] <= 24
-    if not under_two and bounds[0] < 24:
-        result.reason = 'A more precise age is needed to select the growth chart at the 2-year boundary.'
-        return result
+    # Infant WFL eligibility uses the patient's general age. BMI Age belongs
+    # only to the recorded BMI and never supplies an infant's current age.
+    under_two = bounds is not None and bounds[0] < 24 and bounds[1] <= 24
     result.metric = 'weight_for_length' if under_two else 'bmi_for_age'
     sex = attrs.get('sex', '')
     if sex not in ('Male', 'Female'):
@@ -120,9 +116,9 @@ def assess_growth(sheet: dict) -> GrowthAssessment:
             return result
         label, source = 'Weight-for-length z score', 'WHO'
     else:
-        months = age_months(attrs.get('age', ''))
+        months, age_reason = resolve_bmi_age(attrs)
         if months is None:
-            result.reason = 'BMI-for-age needs age at the BMI measurement in months or years and months. A whole-year age is not precise enough.'
+            result.reason = age_reason
             return result
         bmi_value = attrs.get('bmi', '')
         try:
@@ -133,9 +129,18 @@ def assess_growth(sheet: dict) -> GrowthAssessment:
         if not math.isfinite(bmi) or bmi <= 0 or bmi > 200:
             result.reason = 'Verify the recorded BMI before calculating BMI-for-age.'
             return result
-        result.inputs = {'age': attrs['age'], 'age_months': months, 'sex': sex,
+        result.inputs = {'age': attrs.get('age', ''), 'bmi_age': attrs.get('bmi_age', ''),
+                         'age_source': 'BMI Age' if attrs.get('bmi_age') else 'Age',
+                         'age_at_bmi': bmi_age_text(attrs), 'age_months': months, 'sex': sex,
                          'recorded_bmi': bmi_value, 'bmi': bmi,
                          'reference': 'CDC 2000 LMS / 2022 extended BMI-for-age'}
+        try:
+            # Category thresholds remain usable even if an extreme positive
+            # z score cannot be represented by the normal-tail calculation.
+            result.weight_category = bmi_weight_category(bmi, months, sex)
+        except (OSError, ValueError, KeyError, OverflowError):
+            result.reason = 'BMI-for-age is unavailable. Verify the recorded BMI and bundled CDC reference.'
+            return result
         try:
             z = bmi_zscore(bmi, months, sex)
         except (OSError, ValueError, KeyError, OverflowError):
@@ -147,10 +152,12 @@ def assess_growth(sheet: dict) -> GrowthAssessment:
         return result
     result.z_score = z
     result.severity = malnutrition_severity(z)
-    result.display_text = f'{label}: {_score_text(z)} ({source})'
+    if under_two and z > 2:
+        result.weight_category = 'High weight-for-length'
+    result.display_text = f'{label}: {_score_text(z, weight_for_length=under_two)} ({source})'
     result.reason = ('Uses measured weight and recumbent length, not dosing weight or weight-for-age.'
                      if under_two else
-                     'Uses the recorded BMI and documented age month. Editing weight or height does not change the independently recorded BMI.')
+                     f'Uses the recorded BMI and {result.inputs["age_source"]} ({result.inputs["age_months"]:g} months). Editing weight or height does not change the independently recorded BMI.')
     return result
 
 

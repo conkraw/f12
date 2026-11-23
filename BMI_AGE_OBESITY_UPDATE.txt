@@ -1,0 +1,72 @@
+PICU Handoff version 6.106
+BMI Age and growth categories
+
+INSTALL
+
+This update builds on the installed conkraw/f12 version 6.105.
+
+1. Extract the ZIP.
+2. Open conkraw/f12 in GitHub and use Add file > Upload files.
+3. Drag in the extracted files and folders. Replace the Python files and keep
+   the data folder intact, including its two growth reference CSV files.
+4. Commit together, reboot Streamlit, confirm Version 6.106, and re-paste each
+   patient's complete SmartPhrase.
+
+The package includes the required modules and both reference tables. Do not
+upload only app.py. No new secrets or requirements.txt change is needed.
+
+BMI AGE
+
+The new field is imported directly:
+BMI Age: 2 y.o. 1 m.o.
+
+That means 25 months. It is used for the BMI-for-age z score, BMI percentile,
+and high-BMI category. General Age: 2 y.o. stays unchanged in the patient header.
+BMI Age is displayed with the BMI measurements on the handoff.
+
+Other accepted examples include BMI Age: 25 months and BMI Age: 2 years 1 month.
+The field can be edited under Labs / Vitals > Demographics / Weight.
+
+BMI Age takes priority when present. Without it, a precise general age in
+months or years plus months can still be used. Missing or invalid age precision
+does not produce a guessed score. A new Nutrition import clears any prior
+BMI Age omitted from the new source.
+
+EXAMPLE RESULT
+
+Male growth-chart sex, recorded BMI 11.9, BMI Age 2 y.o. 1 m.o.:
+BMI-for-age z score: -5.73 (CDC)
+Problems: Severe malnutrition
+
+The score printed beside the Epic weight reading is not used for this result.
+
+NEW PROBLEMS
+
+Ages 2 through 19:
+Overweight: BMI at or above P85 and below P95.
+Obesity: BMI at or above P95, unless severe criteria apply.
+Severe obesity: BMI at or above 120% of P95, or BMI at or above 35 kg/m².
+
+Only the highest applicable high-BMI category is added. These are the CDC
+categories associated with the age- and sex-specific BMI distribution.
+Severe obesity is not assigned from an arbitrary fixed z-score threshold.
+
+Below age 2:
+High weight-for-length is added when WHO WFL z is above +2. Infant obesity
+labels are not applied. Existing mild, moderate and severe malnutrition rules
+are unchanged. Normal growth does not add a problem.
+
+All labels use the existing Problems review/hide controls. Changes to the
+supporting BMI, BMI Age, sex, weight or length refresh the calculation and
+relevant review decision. Age 20 and older remains outside pediatric scoring.
+
+PRIOR UPDATE FEATURES
+
+Head circumference below age 2 and abdominal girth when supplied retain their
+latest measurement dates. The age-appropriate z score is in the demographics
+column. WFL continues to use measured weight and recumbent length. Dosing
+weight is not used for growth classification. The previous ventilator,
+paralytic-table and airway-clearance updates remain included.
+
+BMI_REFERENCE.md explains the calculation and classification methods.
+VALIDATION_GROWTH_6106.txt describes the checks performed for this build.

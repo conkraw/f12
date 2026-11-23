@@ -36,6 +36,7 @@ RULES = {
     'coagulopathy': 'Coagulopathy',
     'QTC': 'Long QTc',
     'malnutrition': 'Malnutrition',
+    'growth_weight': 'Growth weight category',
 }
 LOW_RULES = tuple(k for k in RULES if k in ('NA','K','ALBUMIN','CO2','MG','PHOS','HGB','PLT'))
 LABELS = {'NA':'Sodium', 'K':'Potassium', 'ALBUMIN':'Albumin', 'CO2':'Serum CO2',
@@ -255,6 +256,18 @@ def suggestions(sheet: dict, as_of: datetime | None = None) -> list[dict]:
             {'metric': growth.metric, 'z_score': growth.z_score,
              'severity': growth.severity, 'inputs': growth.inputs},
             label=growth.severity)
+    if growth.weight_category:
+        if growth.metric == 'weight_for_length':
+            evidence = growth.display_text
+            caution = 'WHO weight-for-length z score above +2. The label for children under 2 is High weight-for-length. Verify recumbent length, measured weight and clinical context.'
+        else:
+            evidence = (growth.display_text + ', ' if growth.display_text else '') + (
+                f'BMI {growth.inputs["bmi"]:g} kg/m² at {growth.inputs["age_months"]:g} months ({growth.inputs["age_source"]})')
+            caution = 'CDC BMI-for-age categories, ages 2 through 19: overweight at P85 to below P95, obesity at P95 or higher, severe obesity at 120% of P95 or BMI 35 kg/m² or higher. Only the highest applicable category is shown. Verify source measurements and clinical context.'
+        add('growth_weight', evidence, caution,
+            {'metric': growth.metric, 'z_score': growth.z_score,
+             'category': growth.weight_category, 'inputs': growth.inputs},
+            label=growth.weight_category)
     latest = _latest_rows(sheet, now)
     for key in LOW_RULES:
         row = latest.get(key)

@@ -1,0 +1,54 @@
+PICU Handoff 6.106 validation
+
+Base: conkraw/f12 version 6.105
+Base commit: 2c4095ff27a869d15f577c53ae562a48c7f8d905
+
+The selected regression suite passed 1,077 tests.
+It covered the new BMI Age parser and age resolver, calculation and category
+boundaries, existing demographics and laboratory imports, replacement imports,
+Problems review and dismissal, encrypted saved records, editor callbacks,
+screen rendering, all handoff export formats, and PDF cache invalidation.
+UI checks use the project's widget stubs, not a deployed browser.
+
+New BMI Age behavior checked:
+- BMI Age: 2 y.o. 1 m.o. resolves to 25 months and leaves Age: 2 y.o. unchanged.
+- The BMI z score, percentile and high-BMI category use the same age and sex.
+- Standalone, next-line and inline metadata forms import correctly.
+- Explicit incomplete or contradictory BMI Age never falls back silently.
+- A successful new Nutrition import clears an omitted previous BMI Age.
+- Old five-field records still validate and round-trip through encryption.
+- Editing BMI Age refreshes exports and relevant Problems review decisions.
+
+Calculation and Problems checks:
+- Male, BMI 11.9, BMI Age 25 months produces z -5.73426217561093.
+  The handoff displays -5.73 (CDC) and Severe malnutrition in Problems.
+- Overweight begins at the unrounded LMS P85, obesity at the published P95,
+  and severe obesity at 120% of P95 or BMI 35 kg/m2, whichever is lower.
+- Only the highest applicable high-BMI category is returned.
+- High-BMI classification remains available if an extreme positive z score
+  cannot be represented by the normal-tail calculation.
+- Children under 2 retain WHO WFL scoring. A WFL z above +2 adds
+  High weight-for-length. BMI Age cannot change infant chart eligibility.
+- Display rounding preserves the malnutrition and high-WFL boundaries.
+- Age 20 and older does not receive a pediatric BMI z score or category.
+
+Layout checks:
+Three dense handoffs were rendered to PDF and inspected as PNG images.
+Each remained one page without clipping the new BMI Age, z score or Problems.
+The cases were the earlier infant source, a synthetic dense case using the
+supplied 25-month BMI values, and a synthetic severe-obesity variant.
+The infant retained its dated head-circumference line. The older cases omitted
+head circumference. The untyped source weight-chart z was not printed.
+Patient source pastes and generated PDFs/images are not in this package.
+
+The WHO and CDC public reference tables are unchanged from 6.105. Their source
+URLs and checksums remain in data/GROWTH_REFERENCE_SOURCES.txt. This release
+adds classification and age routing, without replacing those validated tables.
+
+Python compilation and git whitespace checks passed.
+The suite completed with pypdf deprecation warnings.
+No live Streamlit deployment was changed or verified during this build.
+
+To run the new focused tests from the repository root with the existing
+development requirements installed:
+python -m pytest -q tests/test_bmi_age_parser.py tests/test_bmi_weight_categories.py tests/test_bmi_age_and_categories.py
