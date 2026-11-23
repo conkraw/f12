@@ -1,34 +1,37 @@
-PICU Handoff 6.103
-Baseline: 6.102
+PICU Handoff 6.107
+Baseline: installed version 6.106
 
-From 6.102, update these runtime files together in the application folder:
+Fix: preserve a dated PS - CPAP trial after the flow table returns to IMV.
+
+Update these four runtime files together:
 app.py
 error_store.py
 exports.py
 ventilation.py
-ventilator_modes.py
 
-Confirm Version 6.103 in the sidebar after Streamlit reloads the source.
-If the previous version remains, reboot the app once.
-From an earlier version, use the complete repository's application files.
+Extract the ZIP, upload all included contents to conkraw/f12, and commit.
+Reboot Streamlit and confirm Version 6.107 in the sidebar.
+Re-paste the complete SmartPhrase for affected rooms. Previously saved handoffs
+keep their existing history selections until reimported or manually changed.
 
-All Vent Modes now selects the newest timestamp across every Epic table block.
-When PS - CPAP is newest, the handoff uses CPAP Trial Settings. A newer
-conventional mode selects its corresponding settings. Previous table modes
-remain available in the history editor and are unchecked initially.
+The latest dated mode still supplies the current ventilator settings.
+A separate CPAP Trial Data block now shows the latest dated PS - CPAP entry
+even after the patient has returned to a conventional mode.
 
-An empty or absent table uses the original Vent Mode field. An unknown newest
-mode retains its name without borrowing older settings. NAVA, AVAPS, NIV,
-and the older individual SmartLink history format retain their existing rules.
+Trial values come only from the corresponding CPAP settings section. Repeated
+trial entries are displayed once. Other prior flow-table modes stay hidden
+by default. A template heading without a recorded trial does not add one.
+The existing history checkbox can still hide a trial.
 
-Version 6.102 AF-table behavior is preserved. Count only vecuronium and
-rocuronium from 07:00 Eastern on the previous calendar day through printing.
-Five qualifying entries display as PRN x 5. Six or more display as PRN >=6.
-The medications.py, prn_counts.py, and prn_html.py files match the 6.102 baseline.
+For the supplied example, the current mode is PRVC-IMV at 20:00, with CPAP
+Trial Data for PS-CPAP at 11:30. The trial has pressure support 10 cm H2O,
+PEEP 5 cm H2O, FiO2 30%, and weaning tidal volumes 101 to 210 mL.
+The timestamp identifies the mode entry. The table does not separately date
+each numerical trial setting.
 
-Keep the current Streamlit Secrets, encryption key, and repository settings.
-Dependencies and archive schema 34 are unchanged. Existing archives remain
-readable by 6.103. See ARCHIVE_COMPATIBILITY.txt for downgrade considerations.
+BMI Age, growth categories, dated circumference measurements, airway-clearance
+devices and paralytic counts are retained. No dependency, Secrets, encryption
+key or archive schema change is required.
 
-801 focused tests passed. See TEST_REPORT.md for verification.
-Live Streamlit deployment was not verified by these local checks.
+See VALIDATION_CPAP_6107.txt for verification and BUILD_MANIFEST_6107.json for
+the included file checksums. No live deployment was changed by this build.

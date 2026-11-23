@@ -1,0 +1,53 @@
+PICU Handoff 6.107 validation
+
+Base: installed conkraw/f12 version 6.106
+Base commit: 361062b577906c08a43e407a43d916bbeb9939b6
+
+847 selected regression tests passed in 38.42 seconds.
+The suite covered ventilation, flow tables, mode history, dedicated CPAP/NAVA/
+AVAPS settings, NIV routing, respiratory fallbacks, room replacement, saved
+records, editor callbacks, PDF caching, print preparation and BMI Age.
+The run completed with 112 existing pypdf deprecation warnings.
+
+The native Streamlit AppTest workflow passed. It imports the synthetic flow
+table through the real app, verifies saved room state and preview/PDF output,
+and replaces the room with a newer current PS-CPAP record without duplicates.
+The readiness check now expects a prior PS-CPAP trial to be included while
+other prior flow-table modes stay excluded.
+
+Specific regression cases:
+- A later conventional mode stays current and retains its own settings.
+- A prior dated PS-CPAP entry appears under CPAP Trial Data.
+- Spacing, case and supported dash aliases identify the same trial mode.
+- Repeated PS-CPAP entries display once using the latest trial timestamp.
+- Trial settings remain separate from current and other mode settings.
+- An absent CPAP settings section does not borrow conventional settings.
+- A CPAP template without a recorded mode does not create a trial.
+- Invalid or missing prior timestamps do not automatically include a trial.
+- Tied timestamps retain the existing uncertainty note.
+- Explicit user hiding survives output and encrypted save/load.
+- Full replacement without CPAP history removes the previous trial.
+- Text, HTML and PDF exports show the same current mode and prior trial.
+
+The supplied complete SmartPhrase imported without errors. It displayed:
+Current mode: PRVC-IMV (11/22/26 20:00)
+CPAP trial: PS-CPAP (11/22/26 11:30)
+Trial PEEP: 5 cm H2O
+Trial pressure support: 10 cm H2O
+Trial FiO2: 30%
+Weaning tidal volume range: 101 to 210 mL
+
+The source mode timestamp identifies when PS-CPAP was charted. Numerical trial
+settings come from the matching CPAP Trial Settings section, which has no
+separate individual measurement timestamps in this paste.
+
+The generated PDF remained one page. Its rendered image was inspected for
+legible, separate current settings and trial data with no clipped content.
+Patient source text and generated patient PDF/images are excluded from the ZIP.
+
+Python compilation and git whitespace checks passed. Archive integrity and
+manifest checksums were verified. This is an update package for 6.106.
+No live Streamlit deployment was changed or verified during this build.
+
+Focused tests from the repository root with requirements-dev.txt installed:
+python -m pytest -q tests/test_vent_mode_flow_table.py tests/test_vent_mode_flow_table_native.py tests/test_prior_cpap_trial_integration.py tests/test_cpap_trial_data.py

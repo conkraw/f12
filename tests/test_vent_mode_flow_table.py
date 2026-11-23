@@ -59,7 +59,7 @@ def two_blocks(last=PRVC):
     )
 
 
-def test_split_flow_table_selects_latest_conventional_mode_and_hides_old_trial():
+def test_split_flow_table_keeps_latest_conventional_mode_and_prior_cpap_trial():
     data = parsed(two_blocks())
     assert data["mode"] == PRVC
     assert data["values"]["Vt (Set, mL)"] == "180 mL"
@@ -70,10 +70,73 @@ def test_split_flow_table_selects_latest_conventional_mode_and_hides_old_trial()
     assert meta["latest_confirmed"] is True
     previous = meta["other_modes"]
     assert len(previous) == 1
-    assert previous[0]["include"] is False
+    assert previous[0]["include"] is True
+    assert previous[0]["reported_at"] == "2026-03-04T11:30"
+    assert previous[0]["values"]["Pressure Support (cm H2O)"] == "8 cm H20"
+    assert previous[0]["values"]["PEEP (cm H2O)"] == "7 cm H2O"
+    assert previous[0]["values"]["FiO2 set (%)"] == "40 %"
     text = format_ventilation(data)
-    assert text.count("Mode:") == 1
-    assert "CPAP Trial Data" not in text and "Weaning TV:" not in text
+    assert text.count("Mode:") == 2
+    main, trial = text.split("\n---\n")
+    assert main.startswith("Mode: PRVC-IMV (03/04/26 11:40)")
+    assert "Set TV: 180 mL" in main and "FiO2: 31 %" in main
+    assert trial.startswith("CPAP Trial Data\nMode: PS-CPAP (03/04/26 11:30)")
+    assert "Weaning TV: 90–150 mL" in trial
+    assert "FiO2: 40 %" in trial and "Set RR:" not in trial
+
+
+@pytest.mark.parametrize("mode", [
+    "PS - CPAP", "ps-cpap", " PS  -  cpap ", "PS- CPAP", "PS -CPAP", "PS – CPAP",
+    "Pressure Support - Continuous Positive Airway Pressure",
+])
+def test_prior_cpap_aliases_are_visible_without_changing_current_mode(mode):
+    data = parsed(source(table(["03/04/26 1130", "03/04/26 1140"], [mode, PRVC])))
+    assert data["mode"] == PRVC
+    assert data["mode_history"]["reported_at"] == "2026-03-04T11:40"
+    assert data["mode_history"]["other_modes"][0]["include"] is True
+    assert "CPAP Trial Data\nMode: PS-CPAP (03/04/26 11:30)" in format_ventilation(data)
+
+
+def test_repeated_cpap_trials_display_once_at_the_latest_trial_time():
+    data = parsed(source(
+        table(["03/04/26 1300", "03/04/26 0900"], ["PS - CPAP", "PS-CPAP"]),
+        table(["03/04/26 2000", "03/04/26 1130"], [PRVC, "PS - CPAP"]),
+    ))
+    previous = data["mode_history"]["other_modes"]
+    assert len(previous) == 1
+    assert previous[0]["reported_at"] == "2026-03-04T13:00"
+    text = format_ventilation(data)
+    assert text.count("CPAP Trial Data") == 1
+    assert "Mode: PS-CPAP (03/04/26 13:00)" in text
+    assert "(03/04/26 09:00)" not in text and "(03/04/26 11:30)" not in text
+
+
+def test_prior_cpap_without_scoped_settings_does_not_borrow_current_values():
+    general = GENERAL.format(mode=PRVC_FULL).split("CPAP Trial Settings:", 1)[0]
+    text = general + "All Vent Modes:\n" + table(
+        ["03/04/26 1130", "03/04/26 1140"], ["PS - CPAP", PRVC])
+    data = parsed(text)
+    previous = data["mode_history"]["other_modes"][0]
+    assert previous["include"] is True
+    assert previous["values"] == {}
+    main, trial = format_ventilation(data).split("\n---\n")
+    assert "Set TV: 180 mL" in main and "Pressure Support: 10 cm H2O" in main
+    assert trial == ("CPAP Trial Data\nMode: PS-CPAP (03/04/26 11:30)\n"
+                     "Settings not available for this mode in the paste.")
+
+
+def test_only_prior_cpap_is_visible_and_user_can_hide_it():
+    data = parsed(source(table(
+        ["03/04/26 1000", "03/04/26 1130", "03/04/26 1140"],
+        ["NAVA", "PS - CPAP", PRVC])))
+    previous = data["mode_history"]["other_modes"]
+    nava = next(record for record in previous if record["mode"] == "NAVA")
+    trial = next(record for record in previous if record["mode"] == "PS - CPAP")
+    assert nava["include"] is False and trial["include"] is True
+    output = format_ventilation(data)
+    assert "CPAP Trial Data" in output and "Mode: NAVA" not in output
+    trial["include"] = False
+    assert "CPAP Trial Data" not in format_ventilation(data)
 
 
 @pytest.mark.parametrize("mode", ["PS - CPAP", "ps-cpap", " PS  -  cpap ", "PS- CPAP", "PS -CPAP", "PS – CPAP"])
@@ -210,6 +273,8 @@ def test_bad_timestamp_cell_does_not_shift_neighboring_mode_values(bad_date):
     assert data["mode_history"]["latest_confirmed"] is False
     prior = next(item for item in data["mode_history"]["other_modes"] if item["mode"] == "PS - CPAP")
     assert prior["reported_at"] == ""
+    assert prior["include"] is False
+    assert "CPAP Trial Data" not in format_ventilation(data)
     assert any("missing or invalid times" in note for note in data["mode_history"]["notes"])
 
 
@@ -228,6 +293,10 @@ def test_different_modes_at_same_newest_timestamp_remain_unconfirmed():
     data = parsed(source(table(["03/04/26 1140", "03/04/26 1140"], [PRVC, "PS - CPAP"])))
     assert data["mode_history"]["latest_confirmed"] is False
     assert any("share the newest timestamp" in note for note in data["mode_history"]["notes"])
+    prior = data["mode_history"]["other_modes"][0]
+    assert prior["include"] is True
+    assert prior["reported_at"] == "2026-03-04T11:40"
+    assert "Mode: PS-CPAP (03/04/26 11:40)" in format_ventilation(data)
 
 
 @pytest.mark.parametrize("latest,expected", [("PS - CPAP", "PS-CPAP"), ("Unlisted support mode", "Unlisted support mode")])
@@ -250,9 +319,6 @@ def test_import_and_exports_use_latest_mode_without_retaining_raw_history(latest
         assert result.sheet["ventilation"]["values"] == {}
     for output in (handoff_text(result.sheet), handoff_html(result.sheet)):
         assert expected in output
-        if latest == "PS - CPAP":
-            assert "CPAP Trial Data" in output
-        else:
-            assert "CPAP Trial Data" not in output
+        assert "CPAP Trial Data" in output
         assert "PRVC-IMV" not in output
         assert "All Vent Modes" not in output

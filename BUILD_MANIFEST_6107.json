@@ -1,0 +1,18 @@
+{
+  "version": "6.107",
+  "base_repository": "conkraw/f12",
+  "base_version": "6.106",
+  "base_commit": "361062b577906c08a43e407a43d916bbeb9939b6",
+  "files": {
+    "app.py": "1ddee433e0cf2d1fc7aa9bf21a1d1509067e433df640443236d7e2452ed0a7d4",
+    "ventilation.py": "3549ebe81bafdd50593533593cb0ee362ed1c2acdb57b366f692ed165ad742db",
+    "error_store.py": "95019937ef93ed30e446b0a15cbda414daf9498dc078806c917b11c95cca2c0f",
+    "exports.py": "c07fcf70ce87b1c298ea2cf9f9eb5e9d761eb713bb37e919decb26c1ba5591f7",
+    "README.md": "fe865d7890b6c16d68b53954224135fbff045cab91915bf148e6d732d6ab6097",
+    "UPDATE_FILES.txt": "44d82de81a71b2e09f4cec7e5e809d63bd312a10062d9913ff85569424ba92bf",
+    "VALIDATION_CPAP_6107.txt": "f62568f19e3e2ac555aa914e6a4b7364ce737e2618168301f206990825fa3808",
+    "tests/test_vent_mode_flow_table.py": "499959714f1bcd6ec367b5340547010327e9dd7bcaa6dc2fdb79015d95d369fb",
+    "tests/test_vent_mode_flow_table_native.py": "ae5789f0507a4357c6541b8f1b053af1ecc0f03baac674c113d1522beee4f818",
+    "tests/test_prior_cpap_trial_integration.py": "fc40991af03df4f96c9d04b64927db334831c438d22a50b951d0cf248937ea7b"
+  }
+}

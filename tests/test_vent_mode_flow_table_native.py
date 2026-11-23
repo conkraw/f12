@@ -38,10 +38,15 @@ def test_native_table_import_and_cpap_replacement_update_preview_saved_room_and_
     assert conventional["sbs_vent_mode"] == PRVC
     assert conventional["ventilation"]["values"]["FiO2 set (%)"] == "31 %"
     for text in _preview_and_pdf(at, conventional):
-        assert "Mode: PRVC-IMV" in text
+        assert "Mode: PRVC-IMV (03/04/26 11:40)" in text
         assert "Set TV: 180 mL" in text
         assert "FiO2: 31 %" in text
-        assert "CPAP Trial Data" not in text and "PS-CPAP" not in text
+        assert text.count("CPAP Trial Data") == 1
+        assert "Mode: PS-CPAP (03/04/26 11:30)" in text
+        assert "Pressure Support: 8 cm H2O" in text
+        assert "Set PEEP: 7 cm H2O" in text and "FiO2: 40 %" in text
+        assert re.search(r"Weaning TV: 90[–-]150 mL", text)
+        assert text.index("Mode: PRVC-IMV") < text.index("CPAP Trial Data")
 
     import_source(at, _phrase("PS - CPAP"))
     trial = deepcopy(at.session_state["drafts"]["P4102"])
@@ -53,7 +58,8 @@ def test_native_table_import_and_cpap_replacement_update_preview_saved_room_and_
     assert trial["ventilation"]["values"]["FiO2 set (%)"] == "40 %"
     assert "Vt (Set, mL)" not in trial["ventilation"]["values"]
     for text in _preview_and_pdf(at, trial):
-        assert "CPAP Trial Data" in text and "Mode: PS-CPAP" in text
+        assert text.count("CPAP Trial Data") == 1
+        assert "Mode: PS-CPAP (03/04/26 11:40)" in text
         assert "Pressure Support: 8 cm H2O" in text
         assert "Set PEEP: 7 cm H2O" in text and "FiO2: 40 %" in text
         assert "Weaning TV:" in text

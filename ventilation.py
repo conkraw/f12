@@ -858,7 +858,12 @@ def _history_context(block: str) -> dict | None:
             omitted_niv = True
             continue
         other_source = _source_for_record(parts, record["mode"], allow_generic=generic_ok and _mode_identity(record["mode"]) == original_identity)
-        others.append({**record, "source": other_source, **({"include": False} if flow_table else {})})
+        # A documented PS-CPAP trial remains relevant after returning to the
+        # current ventilator mode. Keep its own timestamp and scoped settings,
+        # while other historical flow-table modes stay hidden by default.
+        show_trial = (bool(record["reported_at"])
+                      and _mode_identity(record["mode"]) == _mode_identity("PS-CPAP"))
+        others.append({**record, "source": other_source, **({"include": show_trial} if flow_table else {})})
     if omitted_niv:
         notes.append("Recorded non-invasive modes were omitted from this invasive ventilation list.")
     if len(others) > 64:

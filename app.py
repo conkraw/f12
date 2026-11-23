@@ -1405,12 +1405,16 @@ def respiratory_parser_ready() -> bool:
                 return False
             data = result.sheet.get("ventilation") or {}
             history = data.get("mode_history") or {}
+            expected_other_modes = {"NAVA": False}
+            expected_other_modes["PS-CPAP" if latest == "PRVC-IMV" else "PRVC-IMV"] = latest == "PRVC-IMV"
+            included_modes = {display_mode(record.get("mode", "")): record.get("include")
+                              for record in history.get("other_modes", [])}
             if not (data.get("mode") == latest
                     and data.get("values", {}).get("PEEP (cm H2O)") == peep
                     and data.get("values", {}).get("FiO2 set (%)") == fio2
                     and history.get("reported_at") == "2026-01-01T18:00"
                     and history.get("latest_confirmed") is True
-                    and all(record.get("include") is False for record in history.get("other_modes", []))
+                    and included_modes == expected_other_modes
                     and result.sheet.get("sbs_vent_mode") == latest):
                 return False
         return True
@@ -2243,7 +2247,7 @@ def main() -> None:
         st.button("Home", key="home_screen", on_click=return_home, args=(store,),
                   help="Save all open handoffs and return to the starting screen.", use_container_width=True)
         st.header("PICU Handoff")
-        st.caption(f"Version {APP_VERSION} | BMI Age and growth categories")
+        st.caption(f"Version {APP_VERSION} | CPAP trial history")
         if history_ready:
             st.caption("Respiratory mode-history parser: ready")
         else:

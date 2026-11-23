@@ -1,10 +1,10 @@
-# PICU Handoff 6.103
+# PICU Handoff 6.107
 
 ## Latest ventilator mode from the Epic flow table
 
 The All Vent Modes flow table is now the primary source for the current mode. The importer compares complete dates and times across every table block, including when Epic splits the six entries into multiple blocks. Blank cells keep their column positions and do not become mode entries.
 
-When the newest mode is PS - CPAP, the handoff uses the dedicated CPAP Trial Settings for pressure support, PEEP, FiO2, and available weaning tidal volumes and tolerance. When a newer conventional mode follows the trial, the handoff switches back to its matching settings. Earlier table modes are available in the existing history editor but are unchecked by default. The older individual SmartLink history format keeps its existing behavior.
+When the newest mode is PS - CPAP, the handoff uses the dedicated CPAP Trial Settings for pressure support, PEEP, FiO2, and available weaning tidal volumes and tolerance. When a newer conventional mode follows the trial, its matching settings remain the main ventilator block and the most recent dated PS - CPAP trial is included below it as CPAP Trial Data. Other earlier table modes remain unchecked by default in the history editor. The older individual SmartLink history format keeps its existing behavior.
 
 NAVA, AVAPS, and non-invasive modes continue through their existing settings rules. An empty or absent table uses the original Vent Mode field. The table can also supply the mode when that original SmartLink has been removed. An unrecognized newest table mode retains its name without borrowing settings from an older mode.
 
@@ -27,15 +27,19 @@ PDF generation, combined PDFs, PDF caching, and HTML printing use the same count
 
 ## CPAP trial display
 
-A reported Pressure Support - Continuous Positive Airway Pressure mode, including PS-CPAP, displays CPAP Trial Data. The CPAP block omits the duplicate respiratory rate. Other modes keep their own settings, and historical PS-CPAP blocks receive their own trial headings.
+A reported Pressure Support - Continuous Positive Airway Pressure mode, including PS-CPAP, displays CPAP Trial Data. A valid dated trial in the flow table remains visible after the patient returns to a conventional mode. Repeated trial entries appear once, using the latest recorded trial time. A CPAP settings template alone does not establish that a trial occurred, and an untimed prior flow-table entry is not automatically included. The CPAP block omits the duplicate respiratory rate. Existing history controls can hide an included trial.
 
-## Update from 6.102
+## Update from 6.106
 
-Update app.py, error_store.py, exports.py, ventilation.py, and ventilator_modes.py together in the application folder. Confirm Version 6.103 in the sidebar, then paste the complete SmartPhrase as usual. If Streamlit has not picked up the updated files, reboot the app once. Version 6.102 AF-table parsing and count-window behavior are preserved.
+Update app.py, error_store.py, exports.py, and ventilation.py together in the application folder. Confirm Version 6.107 in the sidebar, then re-paste the complete SmartPhrase to rebuild any handoff imported before this fix. If Streamlit has not picked up the updated files, reboot the app once. BMI Age, growth categories, circumference measurements, airway clearance and paralytic-count behavior remain unchanged.
 
 For an earlier version, use the complete repository's application files. Keep the current Streamlit Secrets and encryption key. Dependencies and archive schema 34 are unchanged. Existing eight-drug PRN records remain readable, but only the two paralytics receive automatic counts. Legacy review signatures do not gate the count.
 
 ## Verification
+
+Version 6.107 verification is recorded in VALIDATION_CPAP_6107.txt. The attached source was checked locally with current PRVC-IMV settings at 20:00 and a separately displayed PS-CPAP trial at 11:30. Tests cover imports, current-mode selection, dedicated trial settings, duplicate trials, user hiding, replacement, saved records and exports. Patient source data is not included in the update package.
+
+## Earlier 6.103 verification
 
 801 focused tests passed on the merged 6.103 code. Coverage includes horizontal flow tables, the older mode-history format, CPAP selection, NAVA, AVAPS, NIV, missing-table fallback, native Streamlit import and save, PDF caching, and batch exports. The new coverage adds 32 table cases and one native end-to-end test. The run took 15.35 seconds and reported 103 existing anyio and pypdf deprecation warnings.
 
