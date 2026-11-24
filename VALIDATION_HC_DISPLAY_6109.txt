@@ -1,0 +1,31 @@
+PICU Handoff 6.109 validation
+Date: 2026-11-24
+Baseline: conkraw/f12, version 6.108
+
+259 targeted tests passed in 9.60 seconds.
+22 existing pypdf deprecation warnings. No failing tests.
+
+Covered the WHO HC reference, age-at-measurement logic, growth integration,
+Labs / Vitals, native Streamlit import and saved records, IBW integration,
+text/HTML/PDF output and the versioned error journal.
+
+A new native Streamlit regression verifies a synthetic dated HC without
+HC Age shows the same percentile beside the measurement in the patient
+preview, Labs / Vitals and PDF. An existing native test now also checks
+that an explicit HC Age appears beside the measurement in Labs / Vitals.
+
+The supplied full sample was processed transiently for investigation. It
+imported successfully and its HC percentile was present in text, HTML and
+a single-page PDF. The patient column was rendered and visually inspected.
+The expected percentile was visible and not clipped. No raw patient source,
+patient-derived exports or staff identifiers are included in this update.
+
+All 25 files in the uploaded version 6.108 manifest were compared with the
+repository and matched, including the WHO reference. The original omission
+could not be reproduced in the exported handoff with that sample. A real
+editor-only display inconsistency was found and corrected: its raw HC line
+previously omitted the computed percentile keyword argument.
+
+The live Streamlit process was not inspected. Reboot and fresh import are
+included in installation steps to ensure all current code and age metadata
+are used. GitHub write access remains unavailable through the integration.

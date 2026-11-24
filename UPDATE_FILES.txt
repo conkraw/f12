@@ -1,51 +1,27 @@
-PICU Handoff 6.108
-Baseline: repository conkraw/f12, version 6.107
+PICU Handoff 6.109
+Baseline: installed version 6.108
 
-Head circumference percentiles and estimated pediatric ideal body weight.
+Fix: show the HC percentile beside the measurement in Labs / Vitals.
 
-Update these runtime files together:
-anthropometrics.py
+Replace these two runtime files together:
 app.py
-circumferences.py
 error_store.py
-exports.py
-growth_assessment.py
-head_circumference.py
-head_circumference_reference.py
-ideal_body_weight.py
-importing.py
-models.py
-data/who_hcfa_lms.csv
 
-Keep the existing data/cdc_bmi_age_2022.csv and data/who_wfl_lms.csv files.
-Apply the update, then confirm Version 6.108 in the sidebar.
-Reboot Streamlit if the new version has not appeared.
-Re-paste the complete SmartPhrase to refresh measurements and record the
-date of the supplied general Age. Alternatively, enter HC Age for a saved HC.
+Upload the included files to conkraw/f12 and commit.
+Reboot Streamlit and confirm Version 6.109.
+Paste the complete current SmartPhrase again to refresh the patient snapshot.
 
-HC percentile is shown in the patient column after the measurement date.
-WHO age/sex-specific reference values are bundled locally. A dated HC uses
-the documented Age and its captured date to calculate age at measurement.
-The ~ marker identifies an estimate based on an age without day precision.
-An explicit HC Age overrides this fallback and may contain a clinician-selected
-corrected age when appropriate. Whole-year age alone does not select an HC
-percentile. No birth date is requested or stored.
+The Labs / Vitals circumference line now uses the same calculated percentile
+as the handoff and its exports. The existing WHO calculation, HC Age override,
+approximate-age marker and IBW behavior are unchanged.
 
-Optional SmartPhrase examples:
-HC Age: 183 days
-HC Age: 6 months
-Head Circumference Age: 26 weeks 1 day
+For a dated HC, the current Age and explicit sex are sufficient when freshly
+imported. An extra HC Age is optional. It is useful for undated measurements,
+older saved records, or a clinician-selected corrected age.
 
-Estimated IBW appears for ages 2 through 19 when recorded BMI is at or above
-the CDC 95th percentile for age and sex and a usable height is available.
-IBW = CDC median BMI for age and sex times height in meters squared.
-The result is labeled as an estimate and does not automatically replace the
-measured or dosing weight in medication, fluid, nutrition or ventilation work.
+This update assumes version 6.108 and its reference tables are already present.
+It does not replace the data directory. The prior upload's complete manifest
+and WHO head circumference reference were checked and matched the release.
 
-The app reads existing archive schema 34 records. New optional hc_age and
-age_as_of values are raw age provenance, not stored derived results. All
-runtime files above must be deployed together. No dependency, Secrets or
-encryption-key change is required.
-
-See VALIDATION_GROWTH_6108.txt for verification and BUILD_MANIFEST_6108.json
-for the included file checksums.
+See VALIDATION_HC_DISPLAY_6109.txt for the checks and BUILD_MANIFEST_6109.json
+for the exact included file hashes. No actual patient source is included.

@@ -947,7 +947,8 @@ def neuro_weight_editor(sheet: dict) -> None:
             circumference_age = attributes.get('age', '')
             if any(source in sheet.get('import_warnings', {}) for source in ('a', 'n')):
                 circumference_age = ''
-            text = circumferences_text(sheet['circumferences'], circumference_age)
+            text = circumferences_text(sheet['circumferences'], circumference_age,
+                                       head_percentile=head.display_text)
             if text:
                 st.text(text)
                 st.caption('Latest supplied measurement dates are shown when available. Re-paste Nutrition to refresh circumference measurements.')

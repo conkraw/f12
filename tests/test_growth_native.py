@@ -1,5 +1,6 @@
 """Real Streamlit import, patient preview and save for HC and estimated IBW."""
 from copy import deepcopy
+from datetime import datetime
 from html import unescape
 from io import BytesIO
 import re
@@ -7,6 +8,7 @@ import re
 from pypdf import PdfReader
 
 from exports import handoff_pdf
+import head_circumference as hc_module
 from test_prn_preview_native import native_app, import_source
 
 
@@ -40,6 +42,8 @@ def test_native_hc_then_obese_patient_replacement_and_save(native_app):
     at.run()
     assert not at.exception and not at.error
     assert at.text_input(key='anthro_' + saved['id'] + '_hc_age').value == '183 days'
+    assert any('Head circumference: 43.52 cm [11/24/26] [56th %tile]' in item.value
+               for item in at.text)
 
     adolescent = (block('a', 'Diagnoses:\nSynthetic growth example\nAge: 15 years\nSex: male')
                   + block('i', 'NUTRITION:\nWeight: 95 kg\nDosing Weight: 70 kg\n'
@@ -63,3 +67,30 @@ def test_native_hc_then_obese_patient_replacement_and_save(native_app):
     pages = PdfReader(BytesIO(handoff_pdf(sheet))).pages
     assert len(pages) == 1
     assert 'Estimated IBW: 50.8 kg (BMI 50th %tile)' in ' '.join(pages[0].extract_text().split())
+
+
+def test_native_dated_hc_without_hc_age_has_percentile_beside_measurement_in_both_views(native_app, monkeypatch):
+    class FrozenDateTime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return cls(2026, 11, 24, 12, 0, tzinfo=tz)
+
+    monkeypatch.setattr(hc_module, 'datetime', FrozenDateTime)
+    at = native_app
+    source = (block('a', 'Diagnoses:\nSynthetic growth example\nAge: 190 days\nSex: male')
+              + block('i', 'NUTRITION:\nWeight: 8 kg\nLength: 68 cm\n'
+                      'Head Circumference: Head Circumference: 43.3393 cm '
+                      '(11/17/26 0400 : SYNTHETIC STAFF)'))
+    import_source(at, source)
+    saved = deepcopy(at.session_state['vault']['rooms']['P4102'])
+    assert 'hc_age' not in saved['anthropometrics']
+    assert saved['age_as_of'] == '2026-11-24'
+    expected = 'Head circumference: 43.3393 cm [11/17/26] [50th %tile]'
+    assert expected in normalized_preview(at)
+    at.session_state['handoff_tab'] = 'Labs / Vitals'
+    at.run()
+    assert not at.exception and not at.error
+    assert any(expected in item.value for item in at.text)
+    pages = PdfReader(BytesIO(handoff_pdf(saved))).pages
+    assert len(pages) == 1
+    assert expected in ' '.join(pages[0].extract_text().split())

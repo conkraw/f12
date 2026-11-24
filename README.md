@@ -1,4 +1,19 @@
-# PICU Handoff 6.108
+# PICU Handoff 6.109
+
+## HC percentile beside the measurement in Labs / Vitals
+
+The Labs / Vitals circumference line now includes the same percentile bracket
+as the handoff and exports. Previously, that editor line showed only the HC
+and date, with the percentile on a separate line elsewhere in the editor.
+The underlying calculation and handoff output are unchanged.
+
+For this update from 6.108, replace app.py and error_store.py together. Confirm
+Version 6.109, reboot Streamlit, and paste the complete current SmartPhrase.
+A dated HC plus current Age and sex can calculate the percentile without an
+extra HC Age line. Existing saved records without an age reference date need
+a fresh import or an explicit age at HC measurement.
+
+See VALIDATION_HC_DISPLAY_6109.txt and UPDATE_FILES.txt for this release.
 
 ## Head circumference percentiles
 

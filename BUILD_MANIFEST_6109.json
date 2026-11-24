@@ -1,0 +1,14 @@
+{
+  "version": "6.109",
+  "base_repository": "conkraw/f12",
+  "base_version": "6.108",
+  "base_commit": "37c2846499c44050908f15f83af479d052dd1263",
+  "files": {
+    "app.py": "30a4d138d6bdecded4929bcb3916b3fdab8662b64c567320416650e8e87a21b3",
+    "error_store.py": "395cfada73503a9339b50d7fa6a1b0808a1236e6422ba1d65a71d773ba6276cc",
+    "README.md": "85f33d89bc60b88f9009ce6c150e88029e5f3174eb1225e6c5089780062a0791",
+    "UPDATE_FILES.txt": "16ec28a56ed448288b0c0854ba1583453e10411dfe78318ac515f0a4c221d1d9",
+    "VALIDATION_HC_DISPLAY_6109.txt": "fe26cee8cb75d65e978c69f89e8690cf217ace43a6399e857ad05a9157eec70f",
+    "tests/test_growth_native.py": "09f2d58d73c5f2bfa27106358cdc8c9b190b1553207ba400e131f408d951b437"
+  }
+}
