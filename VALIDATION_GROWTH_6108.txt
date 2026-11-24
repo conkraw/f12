@@ -1,0 +1,42 @@
+PICU Handoff 6.108 validation
+Date: 2026-11-24
+Base repository: conkraw/f12
+Base version: 6.107
+Base commit: 89db538ac138ccfbb97fb123a39eaf83a36fa5d2
+
+883 targeted tests passed in 29.99 seconds.
+118 existing pypdf deprecation warnings. No failing tests.
+
+Coverage includes:
+- Official WHO head circumference daily reference anchors and sex/day bounds.
+- Percentile ordinal formatting and extreme values below 1st or above 99th.
+- HC Age parsing in A, I and N, including aliases and optional blank values.
+- Dated historical HC age, frozen age-reference date, precise and rounded ages.
+- Missing or contradictory ages, invalid dates, uncertain two-year boundary.
+- Clinician-selected measurement age and corrected-age override.
+- CDC median-BMI IBW formula and raw P95 boundary comparisons.
+- Pediatric age exclusions, missing height/sex/BMI, invalid height units.
+- Patient replacement, age edits, schema validation and encrypted persistence.
+- Consistent on-screen, text, HTML, PDF and print-all output.
+- PDF cache invalidation and reuse of unchanged patients.
+- Existing BMI categories, growth scores, nutrition import and room safety.
+- Medication, fluid and ventilator output remain based on existing weights.
+- Existing ventilator table and prior CPAP trial regressions.
+- Real Streamlit import, preview, Labs / Vitals editor, patient replacement,
+  save and PDF generation for both an infant and an adolescent.
+
+Compile checks and git diff whitespace checks passed.
+Two synthetic patient PDFs were rendered and visually checked. Both retained
+one page per patient. HC percentile and estimated IBW were visible without
+clipping or overlap. No actual patient data was used in these checks.
+
+Verified synthetic examples:
+Male, HC age 183 days, HC 43.52 cm: [56th %tile].
+Male, BMI age 180 months, height 160 cm, BMI 37.11:
+Estimated IBW: 50.8 kg (BMI 50th %tile).
+The example's measured weight remains 95 kg and dosing weight remains 70 kg.
+
+The remote application has not been updated. GitHub returned HTTP403,
+Resource not accessible by integration, when creating an update branch.
+Use the included upload-ready files and preserve the data folder structure.
+Live Streamlit deployment must load all changed runtime files together.

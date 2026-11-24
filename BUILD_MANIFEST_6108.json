@@ -1,0 +1,33 @@
+{
+  "version": "6.108",
+  "base_repository": "conkraw/f12",
+  "base_version": "6.107",
+  "base_commit": "89db538ac138ccfbb97fb123a39eaf83a36fa5d2",
+  "files": {
+    "README.md": "60e7227d0fe0da1332145e0722a418b5cbd09a6ac4ff6810f62476345e41c86a",
+    "UPDATE_FILES.txt": "8792a0ad61602cc4f9f4dbfcb60f0dfdb07a61bd3d386f94a3b1bf9c7f94af61",
+    "VALIDATION_GROWTH_6108.txt": "63dda09de2bee40c22af851b95711a7de3417739ecc906eb441ebdeb0715098e",
+    "anthropometrics.py": "34697fff500ed3946714307ae45b09ecd7e787676890c5cc84d80306cf898e7a",
+    "app.py": "40207f5eac68e5974c05c5327b65133c0e466b812bbf346e14bb7f121f562a44",
+    "circumferences.py": "00b8ba4947810c22e952107385be8afcd5bf7ed210a8b7934687bd401a0ffbe1",
+    "data/GROWTH_REFERENCE_SOURCES.txt": "9ed8e1ff8490f69e930f7368c3771cce205f1a61a0752b47c67161441c06dcb3",
+    "data/README.md": "fa6562e66921492ac00b789455019a5370ae408a22af3f4acc9883fed715b4bc",
+    "data/cdc_bmi_age_2022.csv": "994e0a1b0ce7fa03fb6d67a8fbfe9796cf5ee93fd4db1facaa44775cf90a98e3",
+    "data/who_hcfa_lms.csv": "ae11777d0bbc959de2b5990af263d1d638ea1d3d24b31e0ae6271c802cf6fb43",
+    "data/who_wfl_lms.csv": "5ceae34815a08e10bb7bba94c21f6d373ea293a7bcd42ceba3969fe77f4e4e71",
+    "error_store.py": "3b86e200ee9ec356c76293cc3602f164c9bd315cd1299a4041a54a524ccc5a6d",
+    "exports.py": "a37e86ae3201f8dc3ff93bc345a3f24e958c9432559ab57f567ee2a3c1f5b50f",
+    "growth_assessment.py": "6131cad1de00949a65129b880e111291c468161c47085390657b92715214984b",
+    "head_circumference.py": "5df66ad2299f0a7a6f1fec42173fe2ef4bbc8d34576ca6880ef726511b716458",
+    "head_circumference_reference.py": "ac4b410892a614bfd86077099944ce0b63e8887008b6a544539bda0851e4ecd4",
+    "ideal_body_weight.py": "c23768763ec640b0f45c8e9070b261f3ee2ee5dff0662dc10a3fb56f4b54aaa4",
+    "importing.py": "2f411b918101237c55da7046d58b7e0fb0aeab27bacbd068a7766e165f95ffa5",
+    "models.py": "d7027bc022a72d50cb46e166d094d881e2d1991849a9880291eb9f31dbdacf3a",
+    "tests/test_bmi_age_parser.py": "369d110ade3a822126886332e9eae5f2380a6da180497f37c50e5e72d2ab7395",
+    "tests/test_growth_native.py": "9dbcea0f8f1db10d9d3a9b5a24ccb6913d9e8282401033e44b01d9be1a007909",
+    "tests/test_head_circumference_integration.py": "1dcc333dcc28b21b117b05cd97648458c3e4c758c9c9d625c3dfd66b9a2e2047",
+    "tests/test_head_circumference_reference.py": "3bb9ff6ffd95cc6b9b50eceb05cf11d55c35f8066737e599855fc76184ebde6b",
+    "tests/test_ideal_body_weight.py": "ed2b9970e550a747bdb34651dfc79803fd553fb067874efb6899c2c6b1e30154",
+    "tests/test_ideal_body_weight_integration.py": "296ca5e0ed71677b8589a740a5ef266884862f6c19feab9d0a31bbe1bb333065"
+  }
+}

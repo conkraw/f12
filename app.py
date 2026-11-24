@@ -71,6 +71,8 @@ from clinical_style import clinical_markup
 from anthropometrics import empty_anthropometrics, clean_field, validate_anthropometrics, measurements_text, EDITABLE_FIELDS as ANTHRO_FIELDS
 from bmi_reference import bmi_percentile_summary, download_reference, install_reference, REFERENCE_PATH
 from growth_assessment import assess_growth, growth_measurements_text
+from head_circumference import assess_head_circumference, record_age_as_of
+from ideal_body_weight import assess_ideal_body_weight
 from circumferences import circumferences_text
 from cultures import validate_cultures, cultures_text, compact_groups, category_for
 from viral import validate_viral_panel, viral_text
@@ -362,11 +364,13 @@ def editor_snapshot(room: str) -> dict:
         key = "anthro_" + sheet["id"] + "_" + field
         if key in ss:
             value = clean_field(field, ss[key])
-            if field == 'bmi_age' and not value:
+            if field in ('bmi_age', 'hc_age') and not value:
                 if 'anthropometrics' in sheet:
-                    sheet['anthropometrics'].pop('bmi_age', None)
+                    sheet['anthropometrics'].pop(field, None)
                 continue
             if value or "anthropometrics" in sheet:
+                if field == 'age' and value != sheet.get('anthropometrics', {}).get('age', ''):
+                    record_age_as_of(sheet, {'age': value})
                 sheet.setdefault("anthropometrics", empty_anthropometrics())[field] = value
     for field in ("admission_date", "dosing_weight", "code_status"):
         key = "demo_" + sheet["id"] + "_" + field
@@ -620,12 +624,14 @@ def anthropometric_change(room: str, field: str, key: str) -> None:
     try:
         value = clean_field(field, ss[key])
         data = dict(previous)
-        if field == 'bmi_age' and not value:
+        if field in ('bmi_age', 'hc_age') and not value:
             data.pop(field, None)
         else:
             data[field] = value
         validate_anthropometrics(data)
         ss["drafts"][room]["anthropometrics"] = data
+        if field == 'age' and value != previous.get('age', ''):
+            record_age_as_of(ss["drafts"][room], {'age': value})
         ss[key] = value
     except ValueError as exc:
         ss[key] = previous.get(field, '')
@@ -901,7 +907,7 @@ def neuro_weight_editor(sheet: dict) -> None:
     attributes = sheet.get("anthropometrics", empty_anthropometrics())
     with st.expander("Age, measurements and nutrition z scores", expanded=True):
         st.caption("Below age 2, weight-for-length uses measured weight and recumbent length. From age 2 through 19, BMI-for-age uses the recorded BMI and BMI Age when supplied. For example, BMI Age: 2 y.o. 1 m.o. means 25 months. General Age stays unchanged in the header. Without BMI Age, an age recorded in months or years and months can still be used. Growth-chart sex must be documented.")
-        for field, label in (("age", "Age (for example 5 years 2 months)"), ("sex", "Sex for growth chart (Male / Female, or blank)"), ("bmi", "Recorded BMI (kg/m²)"), ("bmi_age", "BMI Age (for example 2 y.o. 1 m.o. or 25 months)"), ("height", "Recorded length / height (recumbent length if under 2 years)"), ("bsa", "Recorded BSA (for example 0.65 m²)")):
+        for field, label in (("age", "Age (for example 5 years 2 months)"), ("sex", "Sex for growth chart (Male / Female, or blank)"), ("bmi", "Recorded BMI (kg/m²)"), ("bmi_age", "BMI Age (for example 2 y.o. 1 m.o. or 25 months)"), ("height", "Recorded length / height (recumbent length if under 2 years)"), ("bsa", "Recorded BSA (for example 0.65 m²)"), ("hc_age", "HC Age at measurement (optional, for example 183 days)")):
             key = "anthro_" + sheet["id"] + "_" + field
             if key not in st.session_state:
                 st.session_state[key] = attributes.get(field, '')
@@ -923,6 +929,18 @@ def neuro_weight_editor(sheet: dict) -> None:
             st.caption(growth.reason)
         if growth.weight_category:
             st.text('Growth category: ' + growth.weight_category)
+        ibw = assess_ideal_body_weight(sheet)
+        if ibw.display_text:
+            st.text(ibw.display_text)
+            st.caption(ibw.reason)
+        elif growth.weight_category in ('Obesity', 'Severe obesity') and ibw.reason:
+            st.caption(ibw.reason)
+        head = assess_head_circumference(sheet)
+        if head.display_text:
+            st.text('Head circumference percentile: ' + head.display_text)
+        if head.reason:
+            st.caption(head.reason)
+        st.caption('Estimated IBW appears at or above the 95th BMI percentile for ages 2 through 19. It uses the 50th BMI percentile and recorded height. It is a reference estimate, not an automatic medication or ventilator dosing weight. For an older HC measurement or prematurity, HC Age can specify the measurement age or clinician-selected corrected age.')
         st.caption('Automatic cutoffs: mild at -1.65 to above -2, moderate at -2 to above -3, severe at -3 or lower. The score beside an Epic weight is not used for these rules. Problems can be reviewed or hidden in the existing Problems controls.')
         st.caption('For ages 2 through 19, high BMI can add Overweight, Obesity or Severe obesity using CDC criteria. Below age 2, weight-for-length above +2 adds High weight-for-length.')
         if 'i' not in sheet.get('import_warnings', {}) and sheet.get('circumferences'):
@@ -2247,7 +2265,7 @@ def main() -> None:
         st.button("Home", key="home_screen", on_click=return_home, args=(store,),
                   help="Save all open handoffs and return to the starting screen.", use_container_width=True)
         st.header("PICU Handoff")
-        st.caption(f"Version {APP_VERSION} | CPAP trial history")
+        st.caption(f"Version {APP_VERSION} | HC percentiles / Estimated IBW")
         if history_ready:
             st.caption("Respiratory mode-history parser: ready")
         else:
@@ -3758,7 +3776,7 @@ def group_admin(store: GitHubVault | None) -> None:
         st.text_area("Additional generic names, one per line", key="antiepileptic_extra_names", max_chars=10000)
         st.button("Save Antiepileptic names", on_click=save_antiepileptic_names, args=(store,))
     with st.expander("BMI reference data", expanded=False):
-        st.caption("CDC BMI-for-age, ages 2 through 19. The official table is bundled with the app. This optional refresh uses public reference data only. WHO weight-for-length data is also bundled for children under 2.")
+        st.caption("CDC BMI-for-age, ages 2 through 19. The official table is bundled with the app and also supplies the median BMI for estimated IBW. This optional refresh uses public reference data only. WHO weight-for-length and head circumference data are bundled for children under 2.")
         st.caption("Reference available" if REFERENCE_PATH.exists() else "Reference not loaded yet")
         st.button("Load / refresh public CDC BMI reference", on_click=install_bmi_reference)
         st.file_uploader("Or upload CDC bmi-age-2022.csv (public reference only)", type=["csv"], key="bmi_public_reference_upload", on_change=upload_bmi_reference)

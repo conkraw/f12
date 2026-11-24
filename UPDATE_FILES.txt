@@ -1,37 +1,51 @@
-PICU Handoff 6.107
-Baseline: installed version 6.106
+PICU Handoff 6.108
+Baseline: repository conkraw/f12, version 6.107
 
-Fix: preserve a dated PS - CPAP trial after the flow table returns to IMV.
+Head circumference percentiles and estimated pediatric ideal body weight.
 
-Update these four runtime files together:
+Update these runtime files together:
+anthropometrics.py
 app.py
+circumferences.py
 error_store.py
 exports.py
-ventilation.py
+growth_assessment.py
+head_circumference.py
+head_circumference_reference.py
+ideal_body_weight.py
+importing.py
+models.py
+data/who_hcfa_lms.csv
 
-Extract the ZIP, upload all included contents to conkraw/f12, and commit.
-Reboot Streamlit and confirm Version 6.107 in the sidebar.
-Re-paste the complete SmartPhrase for affected rooms. Previously saved handoffs
-keep their existing history selections until reimported or manually changed.
+Keep the existing data/cdc_bmi_age_2022.csv and data/who_wfl_lms.csv files.
+Apply the update, then confirm Version 6.108 in the sidebar.
+Reboot Streamlit if the new version has not appeared.
+Re-paste the complete SmartPhrase to refresh measurements and record the
+date of the supplied general Age. Alternatively, enter HC Age for a saved HC.
 
-The latest dated mode still supplies the current ventilator settings.
-A separate CPAP Trial Data block now shows the latest dated PS - CPAP entry
-even after the patient has returned to a conventional mode.
+HC percentile is shown in the patient column after the measurement date.
+WHO age/sex-specific reference values are bundled locally. A dated HC uses
+the documented Age and its captured date to calculate age at measurement.
+The ~ marker identifies an estimate based on an age without day precision.
+An explicit HC Age overrides this fallback and may contain a clinician-selected
+corrected age when appropriate. Whole-year age alone does not select an HC
+percentile. No birth date is requested or stored.
 
-Trial values come only from the corresponding CPAP settings section. Repeated
-trial entries are displayed once. Other prior flow-table modes stay hidden
-by default. A template heading without a recorded trial does not add one.
-The existing history checkbox can still hide a trial.
+Optional SmartPhrase examples:
+HC Age: 183 days
+HC Age: 6 months
+Head Circumference Age: 26 weeks 1 day
 
-For the supplied example, the current mode is PRVC-IMV at 20:00, with CPAP
-Trial Data for PS-CPAP at 11:30. The trial has pressure support 10 cm H2O,
-PEEP 5 cm H2O, FiO2 30%, and weaning tidal volumes 101 to 210 mL.
-The timestamp identifies the mode entry. The table does not separately date
-each numerical trial setting.
+Estimated IBW appears for ages 2 through 19 when recorded BMI is at or above
+the CDC 95th percentile for age and sex and a usable height is available.
+IBW = CDC median BMI for age and sex times height in meters squared.
+The result is labeled as an estimate and does not automatically replace the
+measured or dosing weight in medication, fluid, nutrition or ventilation work.
 
-BMI Age, growth categories, dated circumference measurements, airway-clearance
-devices and paralytic counts are retained. No dependency, Secrets, encryption
-key or archive schema change is required.
+The app reads existing archive schema 34 records. New optional hc_age and
+age_as_of values are raw age provenance, not stored derived results. All
+runtime files above must be deployed together. No dependency, Secrets or
+encryption-key change is required.
 
-See VALIDATION_CPAP_6107.txt for verification and BUILD_MANIFEST_6107.json for
-the included file checksums. No live deployment was changed by this build.
+See VALIDATION_GROWTH_6108.txt for verification and BUILD_MANIFEST_6108.json
+for the included file checksums.

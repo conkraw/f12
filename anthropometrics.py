@@ -11,10 +11,10 @@ from decimal import Decimal
 import re
 
 FIELDS = ('age', 'sex', 'bmi', 'height', 'bsa')
-EDITABLE_FIELDS = FIELDS + ('bmi_age',)
+EDITABLE_FIELDS = FIELDS + ('bmi_age', 'hc_age')
 MISSING = {'', 'none', 'n/a', 'na', '--', 'unknown', 'not recorded', 'not documented'}
 NUMBER = r'(?:\d+(?:\.\d+)?|\.\d+)'
-AGE_LABEL = r'BMI\s+Age(?:\s+in\s+months)?|Age(?:\s+(?:in\s+months|at\s+(?:BMI\s+)?measurement))?'
+AGE_LABEL = r'(?:BMI|HC|Head\s+Circumference)\s+Age(?:\s+in\s+months)?|Age(?:\s+(?:in\s+months|at\s+(?:(?:BMI|HC|head\s+circumference)\s+)?measurement))?'
 HEADER = re.compile(rf'^({AGE_LABEL}|Sex(?:\s+for\s+growth\s+chart)?|BMI|Body\s+mass\s+index|Height|Length|BSA|Body\s+surface\s+area)\s*(?::|\bis\b)\s*(.*)$', re.I)
 
 BMI_AGE_UNDER_TWO = 'CDC BMI-for-age is not used here below age 2.'
@@ -135,6 +135,8 @@ def resolve_bmi_age(data: dict) -> tuple[float | None, str]:
 
 def _demographic_age_key(label: str) -> str:
     name = ' '.join(label.casefold().split())
+    if name.startswith(('hc age', 'head circumference age')) or name in ('age at hc measurement', 'age at head circumference measurement'):
+        return 'hc_age'
     if name.startswith('bmi age') or name == 'age at bmi measurement':
         return 'bmi_age'
     return 'age' if name.startswith('age') else 'sex'
@@ -249,7 +251,7 @@ def clean_field(key: str, value: str) -> str:
     # A copied charting note can be longer than the normalized measurement.
     if len(value) > (2000 if key == 'height' else 100):
         raise ValueError('A demographic field is too long.')
-    if key in ('age', 'bmi_age'):
+    if key in ('age', 'bmi_age', 'hc_age'):
         if not re.fullmatch(r'\d+(?:\.\d+)?\s*(?:years?|yrs?|y|months?|mos?|m|weeks?|wks?|w|days?|d)(?:\s*(?:,|and)?\s*\d+\s*(?:months?|mos?|m|days?|d))?', _age_for_math(value), re.I):
             raise ValueError('Use an age with units, for example 5 years 2 months, 14 months, or 10 days.')
         if age_months(value) is not None and age_months(value) > 1440:
@@ -378,7 +380,7 @@ def extract_anthropometrics(block: str) -> AnthropometricResult:
         if match:
             label, value = match.groups()
             name = ' '.join(label.casefold().split())
-            key = (_demographic_age_key(label) if name.startswith(('age', 'bmi age', 'sex')) else
+            key = (_demographic_age_key(label) if name.startswith(('age', 'bmi age', 'hc age', 'head circumference age', 'sex')) else
                    'bmi' if name in ('bmi', 'body mass index') else 'bsa' if name in ('bsa', 'body surface area') else 'height')
             if name.endswith('age in months') and re.fullmatch(NUMBER, value):
                 value += ' months'

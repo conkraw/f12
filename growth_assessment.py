@@ -163,12 +163,16 @@ def assess_growth(sheet: dict) -> GrowthAssessment:
 
 def growth_measurements_text(sheet: dict) -> str:
     """Shared patient-column text for the screen and all handoff exports."""
-    parts = [assess_growth(sheet).display_text]
+    from ideal_body_weight import assess_ideal_body_weight
+    from head_circumference import assess_head_circumference
+    parts = [assess_growth(sheet).display_text,
+             assess_ideal_body_weight(sheet).display_text]
     warnings = sheet.get('import_warnings', {})
     if 'i' not in warnings and sheet.get('circumferences'):
         from circumferences import circumferences_text
         age = (sheet.get('anthropometrics') or {}).get('age', '')
         if any(section in warnings for section in ('a', 'n')):
             age = ''
-        parts.append(circumferences_text(sheet['circumferences'], age))
+        percentile = assess_head_circumference(sheet).display_text
+        parts.append(circumferences_text(sheet['circumferences'], age, head_percentile=percentile))
     return '\n'.join(part for part in parts if part)

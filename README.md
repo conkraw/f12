@@ -1,4 +1,22 @@
-# PICU Handoff 6.107
+# PICU Handoff 6.108
+
+## Head circumference percentiles
+
+The patient column now adds the WHO head-circumference-for-age percentile after the measurement and its date, for example `Head circumference: 43.52 cm [11/24/26] [56th %tile]`. The existing display limit remains under age 2. The local WHO daily reference uses explicit growth-chart sex and age at the measurement.
+
+An optional `HC Age: 183 days` line can be placed in A, I or N, or entered in Labs / Vitals. `Head Circumference Age:` and `Age at HC measurement:` also work. This age belongs to the HC measurement and does not replace general Age or BMI Age. A clinician-selected corrected age can be entered here when appropriate. Prematurity is not inferred from diagnoses.
+
+When HC Age is blank, a dated HC can use the documented current Age. The app records the date on which Age was pasted or changed, then subtracts the elapsed days to the HC measurement. It keeps that age date fixed when other fields are edited or the handoff is printed. A percentile based on a rounded current age has a `~` marker, such as `[~56th %tile]`. WHO's standard conversion of 30.4375 days per month is used for ages expressed in months.
+
+Older saved handoffs without that age date need a fresh paste or explicit HC Age. An undated HC also needs HC Age. Missing or contradictory age/sex information leaves the measurement intact without adding an unsupported percentile. Extreme percentiles display as `[<1st %tile]` or `[>99th %tile]`. The editor explains unavailable calculations and flags HC values beyond 5 standard deviations for measurement review. It does not add a microcephaly or macrocephaly diagnosis.
+
+## Estimated ideal body weight
+
+For ages 2 through 19, the patient column displays estimated IBW when the recorded BMI is at or above the age- and sex-specific CDC 95th percentile. A fixed kilogram threshold is not used. Height, growth-chart sex and a sufficiently precise BMI measurement age must be available. The same BMI Age field and monthly reference bin used by the existing BMI feature are used here.
+
+Estimated IBW in kilograms equals the CDC median BMI for age and sex multiplied by the recorded height in meters squared. For a male at 180 months with height 160 cm and an eligible BMI, the display is `Estimated IBW: 50.8 kg (BMI 50th %tile)`. The result is a reference estimate. Pediatric IBW methods are not interchangeable, and this value does not automatically select a medication, fluid, nutrition or ventilator dosing weight. The editor asks the clinician to verify that height and BMI refer to the same measurement episode.
+
+The calculation uses the recorded BMI to establish eligibility. It does not reconstruct BMI or height from weight. A broad height-entry guard of 45 to 250 cm catches likely unit errors. That guard is not an age-specific growth-chart range. No pediatric IBW result is generated below age 2 or at age 20 and above.
 
 ## Latest ventilator mode from the Epic flow table
 
@@ -29,13 +47,17 @@ PDF generation, combined PDFs, PDF caching, and HTML printing use the same count
 
 A reported Pressure Support - Continuous Positive Airway Pressure mode, including PS-CPAP, displays CPAP Trial Data. A valid dated trial in the flow table remains visible after the patient returns to a conventional mode. Repeated trial entries appear once, using the latest recorded trial time. A CPAP settings template alone does not establish that a trial occurred, and an untimed prior flow-table entry is not automatically included. The CPAP block omits the duplicate respiratory rate. Existing history controls can hide an included trial.
 
-## Update from 6.106
+## Update from 6.107
 
-Update app.py, error_store.py, exports.py, and ventilation.py together in the application folder. Confirm Version 6.107 in the sidebar, then re-paste the complete SmartPhrase to rebuild any handoff imported before this fix. If Streamlit has not picked up the updated files, reboot the app once. BMI Age, growth categories, circumference measurements, airway clearance and paralytic-count behavior remain unchanged.
+Apply the files listed in UPDATE_FILES.txt together, including data/who_hcfa_lms.csv. Confirm Version 6.108 in the sidebar, then re-paste the complete SmartPhrase to attach the current-age reference date and refresh measurements. If Streamlit has not picked up the updated files, reboot the app once.
 
 For an earlier version, use the complete repository's application files. Keep the current Streamlit Secrets and encryption key. Dependencies and archive schema 34 are unchanged. Existing eight-drug PRN records remain readable, but only the two paralytics receive automatic counts. Legacy review signatures do not gate the count.
 
 ## Verification
+
+Version 6.108 verification is recorded in VALIDATION_GROWTH_6108.txt. Tests use synthetic data and cover official reference values, boundary conditions, parsing, replacement, saved records, editor callbacks, single-patient output, print-all and PDF cache invalidation.
+
+## Earlier 6.107 verification
 
 Version 6.107 verification is recorded in VALIDATION_CPAP_6107.txt. The attached source was checked locally with current PRVC-IMV settings at 20:00 and a separately displayed PS-CPAP trial at 11:30. Tests cover imports, current-mode selection, dedicated trial settings, duplicate trials, user hiding, replacement, saved records and exports. Patient source data is not included in the update package.
 

@@ -11,7 +11,7 @@ from datetime import date, datetime, time
 from decimal import Decimal, InvalidOperation
 import re
 
-from anthropometrics import age_bounds
+from head_circumference import head_age_eligible
 
 
 LABELS = {"head": "Head circumference", "abdominal": "Abdominal girth"}
@@ -279,10 +279,9 @@ def parse_circumferences(block: str) -> CircumferenceResult:
     return result
 
 
-def circumferences_text(data: dict, age_text: str) -> str:
+def circumferences_text(data: dict, age_text: str, *, head_percentile: str = '') -> str:
     validate_circumferences(data)
-    bounds = age_bounds(age_text)
-    under_two = bounds is not None and bounds[0] < 24 and bounds[1] <= 24
+    under_two = head_age_eligible(age_text)
     lines = []
     for key in LABELS:
         if key == "head" and not under_two:
@@ -290,5 +289,6 @@ def circumferences_text(data: dict, age_text: str) -> str:
         item = data[key]
         if item:
             recorded = " [" + date.fromisoformat(item["date"]).strftime("%m/%d/%y") + "]" if item["date"] else ""
-            lines.append(LABELS[key] + ": " + item["value_cm"] + " cm" + recorded)
+            percentile = ' ' + head_percentile if key == 'head' and head_percentile else ''
+            lines.append(LABELS[key] + ": " + item["value_cm"] + " cm" + recorded + percentile)
     return "\n".join(lines)

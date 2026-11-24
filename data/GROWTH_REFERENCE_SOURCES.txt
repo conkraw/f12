@@ -45,3 +45,55 @@ SHA256: 7f416a213157a5209bb6cbfd1b19292510248f3f31fe43c9ff63f6d8e39f7890
 
 WHO CSV SHA256:
 5ceae34815a08e10bb7bba94c21f6d373ea293a7bcd42ceba3969fe77f4e4e71
+
+WHO head circumference-for-age reference (version 6.108)
+Retrieved 2026-11-24
+
+The bundled who_hcfa_lms.csv contains the exact daily L, M and S strings
+from the official WHO anthro hcanthro.txt data. Sex 1 is male and 2 is female.
+There are 1827 rows per sex, days 0 through 1826. HC measurements use cm.
+The app displays HC for patients under 2 years only.
+
+Official clinical reference:
+https://www.who.int/tools/child-growth-standards/standards/head-circumference-for-age
+
+Official data source:
+https://github.com/WorldHealthOrganization/anthro/blob/master/data-raw/growthstandards/hcanthro.txt
+Source Git blob: 53e2f8bf9a367976052af1fb0d84be177c80dd8a
+Source TSV SHA256:
+e6f9fc5ac0079ad8acc9de59b65bc7990ff945ec07ab5ab6613e8194582499f9
+Bundled CSV SHA256:
+ae11777d0bbc959de2b5990af263d1d638ea1d3d24b31e0ae6271c802cf6fb43
+
+The conversion renames columns to Sex,AgeDays,L,M,S and sorts by sex/day.
+No parameters are estimated. WHO day rounding uses floor(age_days + 0.5).
+WHO month conversion uses 30.4375 days per month. HC uses age at measurement.
+The daily HC table has L=1 throughout. z = ((HC/M)^L - 1)/(L*S).
+Percentile = 100 times the standard normal cumulative probability of z.
+Only reference data is cached. Percentiles are calculated from current inputs.
+
+Official implementation and age conversion:
+https://github.com/WorldHealthOrganization/anthro/blob/master/R/z-score.R
+https://github.com/WorldHealthOrganization/anthro/blob/master/R/z-score-head-circumference-for-age.R
+
+Pediatric estimated ideal body weight (version 6.108)
+
+Trigger: recorded BMI at or above the unrounded CDC age/sex-specific 95th
+percentile, for 24 <= age_months < 240. The existing CDC BMI data supplies
+P95 and median M. The same monthly bin is used for eligibility and estimate.
+Estimated IBW kg = median BMI M times recorded height in meters squared.
+
+CDC weight categories:
+https://www.cdc.gov/bmi/child-teen-calculator/bmi-categories.html
+
+Original study describing and comparing pediatric IBW methods:
+Kang K, et al. Evaluation of Different Methods Used to Calculate Ideal Body
+Weight in the Pediatric Population. J Pediatr Pharmacol Ther.
+2019 Sep-Oct, 24(5):421-430. DOI: 10.5863/1551-6776-24.5.421.
+https://pmc.ncbi.nlm.nih.gov/articles/PMC6782117/
+
+There is no universal pediatric IBW gold standard. The app labels this as a
+reference estimate. Existing measured-weight and dosing-weight calculations
+are not replaced, including medication, fluid, nutrition and ventilation use.
+The broad 45 to 250 cm height check is a likely-unit-error entry guard, not
+a clinical reference range or validation of an individual child's proportions.

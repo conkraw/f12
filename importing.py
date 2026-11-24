@@ -16,6 +16,7 @@ from cultures import parse_cultures
 from demographics import parse_admission
 from anthropometrics import empty_anthropometrics, extract_anthropometrics
 from circumferences import parse_circumferences
+from head_circumference import record_age_as_of
 from viral import parse_viral_panel
 from blood_gases import parse_gases
 from cbc import parse_cbc
@@ -160,6 +161,7 @@ def import_sections(sheet: dict, text: str, settings: dict, *, respiratory_first
                     continue
                 if parsed.demographics:
                     candidate.setdefault("anthropometrics", empty_anthropometrics()).update(parsed.demographics)
+                    record_age_as_of(candidate, parsed.demographics)
                     out.imported.append("age / sex")
                 if parsed.diagnoses:
                     candidate = apply_diagnoses(candidate, "\n".join(parsed.diagnoses), settings["diagnoses_destination"])
@@ -226,16 +228,18 @@ def import_sections(sheet: dict, text: str, settings: dict, *, respiratory_first
                     out.errors.append(nutrition.error)
                     continue
                 attrs = dict(candidate.get("anthropometrics", empty_anthropometrics()))
-                # A full I import clears previous BMI/height/BSA/BMI age when
-                # absent. An explicit BMI age in this paste's successfully
+                # A full I import clears previous BMI/height/BSA/measurement
+                # ages when absent. An explicit age in this paste's successfully
                 # imported A block is current input, not a retained old value.
                 # General age/sex can be set independently in N or manually.
                 for key in ("bmi", "height", "bsa"):
                     attrs[key] = measurements.values.get(key, "")
-                attrs.pop('bmi_age', None)
-                if 'bmi_age' in parsed.demographics and 'a' not in out.skipped:
-                    attrs['bmi_age'] = parsed.demographics['bmi_age']
+                for age_key in ('bmi_age', 'hc_age'):
+                    attrs.pop(age_key, None)
+                    if age_key in parsed.demographics and 'a' not in out.skipped:
+                        attrs[age_key] = parsed.demographics[age_key]
                 attrs.update(measurements.values)
+                record_age_as_of(candidate, measurements.values)
                 if any(attrs.values()) or "anthropometrics" in candidate:
                     candidate["anthropometrics"] = attrs
                 candidate["nutrition"] = nutrition.data
@@ -256,6 +260,7 @@ def import_sections(sheet: dict, text: str, settings: dict, *, respiratory_first
                     continue
                 if measurements.values:
                     candidate.setdefault("anthropometrics", empty_anthropometrics()).update(measurements.values)
+                    record_age_as_of(candidate, measurements.values)
                 candidate["admission_date"] = admission.date
                 out.imported.append("admission date" if admission.date else "admission date cleared")
             elif letter == "o":

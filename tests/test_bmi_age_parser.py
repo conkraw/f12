@@ -125,7 +125,7 @@ def test_generic_age_is_not_extracted_from_nonpatient_prose():
 
 def test_optional_field_preserves_original_five_field_records():
     assert FIELDS == ('age', 'sex', 'bmi', 'height', 'bsa')
-    assert EDITABLE_FIELDS == FIELDS + ('bmi_age',)
+    assert EDITABLE_FIELDS == FIELDS + ('bmi_age', 'hc_age')
     data = empty_anthropometrics()
     before = deepcopy(data)
     assert set(data) == set(FIELDS)
