@@ -61,8 +61,9 @@ def note_sources(vault: dict, drafts: dict) -> dict:
         filled = filled or bool(sheet.get("medications"))
         filled = filled or any(sheet.get(key) for key in (
             "ventilation", "noninvasive", "devices", "neuro_devices", "ecls",
-            "code_status", "dosing_weight", "nutrition", "diet", "feeds",
+            "code_status", "dosing_weight", "nutrition", "diet", "feeds", "cbc",
         ))
+        filled = filled or any((sheet.get(key) or {}).get("rows") for key in ("labs", "viral_panel"))
         if filled:
             ready[room] = sheet
     return ready
@@ -151,7 +152,7 @@ def render_note_utility(st, *, authorize, get_sources, stored_settings,
         ss[ADDITIONAL_KEY] = []
     sources = get_sources()
     st.subheader("Generate a Word document")
-    st.caption("Choose a handoff and a template, then click Generate note. The Word download keeps your original template formatting.")
+    st.caption("Choose a handoff and a template, then click Generate note. Suggested plans are included automatically in the formatted Word download.")
     if not sources:
         clear_note_draft(ss)
         st.info("Create a handoff first, then return to Utilities.")
@@ -212,54 +213,52 @@ def render_note_utility(st, *, authorize, get_sources, stored_settings,
         return
     result = draft["result"]
     if note_type == "attestation":
-        st.caption("Your attending attestation keeps its examination SmartLists and selected plans. Medication lists stay in the resident's note.")
+        st.caption("Your attending attestation keeps its examination SmartLists and suggested plans. Medication lists stay in the resident's note.")
     else:
         st.caption("Medication review lists follow the main systems in your progress note. Review and edit the downloaded document in Word.")
+    st.caption("Review and edit the diagnoses and plans in Word. The optional controls below let you change which plans are included before downloading.")
     for warning in result.get("warnings", []):
         st.warning(warning)
-    from note_generator import get_phrase_catalog
-    suggested = {item["id"]: item for item in result["suggestions"]}
-    catalog = {item["id"]: item for item in get_phrase_catalog()}
-    if suggested:
-        st.multiselect("Include these suggested plans", list(suggested),
-                       key=SELECTION_KEY,
-                       format_func=lambda key: suggested[key]["label"])
-        with st.expander("Why these plans were suggested", expanded=False):
-            for item in suggested.values():
-                st.text(item["label"] + ": " + " | ".join(item.get("reasons", [])))
-                st.caption(item.get("phrase") or "Enter the exact phrase name in Epic phrase settings.")
-    additional = [key for key in catalog if key not in suggested]
-    st.multiselect("Add another plan", additional, key=ADDITIONAL_KEY,
-                   format_func=lambda key: catalog[key]["label"])
-    if st.button("Update note with selected plans", key=PREFIX + "update"):
-        try:
-            selected = list(dict.fromkeys(ss.get(SELECTION_KEY, []) + ss.get(ADDITIONAL_KEY, [])))
-            current = get_sources().get(room)
-            if current is None or not draft_matches(draft, current):
-                clear_note_draft(ss)
-                st.error("The handoff changed. Generate a new note before updating the plan.")
-                return
-            # Widget keys above have already rendered. A separate callback-free
-            # draft refresh defers new selection keys until the next script run.
-            temporary = {}
-            if create_note_draft(temporary, current, authorize=authorize,
-                                 settings=_widget_options(ss, options), selected_ids=selected,
-                                 clinical_settings=clinical_settings, note_type=note_type):
-                old_event = ss.get(REVOKE_KEY)
-                if old_event is not None:
-                    old_event.set()
-                ss[DRAFT_KEY] = temporary[DRAFT_KEY]
-                ss[REVOKE_KEY] = temporary[REVOKE_KEY]
-                ss[EDITOR_KEY] = temporary[EDITOR_KEY]
-                # Keep the already rendered choice widgets stable on this run.
-                ss[PREFIX + "pending_choices"] = temporary[SELECTION_KEY]
-                draft = ss[DRAFT_KEY]
-                result = draft["result"]
-                st.success("Note updated from the current handoff and selected plans.")
-        except ValueError as exc:
-            st.error(str(exc))
-        except Exception:
-            st.error("The note could not be updated. The existing draft is still available.")
+    with st.expander("Edit included plans (optional)", expanded=False):
+        from note_generator import get_phrase_catalog
+        suggested = {item["id"]: item for item in result["suggestions"]}
+        catalog = {item["id"]: item for item in get_phrase_catalog()}
+        if suggested:
+            st.multiselect("Included suggested plans", list(suggested),
+                           key=SELECTION_KEY,
+                           format_func=lambda key: suggested[key]["label"])
+        additional = [key for key in catalog if key not in suggested]
+        st.multiselect("Add another plan", additional, key=ADDITIONAL_KEY,
+                       format_func=lambda key: catalog[key]["label"])
+        if st.button("Update note with selected plans", key=PREFIX + "update"):
+            try:
+                selected = list(dict.fromkeys(ss.get(SELECTION_KEY, []) + ss.get(ADDITIONAL_KEY, [])))
+                current = get_sources().get(room)
+                if current is None or not draft_matches(draft, current):
+                    clear_note_draft(ss)
+                    st.error("The handoff changed. Generate a new note before updating the plan.")
+                    return
+                # Widget keys above have already rendered. A separate callback-free
+                # draft refresh defers new selection keys until the next script run.
+                temporary = {}
+                if create_note_draft(temporary, current, authorize=authorize,
+                                     settings=_widget_options(ss, options), selected_ids=selected,
+                                     clinical_settings=clinical_settings, note_type=note_type):
+                    old_event = ss.get(REVOKE_KEY)
+                    if old_event is not None:
+                        old_event.set()
+                    ss[DRAFT_KEY] = temporary[DRAFT_KEY]
+                    ss[REVOKE_KEY] = temporary[REVOKE_KEY]
+                    ss[EDITOR_KEY] = temporary[EDITOR_KEY]
+                    # Keep the already rendered choice widgets stable on this run.
+                    ss[PREFIX + "pending_choices"] = temporary[SELECTION_KEY]
+                    draft = ss[DRAFT_KEY]
+                    result = draft["result"]
+                    st.success("Note updated from the current handoff and selected plans.")
+            except ValueError as exc:
+                st.error(str(exc))
+            except Exception:
+                st.error("The note could not be updated. The existing draft is still available.")
     if not authorize():
         clear_note_draft(ss, all_values=True)
         return
@@ -267,6 +266,10 @@ def render_note_utility(st, *, authorize, get_sources, stored_settings,
     st.download_button("Download Word document (.docx)", make_download(draft["word_bytes"], draft),
                        file_name=file_prefix + room + ".docx", mime=WORD_MIME,
                        key=PREFIX + "word_download", type="primary", on_click="ignore")
+    with st.expander("Sources for suggested plans", expanded=False):
+        for item in result["suggestions"]:
+            st.text(item["label"] + ": " + " | ".join(item.get("reasons", [])))
+            st.caption(item.get("phrase") or "Enter the exact phrase name in Epic phrase settings.")
     st.caption("Preview text is shown below. Open the Word download to see your formatting and make edits.")
     st.text_area("Generated note preview", height=540, key=EDITOR_KEY,
                  max_chars=MAX_NOTE_LENGTH, disabled=True)

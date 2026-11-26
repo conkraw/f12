@@ -1,4 +1,4 @@
-"""PICU Handoff v6.111: formatted Word progress notes and attending attestations."""
+"""PICU Handoff v6.112: automatically included suggested Word note plans."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,

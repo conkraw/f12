@@ -6,6 +6,7 @@ concentration, weight, or an ordered dose range. This module is read-only.
 """
 from __future__ import annotations
 
+from copy import deepcopy
 from datetime import datetime
 import re
 
@@ -158,7 +159,9 @@ def build_note_medications(sheet: dict, as_of: datetime | None = None) -> dict:
 
     ``sections[main_section]`` has Drips, Scheduled, and PRN string lists.
     Entries carry id, name, source_name, section, group, text, status, active,
-    route, frequency, dose, and rate_source. Use source_name for matching and
+    route, frequency, dose, rate_source, and a copied effective category_path.
+    Category metadata is internal and never adds headings to medication text.
+    Use source_name for matching and
     active to keep nonrunning or future orders out of diagnosis suggestions.
     Input rows and the handoff are never mutated. Only represented sections
     are returned, in the usual handoff order.
@@ -173,7 +176,8 @@ def build_note_medications(sheet: dict, as_of: datetime | None = None) -> dict:
     for row in rows:
         if not visible(row):
             continue
-        section = placement(row)["section"]
+        category_path = placement(row)
+        section = category_path["section"]
         if section == "Ignore":
             continue
         name, qualifiers = _short_name(row)
@@ -215,6 +219,7 @@ def build_note_medications(sheet: dict, as_of: datetime | None = None) -> dict:
             "active": status == "active", "route": row.get("route", ""),
             "frequency": row.get("frequency", ""), "dose": row.get("dose", ""),
             "rate_source": rate_source,
+            "category_path": deepcopy(category_path),
         })
     section_order = list(MAIN_SECTIONS) + [section for section in sections if section not in MAIN_SECTIONS]
     return {

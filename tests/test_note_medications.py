@@ -57,7 +57,11 @@ def test_custom_category_uses_main_section_without_custom_subheading():
                                 parent_id="", parent_name="", order=100, parent_order=100)
     result = summary(row)
     assert "Cardiovascular" in result["sections"]
-    assert "Special subgroup" not in json.dumps(result)
+    assert "Special subgroup" not in json.dumps(result["sections"])
+    assert "Special subgroup" not in result["entries"][0]["text"]
+    assert result["entries"][0]["category_path"] == row["category_path"]
+    result["entries"][0]["category_path"]["name"] = "Changed review metadata"
+    assert row["category_path"]["name"] == "Special subgroup"
 
 
 def test_legacy_main_section_override_is_preserved_when_automatic_group_was_disabled():

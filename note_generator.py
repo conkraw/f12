@@ -1,9 +1,10 @@
-"""Build an optional Epic note draft from one reviewed handoff snapshot.
+"""Build an optional Epic note draft from one handoff snapshot.
 
 This module has no UI, network, persistence or background work. It copies
-documented medication text into the supplied note structure and offers phrase
-names for clinician review. It does not calculate values, expand Epic content,
-write an examination or infer a diagnosis from laboratory thresholds.
+documented medication text into the supplied note structure and includes
+suggested Plan references for clinician editing. It uses existing medication
+placements and recorded findings without calculating new values, expanding
+Epic content, writing an examination or changing the source diagnosis list.
 """
 from __future__ import annotations
 
@@ -11,6 +12,8 @@ from copy import deepcopy
 import re
 
 from note_medications import build_note_medications
+from note_medication_rules import medication_note_candidates
+from note_findings import clinical_note_candidates
 from ventilation import mode_rule
 from ventilator_modes import spec
 
@@ -259,12 +262,12 @@ def _suggestions(sheet: dict, medications: dict, catalog: list[dict], settings: 
     warnings: list[str] = []
     support = _current_support(sheet)
 
-    def record(key: str, state: str, reason: str) -> None:
+    def record(key: str, state: str, reason: str, *, include: bool = True) -> None:
         assertions.setdefault(key, set()).add(state)
         if state in ("positive", "uncertain"):
-            add(key, reason, selected=state == "positive")
+            add(key, reason, selected=include)
 
-    def add(key: str, reason: str, selected: bool = False) -> None:
+    def add(key: str, reason: str, selected: bool = True) -> None:
         states = assertions.get(key, set())
         if states and states <= {"negative", "history", "risk"}:
             return
@@ -293,7 +296,8 @@ def _suggestions(sheet: dict, medications: dict, catalog: list[dict], settings: 
                 # Current support decides which confirmed respiratory phrase
                 # fits a documented diagnosis. Historical mode entries and an
                 # older support label in a diagnosis must not add both plans.
-                # Support alone still produces only an unselected candidate.
+                # Support-based suggestions are included in this editable
+                # draft, while conflicting routes remain unresolved.
                 if support["kind"] in ("invasive", "noninvasive"):
                     route = support["kind"]
                 elif support["conflict"]:
@@ -312,68 +316,38 @@ def _suggestions(sheet: dict, medications: dict, catalog: list[dict], settings: 
             else:
                 for key in keys:
                     record(key, "uncertain" if state == "positive" else state,
-                           "The handoff lists this diagnosis. Confirm the current airway and support before selecting the matching phrase.")
+                           "The handoff lists this diagnosis without one clear current support route.", include=False)
 
     if support["kind"] in ("invasive", "noninvasive"):
         key = "acute_hypoxemic_" + support["kind"]
         description = support["mode"] or ", ".join(support["noninvasive"]) or "a current invasive airway"
-        add(key, "Current handoff support: " + description + ". Confirm acute hypoxemic respiratory failure and the support route.")
+        add(key, "Suggested from current handoff support: " + description + ".")
     if support["uncertain"]:
         warnings.append("The latest ventilator mode is unconfirmed. Historical modes were not used to select note diagnoses.")
     if support["conflict"]:
-        warnings.append("Both invasive and noninvasive support are present. Confirm the current support before choosing a respiratory phrase.")
+        warnings.append("Invasive and noninvasive support conflict. Choose the applicable respiratory phrase under Edit included plans if needed.")
     if support["tracheostomy"]:
         add("tracheostomy", "A current included tracheostomy device is documented.")
     ecls = sheet.get("ecls")
     if isinstance(ecls, dict) and ecls.get("mode") in ("VA", "VV"):
         add("ecls_status", "Current handoff ECLS settings document " + ecls["mode"] + " support.", selected=True)
 
-    active = [row for row in medications.get("entries", []) if row.get("active") is True]
-    for row in active:
-        name = str(row.get("source_name") or row.get("name") or "")
-        short = str(row.get("name") or "Medication")
-        if re.search(r"\b(?:pantoprazole|Protonix)\b", name, re.I):
-            add("gastric_ulcer_risk", short + " is listed. Review its indication for gastric ulcer prophylaxis.", selected=True)
-        elif re.search(r"\b(?:omeprazole|esomeprazole|lansoprazole|famotidine)\b", name, re.I):
-            add("gastric_ulcer_risk", short + " is listed. Confirm gastric ulcer prophylaxis rather than another indication.")
-        if row.get("group") == "Drips":
-            sedative = re.search(r"\b(?:fentanyl|midazolam|dexmedetomidine|morphine|hydromorphone|ketamine|pentobarbital|propofol)\b", name, re.I)
-            if sedative and support["kind"] == "invasive":
-                reason = short + " is listed as a drip with invasive support. Confirm intubated status and the restlessness and agitation indication."
-                if support["tracheostomy"] and not support["endotracheal_tube"]:
-                    reason = short + " is listed as a drip with tracheostomy support. Confirm that the intubated phrase fits the documented airway and indication."
-                add("agitation_intubated", reason)
-            elif re.search(r"\bdexmedetomidine\b", name, re.I) and support["kind"] not in ("invasive", "unclear"):
-                add("agitation_nonintubated", short + " is listed as a drip without documented invasive support. Confirm nonintubated status and the indication.")
-        medication_candidates = (
-            (r"\b(?:levetiracetam|clobazam|lacosamide|phenobarbital|phenytoin|fosphenytoin|valproate|valproic acid|topiramate)\b", "seizure_risk", "Confirm whether this is seizure prophylaxis or treatment of an established seizure disorder."),
-            (r"\b(?:enoxaparin|dalteparin)\b", "dvt_risk", "Confirm prophylaxis versus treatment before selecting a thrombosis phrase."),
-            (r"\b(?:polyethylene glycol|senna|sennosides|docusate|lactulose|bisacodyl)\b", "constipation", "Confirm constipation versus prevention or another indication."),
-            (r"\bpotassium chloride\b", "hypokalemia", "Confirm documented hypokalemia rather than maintenance supplementation."),
-            (r"\b(?:sodium|potassium) phosphate\b", "hypophosphatemia", "Confirm documented hypophosphatemia rather than maintenance supplementation."),
-            (r"\bmagnesium (?:sulfate|oxide)\b", "hypomagnesemia", "Confirm documented hypomagnesemia and the treatment indication."),
-            (r"\bcalcium (?:gluconate|chloride|carbonate)\b", "hypocalcemia", "Confirm documented hypocalcemia and the treatment indication."),
-            (r"\b(?:sildenafil|tadalafil|bosentan)\b", "pulmonary_hypertension", "Confirm pulmonary hypertension as the indication."),
-            (r"\b(?:amlodipine|nicardipine|labetalol)\b", "hypertension", "Confirm systemic hypertension as the indication."),
-            (r"\bmethadone\b", "opioid_dependence", "Confirm opioid dependence or withdrawal rather than an analgesic indication."),
-        )
-        for pattern, key, explanation in medication_candidates:
-            if re.search(pattern, name, re.I):
-                add(key, short + " is listed. " + explanation)
-        if re.search(r"\bheparin\b", name, re.I) and re.search(r"\b(?:flush|lock)\b", name, re.I):
-            add("central_line_occlusion_risk", short + " is listed as a flush or lock. Confirm the central catheter indication.")
-        elif re.search(r"\bheparin\b", name, re.I):
-            add("dvt_risk", short + " is listed. Confirm DVT prophylaxis versus therapeutic or circuit anticoagulation.")
+    for candidate in medication_note_candidates(medications, support=support, catalog=catalog):
+        if candidate["id"] in by_id:
+            add(candidate["id"], candidate["reason"])
+    findings = clinical_note_candidates(sheet, settings=settings, medications=medications)
+    for candidate in findings["candidates"]:
+        if candidate["id"] in by_id:
+            add(candidate["id"], candidate["reason"])
+    warnings.extend(findings.get("warnings", []))
 
-    # A conflicting or qualified diagnosis is never silently promoted by a
-    # medication candidate, even if another line lists it without qualifiers.
+    # Explicit negative and historical statements are still respected.
+    # Other suggestions are included for editing, without a confirmation step.
     for key, item in found.items():
         states = assertions.get(key, set())
         if states & {"negative", "history"}:
             item["selected"] = False
             item["reasons"].append("The diagnosis text also contains a negative or historical qualifier. Resolve this before selecting it.")
-        elif "uncertain" in states:
-            item["selected"] = False
     return [found[row["id"]] for row in catalog if row["id"] in found], warnings
 
 
@@ -520,7 +494,7 @@ def generate_note(
 ) -> dict:
     """Generate a reviewable note only when explicitly called by the UI.
 
-    ``selected_ids=None`` uses suggested defaults. An explicit collection
+    ``selected_ids=None`` includes the suggested plans automatically. An explicit collection
     replaces those defaults and can add any catalog entry. Missing phrase names
     remain omitted, even when selected. ``note_type`` chooses the progress or
     attestation template. Attestation text never contains medication lists,

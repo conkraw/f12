@@ -343,6 +343,56 @@ def test_real_attestation_word_omits_medications_and_keeps_selected_plan_referen
     assert at.session_state["sources"] == sources
 
 
+@pytest.mark.parametrize("note_type", ["progress", "attestation"])
+def test_first_generate_populates_word_and_text_with_user_examples_without_confirmation(note_type):
+    import xml.etree.ElementTree as ET
+    from note_generator import get_phrase_catalog
+    from test_note_generator import EXAMPLE_PLANS, clinical_example_sheet
+
+    def word_text(at):
+        with ZipFile(BytesIO(downloads(at)["word"]["handle"]())) as package:
+            document = ET.fromstring(package.read("word/document.xml"))
+        return "\n".join(node.text or "" for node in document.iter(
+            "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}t"
+        ))
+
+    at = AppTest.from_string(SOURCE, default_timeout=10).run()
+    sources = deepcopy(at.session_state["sources"])
+    sources["P4102"] = clinical_example_sheet()
+    at.session_state["sources"] = sources
+    at.radio(key=TYPE_KEY).set_value(note_type).run()
+    assert not at.checkbox
+    generate(at)
+    assert len(at.get("download_button")) == 2
+    optional = [panel for panel in at.expander if panel.label == "Edit included plans (optional)"]
+    assert len(optional) == 1 and not optional[0].proto.expanded
+    selected = at.multiselect(key=SELECTION_KEY).value
+    assert EXAMPLE_PLANS <= set(selected)
+    text = downloads(at)["text"]["handle"]().decode("utf-8")
+    docx_text = word_text(at)
+    names = {row["id"]: row["phrase"] for row in get_phrase_catalog()}
+    for key in EXAMPLE_PLANS:
+        token = "@" + names[key] + "@"
+        assert token in text and token in docx_text
+    for label in ("Bowel Regimen", "GI prophylaxis", "Antiepileptic", "Antibiotics"):
+        assert label not in text and label not in docx_text
+    if note_type == "progress":
+        assert "Drips:" in text and "Drips:" in docx_text
+        assert "Fentanyl at 2 mcg/kg/hr" in text and "Fentanyl at 2 mcg/kg/hr" in docx_text
+    else:
+        assert "Fentanyl" not in text and "Fentanyl" not in docx_text
+        assert "MEDICATIONS FOR REVIEW" not in text and "MEDICATIONS FOR REVIEW" not in docx_text
+    at.multiselect(key=SELECTION_KEY).set_value([key for key in selected if key != "constipation"]).run()
+    assert "@ACKZCONSTIPATION@" in word_text(at)
+    at.button(key=PREFIX + "update").click().run()
+    at.run()
+    assert not at.exception and not at.error
+    assert "constipation" not in at.multiselect(key=SELECTION_KEY).value
+    assert "@ACKZCONSTIPATION@" not in word_text(at)
+    assert "@ACKZCONSTIPATION@" not in downloads(at)["text"]["handle"]().decode("utf-8")
+    assert at.session_state["sources"] == sources
+
+
 def test_authorization_revoked_during_word_rendering_discards_new_document():
     from models import new_sheet
     from note_utility import create_note_draft

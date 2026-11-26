@@ -32,6 +32,118 @@ def indexed(result):
     return {row["id"]: row for row in result["suggestions"]}
 
 
+def clinical_example_sheet():
+    """Source-shaped synthetic examples from the requested automatic workflow."""
+    from categories import default_categories, target_snapshot
+    from diet import parse_diet
+    from lab_windows import clock
+    from labs import parse_labs
+    from viral import parse_viral_panel
+
+    sheet = sheet_with(
+        order("Fentanyl infusion", "2 mcg/kg/hr", frequency="Continuous"),
+        order("Clobazam", "100 mg", route="Oral"),
+        order("Pantoprazole", "20 mg", section="FEN / GI"),
+        order("Polyethylene glycol", "8.5 g", section="FEN / GI", route="Oral"),
+        order("Ceftriaxone", "500 mg", section="Infectious Disease"),
+        mode="PRVC",
+    )
+    categories = default_categories()
+    for index, target in ((1, "group:antiepileptic"), (2, "gi:prophylaxis"),
+                          (3, "gi:bowel"), (4, "group:antibiotic")):
+        sheet["medications"][index]["category_path"] = target_snapshot(target, categories)
+    stamp = clock().strftime("%m/%d/%Y %H:%M")
+    viral = parse_viral_panel("RESPSYNVRNA\tDetected (A)\t" + stamp)
+    labs = parse_labs("Labs:\n" + "\n".join(
+        component + "\t" + value + "\t" + stamp
+        for component, value in (("HGB", "8.1 (L)"), ("PLT", "75 (L)"),
+                                 ("K", "2.9 (L)"), ("INR", "1.7 (H)"))
+    ))
+    diet = parse_diet("NPO")
+    assert not viral.error and not labs.error and not diet.error
+    sheet.update(viral_panel=viral.data, labs=labs.data, diet=diet.data)
+    return sheet
+
+
+EXAMPLE_PLANS = {
+    "acute_hypoxemic_invasive", "agitation_intubated", "seizure_risk",
+    "gastric_ulcer_risk", "constipation", "sepsis", "rsv", "malnutrition_risk",
+    "anemia", "thrombocytopenia", "hypokalemia", "coagulopathy",
+}
+
+
+@pytest.mark.parametrize("note_type", ["progress", "attestation"])
+def test_first_generation_includes_medication_support_viral_nutrition_and_lab_plans(note_type):
+    sheet = clinical_example_sheet()
+    before = deepcopy(sheet)
+    result = generate_note(sheet, note_type=note_type)
+    selected = {key for key, row in indexed(result).items() if row["selected"]}
+    assert EXAMPLE_PLANS <= selected
+    catalog = {row["id"]: row["phrase"] for row in get_phrase_catalog()}
+    for key in EXAMPLE_PLANS:
+        assert result["selected_plan_tokens"].count("@" + catalog[key] + "@") == 1
+        assert "@" + catalog[key] + "@" in result["text"]
+    for label in ("Bowel Regimen", "GI prophylaxis", "Antiepileptic", "Antibiotics"):
+        assert label not in result["text"]
+    if note_type == "progress":
+        assert "Drips:\nFentanyl at 2 mcg/kg/hr" in result["text"]
+        assert "Scheduled:" in result["text"]
+        assert "Polyethylene glycol 8.5 g Q12H" in result["text"]
+    else:
+        assert "Fentanyl" not in result["text"] and "Polyethylene glycol" not in result["text"]
+    assert sheet == before
+
+
+@pytest.mark.parametrize("nutrition", ["npo", "tube_feeds", "pn"])
+def test_each_requested_nutrition_source_includes_malnutrition_risk(nutrition):
+    from diet import parse_diet
+    from feeds import parse_feeds
+
+    sheet = sheet_with()
+    if nutrition == "npo":
+        sheet["diet"] = parse_diet("NPO").data
+    elif nutrition == "tube_feeds":
+        sheet["feeds"] = parse_feeds("Feeding Method: NG\nFormula: Synthetic formula\nRate: 30 mL/hr").data
+    else:
+        sheet["medications"] = [order("Pediatric 2-in-1 PN (Continuous)", "30 mL/hr",
+                                      section="FEN / GI", frequency="Continuous")]
+    result = generate_note(sheet)
+    assert indexed(result)["malnutrition_risk"]["selected"]
+    assert "@ACKZATRISKFORMALNUTRITION@" in result["text"]
+
+
+def test_saved_therapeutic_categories_supply_plans_without_becoming_note_subheadings():
+    from categories import default_categories, target_snapshot
+
+    categories = default_categories()
+    rows = []
+    for label, target, section in (
+        ("Synthetic bowel agent", "gi:bowel", "FEN / GI"),
+        ("Synthetic gastric agent", "gi:prophylaxis", "FEN / GI"),
+        ("Synthetic seizure agent", "group:antiepileptic", "Neurologic"),
+        ("Synthetic antibiotic agent", "group:antibiotic", "Infectious Disease"),
+    ):
+        row = order(label, "1 mg", section=section)
+        row["category_path"] = target_snapshot(target, categories)
+        rows.append(row)
+    result = generate_note(sheet_with(*rows))
+    for key in ("constipation", "gastric_ulcer_risk", "seizure_risk", "sepsis"):
+        assert indexed(result)[key]["selected"]
+    for label in ("Bowel Regimen", "GI prophylaxis", "Antiepileptic", "Antibiotics"):
+        assert label not in result["text"]
+
+
+def test_explicit_negatives_and_history_override_medication_and_lab_candidates():
+    sheet = clinical_example_sheet()
+    sheet["fields"]["Diagnoses"] = "Sepsis ruled out\nNo hypokalemia\nHistory of constipation"
+    result = generate_note(sheet)
+    rows = indexed(result)
+    for key in ("sepsis", "hypokalemia", "constipation"):
+        assert key not in rows or not rows[key]["selected"]
+    for phrase in ("ACKZSEPSIS", "ACKZHYPOKALEMIA", "ACKZCONSTIPATION"):
+        assert "@" + phrase + "@" not in result["text"]
+
+
 def test_exact_template_tokens_and_medications_stay_in_their_main_sections():
     sheet = sheet_with(
         order("fentaNYL infusion", "2 mcg/kg/hr", frequency="Continuous"),
@@ -65,7 +177,7 @@ def test_exact_template_tokens_and_medications_stay_in_their_main_sections():
         assert text.count(token) == 1
     assert text.count("***") == 3
     assert "@ATRISKFORGASTRICULCERS@" not in text
-    assert text.rstrip().endswith("@ACKZATRISKFORGASTRICULCERS@")
+    assert text.count("@ACKZATRISKFORGASTRICULCERS@") == 1
     assert sheet == before
     json.dumps(result)
 
@@ -93,10 +205,11 @@ def test_negative_and_historical_diagnoses_are_not_promoted(diagnosis):
     "Possible sepsis", "Suspected sepsis", "Rule out sepsis", "Concern for sepsis",
     "Sepsis?", "? Sepsis", "?? Sepsis", "Sepsis not ruled out", "Sepsis unconfirmed",
 ])
-def test_uncertain_diagnoses_remain_review_candidates(diagnosis):
+def test_uncertain_positive_diagnoses_are_included_in_the_first_draft(diagnosis):
     result = generate_note(sheet_with(diagnoses=diagnosis))
-    assert indexed(result)["sepsis"]["selected"] is False
-    assert "@ACKZSEPSIS@" not in result["text"]
+    assert indexed(result)["sepsis"]["selected"] is True
+    assert "@ACKZSEPSIS@" in result["text"]
+    assert any("Uncertain diagnosis" in reason for reason in indexed(result)["sepsis"]["reasons"])
 
 
 def test_risk_and_prophylaxis_do_not_become_the_disease():
@@ -114,11 +227,12 @@ def test_conflicting_diagnoses_are_unselected_until_review():
     assert any("qualifier" in reason for reason in indexed(result)["sepsis"]["reasons"])
 
 
-def test_current_noninvasive_support_does_not_prove_acute_hypoxemia():
+def test_current_noninvasive_support_adds_the_matching_plan_on_first_generation():
     support = [{"device": "HFNC", "values": {"Flow": "10"}, "flow_inferred": False, "pressure_inferred": False}]
     sheet = sheet_with(noninvasive=support)
     first = generate_note(sheet)
-    assert not indexed(first)["acute_hypoxemic_noninvasive"]["selected"]
+    assert indexed(first)["acute_hypoxemic_noninvasive"]["selected"]
+    assert "@ACKZACUTEHYPOXEMICRESPIRATORYFAILURENONINVASIVE@" in first["text"]
     sheet["fields"]["Diagnoses"] = "Acute hypoxemic respiratory failure"
     second = generate_note(sheet)
     assert indexed(second)["acute_hypoxemic_noninvasive"]["selected"]
@@ -138,12 +252,12 @@ def test_confirmed_invasive_phrase_is_available_by_default_and_can_be_overridden
     assert "@ACKZACUTEHYPOXEMICRESPIRATORYFAILUREINVASIVE@" not in configured["text"]
 
 
-def test_current_invasive_support_alone_remains_an_unselected_review_candidate():
+def test_current_invasive_support_alone_includes_the_matching_plan():
     result = generate_note(sheet_with(mode="PRVC"))
     candidate = indexed(result)["acute_hypoxemic_invasive"]
-    assert candidate["verified"] and not candidate["selected"]
-    assert "@ACKZACUTEHYPOXEMICRESPIRATORYFAILUREINVASIVE@" not in result["text"]
-    assert any("Confirm acute hypoxemic respiratory failure" in reason for reason in candidate["reasons"])
+    assert candidate["verified"] and candidate["selected"]
+    assert "@ACKZACUTEHYPOXEMICRESPIRATORYFAILUREINVASIVE@" in result["text"]
+    assert any("support" in reason.lower() for reason in candidate["reasons"])
 
 
 @pytest.mark.parametrize("mode,expected,opposite", [
@@ -200,7 +314,7 @@ def test_old_modes_and_removed_airways_do_not_establish_current_support():
     assert any("latest ventilator mode is unconfirmed" in item for item in result["warnings"])
 
 
-def test_sedation_and_other_medication_candidates_are_unselected():
+def test_sedation_and_other_medication_plans_are_included_without_confirmation():
     sheet = sheet_with(
         order("Fentanyl infusion", "2 mcg/kg/hr", frequency="Continuous"),
         order("Clobazam", "100 mg"),
@@ -211,18 +325,18 @@ def test_sedation_and_other_medication_candidates_are_unselected():
     )
     rows = indexed(generate_note(sheet))
     for key in ("agitation_intubated", "seizure_risk", "constipation", "hypokalemia", "dvt_risk"):
-        assert key in rows and not rows[key]["selected"]
+        assert key in rows and rows[key]["selected"]
     assert "status_epilepticus" not in rows and "deep_vein_thrombosis" not in rows
 
 
-def test_tracheostomy_does_not_select_an_endotracheal_agitation_plan():
+def test_consistent_tracheostomy_support_includes_the_invasive_agitation_suggestion():
     sheet = sheet_with(
         order("Fentanyl infusion", "2 mcg/kg/hr", frequency="Continuous"),
         mode="PRVC", diagnoses="Restlessness and agitation",
     )
     sheet["devices"] = {"rows": [{"kind": "Trach", "include": True, "removed": False, "status": ""}]}
     candidate = indexed(generate_note(sheet))["agitation_intubated"]
-    assert not candidate["selected"]
+    assert candidate["selected"]
     assert any("tracheostomy support" in reason for reason in candidate["reasons"])
     sheet["devices"]["rows"] = [{"kind": "ETT", "include": True, "removed": False, "status": ""}]
     assert indexed(generate_note(sheet))["agitation_intubated"]["selected"]
@@ -235,20 +349,20 @@ def test_not_intubated_diagnosis_uses_only_the_nonintubated_agitation_phrase():
     assert "agitation_intubated" not in rows
 
 
-def test_nasal_cannula_and_room_air_do_not_select_acute_hypoxemic_failure():
+def test_nasal_cannula_adds_noninvasive_plan_and_room_air_does_not():
     sheet = sheet_with(noninvasive=[{
         "device": "Nasal cannula", "values": {"Flow": "1"},
         "flow_inferred": False, "pressure_inferred": False,
     }])
     result = generate_note(sheet)
-    assert not indexed(result)["acute_hypoxemic_noninvasive"]["selected"]
-    assert "@ACKZACUTEHYPOXEMICRESPIRATORYFAILURENONINVASIVE@" not in result["text"]
+    assert indexed(result)["acute_hypoxemic_noninvasive"]["selected"]
+    assert "@ACKZACUTEHYPOXEMICRESPIRATORYFAILURENONINVASIVE@" in result["text"]
     sheet["noninvasive"] = []
     sheet["fields"]["Respiratory"] = "Room air"
     assert not any(key.startswith("acute_hypoxemic") for key in indexed(generate_note(sheet)))
 
 
-def test_medications_do_not_establish_sepsis_dka_heart_failure_or_status():
+def test_antibiotics_add_sepsis_while_other_medications_use_their_supported_rules():
     sheet = sheet_with(
         order("Ceftriaxone", "500 mg", section="Infectious Disease"),
         order("Insulin", "1 unit/hr", frequency="Continuous"),
@@ -256,8 +370,9 @@ def test_medications_do_not_establish_sepsis_dka_heart_failure_or_status():
         order("Levetiracetam", "200 mg"),
     )
     rows = indexed(generate_note(sheet))
-    assert not ({"sepsis", "diabetic_ketoacidosis", "heart_failure", "status_epilepticus"} & set(rows))
-    assert "seizure_risk" in rows
+    assert rows["sepsis"]["selected"]
+    assert not ({"diabetic_ketoacidosis", "heart_failure", "status_epilepticus"} & set(rows))
+    assert rows["seizure_risk"]["selected"]
 
 
 def test_held_pantoprazole_does_not_select_ulcer_risk():
@@ -347,13 +462,15 @@ PLAN
 @ACKZACUTEHYPOXEMICRESPIRATORYFAILUREINVASIVE@
 @ACKZATRISKFORGASTRICULCERS@
 """
-    assert result["text"] == expected
+    assert result["text"].split("\nPLAN\n", 1)[0] == expected.split("\nPLAN\n", 1)[0]
     assert result["note_type"] == "attestation"
     assert result["phrase_style"] == "at"
-    assert result["selected_plan_tokens"] == [
+    assert {
         "@ACKZACUTEHYPOXEMICRESPIRATORYFAILUREINVASIVE@",
         "@ACKZATRISKFORGASTRICULCERS@",
-    ]
+        "@ACKZATRISKFORSEIZURES@",
+        "@ACKZRESTLESSNESSANDAGITATIONINTUBATED@",
+    } <= set(result["selected_plan_tokens"])
     assert indexed(result)["gastric_ulcer_risk"]["selected"]
     assert "Fentanyl" not in result["text"] and "Pantoprazole" not in result["text"]
     assert "Clobazam" not in result["text"] and "MEDICATIONS" not in result["text"]
