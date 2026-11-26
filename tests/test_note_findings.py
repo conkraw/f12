@@ -95,6 +95,59 @@ def test_source_flags_map_to_existing_phrases(component, value, expected):
     assert ids(laboratory((component, value, TODAY))) == {expected}
 
 
+@pytest.mark.parametrize("component,value", [("ALBUMIN", "2.1 (L)"), ("ALB", "2.1 g/dL (LOW)")])
+def test_source_low_albumin_uses_canonical_label_without_changing_the_source(component, value):
+    sheet = laboratory((component, value, TODAY))
+    before = deepcopy(sheet)
+    result = candidates(sheet)
+    assert [item["id"] for item in result["candidates"]] == ["hypoalbuminemia"]
+    assert "Albumin: " + value in result["candidates"][0]["reason"]
+    assert "source marked low" in result["candidates"][0]["reason"]
+    assert result["warnings"] == []
+    assert sheet == before
+
+
+def test_albumin_uses_only_an_existing_patient_limit_with_matching_source_units():
+    sheet = laboratory(("ALB", "2.1 g/dL", TODAY))
+    assert ids(sheet) == set()
+    sheet["problem_review"] = {"enabled": True, "decisions": {},
+                               "low_limits": {"ALBUMIN": {"value": "2.5", "unit": "g/dL"}}}
+    before = deepcopy(sheet)
+    result = candidates(sheet)
+    assert [item["id"] for item in result["candidates"]] == ["hypoalbuminemia"]
+    assert "below your limit 2.5 g/dL" in result["candidates"][0]["reason"]
+    assert sheet == before
+    sheet["problem_review"]["low_limits"]["ALBUMIN"]["unit"] = "g/L"
+    assert ids(sheet) == set()
+
+
+@pytest.mark.parametrize("newer", ["4.0 g/dL", "Pending", "2.1 (L) hemolyzed", "2.1 (L) (H)"])
+def test_latest_albumin_normal_or_unusable_result_supersedes_old_low_across_aliases(newer):
+    sheet = laboratory(("ALBUMIN", "2.1 (L)", YESTERDAY), ("ALB", newer, TODAY))
+    assert ids(sheet) == set()
+
+
+def test_excluded_latest_albumin_does_not_restore_prior_low_and_failed_import_stays_hidden():
+    sheet = laboratory(("ALB", "2.1 (L)", YESTERDAY), ("ALBUMIN", "2.0 (L)", TODAY))
+    sheet["labs"]["rows"][-1]["include"] = False
+    assert ids(sheet) == set()
+    sheet["labs"]["rows"][-1]["include"] = True
+    sheet["import_warnings"] = {"g": []}
+    assert ids(sheet) == set()
+
+
+def test_future_and_preadmission_low_albumin_are_not_current_note_findings():
+    sheet = laboratory(("ALB", "2.1 (L)", "11/20/2026"), ("ALBUMIN", "2.0 (L)", "11/27/2026"))
+    sheet["admission_date"] = "11/24/2026"
+    assert ids(sheet) == set()
+
+
+def test_albumin_infusion_alone_does_not_supply_a_hypoalbuminemia_finding():
+    sheet = new_sheet("P4102")
+    sheet["medications"] = [medication("albumin human 25% infusion", "10 mL/hr")]
+    assert ids(sheet) == set()
+
+
 def test_absolute_cbc_counts_use_recorded_units_and_not_percentages():
     sheet = new_sheet("P4102")
     sheet["cbc"] = parsed(parse_cbc, "Lab\tUnits\t" + TODAY +

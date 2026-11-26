@@ -1,4 +1,4 @@
-# PICU Handoff 6.113
+# PICU Handoff 6.114
 
 ## Generate a Word document
 
@@ -35,6 +35,8 @@ The following handoff information can now place the matching reference in the pl
 | Melatonin or the mapped Insomnia category | `@ACKZINSOMNIA@` |
 | Bethanechol or the mapped Airway Tone Modulator category | `@ACKZTRACHEOBRONCHOMALACIA@` |
 | A medication mapped to Antiarrhythmics | `@ACZKARRHYTHMIA@` |
+| Active milrinone therapy | `@ACKZHEARTFAILURE@` |
+| Documented hypoalbuminemia, a matching category, or a supported low albumin result | `@ACKZHYPOALBUMINEMIA@` |
 | A supported positive respiratory viral result | The matching viral diagnosis phrase |
 | NPO, active feeding orders, recorded feeds, or parenteral nutrition | At risk for malnutrition |
 | Supported current laboratory abnormalities | Matching phrases such as anemia, thrombocytopenia, coagulopathy, hypokalemia, and other electrolyte abnormalities |
@@ -47,9 +49,13 @@ Saved specific subcategories take precedence over broader parent categories and 
 
 The antiarrhythmic defaults include amiodarone, procainamide, esmolol, sotalol, digoxin, ivabradine, and qualifying intravenous lidocaine. The supplied spelling ivardabine is also recognized. An additional drug mapped to the Antiarrhythmics category supplies the same reference. Local lidocaine preparations do not automatically supply an arrhythmia reference. `ACZKARRHYTHMIA` retains the exact spelling supplied by the user.
 
+The requested milrinone rule adds the heart-failure reference in the cardiovascular portion of the plan, including when milrinone has another saved category. Other inotropes do not receive that reference from this rule. Held, stopped, excluded, and future orders do not supply active-medication suggestions.
+
+Hypoalbuminemia appears in the FEN/GI portion of the plan. Albumin matching uses the recorded low flag or an existing saved low-result limit with matching units. It accepts ALB and ALBUMIN source names and respects the latest recorded result. A newer normal or unusable result suppresses an older low result. No new numeric threshold is added.
+
 The Word document is available without opening the plan controls. To change the included references in the app, open Edit included plans (optional). Use Included suggested plans to remove or restore a suggestion, or Add another plan to choose a catalog entry. Click Update note with selected plans to prepare the revised document. Your explicit selections replace the automatic defaults for that update. The reason for each suggestion remains available under Sources for suggested plans.
 
-The catalog contains 88 entries using the complete supplied names, including the new `ACZKARRHYTHMIA` name. For example, pantoprazole can produce:
+The catalog contains 89 entries using the complete supplied names, including `ACZKARRHYTHMIA` and `ACKZHYPOALBUMINEMIA`. For example, pantoprazole can produce:
 
 ```text
 PLAN
@@ -96,7 +102,7 @@ Sources:
 
 The draft and prepared downloads stay in the current administrator session and do not overwrite the handoff. Changing the patient, document type, or source handoff clears the old draft. Locking Admin, leaving the protected workspaces, logging out, returning Home, or resetting the patient list clears the draft and revokes its prepared downloads. Protected actions recheck Admin access, including after Word rendering. Expired or revoked downloads are rejected.
 
-## Install from version 6.109 through 6.112
+## Install from version 6.109 through 6.113
 
 Use the complete update package. Upload these fourteen Python files together beside the existing app.py, replacing matching files:
 
@@ -120,4 +126,4 @@ Also upload the templates folder with both files, keeping these paths:
 - templates/picu_progress_note.docx
 - templates/attending_attestation.docx
 
-There is no dependency change. Keep the existing Streamlit Secrets and encryption key. Restart the app and confirm version 6.113 in the sidebar.
+There is no dependency change. Keep the existing Streamlit Secrets and encryption key. Restart the app and confirm version 6.114 in the sidebar.

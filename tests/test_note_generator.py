@@ -404,7 +404,7 @@ def test_alternate_diagnoses_destination_is_supported_without_scanning_all_notes
 
 def test_catalog_is_independent_and_invalid_names_cannot_insert_arbitrary_note_text():
     catalog = get_phrase_catalog()
-    assert sum(row["verified"] for row in catalog) == 88
+    assert sum(row["verified"] for row in catalog) == 89
     assert len({row["id"] for row in catalog}) == len(catalog)
     original_phrase = catalog[0]["phrase"]
     catalog[0]["phrase"] = "MUTATED"
@@ -422,6 +422,19 @@ def test_progress_output_remains_default_and_returns_word_rendering_metadata():
     assert result["note_type"] == "progress" and result["phrase_style"] == "at"
     assert result["text"].startswith("PEDIATRIC CRITICAL CARE MEDICINE PROGRESS NOTE")
     assert result["selected_plan_tokens"] == ["@ACKZSEPSIS@"]
+
+
+@pytest.mark.parametrize("diagnosis", ["Hypoalbuminemia", "Hypoalbuminaemia"])
+def test_documented_hypoalbuminemia_uses_the_supplied_fengi_phrase(diagnosis):
+    sheet = sheet_with(diagnoses=diagnosis)
+    result = generate_note(sheet)
+    assert result["selected_plan_tokens"] == ["@ACKZHYPOALBUMINEMIA@"]
+    assert indexed(result)["hypoalbuminemia"]["system"] == "FEN / GI"
+
+
+@pytest.mark.parametrize("diagnosis", ["No hypoalbuminemia", "History of hypoalbuminemia"])
+def test_qualified_hypoalbuminemia_does_not_enter_the_plan_automatically(diagnosis):
+    assert generate_note(sheet_with(diagnoses=diagnosis))["selected_plan_tokens"] == []
 
 
 def test_attestation_keeps_exact_source_text_and_smartlists_without_medication_lists():

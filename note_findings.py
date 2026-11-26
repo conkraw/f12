@@ -28,6 +28,7 @@ _LOW_RULES = {
     "K": ("hypokalemia", "Potassium"),
     "MG": ("hypomagnesemia", "Magnesium"),
     "PHOS": ("hypophosphatemia", "Phosphorus"),
+    "ALBUMIN": ("hypoalbuminemia", "Albumin"),
     "CALCIUM": ("hypocalcemia", "Calcium"),
     "GLUCOSE": ("hypoglycemia", "Glucose"),
     "ANC": ("neutropenia", "Absolute neutrophil count"),

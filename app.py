@@ -1,4 +1,4 @@
-"""PICU Handoff v6.113: system-ordered Word plans and medication categories."""
+"""PICU Handoff v6.114: hypoalbuminemia and milrinone note plan references."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,

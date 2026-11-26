@@ -343,3 +343,83 @@ def test_new_gi_category_ids_match_only_supplied_note_phrases(category, key):
     path["id"] = "gi:" + category
     assert ids(entry(category_path=path)) == ({key} if key else set())
     assert group_for({"name": "Amiodarone", "route": "Oral", "frequency": "Daily", "gi_mode": category}) == ""
+
+
+@pytest.mark.parametrize("name", ["Milrinone", "milrinone in sodium chloride infusion", "MILRINONE (PRIMACOR) infusion"])
+def test_active_milrinone_uses_existing_heart_failure_phrase_from_normal_inotrope_group(name):
+    row, medications = medication_snapshot(name, frequency="Continuous")
+    assert automatic_system_group(row) == "inotrope"
+    assert medications["entries"][0]["category_path"]["id"] == "group:inotrope"
+    result = medication_note_candidates(medications, support=SUPPORT, catalog=CATALOG)
+    assert {item["id"] for item in result} == {"heart_failure"}
+    assert next(item["phrase"] for item in CATALOG if item["id"] == "heart_failure") == "ACKZHEARTFAILURE"
+
+
+def test_milrinone_still_supplies_heart_failure_after_inotrope_category_rename():
+    path = target_snapshot("group:inotrope", default_categories())
+    path["name"] = "Renamed cardiac infusions"
+    assert ids(entry("Milrinone", group="Drips", frequency="Continuous", category_path=path)) == {"heart_failure"}
+
+
+def test_requested_milrinone_rule_supplements_a_different_specific_category():
+    path = custom_path("Pulmonary hypertension", section="Cardiovascular")
+    result = candidates(entry("Milrinone", group="Drips", frequency="Continuous", category_path=path))
+    assert {item["id"] for item in result} == {"pulmonary_hypertension", "heart_failure"}
+    heart_failure = next(item for item in result if item["id"] == "heart_failure")
+    assert "saved medication mapping" not in heart_failure["reason"]
+    assert "Milrinone is listed." in heart_failure["reason"]
+
+
+@pytest.mark.parametrize("path", [
+    target_snapshot("gi:diuretic", default_categories()),
+    custom_path("Unrepresented medication indication"),
+    custom_path("Maintenance fluids"),
+])
+def test_otherwise_unsupported_categories_do_not_suppress_requested_milrinone_rule(path):
+    assert ids(entry("Milrinone", category_path=path)) == {"heart_failure"}
+
+
+def test_milrinone_and_heart_failure_category_produce_only_one_candidate():
+    result = candidates(entry("Milrinone", category_path=custom_path("Heart failure")))
+    assert len(result) == 1 and result[0]["id"] == "heart_failure"
+
+
+@pytest.mark.parametrize("name", ["Dobutamine", "Dopamine", "Epinephrine", "Furosemide", "Bumetanide", "Milrinonex", "Milrinone-like extract"])
+def test_milrinone_request_does_not_extend_to_other_inotropes_diuretics_or_similar_names(name):
+    _, medications = medication_snapshot(name, frequency="Continuous")
+    assert "heart_failure" not in {item["id"] for item in medication_note_candidates(medications, support=SUPPORT, catalog=CATALOG)}
+
+
+@pytest.mark.parametrize("name,admin,hidden,include", [
+    ("[Held by provider] Milrinone", "", False, True),
+    ("[Stopped] Milrinone", "", False, True),
+    ("[START ON 01/01/2099] Milrinone", "", False, True),
+    ("Milrinone", "Stopped at 11/25/26 0800", False, True),
+    ("Milrinone", "Held at 11/25/26 0800", False, True),
+    ("Milrinone", "", True, True),
+    ("Milrinone", "", False, False),
+])
+def test_inactive_or_hidden_milrinone_never_supplies_heart_failure(name, admin, hidden, include):
+    source = "Medications:\n• " + "\t".join((name, "0.5 mcg/kg/min", "Intravenous", "Continuous", "", "", admin))
+    parsed = parse_medications(source)
+    assert not parsed.error
+    parsed.rows[0].update(hidden=hidden, include=include)
+    sheet = new_sheet("P4102")
+    sheet["medications"] = parsed.rows
+    medications = build_note_medications(sheet, NOW)
+    assert medication_note_candidates(medications, support=SUPPORT, catalog=CATALOG) == []
+
+
+def test_milrinone_candidate_does_not_change_handoff_diagnoses_doses_or_medication_text():
+    parsed = parse_medications("Medications:\n• Milrinone infusion\t0.5 mcg/kg/min\tIntravenous\tContinuous\t\t2 mL/hr\t0.5 mcg/kg/min at 11/25/26 0800")
+    assert not parsed.error
+    sheet = new_sheet("P4102")
+    sheet["fields"]["Diagnoses"] = "Existing source diagnosis"
+    sheet["medications"] = parsed.rows
+    before = deepcopy(sheet)
+    medications = build_note_medications(sheet, NOW)
+    medication_copy = deepcopy(medications)
+    result = medication_note_candidates(medications, support=SUPPORT, catalog=CATALOG)
+    assert {item["id"] for item in result} == {"heart_failure"}
+    assert sheet == before and medications == medication_copy
+    assert medications["entries"][0]["text"] == "Milrinone at 0.5 mcg/kg/min"

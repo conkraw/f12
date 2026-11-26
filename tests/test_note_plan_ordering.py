@@ -164,7 +164,7 @@ def test_manual_plan_selection_uses_system_order_instead_of_click_order(note_typ
 
 def test_every_catalog_entry_has_one_system_and_catalog_systems_follow_requested_order():
     catalog = get_phrase_catalog()
-    assert len(catalog) == 88
+    assert len(catalog) == 89
     assert len({row["id"] for row in catalog}) == len(catalog)
     assert {row["system"] for row in catalog} == set(SYSTEM_NAMES)
     positions = [SYSTEM_NAMES.index(row["system"]) for row in catalog]
@@ -188,3 +188,30 @@ def test_all_infectious_plans_keep_viral_diagnoses_adjacent_in_text_and_word(not
     assert set(ordered_ids[-len(viral_ids):]) == viral_ids
     assert set(ordered_ids[:-len(viral_ids)]) == set(selected) - viral_ids
     _assert_matching_plan_formats(result, note_type)
+
+
+@pytest.mark.parametrize("note_type", ["progress", "attestation"])
+@pytest.mark.parametrize("phrase_style", ["at", "dot"])
+def test_milrinone_and_low_albumin_follow_cv_then_fengi_in_both_exports(note_type, phrase_style):
+    from labs import parse_labs
+
+    sheet = new_sheet("P4102")
+    sheet["medications"] = [_medication(
+        "Milrinone infusion", "0.5 mcg/kg/min", section="Cardiovascular",
+        frequency="Continuous", target="group:inotrope",
+    )]
+    parsed = parse_labs("Labs:\nALB\t2.1 (L)\t" + STAMP)
+    assert not parsed.error
+    sheet["labs"] = parsed.data
+    before = deepcopy(sheet)
+    with display_clock(NOW):
+        result = generate_note(sheet, note_type=note_type, phrase_style=phrase_style)
+    names = ("ACKZHEARTFAILURE", "ACKZHYPOALBUMINEMIA")
+    expected = ["@" + name + "@" if phrase_style == "at" else "." + name for name in names]
+    assert result["selected_plan_tokens"] == expected
+    paragraphs = _assert_matching_plan_formats(result, note_type)
+    if note_type == "attestation":
+        assert not any("Milrinone" in line for line in paragraphs)
+    else:
+        assert "Milrinone at 0.5 mcg/kg/min" in paragraphs
+    assert sheet == before

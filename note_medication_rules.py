@@ -100,6 +100,7 @@ _NO_PLAN_LABELS = re.compile(
 _LOCAL_ROUTE = re.compile(r"topical|ophthalm|\beyes?\b|otic|irrigation|apply externally", re.I)
 _LOCAL_FORM = re.compile(r"\b(?:ophthalmic|otic|ointment|cream)\b", re.I)
 _NEGATIVE_LABEL = re.compile(r"\b(?:no|not|without|ruled out|history of|previous|resolved)\b", re.I)
+_MILRINONE = re.compile(r"(?<![A-Za-z0-9_-])milrinone(?=$|[\s(,])", re.I)
 
 _NAME_RULES = (
     (r"\b(?:pantoprazole|Protonix|omeprazole|esomeprazole|lansoprazole|famotidine)\b", "gastric_ulcer_risk"),
@@ -144,6 +145,7 @@ _REVIEWS = {
     "insomnia": "Review insomnia and the sleep medication indication.",
     "tracheobronchomalacia": "Review tracheobronchomalacia and the airway medication indication.",
     "arrhythmia": "Review the rhythm diagnosis and antiarrhythmic medication indication.",
+    "heart_failure": "Review the heart failure diagnosis and medication indication.",
 }
 
 
@@ -286,6 +288,8 @@ def medication_note_candidates(medications: dict, *, support: dict, catalog=None
     ``catalog`` optionally supplies current id/label/phrase records so a custom
     category can match any existing diagnosis or exact phrase name. A recognized
     leaf indication wins over a parent category or generic medication name.
+    The user's explicit milrinone rule also adds a heart-failure candidate
+    alongside any applicable category indication.
     Missing or ambiguous catalog indications never produce invented names.
     Categories remain metadata. This function never modifies medication text,
     input rows, the handoff, or the supplied catalog.
@@ -306,10 +310,15 @@ def medication_note_candidates(medications: dict, *, support: dict, catalog=None
         mapped = ids is not None
         if ids is None:
             ids = _fallback_ids(entry, support)
-        for key in ids:
+        # This explicit user-requested medication rule supplements its saved
+        # category rather than replacing it. Other drug/category precedence
+        # remains unchanged, and inactive entries were already excluded above.
+        requested = (["heart_failure"] if _MILRINONE.search(
+            _text(entry.get("source_name") or entry.get("name"))) else [])
+        for key in dict.fromkeys(ids + requested):
             if allowed is not None and key not in allowed:
                 continue
-            reason = _reason(key, entry, support, mapped)
+            reason = _reason(key, entry, support, mapped and key not in requested)
             signature = (key, reason)
             if signature not in seen:
                 output.append({"id": key, "reason": reason})

@@ -67,6 +67,7 @@ _RULES = (
     ("hyperkalemia", "Hyperkalemia", "ACKZHYPERKALEMIA", r"hyperkal(?:ae|e)mia"),
     ("hypernatremia", "Hypernatremia", "ACKZHYPERNATREMIA", r"hypernatr(?:ae|e)mia"),
     ("hypertension", "Hypertension", "ACKZHYPERTENSION", r"(?<!pulmonary )hypertension|systemic hypertension"),
+    ("hypoalbuminemia", "Hypoalbuminemia", "ACKZHYPOALBUMINEMIA", r"hypoalbumin(?:ae|e)mia"),
     ("hypocalcemia", "Hypocalcemia", "ACKZHYPOCALCEMIA", r"hypocalc(?:ae|e)mia"),
     ("hypoglycemia", "Hypoglycemia", "ACKZHYPOGLYCEMIA", r"hypoglyc(?:ae|e)mia"),
     ("hypokalemia", "Hypokalemia", "ACKZHYPOKALEMIA", r"hypokal(?:ae|e)mia"),
@@ -139,7 +140,7 @@ _PLAN_GROUPS = (
         "anaphylactic_shock", "adrenal_insufficiency", "metabolic_acidosis_shock",
     )),
     ("FEN / GI", (
-        "malnutrition_risk", "refeeding_risk", "dysphagia", "gastric_ulcer_risk",
+        "malnutrition_risk", "hypoalbuminemia", "refeeding_risk", "dysphagia", "gastric_ulcer_risk",
         "constipation", "upper_gi_bleeding", "acute_renal_failure",
         "acute_liver_failure", "transaminitis", "rhabdomyolysis",
         "hyperkalemia", "hypokalemia", "hypernatremia", "hyponatremia",
