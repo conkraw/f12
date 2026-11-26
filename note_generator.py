@@ -10,7 +10,10 @@ from __future__ import annotations
 
 from copy import deepcopy
 import re
+import xml.etree.ElementTree as ET
+from zipfile import BadZipFile, ZipFile
 
+from note_fengi import FENGI_TEMPLATE_FILES, select_fengi_variant
 from note_medications import build_note_medications
 from note_medication_rules import medication_note_candidates
 from note_findings import clinical_note_candidates
@@ -500,7 +503,41 @@ def _medication_lines(groups: dict | None) -> str:
     return "\n".join(lines).rstrip()
 
 
-def _render_note(medications: dict, suggestions: list[dict], phrase_style: str, note_type: str = "progress") -> str:
+def _fengi_section_text(variant: str, medication_lines: str) -> str:
+    """Use the same supplied FEN/GI table as Word for the plain-text preview."""
+    word = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
+    try:
+        with ZipFile(FENGI_TEMPLATE_FILES[variant]) as package:
+            source = package.read("word/document.xml")
+        if b"<!DOCTYPE" in source.upper() or b"<!ENTITY" in source.upper():
+            raise ValueError
+        root = ET.fromstring(source)
+        body = root.find(word + "body")
+        tables = [] if body is None else body.findall(word + "tbl")
+        if len(tables) != 1:
+            raise ValueError
+        rows = tables[0].findall(word + "tr")
+        row_lines = [
+            ["".join(part.text or "" for part in paragraph.iter(word + "t"))
+             for paragraph in row.iter(word + "p")]
+            for row in rows
+        ]
+        medication_headers = [index for index, lines in enumerate(row_lines)
+                              if [line.strip() for line in lines if line.strip()] == ["MEDICATIONS"]]
+        if len(medication_headers) != 1:
+            raise ValueError
+        medication_index = medication_headers[0] + 1
+        if medication_index >= len(row_lines) or [line.strip() for line in row_lines[medication_index]
+                                                 if line.strip()] != ["***"]:
+            raise ValueError
+        row_lines[medication_index] = medication_lines.splitlines()
+        return "\n".join(line for lines in row_lines for line in lines if line.strip())
+    except (OSError, BadZipFile, ET.ParseError, KeyError, ValueError):
+        raise ValueError("The age-specific FEN/GI template could not be read. Restore the supplied template files and generate the note again.") from None
+
+
+def _render_note(medications: dict, suggestions: list[dict], phrase_style: str,
+                 note_type: str = "progress", fengi_variant: str | None = None) -> str:
     phrases = _selected_plan_tokens(suggestions, phrase_style)
     if note_type == "attestation":
         return _ATTESTATION_TEMPLATE + ("\n".join(phrases) + "\n" if phrases else "")
@@ -512,8 +549,11 @@ def _render_note(medications: dict, suggestions: list[dict], phrase_style: str, 
             destination[group].extend(groups.get(group) or [])
     blocks = [_TOP.rstrip()]
     for section, token in _SYSTEM_ANCHORS:
-        block = token
         meds = _medication_lines(sections.get(section))
+        if section == "FEN / GI" and fengi_variant is not None:
+            blocks.append(_fengi_section_text(fengi_variant, meds))
+            continue
+        block = token
         if meds:
             block += "\n\n" + meds
         blocks.append(block)
@@ -572,6 +612,10 @@ def generate_note(
     catalog = get_phrase_catalog(phrase_overrides)
     medications = build_note_medications(sheet)
     suggestions, warnings = _suggestions(sheet, medications, catalog, settings)
+    fengi = (select_fengi_variant(sheet) if note_type == "progress"
+             else {"variant": None, "age_text": "", "warning": ""})
+    if fengi["warning"]:
+        warnings.append(fengi["warning"])
     warnings = list(dict.fromkeys(list(medications.get("warnings") or []) + warnings))
     if selected_ids is not None:
         if isinstance(selected_ids, str):
@@ -592,8 +636,9 @@ def generate_note(
             if warning not in warnings:
                 warnings.append(warning)
     return {
-        "text": _render_note(medications, suggestions, phrase_style, note_type),
+        "text": _render_note(medications, suggestions, phrase_style, note_type, fengi["variant"]),
         "suggestions": suggestions, "warnings": warnings, "medications": medications,
         "note_type": note_type, "phrase_style": phrase_style,
+        "fengi_variant": fengi["variant"],
         "selected_plan_tokens": _selected_plan_tokens(suggestions, phrase_style),
     }

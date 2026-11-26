@@ -1,4 +1,4 @@
-# PICU Handoff 6.115
+# PICU Handoff 6.116
 
 ## Generate a Word document
 
@@ -8,13 +8,28 @@ There is no required confirmation step for each suggested diagnosis. The utility
 
 Both exports use the original uploaded Word templates. Existing styles, tables, fonts, colors, headers, footers, and margins are preserved. Added content flows through the document naturally, so a longer note can use additional pages. Existing Epic links, SmartLists, and assessment placeholders remain available for completion. The two medication placeholders in Hematology and Infectious Diseases are removed from the generated progress note, including when those medication cells are empty.
 
-The progress note includes medication lists directly beneath the Neurologic, Respiratory, Cardiovascular, and FEN/GI SmartList references. Hematology and Infectious Diseases use their existing medication blocks. The extra medication review captions are omitted. The expanded contents of the four system SmartLists are not present in the source Word document. After expansion in Epic, move relevant medication lines into the intended placeholders as needed.
+The progress note includes medication lists directly beneath the Neurologic, Respiratory, and Cardiovascular SmartList references. The age-appropriate FEN/GI section appears immediately before Hematology, with its medications inside the supplied table's Medications cell. Hematology and Infectious Diseases use their existing medication blocks. The extra medication review captions are omitted. The expanded contents of the three remaining system SmartLists are not present in the source Word document. After expansion in Epic, move relevant medication lines into their intended placeholders as needed.
 
 Each main system keeps the simple Drips, Scheduled, and PRN lists. Therapeutic category names such as Bowel Regimen, GI prophylaxis, and Antiepileptic help identify suggested plans internally and do not become medication subheadings in the Word document or plain-text note. Recorded doses and rates are copied without new dose, weight, fluid, nutrition, or PRN-count calculations. A missing drip rate is marked for review. Held or stopped orders carry their status instead of a stale rate and do not supply active-medication plan suggestions.
 
 The attending attestation keeps its original wording, examination SmartLists, assessment, and clinical-indication reference. Its plan uses the same automatic suggestions, but the document contains no medication lists.
 
 Only Generate note and Update note with selected plans build the document. Opening Utilities, changing plan selections, saving phrase settings, and downloading do not regenerate it. Prepared Word and plain-text downloads are reused until you generate or update the note. The plain-text preview is read-only. Make document edits in the downloaded Word file.
+
+## Age-appropriate FEN/GI section
+
+The progress note uses the full formatted section supplied in the corresponding attachment:
+
+| Documented current age | Supplied section | Distinguishing anthropometric field |
+| --- | --- | --- |
+| Less than 2 years | ACKFENGILESSTHAN2YEARS | Head circumference |
+| At least 2 years, including exactly 2 years or 24 months | ACKFENGIGREATERTHAN2YEARS | Body mass index |
+
+The selected table replaces the general FEN/GI SmartList placeholder. Its original Epic links, SmartLists, labels, and formatting remain in place. FEN/GI medications fill the table's Medications cell using Drips, Scheduled, and PRN groups. The medication placeholder is removed even when the list is empty. The separate urine-output and assessment placeholders remain available for completion.
+
+Selection uses the current patient age documented in the handoff. An explicitly labeled current age in the demographics text can support older handoffs. Historical BMI or head-circumference measurement ages are not used to choose the section. Missing, malformed, conflicting, or boundary-ambiguous age keeps the general FEN/GI placeholder and medication list, with a message to verify the current age and regenerate. The utility does not guess an age or birth date.
+
+The attending attestation retains its original structure and does not acquire a FEN/GI table or medication lists. Editing patient age clears the previous prepared note. Generate a new note to apply the updated age.
 
 ## Automatic plan references
 
@@ -104,9 +119,9 @@ Admin and Utilities share one username/password login and one timed unlock. The 
 
 The draft and prepared downloads stay in the current administrator session and do not overwrite the handoff. Changing the patient, document type, or source handoff clears the old draft. Locking Admin, leaving the protected workspaces, logging out, returning Home, or resetting the patient list clears the draft and revokes its prepared downloads. Protected actions recheck Admin access, including after Word rendering. Expired or revoked downloads are rejected.
 
-## Install from version 6.109 through 6.114
+## Install from version 6.109 through 6.115
 
-Use the complete update package. Upload these fourteen Python files together beside the existing app.py, replacing matching files:
+Use the complete update package. Upload these fifteen Python files together beside the existing app.py, replacing matching files:
 
 - app.py
 - admin_access.py
@@ -116,6 +131,7 @@ Use the complete update package. Upload these fourteen Python files together bes
 - fen_gi.py
 - medication_groups.py
 - note_generator.py
+- note_fengi.py
 - note_medications.py
 - note_medication_rules.py
 - note_findings.py
@@ -123,9 +139,11 @@ Use the complete update package. Upload these fourteen Python files together bes
 - note_utility.py
 - note_word.py
 
-Also upload the templates folder with both files, keeping these paths:
+Also upload the templates folder with all four files, keeping these paths:
 
 - templates/picu_progress_note.docx
 - templates/attending_attestation.docx
+- templates/fengi_under_2.docx
+- templates/fengi_age_2_plus.docx
 
-The package also includes `ADMIN_SETUP.txt` and an updated `secrets.example.toml` for reference. Keep your current Secrets values, especially the existing Admin password hash and encryption key. Do not replace them with the example file. There is no dependency change. Restart the app and confirm version 6.115 in the sidebar, then use the shared username and existing Admin password for Admin or Utilities.
+The package also includes `ADMIN_SETUP.txt` and an updated `secrets.example.toml` for reference. Keep your current Secrets values, especially the existing Admin password hash and encryption key. Do not replace them with the example file. There is no dependency change. Restart the app and confirm version 6.116 in the sidebar, then use the shared username and existing Admin password for Admin or Utilities.

@@ -343,6 +343,47 @@ def test_real_attestation_word_omits_medications_and_keeps_selected_plan_referen
     assert at.session_state["sources"] == sources
 
 
+def test_age_change_requires_a_new_generation_before_switching_fengi_templates():
+    import xml.etree.ElementTree as ET
+    from test_note_fengi_integration import example, FENGI_TITLE
+
+    def word_text(payload):
+        with ZipFile(BytesIO(payload)) as package:
+            document = ET.fromstring(package.read("word/document.xml"))
+        return "\n".join(node.text or "" for node in document.iter(
+            "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}t"
+        ))
+
+    at = AppTest.from_string(SOURCE, default_timeout=10).run()
+    sources = deepcopy(at.session_state["sources"])
+    sources["P4102"] = example("1 year 11 months")
+    at.session_state["sources"] = sources
+    generate(at)
+    old_download = downloads(at)["word"]["handle"]
+    younger = word_text(old_download())
+    assert FENGI_TITLE in younger and "Head Circumference:" in younger
+    assert "Body Mass Index:" not in younger
+    assert at.session_state[DRAFT_KEY]["result"]["fengi_variant"] == "under_2"
+
+    sources = deepcopy(at.session_state["sources"])
+    sources["P4102"]["anthropometrics"]["age"] = "2 y.o."
+    at.session_state["sources"] = sources
+    at.run()
+    assert not at.exception
+    assert DRAFT_KEY not in at.session_state
+    assert not at.get("download_button")
+    with pytest.raises(ValueError, match="expired"):
+        old_download()
+
+    generate(at)
+    older = word_text(downloads(at)["word"]["handle"]())
+    assert "Body Mass Index:" in older and "Head Circumference:" not in older
+    assert at.session_state[DRAFT_KEY]["result"]["fengi_variant"] == "age_2_plus"
+    assert at.text_area(key=EDITOR_KEY).value.count("Pantoprazole 20 mg Q24H") == 1
+    assert older.count("Pantoprazole 20 mg Q24H") == 1
+    assert at.session_state["sources"] == sources
+
+
 @pytest.mark.parametrize("note_type", ["progress", "attestation"])
 def test_first_generate_populates_word_and_text_with_user_examples_without_confirmation(note_type):
     import xml.etree.ElementTree as ET

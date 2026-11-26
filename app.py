@@ -1,4 +1,4 @@
-"""PICU Handoff v6.115: cleaner Word notes and shared Admin credentials."""
+"""PICU Handoff v6.116: age-selected FEN/GI sections in progress notes."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,

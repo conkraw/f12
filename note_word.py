@@ -15,12 +15,16 @@ import re
 from xml.parsers import expat
 from zipfile import BadZipFile, ZipFile
 
+from note_fengi import FENGI_TEMPLATE_FILES
+
 
 TEMPLATE_FILES = {
     "progress": Path(__file__).resolve().parent / "templates" / "picu_progress_note.docx",
     "attestation": Path(__file__).resolve().parent / "templates" / "attending_attestation.docx",
 }
 _W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
+_R = "http://schemas.openxmlformats.org/officeDocument/2006/relationships}"
+_FENGI_HEADING = "FLUIDS ELECTROLYTES NUTRITION/GASTROINTESTINAL"
 _GROUPS = ("Drips", "Scheduled", "PRN")
 _SYSTEM_ANCHORS = (
     ("Neurologic", "{CKNEUROSMARTLIST:45213}"),
@@ -44,6 +48,8 @@ class _Node:
     close_start: int = 0
     children: list["_Node"] = field(default_factory=list)
     text: list[str] = field(default_factory=list)
+    attributes: dict[str, str] = field(default_factory=dict)
+    namespaces: dict[str | None, str] = field(default_factory=dict)
 
 
 def _tag_end(source: bytes, start: int) -> int:
@@ -68,13 +74,18 @@ def _parse_xml(source: bytes) -> _Node:
     parser = expat.ParserCreate(namespace_separator="}")
     roots = []
     stack = []
+    namespaces = {}
+
+    def namespace(prefix, uri):
+        namespaces[prefix] = uri
 
     def start(name, attributes):
         position = parser.CurrentByteIndex
-        node = _Node(name, position, _tag_end(source, position))
+        node = _Node(name, position, _tag_end(source, position), attributes=dict(attributes))
         if stack:
             stack[-1].children.append(node)
         else:
+            node.namespaces = dict(namespaces)
             roots.append(node)
         stack.append(node)
 
@@ -92,6 +103,7 @@ def _parse_xml(source: bytes) -> _Node:
             stack[-1].text.append(value)
 
     parser.StartElementHandler = start
+    parser.StartNamespaceDeclHandler = namespace
     parser.EndElementHandler = end
     parser.CharacterDataHandler = text
     try:
@@ -108,6 +120,12 @@ def _nodes(root: _Node, name: str):
         yield root
     for child in root.children:
         yield from _nodes(child, name)
+
+
+def _walk(root: _Node):
+    yield root
+    for child in root.children:
+        yield from _walk(child)
 
 
 def _text(root: _Node) -> str:
@@ -130,6 +148,60 @@ def _table(root: _Node, heading: str) -> _Node:
     if len(found) != 1:
         raise NoteWordError("The Word template is missing a unique required section table.")
     return found[0]
+
+
+def _medication_placeholder(table: _Node) -> _Node:
+    """Find the medication row without selecting a urine-output placeholder."""
+    rows = [node for node in table.children if node.name == _W + "tr"]
+    headings = [index for index, row in enumerate(rows) if _text(row).strip() == "MEDICATIONS"]
+    if len(headings) != 1 or headings[0] + 1 >= len(rows):
+        raise NoteWordError("The Word template is missing a unique required medication cell.")
+    return _paragraph(rows[headings[0] + 1], "***")
+
+
+def _fingerprint(node: _Node):
+    return (node.name, tuple(sorted(node.attributes.items())), tuple(node.text),
+            tuple(_fingerprint(child) for child in node.children))
+
+
+def _default_styles(source: bytes):
+    root = _parse_xml(source)
+    defaults = tuple(_fingerprint(node) for node in _nodes(root, "docDefaults"))
+    styles = sorted((node.attributes.get(_W + "styleId", ""), _fingerprint(node))
+                    for node in _nodes(root, "style")
+                    if node.attributes.get(_W + "default") in {"1", "true", "on"})
+    return defaults, tuple(styles)
+
+
+def _load_fengi_source(variant: str, progress: ZipFile) -> bytes:
+    """Load a vetted source table without adding or rewriting Word resources.
+
+    The supplied tables use direct formatting and matching default styles,
+    fonts and theme. Their Epic links are literal text, with no relationship
+    targets. Reject a future incompatible asset instead of silently losing its
+    formatting, links or embedded resources during an XML-only transplant.
+    """
+    if not isinstance(variant, str) or variant not in FENGI_TEMPLATE_FILES:
+        raise NoteWordError("The selected age-specific FEN/GI Word template is invalid.")
+    try:
+        with ZipFile(BytesIO(FENGI_TEMPLATE_FILES[variant].read_bytes())) as original:
+            source = original.read("word/document.xml")
+            root = _parse_xml(source)
+            table = _table(root, _FENGI_HEADING)
+            progress_root = _parse_xml(progress.read("word/document.xml"))
+            if not root.namespaces.items() <= progress_root.namespaces.items():
+                raise NoteWordError("The age-specific FEN/GI Word template has incompatible XML namespaces.")
+            for node in _walk(table):
+                if (any(key.startswith(_R) for key in node.attributes)
+                        or node.name in {_W + name for name in ("pStyle", "rStyle", "tblStyle", "numPr", "sectPr")}):
+                    raise NoteWordError("The age-specific FEN/GI Word template requires unsupported Word resources.")
+            if (_default_styles(original.read("word/styles.xml")) != _default_styles(progress.read("word/styles.xml"))
+                    or any(original.read(part) != progress.read(part)
+                           for part in ("word/fontTable.xml", "word/theme/theme1.xml"))):
+                raise NoteWordError("The age-specific FEN/GI Word template has incompatible formatting resources.")
+            return source
+    except (OSError, BadZipFile, KeyError):
+        raise NoteWordError("The age-specific FEN/GI Word template is missing or invalid. Restore the packaged templates folder.") from None
 
 
 def _body_format(root: _Node, source: bytes) -> tuple[bytes, bytes]:
@@ -261,6 +333,50 @@ def _medication_paragraphs(groups: dict, formatting: tuple[bytes, bytes]) -> byt
     return b"".join(pieces)
 
 
+def _medication_edits(anchor: _Node, content: bytes) -> list[tuple[int, int, bytes]]:
+    if content:
+        return [(anchor.start, anchor.end, content)]
+    # Retain the original styled paragraph in an empty Word cell. Text can be
+    # split over several runs, so clear each text range inside this placeholder.
+    return [(node.open_end, node.close_start, b"") for node in _nodes(anchor, "t")
+            if node.close_start > node.open_end]
+
+
+def _apply_edits(source: bytes, edits: list[tuple[int, int, bytes]]) -> bytes:
+    pieces = []
+    previous = 0
+    for start, end, content in sorted(edits, key=lambda value: (value[0], value[1])):
+        if start < previous:
+            raise NoteWordError("The Word template has overlapping insertion locations.")
+        pieces.extend((source[previous:start], content))
+        previous = end
+    pieces.append(source[previous:])
+    return b"".join(pieces)
+
+
+def _fengi_content(source: bytes, groups: dict, formatting: tuple[bytes, bytes]) -> bytes:
+    root = _parse_xml(source)
+    table = _table(root, _FENGI_HEADING)
+    anchor = _medication_placeholder(table)
+    content = _medication_paragraphs(groups, formatting)
+    edits = [(start - table.start, end - table.start, value)
+             for start, end, value in _medication_edits(anchor, content)]
+    table_content = _apply_edits(source[table.start:table.end], edits)
+    # Copy the supplied empty separator too. It keeps the FEN/GI and Hematology
+    # tables separate when Word opens the resulting document.
+    body = next(_nodes(root, "body"), None)
+    if body is None or table not in body.children:
+        raise NoteWordError("The age-specific FEN/GI Word template has an invalid table location.")
+    following = body.children[body.children.index(table) + 1:]
+    if (following and following[0].name == _W + "p"
+            and all(child.name == _W + "pPr" for child in following[0].children)
+            and not any(_nodes(following[0], "sectPr"))):
+        separator = source[following[0].start:following[0].end]
+    else:
+        separator = _new_paragraph("", formatting)
+    return table_content + separator
+
+
 def _plan_tokens(result: dict) -> list[str]:
     supplied = result.get("selected_plan_tokens")
     if supplied is None:
@@ -283,7 +399,7 @@ def _plan_tokens(result: dict) -> list[str]:
     return tokens
 
 
-def _insert_content(source: bytes, result: dict, note_type: str) -> bytes:
+def _insert_content(source: bytes, result: dict, note_type: str, fengi_source: bytes | None = None) -> bytes:
     root = _parse_xml(source)
     formatting = _body_format(root, source)
     edits = []
@@ -291,23 +407,18 @@ def _insert_content(source: bytes, result: dict, note_type: str) -> bytes:
         sections = _sections(result)
         for section, token in _SYSTEM_ANCHORS:
             anchor = _paragraph(root, token)
+            if section == "FEN / GI" and fengi_source is not None:
+                content = _fengi_content(fengi_source, sections.get(section, {}), formatting)
+                edits.append((anchor.start, anchor.end, content))
+                continue
             content = _medication_paragraphs(sections.get(section, {}), formatting)
             if content:
                 edits.append((anchor.end, anchor.end, content))
         for section, title in (("Hematology", "HEMATOLOGY"), ("Infectious Disease", "INFECTIOUS DISEASES")):
             table = _table(root, title)
-            anchor = _paragraph(table, "***")
+            anchor = _medication_placeholder(table)
             content = _medication_paragraphs(sections.get(section, {}), formatting)
-            if content:
-                # Replace only this medication placeholder with the flat groups,
-                # keeping the table cell and its properties in their exact place.
-                edits.append((anchor.start, anchor.end, content))
-            else:
-                # An empty Word cell still needs its paragraph. Clear only the
-                # placeholder text, including when Word split it across runs.
-                for node in _nodes(anchor, "t"):
-                    if node.close_start > node.open_end:
-                        edits.append((node.open_end, node.close_start, b""))
+            edits.extend(_medication_edits(anchor, content))
         standard = {name for name, _ in _SYSTEM_ANCHORS} | {"Hematology", "Infectious Disease"}
         extra = []
         for section, groups in sections.items():
@@ -326,15 +437,7 @@ def _insert_content(source: bytes, result: dict, note_type: str) -> bytes:
         edits.extend(_plan_edits(root, source, plan, tokens, formatting))
     if not edits:
         return source
-    pieces = []
-    previous = 0
-    for start, end, content in sorted(edits, key=lambda value: (value[0], value[1])):
-        if start < previous:
-            raise NoteWordError("The Word template has overlapping insertion locations.")
-        pieces.extend((source[previous:start], content))
-        previous = end
-    pieces.append(source[previous:])
-    return b"".join(pieces)
+    return _apply_edits(source, edits)
 
 
 def render_note_docx(result: dict, *, note_type: str = "progress") -> bytes:
@@ -355,7 +458,10 @@ def render_note_docx(result: dict, *, note_type: str = "progress") -> bytes:
     try:
         with ZipFile(BytesIO(template)) as original:
             source = original.read("word/document.xml")
-            modified = _insert_content(source, result, note_type)
+            fengi_source = None
+            if note_type == "progress" and result.get("fengi_variant") is not None:
+                fengi_source = _load_fengi_source(result["fengi_variant"], original)
+            modified = _insert_content(source, result, note_type, fengi_source)
             if modified == source:
                 return template
             output = BytesIO()
