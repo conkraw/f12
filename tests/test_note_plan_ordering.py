@@ -111,6 +111,11 @@ def _assert_plan_outputs(result, expected_ids, note_type):
         assert virus_positions == list(range(virus_positions[0], virus_positions[-1] + 1))
 
     paragraphs = _assert_matching_plan_formats(result, note_type)
+    assert "MEDICATIONS FOR REVIEW" not in result["text"]
+    assert "MEDICATIONS FOR REVIEW" not in paragraphs
+    assert "MEDICATIONS IN REVIEW" not in result["text"]
+    assert "***" not in paragraphs
+    assert sum(line.count("***") for line in paragraphs) == 1
     for label in ("Bowel Regimen", "GI prophylaxis", "Antibiotics"):
         assert label not in result["text"]
         assert label not in paragraphs
@@ -126,7 +131,8 @@ def test_first_generated_note_orders_systems_and_groups_detected_viruses(note_ty
     paragraphs = _assert_plan_outputs(result, AUTO_IDS, note_type)
     assert "@ACKZINSOMNIA@" in result["selected_plan_tokens"]
     assert "@ACKZTRACHEOBRONCHOMALACIA@" in result["selected_plan_tokens"]
-    assert "@ACZKARRHYTHMIA@" in result["selected_plan_tokens"]
+    assert "@ACKZARRHYTHMIA@" in result["selected_plan_tokens"]
+    assert "ACZKARRHYTHMIA" not in result["text"]
     if note_type == "progress":
         assert "Drips:" in paragraphs
         assert "Scheduled:" in paragraphs

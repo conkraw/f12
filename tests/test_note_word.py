@@ -37,6 +37,14 @@ def section_table(root, label):
     raise AssertionError("Missing test section")
 
 
+def medication_cell(table):
+    rows = table.findall("w:tr", NS)
+    for index, row in enumerate(rows[:-1]):
+        if any(text(cell).strip() == "MEDICATIONS" for cell in row.findall("w:tc", NS)):
+            return rows[index + 1].find("w:tc", NS)
+    raise AssertionError("Missing test medication cell")
+
+
 def sample_result():
     return {
         "medications": {"sections": {
@@ -53,10 +61,28 @@ def sample_result():
     }
 
 
-@pytest.mark.parametrize("note_type", ["progress", "attestation"])
-def test_empty_generation_returns_the_original_template_unchanged(note_type):
+def test_empty_attestation_returns_the_original_template_unchanged():
     result = {"medications": {"sections": {}}, "selected_plan_tokens": []}
-    assert render_note_docx(result, note_type=note_type) == TEMPLATE_FILES[note_type].read_bytes()
+    assert render_note_docx(result, note_type="attestation") == TEMPLATE_FILES["attestation"].read_bytes()
+
+
+def test_empty_progress_clears_only_the_two_medication_placeholders():
+    original_data = TEMPLATE_FILES["progress"].read_bytes()
+    original = package(original_data)
+    source = original["word/document.xml"]
+    assert source.count(b"<w:t>***</w:t>") == 2
+    result = {"medications": {"sections": {}}, "selected_plan_tokens": []}
+    generated_data = render_note_docx(result)
+    expected = dict(original)
+    expected["word/document.xml"] = source.replace(b"<w:t>***</w:t>", b"<w:t></w:t>")
+    assert package(generated_data) == expected
+    document = tree(generated_data)
+    for label in ("HEMATOLOGY", "INFECTIOUS DISEASES"):
+        cell = medication_cell(section_table(document, label))
+        assert text(cell) == "" and cell.find("w:p", NS) is not None
+    assert "with ***." in text(section_table(document, "ASSESSMENT"))
+    assert text(document).count("***") == 1
+    assert TEMPLATE_FILES["progress"].read_bytes() == original_data
 
 
 @pytest.mark.parametrize("note_type", ["progress", "attestation"])
@@ -70,12 +96,18 @@ def test_all_original_formatting_parts_paragraphs_and_table_properties_are_prese
             assert original_parts[name] == generated_parts[name], name
     original, generated = tree(original_data), tree(generated_data)
     old_paragraphs = Counter(ET.tostring(p) for p in original.iter(W + "p"))
+    if note_type == "progress":
+        for label in ("HEMATOLOGY", "INFECTIOUS DISEASES"):
+            cell = medication_cell(section_table(original, label))
+            placeholder = next(p for p in cell.iter(W + "p") if text(p) == "***")
+            old_paragraphs.subtract([ET.tostring(placeholder)])
     body = list(original.find("w:body", NS))
     plan = section_table(original, "PLAN")
     for node in body[body.index(plan) + 1:]:
         if node.tag != W + "p" or any(child.tag != W + "pPr" for child in node):
             break
-        # Only the original empty Plan placeholders may be filled or consumed.
+        # Empty Plan paragraphs and the two designated medication placeholders
+        # are the only original paragraphs that may be filled or consumed.
         old_paragraphs.subtract([ET.tostring(node)])
     old_paragraphs += Counter()
     new_paragraphs = Counter(ET.tostring(p) for p in generated.iter(W + "p"))
@@ -102,11 +134,15 @@ def test_medications_are_below_smartlists_and_inside_the_correct_original_cells(
     heme = section_table(document, "HEMATOLOGY")
     infectious = section_table(document, "INFECTIOUS DISEASES")
     for section, medication in ((heme, "Ferrous sulfate 15 mg Daily"), (infectious, "Ceftriaxone 500 mg Q24H")):
-        cell = next(cell for cell in section.iter(W + "tc") if "***" in text(cell))
+        cell = medication_cell(section)
         assert medication in text(cell)
-        assert [text(p) for p in cell.iter(W + "p")][0] == "***"
+        assert [text(p) for p in cell.iter(W + "p")] == ["Scheduled:", medication]
     assert "Unmapped example 1 mg Daily" in text(document)
-    assert text(document).count("***") == 3
+    assert "ADDITIONAL MEDICATIONS" in text(document)
+    assert "MEDICATIONS FOR REVIEW" not in text(document)
+    assert "MEDICATIONS IN REVIEW" not in text(document)
+    assert text(document).count("***") == 1
+    assert "with ***." in text(section_table(document, "ASSESSMENT"))
     assert result == before
 
 
@@ -123,6 +159,7 @@ def test_attestation_ignores_medications_and_preserves_every_exam_smartlist():
     assert "I personally examined the patient separately" in output
     assert "@ACKZATRISKFORGASTRICULCERS@" in output
     assert "@ACKZRHINOVIRUS@" in output
+    assert text(section_table(document, "ASSESSMENT")) == text(section_table(tree(TEMPLATE_FILES["attestation"].read_bytes()), "ASSESSMENT"))
 
 
 def test_special_characters_are_xml_escaped_without_changing_the_medication_text():
@@ -153,6 +190,33 @@ def test_anchor_split_across_word_runs_is_found_without_rewriting_those_runs(tmp
     assert split in package(output)["word/document.xml"]
     assert text(tree(output)).count("{CKNEUROSMARTLIST:45213}") == 1
     assert "Fentanyl at 2 mcg/kg/hr" in text(tree(output))
+
+
+@pytest.mark.parametrize("populated", [False, True])
+def test_only_medication_placeholders_are_removed_when_split_across_word_runs(tmp_path, monkeypatch, populated):
+    original = TEMPLATE_FILES["progress"].read_bytes()
+    source = package(original)["word/document.xml"]
+    split = b"<w:t>*</w:t></w:r><w:r><w:t>**</w:t>"
+    changed = source.replace(b"<w:t>***</w:t>", split)
+    assert changed.count(split) == 2
+    path = tmp_path / "split_medication_placeholders.docx"
+    write_with_document(original, changed, path)
+    template_before = path.read_bytes()
+    monkeypatch.setitem(TEMPLATE_FILES, "progress", path)
+    result = sample_result() if populated else {"selected_plan_tokens": []}
+    generated = render_note_docx(result)
+    document = tree(generated)
+    for label in ("HEMATOLOGY", "INFECTIOUS DISEASES"):
+        cell = medication_cell(section_table(document, label))
+        assert "*" not in text(cell)
+        assert cell.find("w:p", NS) is not None
+        if populated:
+            assert [text(p) for p in cell.iter(W + "p")][0] == "Scheduled:"
+        else:
+            assert text(cell) == ""
+    assert "with ***." in text(section_table(document, "ASSESSMENT"))
+    assert path.read_bytes() == template_before
+    assert package(path.read_bytes())["word/document.xml"] == changed
 
 
 def test_large_medication_lists_use_wrapping_paragraphs_without_fixed_height_or_keep_chains():

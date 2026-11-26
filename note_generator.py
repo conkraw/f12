@@ -32,7 +32,7 @@ _RULES = (
     ("adrenal_insufficiency", "Adrenal insufficiency", "ACKZADRENALINSUFFICIENCY", r"adrenal insufficiency|adrenal crisis"),
     ("anaphylactic_shock", "Anaphylactic shock", "ACKZANAPHYLACTICSHOCK", r"anaphylactic shock"),
     ("anemia", "Anemia", "ACKZANEMIA", r"an(?:ae|e)mia"),
-    ("arrhythmia", "Arrhythmia", "ACZKARRHYTHMIA", r"arrhythmias?|dysrhythmias?"),
+    ("arrhythmia", "Arrhythmia", "ACKZARRHYTHMIA", r"arrhythmias?|dysrhythmias?"),
     ("central_line_occlusion_risk", "At risk for central venous catheter occlusion", "ACKZATRISKFORCENTRALVENOUSCATHETEROCCLUSION", r"(?:at )?risk for (?:central venous catheter|central line) occlusion"),
     ("dvt_risk", "At risk for deep vein thrombosis", "ACKZATRISKFORDEEPVEINTHROMBOSIS", r"(?:at )?risk for (?:deep vein thrombosis|DVT)|DVT prophylaxis|venous thromboembolism prophylaxis"),
     ("fungal_infection_risk", "At risk for fungal infection", "ACKZATRISKFORFUNGALINFECTION", r"(?:at )?risk for fungal infection|antifungal prophylaxis"),
@@ -210,6 +210,10 @@ def get_phrase_catalog(phrase_overrides: dict | None = None) -> list[dict]:
     for row in catalog:
         if row["id"] in phrase_overrides:
             name = _phrase_name(phrase_overrides[row["id"]])
+            # The user corrected this exact earlier name. Retain stored
+            # settings compatibility while emitting the confirmed reference.
+            if row["id"] == "arrhythmia" and name == "ACZKARRHYTHMIA":
+                name = "ACKZARRHYTHMIA"
             if name != row["phrase"]:
                 row["verified"] = False
             row["phrase"] = name
@@ -511,15 +515,15 @@ def _render_note(medications: dict, suggestions: list[dict], phrase_style: str, 
         block = token
         meds = _medication_lines(sections.get(section))
         if meds:
-            block += "\n\nMEDICATIONS FOR REVIEW\n" + meds
+            block += "\n\n" + meds
         blocks.append(block)
-    hematology = "HEMATOLOGY\nMEDICATIONS\n***"
+    hematology = "HEMATOLOGY\nMEDICATIONS"
     meds = _medication_lines(sections.get("Hematology"))
     if meds:
         hematology += "\n" + meds
     hematology += "\nPERTINENT LABORATORY DATA\n{ACKHLABS:45360}"
     blocks.append(hematology)
-    infectious = "INFECTIOUS DISEASES\nVITAL SIGNS\nTemperature: @FLOWSTAT(6:24)@\nMEDICATIONS\n***"
+    infectious = "INFECTIOUS DISEASES\nVITAL SIGNS\nTemperature: @FLOWSTAT(6:24)@\nMEDICATIONS"
     meds = _medication_lines(sections.get("Infectious Disease"))
     if meds:
         infectious += "\n" + meds
@@ -540,7 +544,7 @@ MRSA SCREEN
         if section not in standard_sections and meds:
             extras.append(str(section) + "\n" + meds)
     if extras:
-        blocks.append("ADDITIONAL MEDICATIONS FOR REVIEW\n\n" + "\n\n".join(extras))
+        blocks.append("ADDITIONAL MEDICATIONS\n\n" + "\n\n".join(extras))
     blocks.append("ASSESSMENT\nThe patient is a @age@ @sex@ who presented to the Pediatric Intensive Care Unit on @ADMITDT@ with ***.\n{CKCLININDICATIONS:45218}")
     blocks.append("PLAN" + ("\n" + "\n".join(phrases) if phrases else ""))
     return "\n\n".join(blocks).rstrip() + "\n"

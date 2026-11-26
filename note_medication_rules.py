@@ -167,6 +167,10 @@ def _catalog_aliases(catalog) -> dict[str, list[str]]:
         if not isinstance(item, dict) or not isinstance(item.get("id"), str):
             continue
         values = [item["id"], item.get("label", ""), item.get("phrase", "")]
+        if item["id"] == "arrhythmia":
+            # Older saved category labels may contain the original typo.
+            # They resolve to the diagnosis, whose output uses ACKZARRHYTHMIA.
+            values.append("ACZKARRHYTHMIA")
         phrase = _text(item.get("phrase", ""))
         if phrase.startswith("ACKZ"):
             values.append(phrase[4:])

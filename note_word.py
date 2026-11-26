@@ -1,9 +1,9 @@
 """Insert reviewed note content into the original Word templates.
 
 The uploaded DOCX files are preserved as package assets. The builder inserts
-paragraphs and fills empty Plan placeholders without rewriting existing visible
-content or any other package part. SmartLink runs, colors, table styling,
-sections, headers and page geometry retain their original formatting.
+medication and Plan paragraphs and removes the two medication-cell placeholders.
+Other visible template content and package parts stay unchanged. SmartLink runs,
+colors, table styling, sections and page geometry retain their original format.
 """
 from __future__ import annotations
 
@@ -248,10 +248,10 @@ def _sections(result: dict) -> dict:
     return sections
 
 
-def _medication_paragraphs(groups: dict, formatting: tuple[bytes, bytes], *, title: bool) -> bytes:
+def _medication_paragraphs(groups: dict, formatting: tuple[bytes, bytes]) -> bytes:
     if not any(groups.get(group) for group in _GROUPS):
         return b""
-    pieces = [_new_paragraph("MEDICATIONS FOR REVIEW", formatting, heading=True)] if title else []
+    pieces = []
     for group in _GROUPS:
         values = groups.get(group) or []
         if not values:
@@ -291,25 +291,31 @@ def _insert_content(source: bytes, result: dict, note_type: str) -> bytes:
         sections = _sections(result)
         for section, token in _SYSTEM_ANCHORS:
             anchor = _paragraph(root, token)
-            content = _medication_paragraphs(sections.get(section, {}), formatting, title=True)
+            content = _medication_paragraphs(sections.get(section, {}), formatting)
             if content:
                 edits.append((anchor.end, anchor.end, content))
         for section, title in (("Hematology", "HEMATOLOGY"), ("Infectious Disease", "INFECTIOUS DISEASES")):
             table = _table(root, title)
             anchor = _paragraph(table, "***")
-            content = _medication_paragraphs(sections.get(section, {}), formatting, title=False)
+            content = _medication_paragraphs(sections.get(section, {}), formatting)
             if content:
-                # This offset is inside the medication cell, immediately after
-                # its original placeholder paragraph and before the next row.
-                edits.append((anchor.end, anchor.end, content))
+                # Replace only this medication placeholder with the flat groups,
+                # keeping the table cell and its properties in their exact place.
+                edits.append((anchor.start, anchor.end, content))
+            else:
+                # An empty Word cell still needs its paragraph. Clear only the
+                # placeholder text, including when Word split it across runs.
+                for node in _nodes(anchor, "t"):
+                    if node.close_start > node.open_end:
+                        edits.append((node.open_end, node.close_start, b""))
         standard = {name for name, _ in _SYSTEM_ANCHORS} | {"Hematology", "Infectious Disease"}
         extra = []
         for section, groups in sections.items():
             if section not in standard and any(groups.values()):
                 extra.append(_new_paragraph(section, formatting, heading=True))
-                extra.append(_medication_paragraphs(groups, formatting, title=False))
+                extra.append(_medication_paragraphs(groups, formatting))
         if extra:
-            content = _new_paragraph("ADDITIONAL MEDICATIONS FOR REVIEW", formatting, heading=True) + b"".join(extra)
+            content = _new_paragraph("ADDITIONAL MEDICATIONS", formatting, heading=True) + b"".join(extra)
             offset = _table(root, "ASSESSMENT").start
             edits.append((offset, offset, content))
     # Attestation intentionally never reads the medication payload. The source

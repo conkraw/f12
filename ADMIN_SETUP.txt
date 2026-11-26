@@ -1,14 +1,35 @@
-PICU Handoff 6.22: add the separate Admin password
+PICU Handoff: shared Admin and Utilities credentials
 
-This update adds a second password for Admin. Routine handoff creation, editing,
-saving, printing, and reading the instructions at the top of Handoff still use the existing
-app login. Keep your current app password, encryption key, GitHub token and all
-saved data. Do not run create_secrets.py or Generate_Secrets.ipynb for this update.
+Admin and Utilities use the same username and Admin password. Your existing
+admin_password_hash remains valid and does not need to be replaced. The username
+is admin when admin_username is absent from deployment Secrets. Both fields must
+be entered to unlock either workspace.
 
-ONE-TIME SETUP
+Routine handoff creation, editing, saving, printing, and reading instructions
+still use the existing app login. Keep your current app password, encryption key,
+GitHub token and saved data. Do not run create_secrets.py or Generate_Secrets.ipynb
+for this update.
+
+IF YOUR ADMIN PASSWORD IS ALREADY CONFIGURED
+
+Keep the existing admin_password_hash under [app]. Use admin as the username, or
+add admin_username inside that same [app] section to choose another username:
+
+    admin_username = "admin"
+
+Keep this setting before [github]. Username matching is case-sensitive and ignores
+spaces at the beginning and end. An explicitly empty or invalid admin_username
+keeps Admin and Utilities locked. Do not set a blank value to request the default.
+
+Save Secrets and restart the app if needed. Sign in with your usual app password.
+Open Admin or Utilities, then enter the configured username and your existing
+Admin password. One unlock grants access to both workspaces. No new password or
+encryption key is required. Skip the password-generation steps below.
+
+ONE-TIME SETUP IF NO ADMIN PASSWORD IS CONFIGURED
 
 1. Extract the complete update and upload its application files to your current
-   code repository. Keep app.py at the repository root. The app starts with Admin
+   code repository. Keep app.py at the repository root. Admin and Utilities remain
    locked until the separate hash is configured. No new packages are required.
 
 2. On your computer, open Generate_Admin_Password.ipynb in JupyterLab and run its
@@ -29,6 +50,7 @@ ONE-TIME SETUP
 
        [app]
        password_hash = "KEEP YOUR EXISTING VALUE"
+       admin_username = "admin"
        admin_password_hash = "PASTE THE NEW GENERATED HASH"
        encryption_key = "KEEP YOUR EXISTING VALUE"
        ... keep all other existing settings unchanged ...
@@ -38,11 +60,12 @@ ONE-TIME SETUP
 
    This example is explanatory, not a complete replacement secrets file.
    Do not paste these placeholder values over your current credentials.
-   Do not enter your plaintext password in Admin, the code repository, or the
-   published guide. Only enter it in the Admin password field when unlocking.
+   Do not put your plaintext password in source editors, the code repository, or
+   the published guide. Enter it only in the Admin password field when unlocking.
 
 4. Save the deployment Secrets and restart the app if needed. Sign in with your
-   usual app password, select Admin, and unlock with the new Admin password.
+   usual app password, select Admin or Utilities, and unlock with username admin
+   and the new Admin password. Use your configured username if you changed it.
 
 5. In User instructions and Epic SmartPhrase, enter:
    - The exact name or shortcut your team uses in Epic.
@@ -73,15 +96,20 @@ It clears every current patient handoff and custom room, but preserves categorie
 mappings, settings, passwords and the SmartPhrase. The same action is available
 inside unlocked Admin. It does not erase earlier archive versions or downloads.
 
-The Admin workspace and its settings-editing callbacks require the separate password.
-Clearing patient handoffs is also available to signed-in users outside Admin.
-Admin locks when you leave its workspace, select Lock Admin, log out, reach
-15 minutes without Admin activity, or reach one hour since unlocking. Changing
-the configured password hash revokes an old unlock on its next check.
+Admin and Utilities, including their protected callbacks, require the same
+username and separate Admin password. Clearing patient handoffs is also available
+to signed-in users outside Admin. You can switch between Admin and Utilities
+without unlocking again. Both lock when you leave these workspaces, select
+Lock Admin or Lock Utilities, log out, reach 15 minutes without protected
+activity, or reach one hour since unlocking. Changing the configured username
+or either password hash revokes the shared grant on its next check. Locking also
+clears generated note drafts and revokes prepared note downloads. Both credential fields are cleared
+after each login attempt and when access locks.
 
-Missing/invalid Admin credentials keep Admin locked without blocking Handoff.
-The password-entry attempt delay is per session. This feature is a second shared
-password, not individual accounts, multifactor authentication, or a substitute
+Missing/invalid Admin credentials keep Admin and Utilities locked without blocking
+Handoff. Failed username or password attempts share a per-session delay. This
+feature uses one shared credential pair, not individual accounts, multifactor
+authentication, or a substitute
 for an institution-approved identity/access layer. Existing handoff-screen
 medication mapping, hiding, and custom-room workflows remain available to users
 with the app login, as before. They can update those shared rules from Handoff.
@@ -109,9 +137,11 @@ content.
 FORGOTTEN ADMIN PASSWORD
 
 Run the Admin-only helper again and replace only admin_password_hash in the
-existing [app] secrets section. Restart as needed. This changes the Admin login,
-not the app login, archive encryption key, room records or guide. The original
-Admin password cannot be recovered. Do not reset the encryption key.
+existing [app] secrets section. Keep admin_username unchanged unless you also
+want to change the shared username. Restart as needed. The new password applies
+to Admin and Utilities. The app login, archive encryption key, room records and
+guide stay unchanged. The original Admin password cannot be recovered.
+Do not reset the encryption key.
 
 Official hosting guidance:
 https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app/secrets-management

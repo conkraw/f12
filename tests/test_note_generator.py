@@ -165,7 +165,8 @@ def test_exact_template_tokens_and_medications_stay_in_their_main_sections():
     assert "Pantoprazole" in text.split("{ACKFENGI:45365}")[1].split("HEMATOLOGY")[0]
     assert "Ferrous sulfate" in text.split("HEMATOLOGY")[1].split("INFECTIOUS DISEASES")[0]
     assert "Ceftriaxone" in text.split("INFECTIOUS DISEASES")[1].split("ASSESSMENT")[0]
-    assert "ADDITIONAL MEDICATIONS FOR REVIEW\n\nOther Medications" in text
+    assert "ADDITIONAL MEDICATIONS\n\nOther Medications" in text
+    assert "MEDICATIONS FOR REVIEW" not in text and "MEDICATIONS IN REVIEW" not in text
     assert "Unmapped example 1 mg Q12H" in text
     for token in (
         "@NAME@", "@MRN@", "@TODAYDATE@", "@CURHOSPDAY@", "@ICULOS@", "@CODE@", "@DIAGX@",
@@ -175,7 +176,8 @@ def test_exact_template_tokens_and_medications_stay_in_their_main_sections():
         "@age@", "@sex@", "@ADMITDT@",
     ):
         assert text.count(token) == 1
-    assert text.count("***") == 3
+    assert text.count("***") == 1
+    assert "with ***." in text.split("ASSESSMENT")[1]
     assert "@ATRISKFORGASTRICULCERS@" not in text
     assert text.count("@ACKZATRISKFORGASTRICULCERS@") == 1
     assert sheet == before
@@ -422,6 +424,25 @@ def test_progress_output_remains_default_and_returns_word_rendering_metadata():
     assert result["note_type"] == "progress" and result["phrase_style"] == "at"
     assert result["text"].startswith("PEDIATRIC CRITICAL CARE MEDICINE PROGRESS NOTE")
     assert result["selected_plan_tokens"] == ["@ACKZSEPSIS@"]
+
+
+@pytest.mark.parametrize("old_name", ["ACZKARRHYTHMIA", "@ACZKARRHYTHMIA@", ".aczkarrhythmia"])
+@pytest.mark.parametrize("phrase_style", ["at", "dot"])
+def test_corrected_arrhythmia_reference_also_updates_an_old_saved_name_at_generation(old_name, phrase_style):
+    overrides = {"arrhythmia": old_name}
+    before = deepcopy(overrides)
+    result = generate_note(sheet_with(diagnoses="Arrhythmia"),
+                           phrase_overrides=overrides, phrase_style=phrase_style)
+    expected = "@ACKZARRHYTHMIA@" if phrase_style == "at" else ".ACKZARRHYTHMIA"
+    assert result["selected_plan_tokens"] == [expected]
+    assert expected in result["text"] and "ACZKARRHYTHMIA" not in result["text"]
+    assert overrides == before
+
+
+def test_empty_progress_note_clears_only_the_two_medication_placeholders():
+    text = generate_note(sheet_with())["text"]
+    assert "***" not in text.split("HEMATOLOGY", 1)[1].split("ASSESSMENT", 1)[0]
+    assert text.count("***") == 1 and "with ***." in text
 
 
 @pytest.mark.parametrize("diagnosis", ["Hypoalbuminemia", "Hypoalbuminaemia"])

@@ -1,4 +1,4 @@
-"""PICU Handoff v6.114: hypoalbuminemia and milrinone note plan references."""
+"""PICU Handoff v6.115: cleaner Word notes and shared Admin credentials."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,
@@ -4015,15 +4015,16 @@ def require_admin() -> bool:
         return False
     if admin_valid(st.session_state, admin_config(), touch=True):
         return True
-    note("Unlock Admin with the separate Admin password before making this change.", "error")
+    note("Unlock Admin with your username and Admin password before making this change.", "error")
     return False
 
 
 def authenticate_admin() -> None:
+    username = st.session_state.pop("admin_login_username", "")
     password = st.session_state.pop("admin_login_password", "")
     if not require_session():
         return
-    unlock_admin(st.session_state, admin_config(), password)
+    unlock_admin(st.session_state, admin_config(), password, username=username)
 
 
 def lock_admin_page() -> None:
@@ -4087,10 +4088,11 @@ def admin_gate(purpose: str = "change shared settings") -> bool:
         st.info(problem)
         st.caption("The setup helper adds one Admin password hash only. Keep your app password and encryption key unchanged.")
         return False
-    st.caption("Enter the separate Admin password to " + purpose + ". You do not need it to create, edit, save, print, or clear handoffs, or to read the user guide.")
+    st.caption("Admin and Utilities use the same Admin username and password. Enter both to " + purpose + ". You do not need them to create, edit, save, print, or clear handoffs, or to read the user guide.")
     with st.form("admin_unlock"):
+        st.text_input("Admin username", key="admin_login_username")
         st.text_input("Admin password", type="password", key="admin_login_password", max_chars=1024)
-        st.form_submit_button("Unlock Admin", on_click=authenticate_admin)
+        st.form_submit_button("Unlock Admin and Utilities", on_click=authenticate_admin)
     if st.session_state.get("admin_login_error"):
         st.error(st.session_state["admin_login_error"])
     return False

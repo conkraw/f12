@@ -281,9 +281,10 @@ def test_requested_systemic_antiarrhythmics_reach_generic_arrhythmia_plan(name):
     assert row == before
 
 
-def test_arrhythmia_phrase_preserves_the_user_supplied_aczk_prefix():
-    assert next(item["phrase"] for item in CATALOG if item["id"] == "arrhythmia") == "ACZKARRHYTHMIA"
-    row = entry(category_path=custom_path("@ACZKARRHYTHMIA@"))
+@pytest.mark.parametrize("category_name", ["@ACKZARRHYTHMIA@", "@ACZKARRHYTHMIA@"])
+def test_arrhythmia_uses_corrected_ackz_prefix_and_accepts_older_saved_category(category_name):
+    assert next(item["phrase"] for item in CATALOG if item["id"] == "arrhythmia") == "ACKZARRHYTHMIA"
+    row = entry(category_path=custom_path(category_name))
     assert ids(row) == {"arrhythmia"}
 
 

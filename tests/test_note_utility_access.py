@@ -2,6 +2,7 @@
 from copy import deepcopy
 from threading import Event
 import time
+from types import SimpleNamespace
 
 import pytest
 
@@ -11,7 +12,7 @@ from note_utility import (
     DRAFT_KEY, EDITOR_KEY, PREFIX, REVOKE_KEY,
     create_note_draft, note_download, note_sources,
 )
-from test_callbacks import app, open_room
+from test_callbacks import app, open_room, TEST_ADMIN_CONFIG
 
 
 def generated(sheet, **kwargs):
@@ -113,6 +114,18 @@ def test_expiration_revokes_existing_note_and_blocks_new_utility_calls(app, expi
     with pytest.raises(ValueError, match="expired"):
         handle()
     assert DRAFT_KEY not in ss
+
+
+@pytest.mark.parametrize('payload_kind', ['word','text'])
+def test_username_config_change_revokes_note_and_prepared_download(app,payload_kind):
+    ss, _, guard, handle=seeded_draft(app,payload_kind)
+    config={**TEST_ADMIN_CONFIG,'admin_username':'replacement-admin'}
+    app.st.secrets=SimpleNamespace(to_dict=lambda:{'app':config})
+    assert app.require_admin() is False
+    assert guard.is_set()
+    assert not any(key.startswith(PREFIX) for key in ss)
+    with pytest.raises(ValueError,match='expired'):
+        handle()
 
 
 def test_locked_settings_callback_cannot_write_and_routine_handoff_still_saves(app):

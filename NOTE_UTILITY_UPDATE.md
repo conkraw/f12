@@ -1,14 +1,14 @@
-# PICU Handoff 6.114
+# PICU Handoff 6.115
 
 ## Generate a Word document
 
-Open Utilities in the sidebar and unlock it with the existing separate Admin password. Choose a patient handoff, select Progress note or Attending attestation, and click Generate note. The Word document is ready to download with the applicable suggested plan references already included. Review and edit the downloaded document in Word.
+Open Utilities in the sidebar and unlock it with the shared Admin username and existing Admin password. Admin and Utilities use the same credentials. The username defaults to `admin` when no `admin_username` is configured under `[app]` in deployment Secrets. Choose a patient handoff, select Progress note or Attending attestation, and click Generate note. The Word document is ready to download with the applicable suggested plan references already included. Review and edit the downloaded document in Word.
 
 There is no required confirmation step for each suggested diagnosis. The utility uses documented diagnoses, current respiratory support, active medications and their mapped therapeutic categories, viral results, nutrition support, and supported laboratory findings to populate the plan on the first generation.
 
-Both exports use the original uploaded Word templates. Existing styles, tables, fonts, colors, headers, footers, and margins are preserved. Added content flows through the document naturally, so a longer note can use additional pages. Existing Epic links, SmartLists, wording, and placeholders remain available for completion.
+Both exports use the original uploaded Word templates. Existing styles, tables, fonts, colors, headers, footers, and margins are preserved. Added content flows through the document naturally, so a longer note can use additional pages. Existing Epic links, SmartLists, and assessment placeholders remain available for completion. The two medication placeholders in Hematology and Infectious Diseases are removed from the generated progress note, including when those medication cells are empty.
 
-The progress note includes medication review lists beneath the Neurologic, Respiratory, Cardiovascular, and FEN/GI SmartList references. Hematology and Infectious Diseases use their existing medication blocks. The expanded contents of the four system SmartLists are not present in the source Word document. After expansion in Epic, move relevant medication lines into the intended placeholders and remove review text you do not need.
+The progress note includes medication lists directly beneath the Neurologic, Respiratory, Cardiovascular, and FEN/GI SmartList references. Hematology and Infectious Diseases use their existing medication blocks. The extra medication review captions are omitted. The expanded contents of the four system SmartLists are not present in the source Word document. After expansion in Epic, move relevant medication lines into the intended placeholders as needed.
 
 Each main system keeps the simple Drips, Scheduled, and PRN lists. Therapeutic category names such as Bowel Regimen, GI prophylaxis, and Antiepileptic help identify suggested plans internally and do not become medication subheadings in the Word document or plain-text note. Recorded doses and rates are copied without new dose, weight, fluid, nutrition, or PRN-count calculations. A missing drip rate is marked for review. Held or stopped orders carry their status instead of a stale rate and do not supply active-medication plan suggestions.
 
@@ -34,7 +34,7 @@ The following handoff information can now place the matching reference in the pl
 | Antiepileptic medication or its mapped category | At risk for seizures |
 | Melatonin or the mapped Insomnia category | `@ACKZINSOMNIA@` |
 | Bethanechol or the mapped Airway Tone Modulator category | `@ACKZTRACHEOBRONCHOMALACIA@` |
-| A medication mapped to Antiarrhythmics | `@ACZKARRHYTHMIA@` |
+| A medication mapped to Antiarrhythmics | `@ACKZARRHYTHMIA@` |
 | Active milrinone therapy | `@ACKZHEARTFAILURE@` |
 | Documented hypoalbuminemia, a matching category, or a supported low albumin result | `@ACKZHYPOALBUMINEMIA@` |
 | A supported positive respiratory viral result | The matching viral diagnosis phrase |
@@ -47,7 +47,7 @@ Recognized positive viral results include adenovirus, rhinovirus or the combined
 
 Saved specific subcategories take precedence over broader parent categories and generic medication-name rules. A custom subcategory can match any of the existing diagnosis labels or exact phrase names. Category labels remain internal. An active feeding order can supply the malnutrition-risk reference even when its rate is unknown, without calculating intake.
 
-The antiarrhythmic defaults include amiodarone, procainamide, esmolol, sotalol, digoxin, ivabradine, and qualifying intravenous lidocaine. The supplied spelling ivardabine is also recognized. An additional drug mapped to the Antiarrhythmics category supplies the same reference. Local lidocaine preparations do not automatically supply an arrhythmia reference. `ACZKARRHYTHMIA` retains the exact spelling supplied by the user.
+The antiarrhythmic defaults include amiodarone, procainamide, esmolol, sotalol, digoxin, ivabradine, and qualifying intravenous lidocaine. The supplied spelling ivardabine is also recognized. An additional drug mapped to the Antiarrhythmics category supplies the same reference. Local lidocaine preparations do not automatically supply an arrhythmia reference. The corrected phrase is `ACKZARRHYTHMIA`. Older saved arrhythmia names or category labels with the previous typo still resolve to this corrected output.
 
 The requested milrinone rule adds the heart-failure reference in the cardiovascular portion of the plan, including when milrinone has another saved category. Other inotropes do not receive that reference from this rule. Held, stopped, excluded, and future orders do not supply active-medication suggestions.
 
@@ -55,7 +55,7 @@ Hypoalbuminemia appears in the FEN/GI portion of the plan. Albumin matching uses
 
 The Word document is available without opening the plan controls. To change the included references in the app, open Edit included plans (optional). Use Included suggested plans to remove or restore a suggestion, or Add another plan to choose a catalog entry. Click Update note with selected plans to prepare the revised document. Your explicit selections replace the automatic defaults for that update. The reason for each suggestion remains available under Sources for suggested plans.
 
-The catalog contains 89 entries using the complete supplied names, including `ACZKARRHYTHMIA` and `ACKZHYPOALBUMINEMIA`. For example, pantoprazole can produce:
+The catalog contains 89 entries using the complete supplied names, including `ACKZARRHYTHMIA` and `ACKZHYPOALBUMINEMIA`. For example, pantoprazole can produce:
 
 ```text
 PLAN
@@ -100,9 +100,11 @@ Sources:
 
 ## Draft controls
 
+Admin and Utilities share one username/password login and one timed unlock. The existing `admin_password_hash` is used by both workspaces. To choose a different shared username, add `admin_username = "your_username"` under the existing `[app]` section in deployment Secrets. No password or encryption-key replacement is needed. Changing the configured username or either password hash revokes the previous unlock and prepared note downloads on the next authorization check.
+
 The draft and prepared downloads stay in the current administrator session and do not overwrite the handoff. Changing the patient, document type, or source handoff clears the old draft. Locking Admin, leaving the protected workspaces, logging out, returning Home, or resetting the patient list clears the draft and revokes its prepared downloads. Protected actions recheck Admin access, including after Word rendering. Expired or revoked downloads are rejected.
 
-## Install from version 6.109 through 6.113
+## Install from version 6.109 through 6.114
 
 Use the complete update package. Upload these fourteen Python files together beside the existing app.py, replacing matching files:
 
@@ -126,4 +128,4 @@ Also upload the templates folder with both files, keeping these paths:
 - templates/picu_progress_note.docx
 - templates/attending_attestation.docx
 
-There is no dependency change. Keep the existing Streamlit Secrets and encryption key. Restart the app and confirm version 6.114 in the sidebar.
+The package also includes `ADMIN_SETUP.txt` and an updated `secrets.example.toml` for reference. Keep your current Secrets values, especially the existing Admin password hash and encryption key. Do not replace them with the example file. There is no dependency change. Restart the app and confirm version 6.115 in the sidebar, then use the shared username and existing Admin password for Admin or Utilities.

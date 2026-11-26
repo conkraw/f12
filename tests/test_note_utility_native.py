@@ -376,12 +376,15 @@ def test_first_generate_populates_word_and_text_with_user_examples_without_confi
         assert token in text and token in docx_text
     for label in ("Bowel Regimen", "GI prophylaxis", "Antiepileptic", "Antibiotics"):
         assert label not in text and label not in docx_text
+    for label in ("MEDICATIONS FOR REVIEW", "MEDICATIONS IN REVIEW"):
+        assert label not in text and label not in docx_text
+    assert text.count("***") == docx_text.count("***") == 1
+    assert "with ***." in text and "with ***." in docx_text
     if note_type == "progress":
         assert "Drips:" in text and "Drips:" in docx_text
         assert "Fentanyl at 2 mcg/kg/hr" in text and "Fentanyl at 2 mcg/kg/hr" in docx_text
     else:
         assert "Fentanyl" not in text and "Fentanyl" not in docx_text
-        assert "MEDICATIONS FOR REVIEW" not in text and "MEDICATIONS FOR REVIEW" not in docx_text
     at.multiselect(key=SELECTION_KEY).set_value([key for key in selected if key != "constipation"]).run()
     assert "@ACKZCONSTIPATION@" in word_text(at)
     at.button(key=PREFIX + "update").click().run()

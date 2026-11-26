@@ -11,7 +11,7 @@ from types import SimpleNamespace
 import pytest
 from cryptography.fernet import Fernet
 from admin_access import (admin_valid, unlock_admin, lock_admin, config_error,
-                          _fingerprint, IDLE_SECONDS, MAX_SECONDS)
+                          IDLE_SECONDS, MAX_SECONDS)
 from security import hash_password, generate_key, seal_vault, open_vault
 from models import new_vault, new_sheet, save_sheet_in
 from user_guide import default_guide, validate_guide, publication, instructions_html, DEFAULT_INSTRUCTIONS
@@ -30,25 +30,113 @@ def session(now=5000):
 def test_unconfigured_admin_is_closed(config):
     ss=session()
     assert config_error(config)
-    assert not unlock_admin(ss,config,'anything',now=5000)
+    assert not unlock_admin(ss,config,'anything',username='admin',now=5000)
     assert not admin_valid(ss,config,now=5000)
     assert ss['authenticated']
 
 
 def test_password_gate_uses_distinct_credential():
     ss=session()
-    assert not unlock_admin(ss,TEST_ADMIN_CONFIG,'example-app-password',now=5000)
+    assert not unlock_admin(ss,TEST_ADMIN_CONFIG,'example-app-password',username='admin',now=5000)
     assert not ss.get('admin_unlocked')
-    assert unlock_admin(ss,TEST_ADMIN_CONFIG,'example-admin-password',now=5005)
+    assert unlock_admin(ss,TEST_ADMIN_CONFIG,'example-admin-password',username='admin',now=5005)
     assert admin_valid(ss,TEST_ADMIN_CONFIG,now=5006)
     assert 'example-admin-password' not in str(ss)
+
+
+@pytest.mark.parametrize('username', ['', '   ', 'wrong-admin', 'Admin', None, 123])
+def test_correct_password_cannot_bypass_wrong_or_empty_username(username):
+    ss=session()
+    assert not unlock_admin(ss,TEST_ADMIN_CONFIG,'example-admin-password',username=username,now=5000)
+    assert not ss.get('admin_unlocked')
+    assert ss['admin_attempts']==1
+    assert 'username or password not accepted' in ss['admin_login_error']
+
+
+def test_omitting_submitted_username_never_uses_configured_default():
+    ss=session()
+    assert not unlock_admin(ss,TEST_ADMIN_CONFIG,'example-admin-password',now=5000)
+    assert not ss.get('admin_unlocked')
+
+
+def test_missing_username_setting_retains_existing_password_with_admin_default():
+    config={key:value for key,value in TEST_ADMIN_CONFIG.items() if key!='admin_username'}
+    before=deepcopy(config)
+    ss=session()
+    assert not config_error(config)
+    assert unlock_admin(ss,config,'example-admin-password',username='admin',now=5000)
+    assert admin_valid(ss,config,now=5001)
+    assert config==before
+
+
+@pytest.mark.parametrize('configured,supplied', [
+    ('PICU-Admin','PICU-Admin'), (' PICU-Admin ','  PICU-Admin  '), ('équipe',' équipe '),
+])
+def test_configured_username_matches_exactly_after_outer_trim(configured,supplied):
+    config={**TEST_ADMIN_CONFIG,'admin_username':configured}
+    ss=session()
+    assert unlock_admin(ss,config,'example-admin-password',username=supplied,now=5000)
+    assert admin_valid(ss,config,now=5001)
+
+
+@pytest.mark.parametrize('configured', ['', '   ', None, 123, False])
+def test_invalid_explicit_username_setting_does_not_fall_back_to_admin(configured):
+    config={**TEST_ADMIN_CONFIG,'admin_username':configured}
+    ss=session()
+    assert 'admin_username' in config_error(config)
+    assert not unlock_admin(ss,config,'example-admin-password',username='admin',now=5000)
+    assert not ss.get('admin_unlocked')
+
+
+def test_configured_custom_username_disables_default_and_preserves_password():
+    config={**TEST_ADMIN_CONFIG,'admin_username':'PICU-Admin'}
+    ss=session()
+    assert not unlock_admin(ss,config,'example-admin-password',username='admin',now=5000)
+    assert not unlock_admin(ss,config,'example-admin-password',username='picu-admin',now=5003)
+    assert unlock_admin(ss,config,'example-admin-password',username='PICU-Admin',now=5008)
+    assert config['admin_password_hash']==TEST_ADMIN_CONFIG['admin_password_hash']
+
+
+@pytest.mark.parametrize('outcome', ['success','wrong_username','wrong_password','cooldown','invalid_config','expired'])
+def test_every_login_attempt_clears_both_fields_without_leaking_credentials(outcome,capsys):
+    ss=session()
+    username='PrivateSyntheticAdmin'
+    password='example-admin-password'
+    config={**TEST_ADMIN_CONFIG,'admin_username':username}
+    if outcome=='wrong_username':
+        username='UnacceptedSyntheticAdmin'
+    elif outcome=='wrong_password':
+        password='incorrect-private-password'
+    elif outcome=='cooldown':
+        ss['admin_retry_after']=5010
+    elif outcome=='invalid_config':
+        config['admin_username']=''
+    elif outcome=='expired':
+        ss['last_activity']=0
+    ss['admin_login_username']=username
+    ss['admin_login_password']=password
+    accepted=unlock_admin(ss,config,password,username=username,now=5000)
+    assert accepted is (outcome=='success')
+    assert 'admin_login_username' not in ss and 'admin_login_password' not in ss
+    assert username not in str(ss) and password not in str(ss)
+    captured=capsys.readouterr()
+    assert not captured.out and not captured.err
+
+
+def test_manual_lock_clears_username_password_and_grant():
+    ss=session()
+    assert unlock_admin(ss,TEST_ADMIN_CONFIG,'example-admin-password',username='admin',now=5000)
+    ss.update(admin_login_username='admin',admin_login_password='example-admin-password')
+    lock_admin(ss)
+    assert 'admin_login_username' not in ss and 'admin_login_password' not in ss
+    assert not ss.get('admin_unlocked')
 
 
 def test_same_secret_with_different_salt_is_rejected():
     shared='example-app-password'
     config={'password_hash':TEST_ADMIN_CONFIG['password_hash'], 'admin_password_hash':hash_password(shared)}
     ss=session()
-    assert not unlock_admin(ss,config,shared,now=5000)
+    assert not unlock_admin(ss,config,shared,username='admin',now=5000)
     assert not ss.get('admin_unlocked')
     assert 'different' in ss['admin_login_error']
 
@@ -60,8 +148,8 @@ def test_same_hash_is_rejected():
 
 def test_throttle_preserves_error_and_grants_nothing():
     ss=session()
-    assert not unlock_admin(ss,TEST_ADMIN_CONFIG,'incorrect',now=5000)
-    assert not unlock_admin(ss,TEST_ADMIN_CONFIG,'example-admin-password',now=5001)
+    assert not unlock_admin(ss,TEST_ADMIN_CONFIG,'incorrect',username='admin',now=5000)
+    assert not unlock_admin(ss,TEST_ADMIN_CONFIG,'example-admin-password',username='admin',now=5001)
     assert 'Wait' in ss['admin_login_error']
     admin_valid(ss,TEST_ADMIN_CONFIG,now=5001)
     assert ss['admin_login_error']  # Rendering the gate must not erase a failed-attempt message.
@@ -71,7 +159,7 @@ def test_throttle_preserves_error_and_grants_nothing():
 def test_timeout_relocks_without_erasing_room_work(delta):
     ss=session()
     ss['drafts']={'P4102':{'note':'keep'}}
-    assert unlock_admin(ss,TEST_ADMIN_CONFIG,'example-admin-password',now=5000)
+    assert unlock_admin(ss,TEST_ADMIN_CONFIG,'example-admin-password',username='admin',now=5000)
     ss['last_activity']=5000+delta  # Ordinary app activity does not extend Admin access.
     assert not admin_valid(ss,TEST_ADMIN_CONFIG,now=5000+delta)
     assert ss['drafts']['P4102']['note']=='keep'
@@ -79,7 +167,7 @@ def test_timeout_relocks_without_erasing_room_work(delta):
 
 def test_absolute_limit_even_with_admin_activity():
     ss=session()
-    assert unlock_admin(ss,TEST_ADMIN_CONFIG,'example-admin-password',now=5000)
+    assert unlock_admin(ss,TEST_ADMIN_CONFIG,'example-admin-password',username='admin',now=5000)
     ss['last_activity']=ss['admin_last_activity']=5000+MAX_SECONDS
     assert not admin_valid(ss,TEST_ADMIN_CONFIG,now=5000+MAX_SECONDS)
 
@@ -87,15 +175,30 @@ def test_absolute_limit_even_with_admin_activity():
 @pytest.mark.parametrize('changed', ['password_hash','admin_password_hash'])
 def test_changed_secret_revokes_grant(changed):
     ss=session()
-    assert unlock_admin(ss,TEST_ADMIN_CONFIG,'example-admin-password',now=5000)
+    assert unlock_admin(ss,TEST_ADMIN_CONFIG,'example-admin-password',username='admin',now=5000)
     config={**TEST_ADMIN_CONFIG,changed:hash_password('replacement-password')}
     assert not admin_valid(ss,config,now=5001)
+
+
+def test_username_change_revokes_existing_grant_and_new_username_can_unlock():
+    ss=session()
+    assert unlock_admin(ss,TEST_ADMIN_CONFIG,'example-admin-password',username='admin',now=5000)
+    config={**TEST_ADMIN_CONFIG,'admin_username':'PICU-Admin'}
+    assert not admin_valid(ss,config,now=5001)
+    assert not ss.get('admin_unlocked')
+    assert unlock_admin(ss,config,'example-admin-password',username='PICU-Admin',now=5002)
+
+
+def test_equivalent_username_outer_whitespace_preserves_grant():
+    ss=session()
+    assert unlock_admin(ss,TEST_ADMIN_CONFIG,'example-admin-password',username='admin',now=5000)
+    assert admin_valid(ss,{**TEST_ADMIN_CONFIG,'admin_username':' admin '},now=5001)
 
 
 def test_app_logout_and_expiry_revoke_admin():
     for changed in ('authenticated','last_activity','login_at'):
         ss=session()
-        assert unlock_admin(ss,TEST_ADMIN_CONFIG,'example-admin-password',now=5000)
+        assert unlock_admin(ss,TEST_ADMIN_CONFIG,'example-admin-password',username='admin',now=5000)
         ss[changed]=False if changed=='authenticated' else -50000
         assert not admin_valid(ss,TEST_ADMIN_CONFIG,now=5001)
 
@@ -105,11 +208,39 @@ def test_auth_callback_removes_plaintext_and_retains_draft(app):
     open_room(app)
     before=deepcopy(ss['drafts'])
     lock_admin(ss)
+    ss['admin_login_username']='admin'
     ss['admin_login_password']='example-admin-password'
     app.authenticate_admin()
     assert ss['admin_unlocked']
+    assert 'admin_login_username' not in ss
     assert 'admin_login_password' not in ss
     assert ss['drafts']==before
+
+
+@pytest.mark.parametrize('first,second', [('Admin','Utilities'),('Utilities','Admin')])
+def test_one_credential_pair_unlocks_both_workspaces(app,first,second):
+    ss=app.st.session_state
+    lock_admin(ss)
+    ss.update(page=first,active_workspace=first,
+              admin_login_username='admin',admin_login_password='example-admin-password')
+    app.authenticate_admin()
+    assert app.admin_gate()
+    grant=ss['admin_grant_hash']
+    ss['page']=second
+    app.workspace_changed()
+    assert app.admin_gate()
+    assert ss['admin_grant_hash']==grant
+    assert 'admin_login_username' not in ss and 'admin_login_password' not in ss
+
+
+def test_auth_callback_requires_username_and_clears_rejected_pair(app):
+    ss=app.st.session_state
+    lock_admin(ss)
+    ss['admin_login_password']='example-admin-password'
+    app.authenticate_admin()
+    assert not ss.get('admin_unlocked')
+    assert 'admin_login_username' not in ss and 'admin_login_password' not in ss
+    assert 'username or password not accepted' in ss['admin_login_error']
 
 
 @pytest.mark.parametrize('page', ['Handoff','Print all','Instructions / SmartPhrase','Import errors'])
@@ -160,6 +291,7 @@ def test_locked_admin_does_not_render_shared_editors(app,monkeypatch):
     equip(app,monkeypatch)
     lock_admin(ss)
     app.admin_page(None)
+    assert 'admin_login_username' in ss
     assert 'admin_login_password' in ss
     assert 'guide_edit_instructions' not in ss
     assert 'mapping_name' not in ss
@@ -395,6 +527,7 @@ def test_gate_cooldown_error_is_visible_after_failed_login(app,monkeypatch):
     equip(app,monkeypatch)
     errors=[];app.st.error=errors.append
     lock_admin(ss)
+    ss['admin_login_username']='admin'
     ss['admin_login_password']='incorrect'
     app.authenticate_admin()
     app.admin_gate()

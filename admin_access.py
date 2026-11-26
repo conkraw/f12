@@ -1,6 +1,6 @@
-"""A separate, short-lived Admin unlock. Not individual identity or MFA.
+"""A shared, short-lived Admin and Utilities unlock. Not individual identity or MFA.
 
-Password hashes come from deployment Secrets, never the editable guide/vault.
+The username and password hashes come from deployment Secrets, never the guide/vault.
 Every protected callback must check its grant again, not just hide a widget.
 """
 from __future__ import annotations
@@ -17,8 +17,14 @@ _GRANT_KEYS = ("admin_unlocked", "admin_grant_hash", "admin_login_at", "admin_la
 def lock_admin(state) -> None:
     from note_utility import clear_note_draft
     clear_note_draft(state, all_values=True)
-    for key in _GRANT_KEYS + ("admin_login_password",):
+    for key in _GRANT_KEYS + ("admin_login_username", "admin_login_password"):
         state.pop(key, None)
+
+
+def _configured_username(config: dict) -> str:
+    # Existing deployments retain their password and use admin until configured.
+    value = config.get("admin_username", "admin")
+    return value.strip() if isinstance(value, str) else ""
 
 
 def config_error(config: dict) -> str:
@@ -27,12 +33,16 @@ def config_error(config: dict) -> str:
         return "Admin is locked until a separate admin_password_hash is added under [app] in deployment Secrets. Follow ADMIN_SETUP.txt. Routine handoffs remain available."
     if hmac.compare_digest(admin, str(config.get("password_hash", ""))):
         return "Use a different Admin password from the app password. Admin remains locked."
+    if not _configured_username(config):
+        return "Admin and Utilities are locked until admin_username under [app] in deployment Secrets contains a nonempty username. Follow ADMIN_SETUP.txt. Routine handoffs remain available."
     return ""
 
 
 def _fingerprint(config: dict) -> str:
-    # Invalidate the grant if either credential changes during this session.
-    return hashlib.sha256((config.get("password_hash", "") + "\0" + config.get("admin_password_hash", "")).encode()).hexdigest()
+    # Invalidate the shared grant if its username or either password hash changes.
+    credentials = (config.get("password_hash", ""), config.get("admin_password_hash", ""),
+                   _configured_username(config))
+    return hashlib.sha256("\0".join(credentials).encode()).hexdigest()
 
 
 def app_session_valid(state, now: float) -> bool:
@@ -56,21 +66,25 @@ def admin_valid(state, config: dict, *, touch: bool = False, now: float | None =
     return True
 
 
-def unlock_admin(state, config: dict, password: str, *, now: float | None = None) -> bool:
+def unlock_admin(state, config: dict, password: str, *, username: str = "",
+                 now: float | None = None) -> bool:
+    """Unlock both protected workspaces with an explicitly submitted credential pair."""
     now = time.monotonic() if now is None else now
+    # Clear both widget values and any prior grant even on an early rejection.
+    lock_admin(state)
     if not app_session_valid(state, now):
-        lock_admin(state)
         return False
     problem = config_error(config)
     if problem:
-        lock_admin(state)
         state["admin_login_error"] = problem
         return False
     if now < state.get("admin_retry_after", 0):
-        state["admin_login_error"] = "Wait briefly before trying the Admin password again."
+        state["admin_login_error"] = "Wait briefly before trying the Admin username and password again."
         return False
-    lock_admin(state)
-    accepted = verify_password(password, config["admin_password_hash"])
+    supplied_username = username.strip() if isinstance(username, str) else ""
+    username_matches = hmac.compare_digest(supplied_username.encode(), _configured_username(config).encode())
+    password_matches = verify_password(password, config["admin_password_hash"])
+    accepted = username_matches and password_matches
     same_as_app = accepted and verify_password(password, config.get("password_hash", ""))
     if accepted and not same_as_app:
         state.pop("admin_login_error", None)
@@ -80,5 +94,5 @@ def unlock_admin(state, config: dict, password: str, *, now: float | None = None
     attempts = min(state.get("admin_attempts", 0) + 1, 10)
     state.update(admin_attempts=attempts, admin_retry_after=now + min(30, 2 ** attempts),
                  admin_login_error=("Choose an Admin password different from the app password." if same_as_app else
-                                    "Admin password not accepted. Wait briefly before trying again."))
+                                    "Admin username or password not accepted. Wait briefly before trying again."))
     return False

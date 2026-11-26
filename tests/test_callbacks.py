@@ -8,11 +8,12 @@ import time
 import pytest
 from models import new_vault, new_sheet, save_sheet_in
 from security import hash_password
-from admin_access import _fingerprint
+from admin_access import unlock_admin
 
 # Existing callback tests represent an already unlocked administrator.
 # The new security tests explicitly remove the grant and test all denial paths.
 TEST_ADMIN_CONFIG = {"password_hash": hash_password("example-app-password"),
+                     "admin_username": "admin",
                      "admin_password_hash": hash_password("example-admin-password")}
 
 
@@ -31,8 +32,7 @@ def app(monkeypatch):
     spec.loader.exec_module(module)
     stub.session_state.update(vault=new_vault(), vault_sha=None, drafts={}, base_sheets={},
                              authenticated=True, last_activity=time.monotonic(), login_at=time.monotonic())
-    stub.session_state.update(admin_unlocked=True, admin_grant_hash=_fingerprint(TEST_ADMIN_CONFIG),
-                              admin_login_at=time.monotonic(), admin_last_activity=time.monotonic())
+    assert unlock_admin(stub.session_state, TEST_ADMIN_CONFIG, "example-admin-password", username="admin")
     return module
 
 
