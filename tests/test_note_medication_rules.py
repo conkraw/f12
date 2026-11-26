@@ -7,6 +7,7 @@ import pytest
 
 from categories import default_categories, target_snapshot
 from medications import parse_medications
+from medication_groups import automatic_system_group, group_for
 from models import new_sheet
 from note_generator import get_phrase_catalog
 from note_medication_rules import medication_note_candidates
@@ -240,3 +241,105 @@ def test_missing_phrase_for_ambiguous_custom_category_does_not_invent_a_name():
 def test_pn_nutrition_signal_is_left_for_the_findings_helper():
     row = entry("Pediatric 2-in-1 PN", category_path=target_snapshot("gi:tpn", default_categories()))
     assert ids(row) == set()
+
+
+def medication_snapshot(name, *, route="Intravenous", frequency="q12h", category_path=None):
+    parsed = parse_medications("Medications:\n• " + "\t".join((name, "1 mg", route, frequency, "", "", "")))
+    assert not parsed.error
+    row = parsed.rows[0]
+    if category_path is not None:
+        row["category_path"] = category_path
+    sheet = new_sheet("P4102")
+    sheet["medications"] = [row]
+    return row, build_note_medications(sheet, NOW)
+
+
+@pytest.mark.parametrize("name,key,category,phrase", [
+    ("Melatonin", "insomnia", "group:insomnia", "ACKZINSOMNIA"),
+    ("Bethanechol", "tracheobronchomalacia", "group:airway_tone", "ACKZTRACHEOBRONCHOMALACIA"),
+])
+def test_sleep_and_airway_medications_use_new_exact_supplied_phrases(name, key, category, phrase):
+    _, medications = medication_snapshot(name, route="Oral")
+    assert medications["entries"][0]["category_path"]["id"] == category
+    result = medication_note_candidates(medications, support=SUPPORT, catalog=CATALOG)
+    assert {item["id"] for item in result} == {key}
+    assert next(item["phrase"] for item in CATALOG if item["id"] == key) == phrase
+
+
+@pytest.mark.parametrize("name", [
+    "Lidocaine", "Amiodarone", "Procainamide", "Esmolol", "Sotalol", "Digoxin",
+    "Ivabradine", "Ivardabine",
+])
+def test_requested_systemic_antiarrhythmics_reach_generic_arrhythmia_plan(name):
+    frequency = "Continuous" if name == "Lidocaine" else "q12h"
+    route = "Oral" if name in {"Sotalol", "Digoxin", "Ivabradine", "Ivardabine"} else "Intravenous"
+    row, medications = medication_snapshot(name, route=route, frequency=frequency)
+    before = deepcopy(row)
+    assert automatic_system_group(row) == "antiarrhythmic"
+    assert medications["entries"][0]["category_path"]["id"] == "group:antiarrhythmic"
+    assert {item["id"] for item in medication_note_candidates(medications, support=SUPPORT, catalog=CATALOG)} == {"arrhythmia"}
+    assert row == before
+
+
+def test_arrhythmia_phrase_preserves_the_user_supplied_aczk_prefix():
+    assert next(item["phrase"] for item in CATALOG if item["id"] == "arrhythmia") == "ACZKARRHYTHMIA"
+    row = entry(category_path=custom_path("@ACZKARRHYTHMIA@"))
+    assert ids(row) == {"arrhythmia"}
+
+
+def test_any_effective_antiarrhythmic_category_can_suggest_arrhythmia():
+    path = target_snapshot("group:antiarrhythmic", default_categories())
+    path["name"] = "Renamed rhythm agents"
+    assert ids(entry("Previously unknown drug", category_path=path)) == {"arrhythmia"}
+    child = custom_path("Selected rhythm agents", parent_id="group:antiarrhythmic", parent_name="Renamed parent")
+    assert ids(entry("Previously unknown drug", category_path=child)) == {"arrhythmia"}
+    assert ids(entry("Previously unknown drug", category_path=custom_path("Anti-arrhythmic agents"))) == {"arrhythmia"}
+
+
+@pytest.mark.parametrize("route,frequency,name", [
+    ("Topical", "PRN", "Lidocaine patch"),
+    ("Infiltration", "Once", "Lidocaine injection"),
+    ("Epidural", "Continuous", "Lidocaine infusion"),
+    ("Oral", "PRN", "Lidocaine viscous solution"),
+    ("Nebulization", "Continuous", "Lidocaine solution"),
+    ("Intravenous", "Once", "Lidocaine bolus"),
+    ("Intravenous", "q1h PRN", "Lidocaine infusion syringe"),
+    ("Intravenous", "Continuous", "Lidocaine with epinephrine injection"),
+    ("Intravenous", "Continuous", "Lidocaine patch"),
+])
+def test_local_or_unclassified_lidocaine_does_not_imply_an_arrhythmia(route, frequency, name):
+    row, medications = medication_snapshot(name, route=route, frequency=frequency)
+    assert automatic_system_group(row) == ""
+    assert "arrhythmia" not in {item["id"] for item in medication_note_candidates(medications, support=SUPPORT, catalog=CATALOG)}
+
+
+def test_explicit_antiarrhythmic_mapping_remains_authoritative_for_lidocaine():
+    path = target_snapshot("group:antiarrhythmic", default_categories())
+    _, medications = medication_snapshot("Lidocaine", route="Topical", frequency="PRN", category_path=path)
+    assert {item["id"] for item in medication_note_candidates(medications, support=SUPPORT, catalog=CATALOG)} == {"arrhythmia"}
+
+
+@pytest.mark.parametrize("name", ["Lidocaine", "Amiodarone", "Ivabradine", "Ivardabine"])
+def test_a_different_effective_category_prevents_antiarrhythmic_name_fallback(name):
+    path = target_snapshot("system:Neurologic", default_categories())
+    _, medications = medication_snapshot(name, frequency="Continuous", category_path=path)
+    assert "arrhythmia" not in {item["id"] for item in medication_note_candidates(medications, support=SUPPORT, catalog=CATALOG)}
+
+
+def test_specific_user_indications_override_generic_drug_class_defaults():
+    assert ids(entry("Esmolol", category_path=custom_path("Hypertension"))) == {"hypertension"}
+    assert ids(entry("Bethanechol", category_path=target_snapshot("gi:prokinetic", default_categories()))) == set()
+    assert ids(entry("Melatonin", category_path=custom_path("Encephalopathy"))) == {"encephalopathy"}
+
+
+@pytest.mark.parametrize("name", ["Melatonin", "Bethanechol", "Amiodarone"])
+def test_new_medication_rules_require_active_orders(name):
+    assert ids(entry(name, active=False)) == set()
+
+
+@pytest.mark.parametrize("category,key", [("hypocalcemia", "hypocalcemia"), ("hyponatremia", "hyponatremia"), ("zinc_deficiency", None)])
+def test_new_gi_category_ids_match_only_supplied_note_phrases(category, key):
+    path = custom_path("Renamed replacement therapy")
+    path["id"] = "gi:" + category
+    assert ids(entry(category_path=path)) == ({key} if key else set())
+    assert group_for({"name": "Amiodarone", "route": "Oral", "frequency": "Daily", "gi_mode": category}) == ""

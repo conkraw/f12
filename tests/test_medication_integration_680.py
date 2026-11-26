@@ -15,7 +15,7 @@ import pytest
 from cryptography.fernet import Fernet
 from pypdf import PdfReader
 
-from categories import apply_category_rules, medication_blocks, set_category_rule
+from categories import apply_category_rules, medication_blocks, placement, set_category_rule
 from exports import handoff_html, handoff_pdf, handoff_text
 from fen_gi import effective_section
 from import_review import diagnostic
@@ -317,4 +317,8 @@ def test_generic_category_assignment_to_airway_clearance_does_not_sweep_other_sa
     assert [effective_section(row) for row in mapped] == ["Respiratory", "FEN / GI"]
     explicit = set_category_rule(settings, rows[1]["name"], "group:airway_clearance",
                                  "exact", rows[1]["route"], rows[1]["frequency"])
-    assert effective_section(apply_category_rules([rows[1]], explicit)[0]) == "Respiratory"
+    before = deepcopy(explicit)
+    assigned = apply_category_rules([rows[1]], explicit)[0]
+    assert effective_section(assigned) == "FEN / GI"
+    assert placement(assigned)["id"] == "gi:hyponatremia"
+    assert explicit == before

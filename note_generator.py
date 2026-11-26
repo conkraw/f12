@@ -19,8 +19,8 @@ from ventilator_modes import spec
 
 
 # Exact phrase names transcribed from the supplied screenshots, with the
-# invasive and noninvasive respiratory names subsequently confirmed by the
-# user. Matching patterns identify stated diagnoses, not diagnostic criteria.
+# invasive and noninvasive respiratory names and later additions supplied by
+# the user. Matching patterns identify stated diagnoses, not diagnostic criteria.
 _RULES = (
     ("acute_hypoxemic_invasive", "Acute hypoxemic respiratory failure with invasive support", "ACKZACUTEHYPOXEMICRESPIRATORYFAILUREINVASIVE", ""),
     ("acute_hypoxemic_noninvasive", "Acute hypoxemic respiratory failure with noninvasive support", "ACKZACUTEHYPOXEMICRESPIRATORYFAILURENONINVASIVE", ""),
@@ -32,6 +32,7 @@ _RULES = (
     ("adrenal_insufficiency", "Adrenal insufficiency", "ACKZADRENALINSUFFICIENCY", r"adrenal insufficiency|adrenal crisis"),
     ("anaphylactic_shock", "Anaphylactic shock", "ACKZANAPHYLACTICSHOCK", r"anaphylactic shock"),
     ("anemia", "Anemia", "ACKZANEMIA", r"an(?:ae|e)mia"),
+    ("arrhythmia", "Arrhythmia", "ACZKARRHYTHMIA", r"arrhythmias?|dysrhythmias?"),
     ("central_line_occlusion_risk", "At risk for central venous catheter occlusion", "ACKZATRISKFORCENTRALVENOUSCATHETEROCCLUSION", r"(?:at )?risk for (?:central venous catheter|central line) occlusion"),
     ("dvt_risk", "At risk for deep vein thrombosis", "ACKZATRISKFORDEEPVEINTHROMBOSIS", r"(?:at )?risk for (?:deep vein thrombosis|DVT)|DVT prophylaxis|venous thromboembolism prophylaxis"),
     ("fungal_infection_risk", "At risk for fungal infection", "ACKZATRISKFORFUNGALINFECTION", r"(?:at )?risk for fungal infection|antifungal prophylaxis"),
@@ -75,6 +76,7 @@ _RULES = (
     ("medication_hypotension", "Hypotension due to medication", "ACKZHYPOTENSIONDUETOMEDICATION", r"hypotension (?:due to|secondary to|from) (?:medication|sedation|sedatives|fentanyl|midazolam)|(?:medication|sedation)[- ](?:related|induced) hypotension"),
     ("hypovolemic_shock", "Hypovolemic shock", "ACKZHYPOVOLEMICSHOCK", r"hypovol(?:ae|e)mic shock"),
     ("influenza", "Influenza", "ACKZINFLUENZA", r"influenza(?: [AB])?"),
+    ("insomnia", "Insomnia", "ACKZINSOMNIA", r"insomnia"),
     ("lymphopenia", "Lymphopenia", "ACKZLYMPHOPENIA", r"lymphopenia|lymphocytopenia"),
     ("metabolic_acidosis_respiratory_distress", "Metabolic acidosis due to respiratory distress", "ACKZMETABOLICACIDOSISRESPIRATORYDISTRESS", r"metabolic acidosis (?:due to|from|secondary to|in the setting of) (?:decreased perfusion (?:from|due to) )?respiratory distress"),
     ("metabolic_acidosis_shock", "Metabolic acidosis due to shock", "ACKZMETABOLICACIDOSISSHOCK", r"metabolic acidosis (?:due to|from|secondary to|in the setting of) (?:\w+ )?shock"),
@@ -102,6 +104,7 @@ _RULES = (
     ("siadh", "Syndrome of inappropriate ADH secretion", "ACKZSYNDROMEOFINAPPROPRIATEADHSECRETION", r"syndrome of inappropriate (?:ADH|antidiuretic hormone) secretion|SIADH"),
     ("tbi", "Traumatic brain injury", "ACKZTBI", r"traumatic brain injury|TBI"),
     ("thrombocytopenia", "Thrombocytopenia", "ACKZTHROMBOCYTOPENIA", r"thrombocytopenia"),
+    ("tracheobronchomalacia", "Tracheobronchomalacia", "ACKZTRACHEOBRONCHOMALACIA", r"tracheobronchomalacia|tracheomalacia|bronchomalacia"),
     ("tracheostomy", "Tracheostomy", "ACKZTRACHEOSTOMY", r"tracheostomy(?: dependence| status)?|trach dependence"),
     ("transaminitis", "Transaminitis", "ACKZTRANSAMINITIS", r"transaminitis"),
     ("upper_airway_edema", "Upper airway edema", "ACKZUPPERAIRWAYEDEMA", r"upper airway (?:oe|e)dema|laryngeal (?:oe|e)dema"),
@@ -109,9 +112,63 @@ _RULES = (
     ("viral_bronchiolitis", "Viral bronchiolitis", "ACKZVIRALBRONCHIOLITIS", r"viral bronchiolitis|(?:RSV|rhinovirus|adenovirus)[- ](?:associated )?bronchiolitis"),
 )
 
+# This order is shared by automatic suggestions, optional plan selections,
+# plain text and Word. System names are internal metadata, never Plan headings.
+# Respiratory syndromes stay with Respiratory. Specific viral diagnoses stay
+# adjacent at the end of Infectious Disease, including a viral coinfection.
+_PLAN_GROUPS = (
+    ("Neurologic", (
+        "agitation_intubated", "agitation_nonintubated", "acute_pain",
+        "opioid_dependence", "benzodiazepine_dependence", "delirium", "insomnia",
+        "seizure_risk", "status_epilepticus", "encephalopathy", "tbi",
+        "acute_poisoning", "central_diabetes_insipidus", "siadh",
+        "exposure_keratopathy", "pressure_injury_risk",
+    )),
+    ("Respiratory", (
+        "acute_hypoxemic_invasive", "acute_hypoxemic_noninvasive", "pards",
+        "status_asthmaticus", "croup", "tracheobronchomalacia", "tracheostomy",
+        "upper_airway_edema", "pleural_effusion_empyema", "pneumothorax",
+        "pulmonary_hypertension", "metabolic_acidosis_respiratory_distress",
+        "viral_bronchiolitis",
+    )),
+    ("Cardiovascular", (
+        "arrhythmia", "supraventricular_tachycardia", "prolonged_qt",
+        "heart_failure", "post_cardiac_arrest_syndrome", "ecls_status",
+        "hypertension", "medication_hypotension", "cardiogenic_shock",
+        "hypovolemic_shock", "hemorrhagic_shock", "neurogenic_shock",
+        "anaphylactic_shock", "adrenal_insufficiency", "metabolic_acidosis_shock",
+    )),
+    ("FEN / GI", (
+        "malnutrition_risk", "refeeding_risk", "dysphagia", "gastric_ulcer_risk",
+        "constipation", "upper_gi_bleeding", "acute_renal_failure",
+        "acute_liver_failure", "transaminitis", "rhabdomyolysis",
+        "hyperkalemia", "hypokalemia", "hypernatremia", "hyponatremia",
+        "hypocalcemia", "hypomagnesemia", "hypophosphatemia", "hypoglycemia",
+        "stress_hyperglycemia", "diabetic_ketoacidosis",
+    )),
+    ("Hematology", (
+        "anemia", "thrombocytopenia", "coagulopathy",
+        "disseminated_intravascular_coagulation", "neutropenia", "lymphopenia",
+        "deep_vein_thrombosis", "dvt_risk", "central_line_occlusion_risk",
+    )),
+    ("Infectious Disease", (
+        "sepsis", "septic_shock", "bacterial_pneumonia", "bacterial_meningitis",
+        "febrile_neutropenia", "fungal_infection_risk", "pneumocystis_risk",
+        "varicella_risk", "herpes_simplex_encephalitis", "adenovirus", "covid19",
+        "influenza", "parainfluenza", "rhinovirus", "rsv",
+    )),
+)
+_PLAN_POSITION = {
+    key: (system_index, diagnosis_index)
+    for system_index, (_, keys) in enumerate(_PLAN_GROUPS)
+    for diagnosis_index, key in enumerate(keys)
+}
+_PLAN_SYSTEM = {key: system for system, keys in _PLAN_GROUPS for key in keys}
+
 PHRASE_CATALOG = tuple(
-    {"id": key, "label": label, "phrase": phrase, "verified": bool(phrase)}
-    for key, label, phrase, _ in _RULES
+    {"id": key, "label": label, "phrase": phrase, "verified": bool(phrase),
+     "system": _PLAN_SYSTEM[key]}
+    for key, label, phrase, _ in sorted(_RULES, key=lambda row: _PLAN_POSITION[row[0]])
 )
 
 _PATTERNS = {

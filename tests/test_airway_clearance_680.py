@@ -86,13 +86,13 @@ def test_fixed_placement_wins_over_old_conflicting_assignments_once(volume):
     assert row == before
 
 
-def test_category_apply_overrides_broad_gi_rule_for_neb_but_preserves_enteral():
+def test_category_apply_uses_distinct_requested_headings_for_nebulized_and_enteral_saline():
     settings = set_category_rule(new_vault()["settings"], "sodium chloride", "gi:prophylaxis")
     rows = [order(), order("sodium chloride enteral solution 17 mEq", "17 mEq", "Per NJ Tube")]
     before = deepcopy(rows)
     applied = apply_category_rules(rows, settings)
     assert placement(applied[0])["id"] == TARGET
-    assert placement(applied[1])["id"] == "gi:prophylaxis"
+    assert placement(applied[1])["id"] == "gi:hyponatremia"
     assert effective_section(applied[1]) == "FEN / GI"
     for original, updated in zip(rows, applied):
         for field in ("name", "dose", "route", "frequency", "last_rate", "include", "hidden"):
@@ -106,10 +106,11 @@ def test_broad_saline_airway_category_does_not_capture_other_orders(target):
     enteral = order("sodium chloride enteral solution 17 mEq", "17 mEq", "Per NJ Tube")
     assert matching_target(enteral, settings) == ""
     applied = apply_category_rules([enteral, order()], settings)
-    assert effective_section(applied[0]) == "Other Medications"
+    assert effective_section(applied[0]) == "FEN / GI"
+    assert placement(applied[0])["id"] == "gi:hyponatremia"
     assert placement(applied[1])["id"] == TARGET
     settings = set_category_rule(settings, enteral["name"], "gi:prophylaxis", "exact", enteral["route"])
-    assert placement(apply_category_rules([enteral], settings)[0])["id"] == "gi:prophylaxis"
+    assert placement(apply_category_rules([enteral], settings)[0])["id"] == "gi:hyponatremia"
 
 
 def test_specific_non_target_respiratory_mapping_is_preserved():
@@ -132,17 +133,21 @@ def test_settings_aware_repair_of_saved_generic_resp_destination(category_rule):
         settings["medication_mappings"] = upsert_rule([], "sodium chloride", "Respiratory")
     before = deepcopy(row)
     repaired = apply_category_rules([row], settings)[0]
-    assert effective_section(repaired) == "Other Medications"
+    assert effective_section(repaired) == "FEN / GI"
+    assert placement(repaired)["id"] == "gi:hyponatremia"
     assert row == before
     settings["medication_mappings"] = upsert_rule(settings["medication_mappings"], "sodium chloride enteral", "FEN / GI")
     assert effective_section(apply_category_rules([row], settings)[0]) == "FEN / GI"
 
 
-def test_no_settings_evidence_does_not_guess_saved_non_target_placement():
+def test_requested_enteral_saline_heading_applies_to_saved_rows_before_reimport():
     row = order("sodium chloride enteral solution 17 mEq", "17 mEq", "Per NJ Tube")
     row["section"] = "Respiratory"
-    assert effective_section(row) == "Respiratory"
-    assert effective_section(apply_category_rules([row], new_vault()["settings"])[0]) == "Respiratory"
+    before = deepcopy(row)
+    assert effective_section(row) == "FEN / GI"
+    assert placement(row)["id"] == "gi:hyponatremia"
+    assert effective_section(apply_category_rules([row], new_vault()["settings"])[0]) == "FEN / GI"
+    assert row == before
 
 
 @pytest.mark.parametrize("change", [dict(hidden=True), dict(include=False), dict(section="Ignore")])

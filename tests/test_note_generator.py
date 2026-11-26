@@ -404,10 +404,11 @@ def test_alternate_diagnoses_destination_is_supported_without_scanning_all_notes
 
 def test_catalog_is_independent_and_invalid_names_cannot_insert_arbitrary_note_text():
     catalog = get_phrase_catalog()
-    assert sum(row["verified"] for row in catalog) == 85
+    assert sum(row["verified"] for row in catalog) == 88
     assert len({row["id"] for row in catalog}) == len(catalog)
+    original_phrase = catalog[0]["phrase"]
     catalog[0]["phrase"] = "MUTATED"
-    assert get_phrase_catalog()[0]["phrase"] == "ACKZACUTEHYPOXEMICRESPIRATORYFAILUREINVASIVE"
+    assert get_phrase_catalog()[0]["phrase"] == original_phrase
     with pytest.raises(ValueError):
         generate_note(sheet_with(), phrase_overrides={"tbi": "VALID@\nFABRICATED EXAM"})
     with pytest.raises(ValueError):
@@ -484,8 +485,8 @@ def test_attestation_uses_only_selected_tokens_and_supports_dot_format_and_custo
         note_type="attestation", phrase_style="dot", selected_ids=["tbi", "acute_hypoxemic_invasive"],
         phrase_overrides={"acute_hypoxemic_invasive": "MYINVASIVEPHRASE"},
     )
-    assert result["text"].split("\nPLAN\n")[1] == ".MYINVASIVEPHRASE\n.ACKZTBI\n"
-    assert result["selected_plan_tokens"] == [".MYINVASIVEPHRASE", ".ACKZTBI"]
+    assert result["text"].split("\nPLAN\n")[1] == ".ACKZTBI\n.MYINVASIVEPHRASE\n"
+    assert result["selected_plan_tokens"] == [".ACKZTBI", ".MYINVASIVEPHRASE"]
     assert result["phrase_style"] == "dot"
     assert "@ACKZATRISKFORGASTRICULCERS@" not in result["text"]
     empty = generate_note(sheet_with(), note_type="attestation", selected_ids=[])

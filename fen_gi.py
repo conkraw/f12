@@ -18,13 +18,52 @@ from nutrition_display import has_detailed_nutrition, nutrition_sections, parent
 from medication_groups import group_for as special_group, GROUP_SECTIONS, fixed_handoff_group
 from airway_clearance import is_sodium_chloride_3_percent_nebulizer
 from iv_fluids import is_iv_fluid
+from feeds import feeding_method
 
-MODES = ("auto", "prophylaxis", "bowel", "diuretic", "antiemetic", "endocrine", "prokinetic", "tpn", "hypoglycemia", "probiotic", "iv_fluids", "other")
-MODE_LABELS = {"auto": "Automatic", "prophylaxis": "GI prophylaxis", "bowel": "Bowel Regimen", "diuretic": "Diuretics", "antiemetic": "Antiemetics", "endocrine": "Endocrine Medications", "prokinetic": "Prokinetic Agents", "tpn": "TPN", "hypoglycemia": "Hypoglycemia:", "probiotic": "Probiotic", "iv_fluids": "Intravenous Fluids", "other": "No GI grouping"}
-GROUP_NAMES = {"prophylaxis": "GI prophylaxis", "bowel": "Bowel Regimen", "diuretic": "Diuretics", "antiemetic": "Antiemetics", "endocrine": "Endocrine Medications", "prokinetic": "Prokinetic Agents", "tpn": "TPN", "hypoglycemia": "Hypoglycemia:", "probiotic": "Probiotic", "iv_fluids": "Intravenous Fluids"}
+FIXED_GI_GROUPS = ("hypocalcemia", "hyponatremia", "zinc_deficiency")
+MODES = ("auto", "prophylaxis", "bowel", "diuretic", "antiemetic", "endocrine", "prokinetic", "tpn", "hypoglycemia", "probiotic", "iv_fluids") + FIXED_GI_GROUPS + ("other",)
+MODE_LABELS = {"auto": "Automatic", "prophylaxis": "GI prophylaxis", "bowel": "Bowel Regimen", "diuretic": "Diuretics", "antiemetic": "Antiemetics", "endocrine": "Endocrine Medications", "prokinetic": "Prokinetic Agents", "tpn": "TPN", "hypoglycemia": "Hypoglycemia:", "probiotic": "Probiotic", "iv_fluids": "Intravenous Fluids", "hypocalcemia": "Hypocalcemia", "hyponatremia": "Hyponatremia", "zinc_deficiency": "Zinc Deficiency", "other": "No GI grouping"}
+GROUP_NAMES = {"prophylaxis": "GI prophylaxis", "bowel": "Bowel Regimen", "diuretic": "Diuretics", "antiemetic": "Antiemetics", "endocrine": "Endocrine Medications", "prokinetic": "Prokinetic Agents", "tpn": "TPN", "hypoglycemia": "Hypoglycemia:", "probiotic": "Probiotic", "iv_fluids": "Intravenous Fluids", "hypocalcemia": "Hypocalcemia", "hyponatremia": "Hyponatremia", "zinc_deficiency": "Zinc Deficiency"}
+
+_FIXED_SUPPLEMENT = re.compile(r"^(calcium\s+carbonate|sodium\s+chloride|nacl|zinc\s+acetate)(?=$|[\s(])")
+_NONENTERAL_ROUTE = re.compile(r"\biv\b|intraven|intraosse|intraarter|intracath|intramus|subcut|topical|dermal|cutaneous|extern|ophthalm|otic|eye|ear|nasal|nostril|nebul|inhal|respir|tracheal|irrig|rectal", re.I)
+_NONENTERAL_FORM = re.compile(r"\b(?:injection|injectable|infusion|iv|ivpb|intravenous|intramuscular|subcutaneous|flush|lock|nebulizer|nebuliser|nebulization|nebulisation|nebulized|nebulised|inhalation|inhaled|nasal|spray|ophthalmic|otic|topical|cream|ointment|gel|irrigation|enema|suppository)\b")
+_ENTERAL_FORM = re.compile(r"\b(?:enteral|oral|tablet|tablets|capsule|capsules|chewable)\b")
+
+
+def fixed_gi_group(row: dict) -> str:
+    """The requested supplement headings, without changing indications or doses.
+
+    Salts need an enteral route or explicit enteral product form. Zinc acetate
+    is named directly by the requested rule, including when its route is absent.
+    A conflicting recorded route or nonenteral form never qualifies.
+    """
+    name = match_name(row.get("name", ""))
+    matched = _FIXED_SUPPLEMENT.match(name)
+    if (not matched or _NONENTERAL_FORM.search(name)
+            or re.search(r"\b(?:with|plus|and)\b|\bin\s+(?:sodium\s+chloride|nacl|dextrose)\b", name)
+            or re.search(r"(?:carbonate|chloride|acetate)\s*[-+/]\s*[a-z]", name)):
+        return ""
+    route = normalized(row.get("route", ""))
+    if _NONENTERAL_ROUTE.search(route):
+        return ""
+    enteral = (route in {"oral", "po", "enteral", "by mouth", "per os", "gastric", "intragastric",
+                         "feeding tube", "per feeding tube", "via feeding tube"}
+               or feeding_method(route) != "UNK")
+    if route and not enteral:
+        return ""
+    ingredient = re.sub(r"\s+", " ", matched[1])
+    if ingredient == "zinc acetate":
+        return "zinc_deficiency"
+    if not enteral and not _ENTERAL_FORM.search(name):
+        return ""
+    return "hypocalcemia" if ingredient == "calcium carbonate" else "hyponatremia"
 
 
 def automatic_group(row: dict) -> str:
+    requested = fixed_gi_group(row)
+    if requested:
+        return requested
     name = match_name(row.get("name", ""))
     # Match the generic genus at the start of the product name.
     # No probiotic indication or dose is inferred.
@@ -71,6 +110,9 @@ def automatic_group(row: dict) -> str:
 
 
 def group_for(row: dict) -> str:
+    requested = fixed_gi_group(row)
+    if requested:
+        return requested
     mode = row.get("gi_mode", "auto")
     return automatic_group(row) if mode == "auto" else mode if mode in GROUP_NAMES else ""
 
@@ -85,6 +127,8 @@ def effective_section(row: dict) -> str:
     requested_group = fixed_handoff_group(row)
     if requested_group:
         return GROUP_SECTIONS[requested_group]
+    if fixed_gi_group(row):
+        return "FEN / GI"
     if row.get("category_path") is not None:
         return row["category_path"]["section"]
     special = special_group(row)

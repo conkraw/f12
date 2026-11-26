@@ -31,19 +31,25 @@ _BUILTIN_RULES = {
     "group:gcsf": ("neutropenia",),
     "group:adh_analog": ("central_diabetes_insipidus",),
     "group:pulmonary_hypertension": ("pulmonary_hypertension",),
+    "group:antiarrhythmic": ("arrhythmia",),
     "group:antihypertensive": ("hypertension",),
     "group:adrenocortical": ("adrenal_insufficiency",),
+    "group:insomnia": ("insomnia",),
+    "group:airway_tone": ("tracheobronchomalacia",),
     "gi:prophylaxis": ("gastric_ulcer_risk",),
     "gi:bowel": ("constipation",),
     "gi:hypoglycemia": ("hypoglycemia",),
+    "gi:hypocalcemia": ("hypocalcemia",),
+    "gi:hyponatremia": ("hyponatremia",),
+    "gi:zinc_deficiency": (),
     # These indications have no single corresponding diagnosis in the supplied
     # catalog. Do not discard their mapping and relabel the drug by its name.
     "gi:prokinetic": (), "gi:diuretic": (), "gi:antiemetic": (),
     "gi:probiotic": (), "gi:tpn": (), "gi:iv_fluids": (),
     "group:fever": (), "group:chemotherapy": (), "group:antiplatelet": (),
-    "group:insomnia": (), "group:antispasmodic": (),
+    "group:antispasmodic": (),
     "group:neuromodulation": (), "group:airway_clearance": (),
-    "group:airway_tone": (), "group:antisialorrhea": (),
+    "group:antisialorrhea": (),
     "group:leukotriene_receptor_antagonist": (),
 }
 
@@ -80,6 +86,9 @@ _CLASS_ALIASES = (
     (r"\b(?:eye care|ocular lubricants?|eye lubricants?|exposure keratopathy)\b", ("exposure_keratopathy",)),
     (r"\b(?:neurorecovery|neurostimulants?)\b", ("encephalopathy",)),
     (r"\b(?:antihypertensives?|blood pressure control)\b", ("hypertension",)),
+    (r"\banti ?arrhythmics?\b", ("arrhythmia",)),
+    (r"\b(?:sleep medications?|sleep aids?|insomnia)\b", ("insomnia",)),
+    (r"\bairway tone(?: modulators?)?\b", ("tracheobronchomalacia",)),
     (r"\b(?:analgesia|analgesics?|pain control|epidural|NSAIDS?)\b", ("acute_pain",)),
     (r"\bantifungals?\b", ("fungal_infection_risk",)),
 )
@@ -132,6 +141,9 @@ _REVIEWS = {
     "acute_pain": "Review acute pain versus a chronic or nonanalgesic indication.",
     "pulmonary_hypertension": "Confirm pulmonary hypertension as the indication.",
     "hypertension": "Confirm systemic hypertension as the indication.",
+    "insomnia": "Review insomnia and the sleep medication indication.",
+    "tracheobronchomalacia": "Review tracheobronchomalacia and the airway medication indication.",
+    "arrhythmia": "Review the rhythm diagnosis and antiarrhythmic medication indication.",
 }
 
 
@@ -239,6 +251,11 @@ def _fallback_ids(entry: dict, support: dict) -> list[str]:
     row = {key: entry.get(key, "") for key in ("route", "frequency", "dose", "section")}
     row["name"] = name
     automatic = automatic_system_group(row)
+    if automatic == "antiarrhythmic" and isinstance(entry.get("category_path"), dict):
+        # A saved effective category already had its chance to match above.
+        # Do not override a different current placement merely because a drug
+        # can also be used as an antiarrhythmic, especially IV lidocaine.
+        automatic = ""
     if "group:" + automatic in _BUILTIN_RULES:
         ids = _resolve(_BUILTIN_RULES["group:" + automatic], entry, support)
     else:

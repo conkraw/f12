@@ -18,7 +18,8 @@ SETTINGS_KEYS = {"medication_categories", "medication_category_rules"}
 CATEGORY_SYSTEMS = tuple(x for x in DESTINATIONS if x not in ("Labs", "Ignore"))
 # These built-ins were introduced without changing the saved archive schema.
 BACKFILLED_BUILTIN_IDS = ("group:epidural", "group:chemotherapy", "group:leukotriene_receptor_antagonist",
-                          "gi:probiotic", "group:adh_analog", "group:airway_clearance", "gi:iv_fluids") + tuple(
+                          "gi:probiotic", "group:adh_analog", "group:airway_clearance", "gi:iv_fluids",
+                          "gi:hypocalcemia", "gi:hyponatremia", "gi:zinc_deficiency") + tuple(
                               "group:" + group for group in FIXED_HANDOFF_GROUPS)
 
 
@@ -270,6 +271,7 @@ def legacy_target(row: dict) -> str:
 
 
 def apply_category_rules(rows: list[dict], settings: dict) -> list[dict]:
+    from fen_gi import fixed_gi_group
     validate_settings(settings)
     items = catalog(settings)
     defaults = {c["id"]: c for c in default_categories()}
@@ -296,6 +298,7 @@ def apply_category_rules(rows: list[dict], settings: dict) -> list[dict]:
             continue
         saline_nebulizer = is_sodium_chloride_3_percent_nebulizer(row)
         requested_group = fixed_handoff_group(row)
+        requested_gi = fixed_gi_group(row)
         exact_restore = bool(target and target != "system:Ignore" and any(
             rule["match"] == "exact" and rule["target"] == target
             and rule["name"] == match_name(row.get("name", ""))
@@ -303,7 +306,7 @@ def apply_category_rules(rows: list[dict], settings: dict) -> list[dict]:
             and (not rule["frequency"] or rule["frequency"] == normalized(row.get("frequency", "")))
             for rule in settings.get("medication_category_rules", [])))
         if (target == "system:Ignore" or (not target and (ignored(row) or (rejected_broad_rule and was_ignored)))
-                or ((saline_nebulizer or requested_group) and was_ignored and not override and not exact_restore)):
+                or ((saline_nebulizer or requested_group or requested_gi) and was_ignored and not override and not exact_restore)):
             row["section"] = "Ignore"
             row["category_path"] = target_snapshot("system:Ignore", items)
             continue
@@ -324,6 +327,12 @@ def apply_category_rules(rows: list[dict], settings: dict) -> list[dict]:
             # saved mappings, without rewriting the user's rule definitions.
             row["category_path"] = target_snapshot("group:" + requested_group, default_categories())
             row["section"] = row["category_path"]["section"]
+            continue
+        if requested_gi:
+            # Apply the explicitly requested handoff heading to older saved
+            # assignments too, leaving all saved rule definitions untouched.
+            row["category_path"] = target_snapshot("gi:" + requested_gi, default_categories())
+            row["section"] = "FEN / GI"
             continue
         if (not target and rejected_broad_rule and row.get("section") == "Respiratory"
                 and (old_path is None or old_path["id"] == "system:Respiratory"
@@ -356,6 +365,7 @@ def apply_category_rules(rows: list[dict], settings: dict) -> list[dict]:
 
 
 def placement(row: dict) -> dict:
+    from fen_gi import fixed_gi_group
     # Render saved handoffs correctly before any reimport or settings save.
     if ignored(row):
         return target_snapshot("system:Ignore", default_categories())
@@ -366,6 +376,9 @@ def placement(row: dict) -> dict:
     requested_group = fixed_handoff_group(row)
     if requested_group:
         return target_snapshot("group:" + requested_group, default_categories())
+    requested_gi = fixed_gi_group(row)
+    if requested_gi:
+        return target_snapshot("gi:" + requested_gi, default_categories())
     if row.get("category_path") is not None:
         return row["category_path"]
     target = legacy_target(row)
@@ -415,7 +428,9 @@ def _display_root_key(path: dict):
     # orders. Share its visible root without rewriting either category ID.
     if path["section"] == "Respiratory" and normalized(root_name) == "airway clearance":
         return "fixed:airway_clearance"
-    if ident in {"group:epidural", "group:airway_clearance", *("group:" + group for group in FIXED_HANDOFF_GROUPS)}:
+    from fen_gi import FIXED_GI_GROUPS
+    if ident in {"group:epidural", "group:airway_clearance", *("group:" + group for group in FIXED_HANDOFF_GROUPS),
+                 *("gi:" + group for group in FIXED_GI_GROUPS)}:
         return ident, root_name
     return ident
 

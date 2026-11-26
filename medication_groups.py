@@ -74,6 +74,7 @@ GROUP_SECTIONS = {
 ANTIARRHYTHMICS = (
     "esmolol", "amiodarone", "procainamide", "mexiletine", "flecainide",
     "propranolol", "sotalol", "diltiazem", "verapamil", "digoxin",
+    "ivabradine", "ivardabine",
 )
 ANTIHYPERTENSIVES = (
     "enalapril", "metoprolol", "amlodipine", "lisinopril", "hydrochlorothiazide",
@@ -240,13 +241,15 @@ def automatic_system_group(row: dict) -> str:
     if _starts(name, ("scopolamine", "glycopyrrolate", "glycopyrollate")):
         return "antisialorrhea"
     if _starts(name, ("lidocaine",)):
-        return "antiarrhythmic" if _continuous_iv(row) else ""
+        local = (_local_form(row, name) or bool(re.search(
+            r"\b(?:viscous|jelly|gel|patch|aerosol|spray|epinephrine)\b", name)))
+        return "antiarrhythmic" if _continuous_iv(row) and not local else ""
     if _starts(name, INOTROPES):
         return "inotrope" if _continuous_iv(row) else ""
     if _starts(name, VASOPRESSORS):
         return "vasopressor" if _route(row) in IV_ROUTES else ""
     if _starts(name, ANTIARRHYTHMICS):
-        return "antiarrhythmic"
+        return "" if _local_form(row, name) else "antiarrhythmic"
     if _starts(name, ANTIHYPERTENSIVES):
         return "antihypertensive"
     if _starts(name, ("hydrocortisone",)):
@@ -303,7 +306,7 @@ def group_for(row: dict) -> str:
     mode = row.get("group_mode", "auto")
     # An explicit GI override wins over automatic defaults, not over an explicit
     # special-group choice. UI callbacks clear the competing explicit choice.
-    if mode == "auto" and row.get("gi_mode", "auto") in ("prophylaxis", "bowel", "diuretic", "antiemetic", "endocrine", "prokinetic", "tpn", "hypoglycemia"):
+    if mode == "auto" and row.get("gi_mode", "auto") in ("prophylaxis", "bowel", "diuretic", "antiemetic", "endocrine", "prokinetic", "tpn", "hypoglycemia", "hypocalcemia", "hyponatremia", "zinc_deficiency"):
         return ""
     return automatic_group(row) if mode == "auto" else mode if mode in GROUP_NAMES else ""
 
