@@ -1,4 +1,4 @@
-"""PICU SmartPhrase v6.104: airway clearance devices from Epic session tables."""
+"""PICU Handoff v6.111: formatted Word progress notes and attending attestations."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,
@@ -122,6 +122,8 @@ def note(text: str, kind: str = "info") -> None:
 
 
 def clear_session() -> None:
+    from note_utility import clear_note_draft
+    clear_note_draft(st.session_state, all_values=True)
     old = st.session_state.get("download_revocation")
     if old is not None:
         old.set()
@@ -2266,7 +2268,7 @@ def main() -> None:
         st.button("Home", key="home_screen", on_click=return_home, args=(store,),
                   help="Save all open handoffs and return to the starting screen.", use_container_width=True)
         st.header("PICU Handoff")
-        st.caption(f"Version {APP_VERSION} | HC percentiles / Estimated IBW")
+        st.caption(f"Version {APP_VERSION} | Word notes and attestations")
         if history_ready:
             st.caption("Respiratory mode-history parser: ready")
         else:
@@ -2275,7 +2277,7 @@ def main() -> None:
         # Retire the old instructions workspace without discarding room drafts.
         if st.session_state.get("page") == "Instructions / SmartPhrase":
             st.session_state["page"] = "Handoff"
-        page = st.radio("Workspace", ["Handoff", "Print all", "Admin", "Import errors"], key="page", on_change=workspace_changed, args=(store,))
+        page = st.radio("Workspace", ["Handoff", "Print all", "Utilities", "Admin", "Import errors"], key="page", on_change=workspace_changed, args=(store,))
         st.caption("Shared storage connected" if store else "Session-only testing. No persistence.")
         st.button("Reload saved archive", on_click=reload_archive, args=(store,), disabled=store is None)
         st.button("Log out", on_click=clear_session)
@@ -2291,6 +2293,8 @@ def main() -> None:
             getattr(st, kind)(text)
     if page == "Admin":
         admin_page(store)
+    elif page == "Utilities":
+        utilities_page(store)
     elif page == "Import errors":
         import_errors_page(store)
     elif page == "Print all":
@@ -2991,6 +2995,8 @@ def download_revocation() -> Event:
 def discard_all_handoff_state() -> None:
     """Only after a confirmed reset/load. Shared rules and guide remain intact."""
     ss = st.session_state
+    from note_utility import clear_note_draft
+    clear_note_draft(ss, all_values=True)
     guard = ss.get("download_revocation")
     if guard is not None:
         guard.set()
@@ -3211,6 +3217,67 @@ def infusion_admin(store: GitHubVault | None) -> None:
             st.selectbox("Display choice " + str(index + 1), MODES, key=key,
                          format_func=lambda v: MODE_LABELS[v], on_change=edit_saved_infusion_rule,
                          args=((rule["name"], rule["route"], rule["frequency"]), key, store))
+
+
+def utility_note_sources() -> dict:
+    from note_utility import note_sources
+    ss = st.session_state
+    sources = deepcopy(note_sources(ss.get("vault", {}), ss.get("drafts", {})))
+    settings = ss.get("vault", {}).get("settings", {})
+    for sheet in sources.values():
+        sheet["medications"] = apply_category_rules(sheet["medications"], settings)
+    return sources
+
+
+def save_note_utility_settings(settings: dict, store: GitHubVault | None) -> None:
+    from note_settings import normalize_note_settings
+    if not require_admin():
+        raise ValueError("Unlock Admin before saving note phrase settings.")
+    candidate = deepcopy(st.session_state["vault"])
+    candidate["settings"]["note_utility"] = normalize_note_settings(settings)
+    commit(candidate, store)
+
+
+def utility_note_download(content: str | bytes, draft: dict, store: GitHubVault | None):
+    from note_utility import note_download, draft_matches, REVOKE_KEY
+    from admin_access import IDLE_SECONDS, MAX_SECONDS
+    if not require_admin():
+        raise ValueError("Unlock Admin and generate a new note before downloading.")
+    ss = st.session_state
+    room = draft["room"]
+    current = utility_note_sources().get(room)
+    if current is None or not draft_matches(draft, current):
+        raise ValueError("The handoff changed. Generate a new note before downloading.")
+    expires_at = min(ss["last_activity"] + ss.get("idle_seconds", 900),
+                     ss["login_at"] + 8 * 3600,
+                     ss["admin_last_activity"] + IDLE_SECONDS,
+                     ss["admin_login_at"] + MAX_SECONDS)
+    revoked = ss[REVOKE_KEY]
+    saved = ss["vault"]["rooms"].get(room)
+    check_current = guard_download(
+        lambda: None, store, ss["vault"].get("reset_generation", ""),
+        cancelled=revoked, expires_at=expires_at,
+        expected_rooms={room: saved["id"] if saved else None},
+        expected_versions={room: saved_room_version(saved)},
+    )
+    return note_download(content, revoked=revoked, expires_at=expires_at,
+                         check_current=check_current)
+
+
+def utilities_page(store: GitHubVault | None) -> None:
+    from note_utility import render_note_utility
+    st.title("Utilities")
+    if not admin_gate("generate progress notes and attending attestations"):
+        return
+    st.button("Lock Utilities", key="lock_note_utility", on_click=lock_admin_page)
+    render_note_utility(
+        st, authorize=require_admin, get_sources=utility_note_sources,
+        stored_settings=st.session_state["vault"]["settings"].get("note_utility"),
+        save_settings=lambda settings: save_note_utility_settings(settings, store),
+        make_download=lambda text, draft: utility_note_download(text, draft, store),
+        current_room=st.session_state.get("current_room"),
+        clinical_settings=st.session_state["vault"]["settings"],
+    )
 
 
 def admin_page(store: GitHubVault | None) -> None:
@@ -3985,7 +4052,7 @@ def autosave_before_print_all(store: GitHubVault | None, *, for_home: bool = Fal
 
 def workspace_changed(store: GitHubVault | None = None) -> None:
     ss = st.session_state
-    if ss.get("page") != "Admin":
+    if ss.get("page") not in ("Admin", "Utilities"):
         lock_admin(ss)
     if ss.get("page") == "Print all":
         if not autosave_before_print_all(store):
@@ -4009,7 +4076,7 @@ def workspace_changed(store: GitHubVault | None = None) -> None:
     ss["active_workspace"] = ss.get("page", "Handoff")
 
 
-def admin_gate() -> bool:
+def admin_gate(purpose: str = "change shared settings") -> bool:
     if not require_session():
         return False
     config = admin_config()
@@ -4020,7 +4087,7 @@ def admin_gate() -> bool:
         st.info(problem)
         st.caption("The setup helper adds one Admin password hash only. Keep your app password and encryption key unchanged.")
         return False
-    st.caption("Enter the separate Admin password to change shared settings. You do not need it to create, edit, save, print, or clear handoffs, or to read the user guide.")
+    st.caption("Enter the separate Admin password to " + purpose + ". You do not need it to create, edit, save, print, or clear handoffs, or to read the user guide.")
     with st.form("admin_unlock"):
         st.text_input("Admin password", type="password", key="admin_login_password", max_chars=1024)
         st.form_submit_button("Unlock Admin", on_click=authenticate_admin)

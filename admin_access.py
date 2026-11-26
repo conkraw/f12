@@ -15,6 +15,8 @@ _GRANT_KEYS = ("admin_unlocked", "admin_grant_hash", "admin_login_at", "admin_la
 
 
 def lock_admin(state) -> None:
+    from note_utility import clear_note_draft
+    clear_note_draft(state, all_values=True)
     for key in _GRANT_KEYS + ("admin_login_password",):
         state.pop(key, None)
 
