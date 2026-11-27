@@ -61,9 +61,10 @@ def note_sources(vault: dict, drafts: dict) -> dict:
         filled = filled or bool(sheet.get("medications"))
         filled = filled or any(sheet.get(key) for key in (
             "ventilation", "noninvasive", "devices", "neuro_devices", "ecls",
-            "code_status", "dosing_weight", "nutrition", "diet", "feeds", "cbc",
+            "code_status", "dosing_weight", "nutrition", "diet", "feeds", "cbc", "vitals",
         ))
         filled = filled or any((sheet.get(key) or {}).get("rows") for key in ("labs", "viral_panel"))
+        filled = filled or any((sheet.get("neuro_vitals") or {}).get(key) for key in ("k", "l", "m", "y"))
         if filled:
             ready[room] = sheet
     return ready
@@ -216,6 +217,11 @@ def render_note_utility(st, *, authorize, get_sources, stored_settings,
         st.caption("Your attending attestation keeps its examination SmartLists and suggested plans. Medication lists stay in the resident's note.")
     else:
         st.caption("Medication review lists follow the main systems in your progress note. Review and edit the downloaded document in Word.")
+        if result.get("neuro_phrase"):
+            selection = "Neurology section: " + result["neuro_phrase"] + "."
+            if result.get("neuro_reason"):
+                selection += " " + result["neuro_reason"]
+            st.caption(selection)
     st.caption("Review and edit the diagnoses and plans in Word. The optional controls below let you change which plans are included before downloading.")
     for warning in result.get("warnings", []):
         st.warning(warning)

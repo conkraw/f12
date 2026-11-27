@@ -180,3 +180,29 @@ def test_note_sources_uses_current_drafts_and_omits_empty_handoffs():
     assert set(result) == {"P4102"}
     assert result["P4102"]["fields"]["Diagnoses"] == "Synthetic current diagnosis"
     assert vault == before
+
+
+@pytest.mark.parametrize("source", ["icp", "nirs", "capd", "wat"])
+def test_monitoring_only_handoff_is_available_without_showing_empty_handoffs(source):
+    from observations import parse_neuro
+    from vitals import parse_vitals
+
+    sheet = new_sheet("P4102")
+    if source == "nirs":
+        parsed = parse_vitals("NIRS Range: rSO2 Cerebral % Avg: 62.8 % Min: 60 % Max: 68 %\nLast NIRS: rSO2 Cerebral %: 66 %")
+        assert not parsed.error
+        sheet["vitals"] = parsed.rows
+    else:
+        key, content = {
+            "icp": ("m", "ICP Mean (mmHg): 5 mmHg\nCPP: 72 mmHg"),
+            "capd": ("y", "CAPD: Cornell Assessment of Pediatric Delirium Score: 0"),
+            "wat": ("l", "WAT-1 total score (0-12): 0"),
+        }[source]
+        parsed = parse_neuro(content, key)
+        assert not parsed.error
+        sheet["neuro_vitals"][key] = parsed.rows
+    empty = new_sheet("P4104")
+    vault = {"rooms": {"P4102": sheet, "P4104": empty}}
+    before = deepcopy(vault)
+    assert note_sources(vault, {}) == {"P4102": sheet}
+    assert vault == before

@@ -14,6 +14,7 @@ import xml.etree.ElementTree as ET
 from zipfile import BadZipFile, ZipFile
 
 from note_fengi import FENGI_TEMPLATE_FILES, select_fengi_variant
+from note_neuro import NEURO_TEMPLATE_FILES, select_neuro_variant
 from note_medications import build_note_medications
 from note_medication_rules import medication_note_candidates
 from note_findings import clinical_note_candidates
@@ -503,11 +504,11 @@ def _medication_lines(groups: dict | None) -> str:
     return "\n".join(lines).rstrip()
 
 
-def _fengi_section_text(variant: str, medication_lines: str) -> str:
-    """Use the same supplied FEN/GI table as Word for the plain-text preview."""
+def _template_section_text(template_path, medication_lines: str, section_name: str) -> str:
+    """Use the same supplied section table as Word for the plain-text preview."""
     word = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
     try:
-        with ZipFile(FENGI_TEMPLATE_FILES[variant]) as package:
+        with ZipFile(template_path) as package:
             source = package.read("word/document.xml")
         if b"<!DOCTYPE" in source.upper() or b"<!ENTITY" in source.upper():
             raise ValueError
@@ -533,11 +534,12 @@ def _fengi_section_text(variant: str, medication_lines: str) -> str:
         row_lines[medication_index] = medication_lines.splitlines()
         return "\n".join(line for lines in row_lines for line in lines if line.strip())
     except (OSError, BadZipFile, ET.ParseError, KeyError, ValueError):
-        raise ValueError("The age-specific FEN/GI template could not be read. Restore the supplied template files and generate the note again.") from None
+        raise ValueError(f"The {section_name} template could not be read. Restore the supplied template files and generate the note again.") from None
 
 
 def _render_note(medications: dict, suggestions: list[dict], phrase_style: str,
-                 note_type: str = "progress", fengi_variant: str | None = None) -> str:
+                 note_type: str = "progress", fengi_variant: str | None = None,
+                 neuro_variant: str | None = None) -> str:
     phrases = _selected_plan_tokens(suggestions, phrase_style)
     if note_type == "attestation":
         return _ATTESTATION_TEMPLATE + ("\n".join(phrases) + "\n" if phrases else "")
@@ -550,8 +552,11 @@ def _render_note(medications: dict, suggestions: list[dict], phrase_style: str,
     blocks = [_TOP.rstrip()]
     for section, token in _SYSTEM_ANCHORS:
         meds = _medication_lines(sections.get(section))
+        if section == "Neurologic" and neuro_variant is not None:
+            blocks.append(_template_section_text(NEURO_TEMPLATE_FILES[neuro_variant], meds, "neurologic"))
+            continue
         if section == "FEN / GI" and fengi_variant is not None:
-            blocks.append(_fengi_section_text(fengi_variant, meds))
+            blocks.append(_template_section_text(FENGI_TEMPLATE_FILES[fengi_variant], meds, "age-specific FEN/GI"))
             continue
         block = token
         if meds:
@@ -614,8 +619,12 @@ def generate_note(
     suggestions, warnings = _suggestions(sheet, medications, catalog, settings)
     fengi = (select_fengi_variant(sheet) if note_type == "progress"
              else {"variant": None, "age_text": "", "warning": ""})
+    neuro = (select_neuro_variant(sheet, settings=settings, medications=medications) if note_type == "progress"
+             else {"variant": None, "phrase": "", "label": "", "reason": "", "warning": ""})
     if fengi["warning"]:
         warnings.append(fengi["warning"])
+    if neuro["warning"]:
+        warnings.append(neuro["warning"])
     warnings = list(dict.fromkeys(list(medications.get("warnings") or []) + warnings))
     if selected_ids is not None:
         if isinstance(selected_ids, str):
@@ -636,9 +645,11 @@ def generate_note(
             if warning not in warnings:
                 warnings.append(warning)
     return {
-        "text": _render_note(medications, suggestions, phrase_style, note_type, fengi["variant"]),
+        "text": _render_note(medications, suggestions, phrase_style, note_type, fengi["variant"], neuro["variant"]),
         "suggestions": suggestions, "warnings": warnings, "medications": medications,
         "note_type": note_type, "phrase_style": phrase_style,
         "fengi_variant": fengi["variant"],
+        "neuro_variant": neuro["variant"], "neuro_phrase": neuro["phrase"],
+        "neuro_label": neuro["label"], "neuro_reason": neuro["reason"],
         "selected_plan_tokens": _selected_plan_tokens(suggestions, phrase_style),
     }

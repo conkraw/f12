@@ -157,7 +157,9 @@ def test_exact_template_tokens_and_medications_stay_in_their_main_sections():
     before = deepcopy(sheet)
     result = generate_note(sheet)
     text = result["text"]
-    neuro = text.split("{CKNEUROSMARTLIST:45213}")[1].split("{CKRESPLIST:45220}")[0]
+    neuro = text.split("NEUROLOGY", 1)[1].split("{CKRESPLIST:45220}", 1)[0]
+    assert "{CKNEUROSMARTLIST:45213}" not in text
+    assert "{ACKNEUROEXAM:45450}" in neuro
     assert "Drips:\nFentanyl at 2 mcg/kg/hr" in neuro
     assert "Scheduled:\nClobazam 100 mg Q12H" in neuro
     assert "PRN:\nFentanyl 20 mcg Q1H PRN" in neuro

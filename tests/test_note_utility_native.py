@@ -343,6 +343,43 @@ def test_real_attestation_word_omits_medications_and_keeps_selected_plan_referen
     assert at.session_state["sources"] == sources
 
 
+def test_handoff_change_reselects_neuro_template_only_after_generate_is_pressed():
+    from test_note_neuro_integration import example, section, text, tree
+
+    at = AppTest.from_string(SOURCE, default_timeout=10).run()
+    sources = deepcopy(at.session_state["sources"])
+    sources["P4102"] = example("intubated")
+    at.session_state["sources"] = sources
+    at.run()
+    assert DRAFT_KEY not in at.session_state
+    generate(at)
+    old_download = downloads(at)["word"]["handle"]
+    neuro = section(tree(old_download()), "NEUROLOGY")
+    assert "SBS Score:" in text(neuro)
+    assert at.session_state[DRAFT_KEY]["result"]["neuro_variant"] == "intubated"
+    assert any("Neurology section: ACKNINTUBATED" in caption.value for caption in at.caption)
+
+    sources = deepcopy(at.session_state["sources"])
+    sources["P4102"]["ventilation"] = None
+    sources["P4102"]["noninvasive"] = [{"device": "HFNC", "values": {}}]
+    sources["P4102"]["fields"]["Respiratory"] = "Extubated to HFNC today."
+    at.session_state["sources"] = sources
+    at.run()
+    assert not at.exception
+    assert DRAFT_KEY not in at.session_state
+    assert not at.get("download_button")
+    with pytest.raises(ValueError, match="expired"):
+        old_download()
+
+    generate(at)
+    neuro = section(tree(downloads(at)["word"]["handle"]()), "NEUROLOGY")
+    assert "CAPD:" in text(neuro) and "SBS Score:" not in text(neuro)
+    assert at.session_state[DRAFT_KEY]["result"]["neuro_variant"] == "extubated"
+    assert any("Neurology section: ACKNEXTUBATED" in caption.value for caption in at.caption)
+    assert at.text_area(key=EDITOR_KEY).value.count("Clobazam 100 mg Q12H") == 1
+    assert at.session_state["sources"] == sources
+
+
 def test_age_change_requires_a_new_generation_before_switching_fengi_templates():
     import xml.etree.ElementTree as ET
     from test_note_fengi_integration import example, FENGI_TITLE

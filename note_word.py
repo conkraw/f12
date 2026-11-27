@@ -1,7 +1,7 @@
 """Insert reviewed note content into the original Word templates.
 
 The uploaded DOCX files are preserved as package assets. The builder inserts
-medication and Plan paragraphs and removes the two medication-cell placeholders.
+medication and Plan paragraphs and clears medication-cell placeholders.
 Other visible template content and package parts stay unchanged. SmartLink runs,
 colors, table styling, sections and page geometry retain their original format.
 """
@@ -16,6 +16,7 @@ from xml.parsers import expat
 from zipfile import BadZipFile, ZipFile
 
 from note_fengi import FENGI_TEMPLATE_FILES
+from note_neuro import NEURO_TEMPLATE_FILES
 
 
 TEMPLATE_FILES = {
@@ -25,6 +26,7 @@ TEMPLATE_FILES = {
 _W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
 _R = "http://schemas.openxmlformats.org/officeDocument/2006/relationships}"
 _FENGI_HEADING = "FLUIDS ELECTROLYTES NUTRITION/GASTROINTESTINAL"
+_NEURO_HEADING = "NEUROLOGY"
 _GROUPS = ("Drips", "Scheduled", "PRN")
 _SYSTEM_ANCHORS = (
     ("Neurologic", "{CKNEUROSMARTLIST:45213}"),
@@ -173,7 +175,8 @@ def _default_styles(source: bytes):
     return defaults, tuple(styles)
 
 
-def _load_fengi_source(variant: str, progress: ZipFile) -> bytes:
+def _load_section_source(variant: str, progress: ZipFile, *, template_files: dict,
+                         heading: str, description: str) -> bytes:
     """Load a vetted source table without adding or rewriting Word resources.
 
     The supplied tables use direct formatting and matching default styles,
@@ -181,27 +184,37 @@ def _load_fengi_source(variant: str, progress: ZipFile) -> bytes:
     targets. Reject a future incompatible asset instead of silently losing its
     formatting, links or embedded resources during an XML-only transplant.
     """
-    if not isinstance(variant, str) or variant not in FENGI_TEMPLATE_FILES:
-        raise NoteWordError("The selected age-specific FEN/GI Word template is invalid.")
+    if not isinstance(variant, str) or variant not in template_files:
+        raise NoteWordError(f"The selected {description} Word template is invalid.")
     try:
-        with ZipFile(BytesIO(FENGI_TEMPLATE_FILES[variant].read_bytes())) as original:
+        with ZipFile(BytesIO(template_files[variant].read_bytes())) as original:
             source = original.read("word/document.xml")
             root = _parse_xml(source)
-            table = _table(root, _FENGI_HEADING)
+            table = _table(root, heading)
             progress_root = _parse_xml(progress.read("word/document.xml"))
             if not root.namespaces.items() <= progress_root.namespaces.items():
-                raise NoteWordError("The age-specific FEN/GI Word template has incompatible XML namespaces.")
+                raise NoteWordError(f"The {description} Word template has incompatible XML namespaces.")
             for node in _walk(table):
                 if (any(key.startswith(_R) for key in node.attributes)
                         or node.name in {_W + name for name in ("pStyle", "rStyle", "tblStyle", "numPr", "sectPr")}):
-                    raise NoteWordError("The age-specific FEN/GI Word template requires unsupported Word resources.")
+                    raise NoteWordError(f"The {description} Word template requires unsupported Word resources.")
             if (_default_styles(original.read("word/styles.xml")) != _default_styles(progress.read("word/styles.xml"))
                     or any(original.read(part) != progress.read(part)
                            for part in ("word/fontTable.xml", "word/theme/theme1.xml"))):
-                raise NoteWordError("The age-specific FEN/GI Word template has incompatible formatting resources.")
+                raise NoteWordError(f"The {description} Word template has incompatible formatting resources.")
             return source
     except (OSError, BadZipFile, KeyError):
-        raise NoteWordError("The age-specific FEN/GI Word template is missing or invalid. Restore the packaged templates folder.") from None
+        raise NoteWordError(f"The {description} Word template is missing or invalid. Restore the packaged templates folder.") from None
+
+
+def _load_fengi_source(variant: str, progress: ZipFile) -> bytes:
+    return _load_section_source(variant, progress, template_files=FENGI_TEMPLATE_FILES,
+                                heading=_FENGI_HEADING, description="age-specific FEN/GI")
+
+
+def _load_neuro_source(variant: str, progress: ZipFile) -> bytes:
+    return _load_section_source(variant, progress, template_files=NEURO_TEMPLATE_FILES,
+                                heading=_NEURO_HEADING, description="neurologic")
 
 
 def _body_format(root: _Node, source: bytes) -> tuple[bytes, bytes]:
@@ -301,6 +314,22 @@ def _plan_edits(root: _Node, source: bytes, plan: _Node, tokens: list[str], form
     return edits
 
 
+def _plan_heading_edits(plan: _Node, source: bytes) -> list[tuple[int, int, bytes]]:
+    """Keep the existing Plan heading with its first generated plan item."""
+    paragraph = _paragraph(plan, "PLAN")
+    properties = next((node for node in paragraph.children if node.name == _W + "pPr"), None)
+    keep_next = b"<w:keepNext/>"
+    if properties is None:
+        return [(paragraph.open_end, paragraph.open_end, b"<w:pPr>" + keep_next + b"</w:pPr>")]
+    existing = [node for node in properties.children if node.name == _W + "keepNext"]
+    if existing:
+        return [(node.start, node.end, keep_next) for node in existing]
+    if properties.end == properties.open_end:
+        content = source[properties.start:properties.open_end - 2] + b">" + keep_next + b"</w:pPr>"
+        return [(properties.start, properties.end, content)]
+    return [(properties.open_end, properties.open_end, keep_next)]
+
+
 def _sections(result: dict) -> dict:
     payload = result.get("medications") or {}
     raw = payload.get("sections") or {}
@@ -354,19 +383,26 @@ def _apply_edits(source: bytes, edits: list[tuple[int, int, bytes]]) -> bytes:
     return b"".join(pieces)
 
 
-def _fengi_content(source: bytes, groups: dict, formatting: tuple[bytes, bytes]) -> bytes:
+def _cleared_paragraph(source: bytes, paragraph: _Node) -> bytes:
+    edits = [(start - paragraph.start, end - paragraph.start, value)
+             for start, end, value in _medication_edits(paragraph, b"")]
+    return _apply_edits(source[paragraph.start:paragraph.end], edits)
+
+
+def _section_content(source: bytes, groups: dict, formatting: tuple[bytes, bytes], *,
+                     heading: str, description: str) -> bytes:
     root = _parse_xml(source)
-    table = _table(root, _FENGI_HEADING)
+    table = _table(root, heading)
     anchor = _medication_placeholder(table)
     content = _medication_paragraphs(groups, formatting)
     edits = [(start - table.start, end - table.start, value)
              for start, end, value in _medication_edits(anchor, content)]
     table_content = _apply_edits(source[table.start:table.end], edits)
-    # Copy the supplied empty separator too. It keeps the FEN/GI and Hematology
-    # tables separate when Word opens the resulting document.
+    # Copy the supplied empty separator too. It prevents adjacent source tables
+    # from merging when Word opens the resulting document.
     body = next(_nodes(root, "body"), None)
     if body is None or table not in body.children:
-        raise NoteWordError("The age-specific FEN/GI Word template has an invalid table location.")
+        raise NoteWordError(f"The {description} Word template has an invalid table location.")
     following = body.children[body.children.index(table) + 1:]
     if (following and following[0].name == _W + "p"
             and all(child.name == _W + "pPr" for child in following[0].children)
@@ -375,6 +411,16 @@ def _fengi_content(source: bytes, groups: dict, formatting: tuple[bytes, bytes])
     else:
         separator = _new_paragraph("", formatting)
     return table_content + separator
+
+
+def _fengi_content(source: bytes, groups: dict, formatting: tuple[bytes, bytes]) -> bytes:
+    return _section_content(source, groups, formatting, heading=_FENGI_HEADING,
+                            description="age-specific FEN/GI")
+
+
+def _neuro_content(source: bytes, groups: dict, formatting: tuple[bytes, bytes]) -> bytes:
+    return _section_content(source, groups, formatting, heading=_NEURO_HEADING,
+                            description="neurologic")
 
 
 def _plan_tokens(result: dict) -> list[str]:
@@ -399,7 +445,8 @@ def _plan_tokens(result: dict) -> list[str]:
     return tokens
 
 
-def _insert_content(source: bytes, result: dict, note_type: str, fengi_source: bytes | None = None) -> bytes:
+def _insert_content(source: bytes, result: dict, note_type: str, fengi_source: bytes | None = None,
+                    neuro_source: bytes | None = None) -> bytes:
     root = _parse_xml(source)
     formatting = _body_format(root, source)
     edits = []
@@ -407,6 +454,14 @@ def _insert_content(source: bytes, result: dict, note_type: str, fengi_source: b
         sections = _sections(result)
         for section, token in _SYSTEM_ANCHORS:
             anchor = _paragraph(root, token)
+            if section == "Neurologic" and neuro_source is not None:
+                # The original anchor separates the Objective heading table
+                # from this section. Preserve its now-empty paragraph so Word
+                # cannot merge those two independently formatted tables.
+                content = _cleared_paragraph(source, anchor)
+                content += _neuro_content(neuro_source, sections.get(section, {}), formatting)
+                edits.append((anchor.start, anchor.end, content))
+                continue
             if section == "FEN / GI" and fengi_source is not None:
                 content = _fengi_content(fengi_source, sections.get(section, {}), formatting)
                 edits.append((anchor.start, anchor.end, content))
@@ -434,6 +489,8 @@ def _insert_content(source: bytes, result: dict, note_type: str, fengi_source: b
     plan = _table(root, "PLAN")
     tokens = _plan_tokens(result)
     if tokens:
+        if note_type == "progress" and neuro_source is not None:
+            edits.extend(_plan_heading_edits(plan, source))
         edits.extend(_plan_edits(root, source, plan, tokens, formatting))
     if not edits:
         return source
@@ -459,9 +516,12 @@ def render_note_docx(result: dict, *, note_type: str = "progress") -> bytes:
         with ZipFile(BytesIO(template)) as original:
             source = original.read("word/document.xml")
             fengi_source = None
+            neuro_source = None
             if note_type == "progress" and result.get("fengi_variant") is not None:
                 fengi_source = _load_fengi_source(result["fengi_variant"], original)
-            modified = _insert_content(source, result, note_type, fengi_source)
+            if note_type == "progress" and result.get("neuro_variant") is not None:
+                neuro_source = _load_neuro_source(result["neuro_variant"], original)
+            modified = _insert_content(source, result, note_type, fengi_source, neuro_source)
             if modified == source:
                 return template
             output = BytesIO()
