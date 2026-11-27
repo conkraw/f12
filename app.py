@@ -1,4 +1,4 @@
-"""PICU Handoff v6.117: handoff-selected neurologic sections in progress notes."""
+"""PICU Handoff v6.118: confirmed ICP monitor site examination reference."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,

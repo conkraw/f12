@@ -1,4 +1,4 @@
-# PICU Handoff 6.117
+# PICU Handoff 6.118
 
 ## Generate a Word document
 
@@ -38,7 +38,7 @@ Historical, negated, uncertain, removed, excluded, or failed-import data do not 
 
 The selector reads the handoff each time a generation button is pressed. Changes to the source handoff clear the previous prepared note. Editing the optional plan selections does not change which neurologic template the handoff supports. The attending attestation retains its own examination layout and does not receive these tables or medication lists.
 
-The source templates retain two unfinished reference details: the TBI and ICP device-site examination uses `{???}`, and the status-epilepticus template uses `{ACKNIMAGES:45359}` under both EEG and imaging. No replacement Epic identifiers are invented.
+The TBI and ICP device-site examination uses the confirmed reference `{ICPMONITORSITE:45483}`. The status-epilepticus template retains `{ACKNIMAGES:45359}` under both EEG and imaging, as supplied.
 
 ## Age-appropriate FEN/GI section
 
@@ -143,7 +143,7 @@ Admin and Utilities share one username/password login and one timed unlock. The 
 
 The draft and prepared downloads stay in the current administrator session and do not overwrite the handoff. Changing the patient, document type, or source handoff clears the old draft. Locking Admin, leaving the protected workspaces, logging out, returning Home, or resetting the patient list clears the draft and revokes its prepared downloads. Protected actions recheck Admin access, including after Word rendering. Expired or revoked downloads are rejected.
 
-## Install from version 6.109 through 6.116
+## Install from version 6.109 through 6.117
 
 Use the complete update package. Upload these sixteen Python files together beside the existing app.py, replacing matching files:
 
@@ -178,4 +178,4 @@ Also upload the templates folder with all eleven files, keeping these paths:
 - templates/neuro_status_epilepticus.docx
 - templates/neuro_extubated.docx
 
-The package also includes `ADMIN_SETUP.txt` and an updated `secrets.example.toml` for reference. Keep your current Secrets values, especially the existing Admin password hash and encryption key. Do not replace them with the example file. There is no dependency change. Restart the app and confirm version 6.117 in the sidebar, then use the shared username and existing Admin password for Admin or Utilities.
+The package also includes `ADMIN_SETUP.txt` and an updated `secrets.example.toml` for reference. Keep your current Secrets values, especially the existing Admin password hash and encryption key. Do not replace them with the example file. There is no dependency change. Restart the app and confirm version 6.118 in the sidebar, then use the shared username and existing Admin password for Admin or Utilities. Generate a new note to apply the corrected ICP monitor site examination reference.

@@ -17,9 +17,9 @@ HEADING = "NEUROLOGY"
 SOURCE_HASHES = {
     "ct_patient": "93767ee5f0be91617cba0ad6c4401b8da0eb27724e7d084b4411821eefc5621e",
     "none": "ac1b2f194f3aa6ed2320a6675838e629bab4054c1e9584c6bde811b9d5860e19",
-    "icp_monitoring": "c1638f8df3685c334f5cdc2f9017d1bac599fd6d62a31c1af586091cfc05c0eb",
+    "icp_monitoring": "ad04dd43268f7fa8794e4f28023595c2f2fee5b5cfabfa7fc93470a907ed348b",
     "intubated": "ab7ab0586ab4bf62b5e160304bb641570ebc6db60abc8874d026f94293730e19",
-    "tbi": "bd70456ff0f67235688e1d5cfc14987bb361451d29c911b4a5daddd774a1093e",
+    "tbi": "d86c6b2eb18e015c4c5a11f48f16471babe90e4a40fd0e3312754bdc05955b50",
     "status_epilepticus": "fb2fa23388ebfae0c95e1d0935820ed1c3fe09f1c55a244d23792df223a9fb12",
     "extubated": "591879dcd18bd71995ebc4dc665c109237ba5104e576fe46ea6c224e71340159",
 }
@@ -38,7 +38,7 @@ def raw_table(data):
 
 
 @pytest.mark.parametrize("variant", SOURCE_HASHES)
-def test_packaged_neuro_templates_are_exact_copies_of_the_supplied_documents(variant):
+def test_packaged_neuro_templates_match_supplied_documents_with_approved_corrections(variant):
     assert sha256(NEURO_TEMPLATE_FILES[variant].read_bytes()).hexdigest() == SOURCE_HASHES[variant]
 
 
@@ -82,7 +82,7 @@ def test_neuro_table_is_byte_identical_outside_its_medication_placeholder(varian
     for tag in ("tblPr", "tblGrid", "trPr", "tcPr"):
         assert [ET.tostring(node) for node in original_xml.iter(W + tag)] == [
             ET.tostring(node) for node in inserted_xml.iter(W + tag)]
-    # This includes unresolved device-site text and the intentionally repeated
+    # This includes the approved device-site SmartList and the intentionally repeated
     # EEG/imaging SmartList in the supplied status-epilepticus document.
     source_paragraphs = Counter(text(p) for p in original_xml.iter(W + "p") if text(p) != "***")
     inserted_paragraphs = Counter(text(p) for p in inserted_xml.iter(W + "p"))
@@ -173,7 +173,8 @@ def test_neuro_and_fengi_tables_coexist_with_medications_in_their_own_cells(feng
     assert "{CKNEUROSMARTLIST:45213}" not in text(root) and "{ACKFENGI:45365}" not in text(root)
     assert "Urine Output:***" in text(fengi)
     assert "with ***." in text(section_table(root, "ASSESSMENT"))
-    assert "{???}" in text(neuro)
+    assert "{ICPMONITORSITE:45483}" in text(neuro)
+    assert "{???}" not in text(neuro)
 
 
 def test_missing_or_none_neuro_variant_preserves_legacy_generic_behavior_without_loading_assets(tmp_path, monkeypatch):
@@ -228,7 +229,8 @@ def test_split_medication_placeholder_is_removed_without_changing_other_neuro_fi
     root = tree(render_note_docx(result))
     table = section_table(root, HEADING)
     assert "*" not in text(medication_cell(table))
-    assert "{???}" in text(table)
+    assert "{ICPMONITORSITE:45483}" in text(table)
+    assert "{???}" not in text(table)
     assert "{ACKNGCSE:45310}" in text(table)
     assert "{ACKNEUROEXAM:45450}" in text(table)
 

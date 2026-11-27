@@ -95,6 +95,9 @@ def test_all_seven_selected_sections_have_neuro_medications_once_in_the_correct_
     assert "***" not in plain + text(cell)
     assert "MEDICATIONS FOR REVIEW" not in plain + text(neuro)
     assert "MEDICATIONS IN REVIEW" not in plain + text(neuro)
+    if variant in ("tbi", "icp_monitoring"):
+        assert plain.count("{ICPMONITORSITE:45483}") == text(neuro).count("{ICPMONITORSITE:45483}") == 1
+        assert "{???}" not in plain + text(neuro)
     for group in ("Drips", "Scheduled", "PRN"):
         assert group + ":" in plain and group + ":" in text(cell)
         for medication in result["medications"]["sections"]["Neurologic"][group]:
@@ -122,7 +125,8 @@ def test_empty_neuro_medication_cell_removes_its_placeholder_without_removing_ex
     assert distinctive in text(neuro)
     assert "***" not in text(neuro)
     if variant in ("tbi", "icp_monitoring"):
-        assert "{???}" in text(neuro)
+        assert "{ICPMONITORSITE:45483}" in text(neuro)
+        assert "{???}" not in text(neuro)
     if variant == "status_epilepticus":
         assert text(neuro).count("{ACKNIMAGES:45359}") == 2
 
