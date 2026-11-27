@@ -83,9 +83,11 @@ def test_age_selected_section_precedes_hematology_with_its_medications_inside(ag
     cell = medication_cell(section)
     med_lines = [text(paragraph) for paragraph in cell.iter(W + "p")]
     for group in ("Drips", "Scheduled", "PRN"):
-        assert group + ":" in med_lines
-        for value in result["medications"]["sections"]["FEN / GI"][group]:
-            assert value in med_lines and plain_section.count(value) == 1
+        values = result["medications"]["sections"]["FEN / GI"][group]
+        assert values
+        for index, value in enumerate(values):
+            expected_line = group + ": " + value if index == 0 else value
+            assert expected_line in med_lines and plain_section.count(value) == 1
             assert text(document).count(value) == 1
     for other_medication in ("Clobazam", "Ferrous sulfate", "Ceftriaxone"):
         assert other_medication not in text(section)

@@ -14,6 +14,23 @@ from note_word import NoteWordError, TEMPLATE_FILES, render_note_docx
 
 NS = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
 W = "{" + NS["w"] + "}"
+CLINICAL_TABLES = {
+    "NEUROLOGY", "RESPIRATORY", "CARDIOVASCULAR", "HEMATOLOGY", "INFECTIOUS DISEASES",
+    "FLUIDS ELECTROLYTES NUTRITION/GASTROINTESTINAL",
+}
+SOURCE_HEADING_LABELS = {
+    "NEUROLOGY", "PHYSICAL EXAMINATION", "CEREBRAL OXIMETRY MONITORING", "SEDATION MONITORING",
+    "MEDICATIONS", "INTRACRANIAL PRESSURE MONITORING", "PERTINENT IMAGING OR LABORATORY DATA",
+    "GLASGOW COMA SCALE", "PERTINENT ELECTROENCEPHALOGRAM DATA", "PERTINENT IMAGING DATA",
+    "PERTINENT LABORATORY DATA", "RESPIRATORY", "VITAL SIGNS", "CHEST RADIOGRAPH INTERPRETATION",
+    "DEVICE OVERVIEW", "INVASIVE MECHANICAL VENTILATOR SETTINGS", "CPAP TRIAL REPORT",
+    "NON-INVASIVE MECHANICAL VENTILATOR SETTINGS", "CARDIOVASCULAR", "LINES",
+    "EXTRACORPOREAL LIFE SUPPORT", "PACEMAKER", "ELECTROCARDIOGRAPHIC INTERPRETATION",
+    "CARDIAC IMAGING DATA", "FLUIDS ELECTROLYTES NUTRITION/GASTROINTESTINAL", "ANTROPOMETRICS",
+    "FEEDS, DIET AND FLUIDS", "INTAKE / OUTPUT (LAST 24 HOURS)", "DETAILED REVIEW", "DEVICES",
+    "ABDOMINAL IMAGING INTERPRETATION", "HEMATOLOGY", "INFECTIOUS DISEASES", "CULTURE DATA",
+    "RESPIRATORY VIRAL PANEL DATA", "MRSA SCREEN",
+}
 
 
 def package(data):
@@ -21,8 +38,43 @@ def package(data):
         return {name: archive.read(name) for name in archive.namelist()}
 
 
-def tree(data):
-    return ET.fromstring(package(data)["word/document.xml"])
+def without_heading_keep_next(document):
+    """Normalize only the approved pagination property on named source headings.
+
+    Byte comparisons still cover every other attribute, run, spacing setting,
+    style and table property. Medication paragraphs and unrelated headings are
+    deliberately outside this allowance.
+    """
+    root = note_word._parse_xml(document)
+    removals = set()
+    for table in note_word._nodes(root, "tbl"):
+        first = next(note_word._nodes(table, "p"), None)
+        if first is None or note_word._text(first).strip() not in CLINICAL_TABLES:
+            continue
+        rows = [node for node in table.children if node.name == note_word._W + "tr"]
+        for row in rows[:-1]:
+            cells = [node for node in row.children if node.name == note_word._W + "tc"]
+            if len(cells) != 1:
+                continue
+            visible = [p for p in note_word._nodes(cells[0], "p") if note_word._text(p).strip()]
+            if len(visible) != 1 or note_word._text(visible[0]).strip() not in SOURCE_HEADING_LABELS:
+                continue
+            properties = next((node for node in visible[0].children if node.name == note_word._W + "pPr"), None)
+            if properties is None:
+                continue
+            other = [node for node in properties.children if node.name != note_word._W + "keepNext"]
+            if not other and not properties.attributes and not "".join(properties.text).strip():
+                removals.add((properties.start, properties.end))
+            else:
+                removals.update((node.start, node.end) for node in properties.children if node.name == note_word._W + "keepNext")
+    for start, end in sorted(removals, reverse=True):
+        document = document[:start] + document[end:]
+    return document
+
+
+def tree(data, *, normalize_heading_pagination=False):
+    document = package(data)["word/document.xml"]
+    return ET.fromstring(without_heading_keep_next(document) if normalize_heading_pagination else document)
 
 
 def text(node):
@@ -66,7 +118,7 @@ def test_empty_attestation_returns_the_original_template_unchanged():
     assert render_note_docx(result, note_type="attestation") == TEMPLATE_FILES["attestation"].read_bytes()
 
 
-def test_empty_progress_clears_only_the_two_medication_placeholders():
+def test_empty_progress_clears_only_medication_placeholders_and_sets_heading_pagination():
     original_data = TEMPLATE_FILES["progress"].read_bytes()
     original = package(original_data)
     source = original["word/document.xml"]
@@ -75,7 +127,10 @@ def test_empty_progress_clears_only_the_two_medication_placeholders():
     generated_data = render_note_docx(result)
     expected = dict(original)
     expected["word/document.xml"] = source.replace(b"<w:t>***</w:t>", b"<w:t></w:t>")
-    assert package(generated_data) == expected
+    generated_parts = package(generated_data)
+    generated_parts["word/document.xml"] = without_heading_keep_next(generated_parts["word/document.xml"])
+    expected["word/document.xml"] = without_heading_keep_next(expected["word/document.xml"])
+    assert generated_parts == expected
     document = tree(generated_data)
     for label in ("HEMATOLOGY", "INFECTIOUS DISEASES"):
         cell = medication_cell(section_table(document, label))
@@ -94,7 +149,7 @@ def test_all_original_formatting_parts_paragraphs_and_table_properties_are_prese
     for name in original_parts:
         if name != "word/document.xml":
             assert original_parts[name] == generated_parts[name], name
-    original, generated = tree(original_data), tree(generated_data)
+    original, generated = tree(original_data, normalize_heading_pagination=True), tree(generated_data, normalize_heading_pagination=True)
     old_paragraphs = Counter(ET.tostring(p) for p in original.iter(W + "p"))
     if note_type == "progress":
         for label in ("HEMATOLOGY", "INFECTIOUS DISEASES"):
@@ -136,7 +191,7 @@ def test_medications_are_below_smartlists_and_inside_the_correct_original_cells(
     for section, medication in ((heme, "Ferrous sulfate 15 mg Daily"), (infectious, "Ceftriaxone 500 mg Q24H")):
         cell = medication_cell(section)
         assert medication in text(cell)
-        assert [text(p) for p in cell.iter(W + "p")] == ["Scheduled:", medication]
+        assert [text(p) for p in cell.iter(W + "p")] == ["Scheduled: " + medication]
     assert "Unmapped example 1 mg Daily" in text(document)
     assert "ADDITIONAL MEDICATIONS" in text(document)
     assert "MEDICATIONS FOR REVIEW" not in text(document)
@@ -211,7 +266,7 @@ def test_only_medication_placeholders_are_removed_when_split_across_word_runs(tm
         assert "*" not in text(cell)
         assert cell.find("w:p", NS) is not None
         if populated:
-            assert [text(p) for p in cell.iter(W + "p")][0] == "Scheduled:"
+            assert [text(p) for p in cell.iter(W + "p")][0].startswith("Scheduled: ")
         else:
             assert text(cell) == ""
     assert "with ***." in text(section_table(document, "ASSESSMENT"))
@@ -224,7 +279,7 @@ def test_large_medication_lists_use_wrapping_paragraphs_without_fixed_height_or_
     result = {"medications": {"sections": {"Hematology": {"Scheduled": medications}}}, "selected_plan_tokens": []}
     root = tree(render_note_docx(result))
     heme = section_table(root, "HEMATOLOGY")
-    paragraphs = {text(p): p for p in heme.iter(W + "p")}
+    paragraphs = {text(p).removeprefix("Scheduled: "): p for p in heme.iter(W + "p")}
     assert all(item in paragraphs for item in medications)
     for item in medications:
         assert paragraphs[item].find("w:pPr/w:keepNext", NS).get(W + "val") == "0"

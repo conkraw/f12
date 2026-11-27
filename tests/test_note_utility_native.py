@@ -421,6 +421,55 @@ def test_age_change_requires_a_new_generation_before_switching_fengi_templates()
     assert at.session_state["sources"] == sources
 
 
+def test_respiratory_and_cv_changes_reselect_sections_only_after_generation():
+    from test_note_cardiorespiratory_integration import example
+    from test_note_neuro_integration import section, text, tree
+
+    at = AppTest.from_string(SOURCE, default_timeout=10).run()
+    sources = deepcopy(at.session_state["sources"])
+    sources["P4102"] = example("prvc", "art_cvl")
+    at.session_state["sources"] = sources
+    at.run()
+    assert DRAFT_KEY not in at.session_state
+    generate(at)
+    prepared = downloads(at)
+    result = at.session_state[DRAFT_KEY]["result"]
+    assert result["respiratory_variant"] == "prvc"
+    assert result["cardiovascular_variant"] == "art_cvl"
+    assert any("Respiratory section: ACKRPRVC" in item.value for item in at.caption)
+    assert any("Cardiovascular section: ACKCVARTCVL" in item.value for item in at.caption)
+    root = tree(prepared["word"]["handle"]())
+    assert "Set TV:" in text(section(root, "RESPIRATORY"))
+
+    sources = deepcopy(at.session_state["sources"])
+    updated = example("hfnc", "cvl")
+    source = sources["P4102"]
+    source["ventilation"] = None
+    source["noninvasive"] = updated["noninvasive"]
+    source["devices"] = updated["devices"]
+    source["fields"]["Respiratory"] = "Extubated to HFNC today."
+    at.session_state["sources"] = sources
+    at.run()
+    assert not at.exception
+    assert DRAFT_KEY not in at.session_state
+    assert not at.get("download_button")
+    assert not at.text_area
+    assert_revoked(prepared)
+
+    generate(at)
+    result = at.session_state[DRAFT_KEY]["result"]
+    assert result["respiratory_variant"] == "hfnc"
+    assert result["cardiovascular_variant"] == "cvl"
+    assert any("Respiratory section: ACKRHFNC" in item.value for item in at.caption)
+    assert any("Cardiovascular section: ACKCVCVL" in item.value for item in at.caption)
+    root = tree(downloads(at)["word"]["handle"]())
+    respiratory = text(section(root, "RESPIRATORY"))
+    assert "Flow Rate:" in respiratory and "Set TV:" not in respiratory
+    assert respiratory.count("Budesonide 0.5 mg Q12H") == 1
+    assert text(section(root, "CARDIOVASCULAR")).count("Enalapril 2 mg Q12H") == 1
+    assert at.session_state["sources"] == sources
+
+
 @pytest.mark.parametrize("note_type", ["progress", "attestation"])
 def test_first_generate_populates_word_and_text_with_user_examples_without_confirmation(note_type):
     import xml.etree.ElementTree as ET

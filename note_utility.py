@@ -60,7 +60,7 @@ def note_sources(vault: dict, drafts: dict) -> dict:
         filled = any(str(value).strip() for value in fields.values())
         filled = filled or bool(sheet.get("medications"))
         filled = filled or any(sheet.get(key) for key in (
-            "ventilation", "noninvasive", "devices", "neuro_devices", "ecls",
+            "ventilation", "noninvasive", "devices", "neuro_devices", "ecls", "pacemaker",
             "code_status", "dosing_weight", "nutrition", "diet", "feeds", "cbc", "vitals",
         ))
         filled = filled or any((sheet.get(key) or {}).get("rows") for key in ("labs", "viral_panel"))
@@ -217,11 +217,12 @@ def render_note_utility(st, *, authorize, get_sources, stored_settings,
         st.caption("Your attending attestation keeps its examination SmartLists and suggested plans. Medication lists stay in the resident's note.")
     else:
         st.caption("Medication review lists follow the main systems in your progress note. Review and edit the downloaded document in Word.")
-        if result.get("neuro_phrase"):
-            selection = "Neurology section: " + result["neuro_phrase"] + "."
-            if result.get("neuro_reason"):
-                selection += " " + result["neuro_reason"]
-            st.caption(selection)
+        for section, key in (("Neurology", "neuro"), ("Respiratory", "respiratory"), ("Cardiovascular", "cardiovascular")):
+            if result.get(key + "_phrase"):
+                selection = section + " section: " + result[key + "_phrase"] + "."
+                if result.get(key + "_reason"):
+                    selection += " " + result[key + "_reason"]
+                st.caption(selection)
     st.caption("Review and edit the diagnoses and plans in Word. The optional controls below let you change which plans are included before downloading.")
     for warning in result.get("warnings", []):
         st.warning(warning)

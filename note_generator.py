@@ -15,6 +15,8 @@ from zipfile import BadZipFile, ZipFile
 
 from note_fengi import FENGI_TEMPLATE_FILES, select_fengi_variant
 from note_neuro import NEURO_TEMPLATE_FILES, select_neuro_variant
+from note_respiratory import RESP_TEMPLATE_FILES, select_respiratory_variant
+from note_cardiovascular import CV_TEMPLATE_FILES, select_cardiovascular_variant
 from note_medications import build_note_medications
 from note_medication_rules import medication_note_candidates
 from note_findings import clinical_note_candidates
@@ -504,25 +506,29 @@ def _medication_lines(groups: dict | None) -> str:
     return "\n".join(lines).rstrip()
 
 
-def _template_section_text(template_path, medication_lines: str, section_name: str) -> str:
-    """Use the same supplied section table as Word for the plain-text preview."""
+def _template_section_rows(template_path) -> list[list[str]]:
     word = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
+    with ZipFile(template_path) as package:
+        source = package.read("word/document.xml")
+    if b"<!DOCTYPE" in source.upper() or b"<!ENTITY" in source.upper():
+        raise ValueError
+    root = ET.fromstring(source)
+    body = root.find(word + "body")
+    tables = [] if body is None else body.findall(word + "tbl")
+    if len(tables) != 1:
+        raise ValueError
+    return [
+        ["".join(part.text or "" for part in paragraph.iter(word + "t"))
+         for paragraph in row.iter(word + "p")]
+        for row in tables[0].findall(word + "tr")
+    ]
+
+
+def _template_section_text(template_path, medication_lines: str, section_name: str,
+                           *, pacemaker_template=None) -> str:
+    """Use the same supplied section table as Word for the plain-text preview."""
     try:
-        with ZipFile(template_path) as package:
-            source = package.read("word/document.xml")
-        if b"<!DOCTYPE" in source.upper() or b"<!ENTITY" in source.upper():
-            raise ValueError
-        root = ET.fromstring(source)
-        body = root.find(word + "body")
-        tables = [] if body is None else body.findall(word + "tbl")
-        if len(tables) != 1:
-            raise ValueError
-        rows = tables[0].findall(word + "tr")
-        row_lines = [
-            ["".join(part.text or "" for part in paragraph.iter(word + "t"))
-             for paragraph in row.iter(word + "p")]
-            for row in rows
-        ]
+        row_lines = _template_section_rows(template_path)
         medication_headers = [index for index, lines in enumerate(row_lines)
                               if [line.strip() for line in lines if line.strip()] == ["MEDICATIONS"]]
         if len(medication_headers) != 1:
@@ -531,6 +537,17 @@ def _template_section_text(template_path, medication_lines: str, section_name: s
         if medication_index >= len(row_lines) or [line.strip() for line in row_lines[medication_index]
                                                  if line.strip()] != ["***"]:
             raise ValueError
+        if pacemaker_template is not None:
+            pacemaker_rows = _template_section_rows(pacemaker_template)
+            headings = [index for index, lines in enumerate(pacemaker_rows)
+                        if [line.strip() for line in lines if line.strip()] == ["PACEMAKER"]]
+            if len(headings) != 1 or headings[0] + 1 >= len(pacemaker_rows):
+                raise ValueError
+            start = headings[0]
+            if [line.strip() for line in pacemaker_rows[start + 1] if line.strip()] != ["{ACKCVPACEMAKER:45347}"]:
+                raise ValueError
+            row_lines[medication_index - 1:medication_index - 1] = pacemaker_rows[start:start + 2]
+            medication_index += 2
         row_lines[medication_index] = medication_lines.splitlines()
         return "\n".join(line for lines in row_lines for line in lines if line.strip())
     except (OSError, BadZipFile, ET.ParseError, KeyError, ValueError):
@@ -539,7 +556,9 @@ def _template_section_text(template_path, medication_lines: str, section_name: s
 
 def _render_note(medications: dict, suggestions: list[dict], phrase_style: str,
                  note_type: str = "progress", fengi_variant: str | None = None,
-                 neuro_variant: str | None = None) -> str:
+                 neuro_variant: str | None = None, respiratory_variant: str | None = None,
+                 cardiovascular_variant: str | None = None,
+                 cardiovascular_include_pacemaker: bool = False) -> str:
     phrases = _selected_plan_tokens(suggestions, phrase_style)
     if note_type == "attestation":
         return _ATTESTATION_TEMPLATE + ("\n".join(phrases) + "\n" if phrases else "")
@@ -554,6 +573,15 @@ def _render_note(medications: dict, suggestions: list[dict], phrase_style: str,
         meds = _medication_lines(sections.get(section))
         if section == "Neurologic" and neuro_variant is not None:
             blocks.append(_template_section_text(NEURO_TEMPLATE_FILES[neuro_variant], meds, "neurologic"))
+            continue
+        if section == "Respiratory" and respiratory_variant is not None:
+            blocks.append(_template_section_text(RESP_TEMPLATE_FILES[respiratory_variant], meds, "respiratory"))
+            continue
+        if section == "Cardiovascular" and cardiovascular_variant is not None:
+            pacemaker_template = (CV_TEMPLATE_FILES["art_cvl_pacemaker"]
+                                  if cardiovascular_variant == "art_cvl_ecls" and cardiovascular_include_pacemaker else None)
+            blocks.append(_template_section_text(CV_TEMPLATE_FILES[cardiovascular_variant], meds, "cardiovascular",
+                                                  pacemaker_template=pacemaker_template))
             continue
         if section == "FEN / GI" and fengi_variant is not None:
             blocks.append(_template_section_text(FENGI_TEMPLATE_FILES[fengi_variant], meds, "age-specific FEN/GI"))
@@ -621,10 +649,13 @@ def generate_note(
              else {"variant": None, "age_text": "", "warning": ""})
     neuro = (select_neuro_variant(sheet, settings=settings, medications=medications) if note_type == "progress"
              else {"variant": None, "phrase": "", "label": "", "reason": "", "warning": ""})
-    if fengi["warning"]:
-        warnings.append(fengi["warning"])
-    if neuro["warning"]:
-        warnings.append(neuro["warning"])
+    respiratory = (select_respiratory_variant(sheet, settings=settings) if note_type == "progress"
+                   else {"variant": None, "phrase": "", "label": "", "reason": "", "warning": ""})
+    cardiovascular = (select_cardiovascular_variant(sheet, settings=settings) if note_type == "progress"
+                      else {"variant": None, "phrase": "", "label": "", "reason": "", "warning": "", "include_pacemaker": False})
+    for selection in (fengi, neuro, respiratory, cardiovascular):
+        if selection["warning"]:
+            warnings.append(selection["warning"])
     warnings = list(dict.fromkeys(list(medications.get("warnings") or []) + warnings))
     if selected_ids is not None:
         if isinstance(selected_ids, str):
@@ -645,11 +676,17 @@ def generate_note(
             if warning not in warnings:
                 warnings.append(warning)
     return {
-        "text": _render_note(medications, suggestions, phrase_style, note_type, fengi["variant"], neuro["variant"]),
+        "text": _render_note(medications, suggestions, phrase_style, note_type, fengi["variant"], neuro["variant"],
+                             respiratory["variant"], cardiovascular["variant"], cardiovascular["include_pacemaker"]),
         "suggestions": suggestions, "warnings": warnings, "medications": medications,
         "note_type": note_type, "phrase_style": phrase_style,
         "fengi_variant": fengi["variant"],
         "neuro_variant": neuro["variant"], "neuro_phrase": neuro["phrase"],
         "neuro_label": neuro["label"], "neuro_reason": neuro["reason"],
+        "respiratory_variant": respiratory["variant"], "respiratory_phrase": respiratory["phrase"],
+        "respiratory_label": respiratory["label"], "respiratory_reason": respiratory["reason"],
+        "cardiovascular_variant": cardiovascular["variant"], "cardiovascular_phrase": cardiovascular["phrase"],
+        "cardiovascular_label": cardiovascular["label"], "cardiovascular_reason": cardiovascular["reason"],
+        "cardiovascular_include_pacemaker": cardiovascular["include_pacemaker"],
         "selected_plan_tokens": _selected_plan_tokens(suggestions, phrase_style),
     }

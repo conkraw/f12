@@ -84,7 +84,7 @@ def test_all_seven_selected_sections_have_neuro_medications_once_in_the_correct_
     assert result["neuro_phrase"] == phrase
     assert result["neuro_reason"]
     assert result["neuro_label"]
-    plain = result["text"].split("NEUROLOGY", 1)[1].split("{CKRESPLIST:45220}", 1)[0]
+    plain = result["text"].split("NEUROLOGY", 1)[1].split("\n\nRESPIRATORY\n", 1)[0]
     root = tree(render_note_docx(result))
     neuro = section(root, "NEUROLOGY")
     cell = medication_cell(neuro)
@@ -104,7 +104,7 @@ def test_all_seven_selected_sections_have_neuro_medications_once_in_the_correct_
             assert result["text"].count(medication) == text(root).count(medication) == 1
             assert medication in plain and medication in text(cell)
     paragraphs = [text(p) for p in root.iter(W + "p")]
-    assert paragraphs.index("OBJECTIVE") < paragraphs.index("NEUROLOGY") < paragraphs.index("{CKRESPLIST:45220}")
+    assert paragraphs.index("OBJECTIVE") < paragraphs.index("NEUROLOGY") < paragraphs.index("RESPIRATORY")
     assert result["fengi_variant"] == "age_2_plus"
     assert "Body Mass Index:" in text(root)
     assert text(root).count("***") == result["text"].count("***") == 2

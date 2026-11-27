@@ -157,7 +157,7 @@ def test_exact_template_tokens_and_medications_stay_in_their_main_sections():
     before = deepcopy(sheet)
     result = generate_note(sheet)
     text = result["text"]
-    neuro = text.split("NEUROLOGY", 1)[1].split("{CKRESPLIST:45220}", 1)[0]
+    neuro = text.split("NEUROLOGY", 1)[1].split("\n\nRESPIRATORY\n", 1)[0]
     assert "{CKNEUROSMARTLIST:45213}" not in text
     assert "{ACKNEUROEXAM:45450}" in neuro
     assert "Drips:\nFentanyl at 2 mcg/kg/hr" in neuro
@@ -172,7 +172,7 @@ def test_exact_template_tokens_and_medications_stay_in_their_main_sections():
     assert "Unmapped example 1 mg Q12H" in text
     for token in (
         "@NAME@", "@MRN@", "@TODAYDATE@", "@CURHOSPDAY@", "@ICULOS@", "@CODE@", "@DIAGX@",
-        "{overnightevents:45212}", "{ACKROS:45449}", "{CKCVLIST:45328}",
+        "{overnightevents:45212}", "{ACKROS:45449}", "{ACKCVEXAM:45452}",
         "{ACKHLABS:45360}", "@FLOWSTAT(6:24)@", "@CULTUREHX@", "{ACKIDLABS:45351}",
         "@RESUFAST(MRSADNA:1,MRSANPADM:1)@", "{CKCLININDICATIONS:45218}",
         "@age@", "@sex@", "@ADMITDT@",

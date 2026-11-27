@@ -10,7 +10,7 @@ import note_word
 from note_neuro import NEURO_TEMPLATE_FILES
 from note_word import NoteWordError, TEMPLATE_FILES, render_note_docx
 from test_note_word import (NS, W, medication_cell, package, sample_result, section_table,
-                           text, tree, write_with_document)
+                           text, tree, without_heading_keep_next, write_with_document)
 
 
 HEADING = "NEUROLOGY"
@@ -31,8 +31,10 @@ def neuro_result(variant):
     return result
 
 
-def raw_table(data):
+def raw_table(data, *, normalize_pagination=False):
     document = package(data)["word/document.xml"]
+    if normalize_pagination:
+        document = without_heading_keep_next(document)
     root = note_word._parse_xml(document)
     return document, note_word._table(root, HEADING)
 
@@ -55,8 +57,8 @@ def test_selected_neuro_table_replaces_anchor_and_contains_each_medication_once(
     assert "{CKNEUROSMARTLIST:45213}" not in text(root)
     cell = medication_cell(table)
     assert [text(p) for p in cell.iter(W + "p")] == [
-        "Drips:", "Fentanyl at 2 mcg/kg/hr", "Scheduled:", "Clobazam 100 mg Q12H",
-        "PRN:", "Fentanyl 20 mcg Q1H PRN",
+        "Drips: Fentanyl at 2 mcg/kg/hr", "Scheduled: Clobazam 100 mg Q12H",
+        "PRN: Fentanyl 20 mcg Q1H PRN",
     ]
     for values in result["medications"]["sections"]["Neurologic"].values():
         for value in values:
@@ -68,12 +70,12 @@ def test_selected_neuro_table_replaces_anchor_and_contains_each_medication_once(
 
 
 @pytest.mark.parametrize("variant", SOURCE_HASHES)
-def test_neuro_table_is_byte_identical_outside_its_medication_placeholder(variant):
+def test_neuro_table_is_byte_identical_except_medications_and_heading_pagination(variant):
     original_data = NEURO_TEMPLATE_FILES[variant].read_bytes()
-    source, original_table = raw_table(original_data)
+    source, original_table = raw_table(original_data, normalize_pagination=True)
     placeholder = note_word._medication_placeholder(original_table)
     generated_data = render_note_docx(neuro_result(variant))
-    generated, inserted_table = raw_table(generated_data)
+    generated, inserted_table = raw_table(generated_data, normalize_pagination=True)
     inserted = generated[inserted_table.start:inserted_table.end]
     assert inserted.startswith(source[original_table.start:placeholder.start])
     assert inserted.endswith(source[placeholder.end:original_table.end])
@@ -93,13 +95,13 @@ def test_neuro_table_is_byte_identical_outside_its_medication_placeholder(varian
 @pytest.mark.parametrize("variant", SOURCE_HASHES)
 def test_empty_neuro_medications_clear_only_the_designated_cell(variant):
     original_data = NEURO_TEMPLATE_FILES[variant].read_bytes()
-    source, original_table = raw_table(original_data)
+    source, original_table = raw_table(original_data, normalize_pagination=True)
     placeholder = note_word._medication_placeholder(original_table)
     expected = (source[original_table.start:placeholder.start]
                 + source[placeholder.start:placeholder.end].replace(b"***", b"")
                 + source[placeholder.end:original_table.end])
     generated_data = render_note_docx({"neuro_variant": variant, "selected_plan_tokens": []})
-    generated, inserted_table = raw_table(generated_data)
+    generated, inserted_table = raw_table(generated_data, normalize_pagination=True)
     assert generated[inserted_table.start:inserted_table.end] == expected
     root = tree(generated_data)
     cell = medication_cell(section_table(root, HEADING))
@@ -116,7 +118,7 @@ def test_progress_parts_and_unrelated_source_paragraphs_remain_unchanged():
     for name in original_parts:
         if name != "word/document.xml":
             assert original_parts[name] == generated_parts[name], name
-    original, generated = tree(original_data), tree(generated_data)
+    original, generated = tree(original_data, normalize_heading_pagination=True), tree(generated_data, normalize_heading_pagination=True)
     preserved = Counter(ET.tostring(p) for p in original.iter(W + "p"))
     anchor = next(p for p in original.iter(W + "p") if text(p) == "{CKNEUROSMARTLIST:45213}")
     preserved.subtract([ET.tostring(anchor)])
@@ -283,7 +285,7 @@ def test_large_neuro_medication_list_can_wrap_inside_its_own_table_and_escapes_s
     root = tree(output)
     table = section_table(root, HEADING)
     cell = medication_cell(table)
-    paragraphs = {text(p): p for p in cell.iter(W + "p")}
+    paragraphs = {text(p).removeprefix("Scheduled: "): p for p in cell.iter(W + "p")}
     for value in values:
         assert text(root).count(value) == 1
         assert paragraphs[value].find("w:pPr/w:keepNext", NS).get(W + "val") == "0"

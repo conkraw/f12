@@ -10,7 +10,7 @@ import note_word
 from note_fengi import FENGI_TEMPLATE_FILES
 from note_word import NoteWordError, TEMPLATE_FILES, render_note_docx
 from test_note_word import (NS, W, medication_cell, package, sample_result, section_table,
-                           text, tree, write_with_document)
+                           text, tree, without_heading_keep_next, write_with_document)
 
 
 HEADING = "FLUIDS ELECTROLYTES NUTRITION/GASTROINTESTINAL"
@@ -35,8 +35,10 @@ def age_result(variant):
     return result
 
 
-def raw_table(data, heading=HEADING):
+def raw_table(data, heading=HEADING, *, normalize_pagination=False):
     document = package(data)["word/document.xml"]
+    if normalize_pagination:
+        document = without_heading_keep_next(document)
     root = note_word._parse_xml(document)
     table = note_word._table(root, heading)
     return document, table
@@ -64,8 +66,8 @@ def test_selected_age_table_replaces_generic_anchor_and_contains_its_medications
     assert label in text(table) and expected_token in text(table) and excluded_token not in text(table)
     cell = medication_cell(table)
     assert [text(p) for p in cell.iter(W + "p")] == [
-        "Drips:", "Synthetic GI infusion at 20 mL/hr", "Scheduled:",
-        "Pantoprazole 20 mg Q24H", "Calcium carbonate 500 mg Q12H", "PRN:", "Ondansetron 2 mg Q6H PRN",
+        "Drips: Synthetic GI infusion at 20 mL/hr", "Scheduled: Pantoprazole 20 mg Q24H",
+        "Calcium carbonate 500 mg Q12H", "PRN: Ondansetron 2 mg Q6H PRN",
     ]
     for values in result["medications"]["sections"]["FEN / GI"].values():
         for value in values:
@@ -79,12 +81,12 @@ def test_selected_age_table_replaces_generic_anchor_and_contains_its_medications
 
 
 @pytest.mark.parametrize("variant", SOURCE_HASHES)
-def test_transplanted_table_is_byte_identical_outside_the_one_medication_paragraph(variant):
+def test_transplanted_table_is_byte_identical_except_medications_and_heading_pagination(variant):
     source_data = FENGI_TEMPLATE_FILES[variant].read_bytes()
-    source, original_table = raw_table(source_data)
+    source, original_table = raw_table(source_data, normalize_pagination=True)
     original_placeholder = note_word._medication_placeholder(original_table)
     generated_data = render_note_docx(age_result(variant))
-    generated, inserted_table = raw_table(generated_data)
+    generated, inserted_table = raw_table(generated_data, normalize_pagination=True)
     inserted = generated[inserted_table.start:inserted_table.end]
     assert inserted.startswith(source[original_table.start:original_placeholder.start])
     assert inserted.endswith(source[original_placeholder.end:original_table.end])
@@ -100,13 +102,13 @@ def test_transplanted_table_is_byte_identical_outside_the_one_medication_paragra
 @pytest.mark.parametrize("variant", SOURCE_HASHES)
 def test_empty_age_table_clears_only_medication_stars_and_preserves_other_placeholders(variant):
     original_data = FENGI_TEMPLATE_FILES[variant].read_bytes()
-    original, source_table = raw_table(original_data)
+    original, source_table = raw_table(original_data, normalize_pagination=True)
     placeholder = note_word._medication_placeholder(source_table)
     expected = (original[source_table.start:placeholder.start]
                 + original[placeholder.start:placeholder.end].replace(b"***", b"")
                 + original[placeholder.end:source_table.end])
     rendered = render_note_docx({"fengi_variant": variant, "selected_plan_tokens": []})
-    generated, inserted_table = raw_table(rendered)
+    generated, inserted_table = raw_table(rendered, normalize_pagination=True)
     assert generated[inserted_table.start:inserted_table.end] == expected
     root = tree(rendered)
     cell = medication_cell(section_table(root, HEADING))
@@ -124,7 +126,7 @@ def test_progress_resources_and_unrelated_paragraphs_remain_unchanged(variant):
     for name in original_parts:
         if name != "word/document.xml":
             assert original_parts[name] == generated_parts[name], name
-    original, generated = tree(original_data), tree(generated_data)
+    original, generated = tree(original_data, normalize_heading_pagination=True), tree(generated_data, normalize_heading_pagination=True)
     preserved = Counter(ET.tostring(p) for p in original.iter(W + "p"))
     generic = next(p for p in original.iter(W + "p") if text(p) == "{ACKFENGI:45365}")
     preserved.subtract([ET.tostring(generic)])
@@ -231,7 +233,7 @@ def test_large_fen_medication_list_remains_inside_its_original_table_with_wrappi
     root = tree(render_note_docx(result))
     table = section_table(root, HEADING)
     cell = medication_cell(table)
-    paragraphs = {text(p): p for p in cell.iter(W + "p")}
+    paragraphs = {text(p).removeprefix("Scheduled: "): p for p in cell.iter(W + "p")}
     for value in medications:
         assert text(root).count(value) == 1
         assert paragraphs[value].find("w:pPr/w:keepNext", NS).get(W + "val") == "0"

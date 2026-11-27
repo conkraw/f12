@@ -134,11 +134,10 @@ def test_first_generated_note_orders_systems_and_groups_detected_viruses(note_ty
     assert "@ACKZARRHYTHMIA@" in result["selected_plan_tokens"]
     assert "ACZKARRHYTHMIA" not in result["text"]
     if note_type == "progress":
-        assert "Drips:" in paragraphs
-        assert "Scheduled:" in paragraphs
-        assert "PRN:" in paragraphs
-        assert "Fentanyl at 2 mcg/kg/hr" in paragraphs
-        assert "Fentanyl 20 mcg Q1H PRN" in paragraphs
+        for label in ("Drips:", "Scheduled:", "PRN:"):
+            assert any(line.startswith(label) for line in paragraphs)
+        assert "Drips: Fentanyl at 2 mcg/kg/hr" in paragraphs
+        assert "PRN: Fentanyl 20 mcg Q1H PRN" in paragraphs
     else:
         assert "MEDICATIONS FOR REVIEW" not in paragraphs
         assert not any("Fentanyl" in value or "Pantoprazole" in value for value in paragraphs)
@@ -219,5 +218,5 @@ def test_milrinone_and_low_albumin_follow_cv_then_fengi_in_both_exports(note_typ
     if note_type == "attestation":
         assert not any("Milrinone" in line for line in paragraphs)
     else:
-        assert "Milrinone at 0.5 mcg/kg/min" in paragraphs
+        assert "Drips: Milrinone at 0.5 mcg/kg/min" in paragraphs
     assert sheet == before

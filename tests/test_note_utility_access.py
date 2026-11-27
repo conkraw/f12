@@ -182,13 +182,18 @@ def test_note_sources_uses_current_drafts_and_omits_empty_handoffs():
     assert vault == before
 
 
-@pytest.mark.parametrize("source", ["icp", "nirs", "capd", "wat"])
+@pytest.mark.parametrize("source", ["icp", "nirs", "capd", "wat", "pacemaker"])
 def test_monitoring_only_handoff_is_available_without_showing_empty_handoffs(source):
     from observations import parse_neuro
     from vitals import parse_vitals
 
     sheet = new_sheet("P4102")
-    if source == "nirs":
+    if source == "pacemaker":
+        from pacemaker import parse_pacemaker
+        parsed = parse_pacemaker("Pacemaker: Yes\nPacer Status: Standby")
+        assert not parsed.error
+        sheet["pacemaker"] = parsed.data
+    elif source == "nirs":
         parsed = parse_vitals("NIRS Range: rSO2 Cerebral % Avg: 62.8 % Min: 60 % Max: 68 %\nLast NIRS: rSO2 Cerebral %: 66 %")
         assert not parsed.error
         sheet["vitals"] = parsed.rows

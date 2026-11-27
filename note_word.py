@@ -17,6 +17,8 @@ from zipfile import BadZipFile, ZipFile
 
 from note_fengi import FENGI_TEMPLATE_FILES
 from note_neuro import NEURO_TEMPLATE_FILES
+from note_respiratory import RESP_TEMPLATE_FILES
+from note_cardiovascular import CV_TEMPLATE_FILES
 
 
 TEMPLATE_FILES = {
@@ -27,6 +29,9 @@ _W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
 _R = "http://schemas.openxmlformats.org/officeDocument/2006/relationships}"
 _FENGI_HEADING = "FLUIDS ELECTROLYTES NUTRITION/GASTROINTESTINAL"
 _NEURO_HEADING = "NEUROLOGY"
+_RESPIRATORY_HEADING = "RESPIRATORY"
+_CARDIOVASCULAR_HEADING = "CARDIOVASCULAR"
+_TABLE_HEADING_TEXT = re.compile(r"[A-Z][A-Z0-9 /(),&-]*")
 _GROUPS = ("Drips", "Scheduled", "PRN")
 _SYSTEM_ANCHORS = (
     ("Neurologic", "{CKNEUROSMARTLIST:45213}"),
@@ -152,13 +157,17 @@ def _table(root: _Node, heading: str) -> _Node:
     return found[0]
 
 
-def _medication_placeholder(table: _Node) -> _Node:
-    """Find the medication row without selecting a urine-output placeholder."""
+def _medication_rows(table: _Node) -> tuple[_Node, _Node]:
     rows = [node for node in table.children if node.name == _W + "tr"]
     headings = [index for index, row in enumerate(rows) if _text(row).strip() == "MEDICATIONS"]
     if len(headings) != 1 or headings[0] + 1 >= len(rows):
         raise NoteWordError("The Word template is missing a unique required medication cell.")
-    return _paragraph(rows[headings[0] + 1], "***")
+    return rows[headings[0]], rows[headings[0] + 1]
+
+
+def _medication_placeholder(table: _Node) -> _Node:
+    """Find the medication row without selecting a urine-output placeholder."""
+    return _paragraph(_medication_rows(table)[1], "***")
 
 
 def _fingerprint(node: _Node):
@@ -217,6 +226,43 @@ def _load_neuro_source(variant: str, progress: ZipFile) -> bytes:
                                 heading=_NEURO_HEADING, description="neurologic")
 
 
+def _load_respiratory_source(variant: str, progress: ZipFile) -> bytes:
+    return _load_section_source(variant, progress, template_files=RESP_TEMPLATE_FILES,
+                                heading=_RESPIRATORY_HEADING, description="respiratory")
+
+
+def _add_pacemaker_rows(source: bytes, pacemaker_source: bytes) -> bytes:
+    """Copy the two supplied pacemaker rows into the compatible ECLS table."""
+    table = _table(_parse_xml(source), _CARDIOVASCULAR_HEADING)
+    pacemaker_table = _table(_parse_xml(pacemaker_source), _CARDIOVASCULAR_HEADING)
+    grid = next((node for node in table.children if node.name == _W + "tblGrid"), None)
+    pacemaker_grid = next((node for node in pacemaker_table.children if node.name == _W + "tblGrid"), None)
+    if grid is None or pacemaker_grid is None or _fingerprint(grid) != _fingerprint(pacemaker_grid):
+        raise NoteWordError("The cardiovascular pacemaker rows have an incompatible table grid.")
+    rows = [node for node in table.children if node.name == _W + "tr"]
+    if any(_text(node).strip() == "PACEMAKER" for node in rows):
+        raise NoteWordError("The cardiovascular Word template already contains pacemaker rows.")
+    pacemaker_rows = [node for node in pacemaker_table.children if node.name == _W + "tr"]
+    headings = [index for index, node in enumerate(pacemaker_rows) if _text(node).strip() == "PACEMAKER"]
+    if (len(headings) != 1 or headings[0] + 1 >= len(pacemaker_rows)
+            or _text(pacemaker_rows[headings[0] + 1]).strip() != "{ACKCVPACEMAKER:45347}"):
+        raise NoteWordError("The cardiovascular Word template is missing unique required pacemaker rows.")
+    first, last = pacemaker_rows[headings[0]], pacemaker_rows[headings[0] + 1]
+    content = pacemaker_source[first.start:last.end]
+    medication_heading, _ = _medication_rows(table)
+    return _apply_edits(source, [(medication_heading.start, medication_heading.start, content)])
+
+
+def _load_cardiovascular_source(variant: str, progress: ZipFile, *, include_pacemaker: bool = False) -> bytes:
+    source = _load_section_source(variant, progress, template_files=CV_TEMPLATE_FILES,
+                                  heading=_CARDIOVASCULAR_HEADING, description="cardiovascular")
+    if variant == "art_cvl_ecls" and include_pacemaker is True:
+        pacemaker_source = _load_section_source("art_cvl_pacemaker", progress, template_files=CV_TEMPLATE_FILES,
+                                                heading=_CARDIOVASCULAR_HEADING, description="cardiovascular")
+        source = _add_pacemaker_rows(source, pacemaker_source)
+    return source
+
+
 def _body_format(root: _Node, source: bytes) -> tuple[bytes, bytes]:
     """Reuse the template's ordinary body paragraph and run formatting."""
     paragraphs = [node for node in _nodes(root, "p") if _text(node).startswith("The patient is a ")]
@@ -267,9 +313,11 @@ def _new_run(text: str, run_properties: bytes, *, heading: bool = False) -> byte
     return b"<w:r>" + run_properties + "".join(text_xml).encode("utf-8") + b"</w:r>"
 
 
-def _new_paragraph(text: str, formatting: tuple[bytes, bytes], *, heading: bool = False) -> bytes:
+def _new_paragraph(text: str, formatting: tuple[bytes, bytes], *, heading: bool = False,
+                   keep_next: bool | None = None) -> bytes:
     paragraph_properties, run_properties = formatting
-    pagination = b'<w:keepNext w:val="1"/>' if heading else b'<w:keepNext w:val="0"/>'
+    keep_next = heading if keep_next is None else keep_next
+    pagination = b'<w:keepNext w:val="1"/>' if keep_next else b'<w:keepNext w:val="0"/>'
     return (b"<w:p><w:pPr>" + pagination + b'<w:keepLines w:val="0"/>' + paragraph_properties
             + b"</w:pPr>" + _new_run(text, run_properties, heading=heading) + b"</w:p>")
 
@@ -314,9 +362,8 @@ def _plan_edits(root: _Node, source: bytes, plan: _Node, tokens: list[str], form
     return edits
 
 
-def _plan_heading_edits(plan: _Node, source: bytes) -> list[tuple[int, int, bytes]]:
-    """Keep the existing Plan heading with its first generated plan item."""
-    paragraph = _paragraph(plan, "PLAN")
+def _keep_with_next_edits(paragraph: _Node, source: bytes) -> list[tuple[int, int, bytes]]:
+    """Change only one paragraph's nonvisual keep-with-next property."""
     properties = next((node for node in paragraph.children if node.name == _W + "pPr"), None)
     keep_next = b"<w:keepNext/>"
     if properties is None:
@@ -328,6 +375,26 @@ def _plan_heading_edits(plan: _Node, source: bytes) -> list[tuple[int, int, byte
         content = source[properties.start:properties.open_end - 2] + b">" + keep_next + b"</w:pPr>"
         return [(properties.start, properties.end, content)]
     return [(properties.open_end, properties.open_end, keep_next)]
+
+
+def _plan_heading_edits(plan: _Node, source: bytes) -> list[tuple[int, int, bytes]]:
+    """Keep the existing Plan heading with its first generated plan item."""
+    return _keep_with_next_edits(_paragraph(plan, "PLAN"), source)
+
+
+def _table_heading_edits(table: _Node, source: bytes) -> list[tuple[int, int, bytes]]:
+    """Keep plain section labels with the next row without changing appearance."""
+    rows = [node for node in table.children if node.name == _W + "tr"]
+    edits = []
+    for row in rows[:-1]:
+        cells = [node for node in row.children if node.name == _W + "tc"]
+        if len(cells) != 1:
+            continue
+        paragraphs = [node for node in _nodes(cells[0], "p") if _text(node).strip()]
+        if len(paragraphs) != 1 or not _TABLE_HEADING_TEXT.fullmatch(_text(paragraphs[0]).strip()):
+            continue
+        edits.extend(_keep_with_next_edits(paragraphs[0], source))
+    return edits
 
 
 def _sections(result: dict) -> dict:
@@ -349,7 +416,7 @@ def _sections(result: dict) -> dict:
     return sections
 
 
-def _medication_paragraphs(groups: dict, formatting: tuple[bytes, bytes]) -> bytes:
+def _medication_paragraphs(groups: dict, formatting: tuple[bytes, bytes], *, table_cell: bool = False) -> bytes:
     if not any(groups.get(group) for group in _GROUPS):
         return b""
     pieces = []
@@ -357,8 +424,17 @@ def _medication_paragraphs(groups: dict, formatting: tuple[bytes, bytes]) -> byt
         values = groups.get(group) or []
         if not values:
             continue
-        pieces.append(_new_paragraph(group + ":", formatting, heading=True))
-        pieces.extend(_new_paragraph(value, formatting) for value in values)
+        if table_cell:
+            # An inline label cannot be stranded when its table row splits.
+            # Keep only the generated label bold, and avoid paragraph keep
+            # chains that can push an oversized medication row to a new page.
+            first = _new_paragraph(group + ": ", formatting, heading=True, keep_next=False)
+            first = first[:-len(b"</w:p>")] + _new_run(values[0], formatting[1]) + b"</w:p>"
+            pieces.append(first)
+            pieces.extend(_new_paragraph(value, formatting) for value in values[1:])
+        else:
+            pieces.append(_new_paragraph(group + ":", formatting, heading=True))
+            pieces.extend(_new_paragraph(value, formatting) for value in values)
     return b"".join(pieces)
 
 
@@ -394,9 +470,10 @@ def _section_content(source: bytes, groups: dict, formatting: tuple[bytes, bytes
     root = _parse_xml(source)
     table = _table(root, heading)
     anchor = _medication_placeholder(table)
-    content = _medication_paragraphs(groups, formatting)
+    content = _medication_paragraphs(groups, formatting, table_cell=True)
+    source_edits = _medication_edits(anchor, content) + _table_heading_edits(table, source)
     edits = [(start - table.start, end - table.start, value)
-             for start, end, value in _medication_edits(anchor, content)]
+             for start, end, value in source_edits]
     table_content = _apply_edits(source[table.start:table.end], edits)
     # Copy the supplied empty separator too. It prevents adjacent source tables
     # from merging when Word opens the resulting document.
@@ -446,7 +523,8 @@ def _plan_tokens(result: dict) -> list[str]:
 
 
 def _insert_content(source: bytes, result: dict, note_type: str, fengi_source: bytes | None = None,
-                    neuro_source: bytes | None = None) -> bytes:
+                    neuro_source: bytes | None = None, respiratory_source: bytes | None = None,
+                    cardiovascular_source: bytes | None = None) -> bytes:
     root = _parse_xml(source)
     formatting = _body_format(root, source)
     edits = []
@@ -462,6 +540,16 @@ def _insert_content(source: bytes, result: dict, note_type: str, fengi_source: b
                 content += _neuro_content(neuro_source, sections.get(section, {}), formatting)
                 edits.append((anchor.start, anchor.end, content))
                 continue
+            if section == "Respiratory" and respiratory_source is not None:
+                content = _section_content(respiratory_source, sections.get(section, {}), formatting,
+                                           heading=_RESPIRATORY_HEADING, description="respiratory")
+                edits.append((anchor.start, anchor.end, content))
+                continue
+            if section == "Cardiovascular" and cardiovascular_source is not None:
+                content = _section_content(cardiovascular_source, sections.get(section, {}), formatting,
+                                           heading=_CARDIOVASCULAR_HEADING, description="cardiovascular")
+                edits.append((anchor.start, anchor.end, content))
+                continue
             if section == "FEN / GI" and fengi_source is not None:
                 content = _fengi_content(fengi_source, sections.get(section, {}), formatting)
                 edits.append((anchor.start, anchor.end, content))
@@ -472,8 +560,9 @@ def _insert_content(source: bytes, result: dict, note_type: str, fengi_source: b
         for section, title in (("Hematology", "HEMATOLOGY"), ("Infectious Disease", "INFECTIOUS DISEASES")):
             table = _table(root, title)
             anchor = _medication_placeholder(table)
-            content = _medication_paragraphs(sections.get(section, {}), formatting)
+            content = _medication_paragraphs(sections.get(section, {}), formatting, table_cell=True)
             edits.extend(_medication_edits(anchor, content))
+            edits.extend(_table_heading_edits(table, source))
         standard = {name for name, _ in _SYSTEM_ANCHORS} | {"Hematology", "Infectious Disease"}
         extra = []
         for section, groups in sections.items():
@@ -489,7 +578,7 @@ def _insert_content(source: bytes, result: dict, note_type: str, fengi_source: b
     plan = _table(root, "PLAN")
     tokens = _plan_tokens(result)
     if tokens:
-        if note_type == "progress" and neuro_source is not None:
+        if note_type == "progress" and any(value is not None for value in (neuro_source, respiratory_source, cardiovascular_source)):
             edits.extend(_plan_heading_edits(plan, source))
         edits.extend(_plan_edits(root, source, plan, tokens, formatting))
     if not edits:
@@ -517,11 +606,20 @@ def render_note_docx(result: dict, *, note_type: str = "progress") -> bytes:
             source = original.read("word/document.xml")
             fengi_source = None
             neuro_source = None
+            respiratory_source = None
+            cardiovascular_source = None
             if note_type == "progress" and result.get("fengi_variant") is not None:
                 fengi_source = _load_fengi_source(result["fengi_variant"], original)
             if note_type == "progress" and result.get("neuro_variant") is not None:
                 neuro_source = _load_neuro_source(result["neuro_variant"], original)
-            modified = _insert_content(source, result, note_type, fengi_source, neuro_source)
+            if note_type == "progress" and result.get("respiratory_variant") is not None:
+                respiratory_source = _load_respiratory_source(result["respiratory_variant"], original)
+            if note_type == "progress" and result.get("cardiovascular_variant") is not None:
+                cardiovascular_source = _load_cardiovascular_source(
+                    result["cardiovascular_variant"], original,
+                    include_pacemaker=result.get("cardiovascular_include_pacemaker", False))
+            modified = _insert_content(source, result, note_type, fengi_source, neuro_source,
+                                       respiratory_source, cardiovascular_source)
             if modified == source:
                 return template
             output = BytesIO()
