@@ -169,7 +169,7 @@ def test_manual_plan_selection_uses_system_order_instead_of_click_order(note_typ
 
 def test_every_catalog_entry_has_one_system_and_catalog_systems_follow_requested_order():
     catalog = get_phrase_catalog()
-    assert len(catalog) == 89
+    assert len(catalog) == 96
     assert len({row["id"] for row in catalog}) == len(catalog)
     assert {row["system"] for row in catalog} == set(SYSTEM_NAMES)
     positions = [SYSTEM_NAMES.index(row["system"]) for row in catalog]

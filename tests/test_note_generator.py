@@ -408,7 +408,7 @@ def test_alternate_diagnoses_destination_is_supported_without_scanning_all_notes
 
 def test_catalog_is_independent_and_invalid_names_cannot_insert_arbitrary_note_text():
     catalog = get_phrase_catalog()
-    assert sum(row["verified"] for row in catalog) == 89
+    assert sum(row["verified"] for row in catalog) == 96
     assert len({row["id"] for row in catalog}) == len(catalog)
     original_phrase = catalog[0]["phrase"]
     catalog[0]["phrase"] = "MUTATED"

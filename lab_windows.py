@@ -18,7 +18,8 @@ from inspect import signature
 
 _WINDOW_TIME = ContextVar("lab_window_time", default=None)
 
-from labs import canonical, date_parts, ordered_components, lactate_endpoints, is_lactate
+from labs import (canonical, date_parts, ordered_components, lactate_endpoints,
+                  is_lactate, ENDOCRINE, is_numeric_endocrine)
 
 EASTERN = ZoneInfo('America/New_York')
 CARDIAC_RECENT = {'METHB', 'O2SATV'}
@@ -129,8 +130,10 @@ def rows_for(sheet: dict, component: str, as_of: datetime | None = None) -> list
     if component in ADMISSION and not admission:
         return []
     for row in sheet['labs']['rows']:
-        if (not row['include'] or analyte(row['component']) != component
-                or not measured(row['value'])):
+        if not row['include'] or analyte(row['component']) != component:
+            continue
+        usable = is_numeric_endocrine(row['value']) if component in ENDOCRINE else measured(row['value'])
+        if not usable:
             continue
         if component in CARDIAC_RECENT | {'HEPLMW'} and re.search(r'\b(?:pending|cancelled|canceled|hemolyzed|haemolysed|rejected|invalid)\b', row['value'], re.I):
             continue
@@ -238,6 +241,10 @@ def laboratory_data(sheet: dict, as_of: datetime | None = None) -> dict:
     now = clock(as_of)
     data = deepcopy(sheet['labs'])
     aed_fallback = {row['id']: row for row in aed_lab_rows(sheet, now)}
+    # Last actual result across all supplied dates. A new pending or rejected
+    # specimen does not hide an older measured endocrine level and its date.
+    endocrine_ids = {row['id'] for key in ENDOCRINE
+                     for row in ordered(rows_for(sheet, key, now))[:1]}
     ck = {r['id'] for r in rows_for(sheet, 'CK', now)}
     # When promoted to HEME, do not also show an older HEPLMW below. Once its
     # date is no longer today, the existing coagulation card selects it below.
@@ -254,6 +261,10 @@ def laboratory_data(sheet: dict, as_of: datetime | None = None) -> dict:
                 out.append(aed_fallback[row['id']])
             continue
         key = analyte(row['component'])
+        if key in ENDOCRINE:
+            if row['id'] not in endocrine_ids:
+                continue
+            row['panel'] = 'Other labs'
         if key in {'NTPROBNP', 'VANCOTROUGH'} | CARDIAC_RECENT:
             continue  # shown only in the appropriate system column
         if key == 'HEPLMW' and (anti_xa_in_heme or row['id'] not in anti_xa_ids):
@@ -278,6 +289,8 @@ def window_help(sheet: dict, as_of: datetime | None = None) -> str:
             'A date-only result for these two tests qualifies only when the start of its '
             'Eastern date is within 24 hours. Include collection times for prior-day results. '
             'CRP/procalcitonin: admission onward. NT-proBNP: latest from all supplied dates. '
+            'TSH, free T4 and cortisol: latest included actual level from all supplied dates in Other labs. '
+            'Pending or unusable endocrine entries do not replace a prior measured level. '
             'HEPLMW: today in HEME, older results in the lower coagulation area. '
             'Phenobarbital and phenytoin: latest within 24 hours in NEURO. '
             'Older results or prior-day results without collection times stay in Labs with the last checked date. '

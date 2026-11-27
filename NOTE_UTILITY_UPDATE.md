@@ -1,4 +1,24 @@
-# PICU Handoff 6.119
+# PICU Handoff 6.120
+
+## New in this update
+
+The note utility recognizes seven additional diagnosis references:
+
+| Documented diagnosis or matching wording | Plan reference |
+| --- | --- |
+| Hypoplastic left heart syndrome or HLHS | `@ACKZHLHS@` |
+| Chylothorax or chylous pleural effusion | `@ACKZCHYLOUSEFFUSION@` |
+| Prematurity or a clearly documented preterm birth | `@ACKZPREMATURITY@` |
+| Trisomy 13 or Patau syndrome | `@ACKZTRISOMY13@` |
+| Trisomy 21 or Down syndrome | `@ACKZTRISOMY21@` |
+| Trisomy 18 or Edwards syndrome | `@ACKZTRISOMY18@` |
+| Metachromatic leukodystrophy | `@ACKZMETACHROMATICLEUKODYSTROPHY@` |
+
+Repeated diagnosis descriptions produce one reference. The existing plan order and optional editing controls remain in place. The new baseline conditions can be recognized in the patient's own documented history. Documented prematurity includes relevant birth history. The patient's current age in weeks does not establish prematurity. Family history and prenatal screening alone do not supply these new plan references.
+
+The lower Other labs list includes the latest available TSH, free T4, and cortisol from the supplied laboratory results. These tests use all supplied dates, including results before admission or outside the 24-hour window. The display preserves the recorded value, units when supplied, abnormal flag, and collection date. Equivalent component names are combined so CORT and CORTISOL do not produce duplicate cortisol entries. Free T4 remains distinct from total T4.
+
+The display uses the last included measured result. A newer pending, canceled, or unusable entry does not displace that result. All original rows remain available in the lab editor. Future-dated results and failed current lab imports do not supply a displayed level. If the source contains no usable result for one of these tests, the utility leaves that test out.
 
 ## Generate a Word document
 
@@ -120,7 +140,7 @@ The following handoff information can now place the matching reference in the pl
 | NPO, active feeding orders, recorded feeds, or parenteral nutrition | At risk for malnutrition |
 | Supported current laboratory abnormalities | Matching phrases such as anemia, thrombocytopenia, coagulopathy, hypokalemia, and other electrolyte abnormalities |
 
-These are suggested plan references for your review in Word. Uncertain positive diagnosis wording can also supply a reference. Explicit negative or historical diagnoses are not automatically included. Laboratory matching uses recorded source results, abnormal flags, and the app's existing supported thresholds. Newer normal or unusable results suppress older abnormalities. It does not calculate new laboratory values. Viral matching uses the latest supported result for each component, so a newer negative result does not retain an older positive result.
+These are suggested plan references for your review in Word. Uncertain positive diagnosis wording can also supply a reference. Explicit negative diagnoses and historical acute conditions are not automatically included. The newly added baseline diagnoses can use the patient's own documented history, as described above. Laboratory matching for note diagnoses uses recorded source results, abnormal flags, and the app's existing supported thresholds. Newer normal or unusable results suppress older abnormalities. It does not calculate new laboratory values. Viral matching uses the latest supported result for each component, so a newer negative result does not retain an older positive result.
 
 Recognized positive viral results include adenovirus, rhinovirus or the combined rhinovirus/enterovirus target, influenza, parainfluenza, RSV, and explicitly identified COVID-19 or SARS-CoV-2. A positive target without a matching supplied phrase produces a message. For example, no phrase name was supplied for human metapneumovirus. Known source assay names retain their identity when their display labels are edited.
 
@@ -134,7 +154,7 @@ Hypoalbuminemia appears in the FEN/GI portion of the plan. Albumin matching uses
 
 The Word document is available without opening the plan controls. To change the included references in the app, open Edit included plans (optional). Use Included suggested plans to remove or restore a suggestion, or Add another plan to choose a catalog entry. Click Update note with selected plans to prepare the revised document. Your explicit selections replace the automatic defaults for that update. The reason for each suggestion remains available under Sources for suggested plans.
 
-The catalog contains 89 entries using the complete supplied names, including `ACKZARRHYTHMIA` and `ACKZHYPOALBUMINEMIA`. For example, pantoprazole can produce:
+The catalog contains 96 entries using the complete supplied names, including the seven diagnoses added in this update. For example, pantoprazole can produce:
 
 ```text
 PLAN
@@ -183,9 +203,9 @@ Admin and Utilities share one username/password login and one timed unlock. The 
 
 The draft and prepared downloads stay in the current administrator session and do not overwrite the handoff. Changing the patient, document type, or source handoff clears the old draft. Locking Admin, leaving the protected workspaces, logging out, returning Home, or resetting the patient list clears the draft and revokes its prepared downloads. Protected actions recheck Admin access, including after Word rendering. Expired or revoked downloads are rejected.
 
-## Install from version 6.109 through 6.118
+## Install from version 6.109 through 6.119
 
-Use the complete update package. Upload these eighteen Python files together beside the existing app.py, replacing matching files:
+Use the complete update package. Upload these twenty Python files together beside the existing app.py, replacing matching files:
 
 - app.py
 - admin_access.py
@@ -194,6 +214,8 @@ Use the complete update package. Upload these eighteen Python files together bes
 - categories.py
 - fen_gi.py
 - medication_groups.py
+- labs.py
+- lab_windows.py
 - note_generator.py
 - note_fengi.py
 - note_neuro.py
@@ -234,4 +256,4 @@ Also upload the templates folder with all twenty-five files, keeping these paths
 - templates/cv_cvl.docx
 - templates/cv_none.docx
 
-The package also includes `ADMIN_SETUP.txt` and an updated `secrets.example.toml` for reference. Keep your current Secrets values, especially the existing Admin password hash and encryption key. Do not replace them with the example file. There is no dependency change. Restart the app and confirm version 6.119 in the sidebar, then use the shared username and existing Admin password for Admin or Utilities. Generate a new note to apply the new respiratory and cardiovascular sections.
+The package also includes `ADMIN_SETUP.txt` and an updated `secrets.example.toml` for reference. Keep your current Secrets values, especially the existing Admin password hash and encryption key. Do not replace them with the example file. There is no dependency change. Restart the app and confirm version 6.120 in the sidebar, then use the shared username and existing Admin password for Admin or Utilities. Generate a new note to apply the additional diagnosis references. Existing saved lab rows use the updated display rules when the handoff is reopened or exported.

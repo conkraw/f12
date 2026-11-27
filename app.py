@@ -1,4 +1,4 @@
-"""PICU Handoff v6.119: respiratory and cardiovascular note sections from handoff."""
+"""PICU Handoff v6.120: additional note diagnoses and latest endocrine labs."""
 from __future__ import annotations
 from copy import deepcopy
 from workspace_ui import (WORKSPACE_TABS, COMPACT_STYLES, compact_help, alert_rows,

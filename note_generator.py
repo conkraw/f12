@@ -53,6 +53,7 @@ _RULES = (
     ("bacterial_pneumonia", "Bacterial pneumonia", "ACKZBACTERIALPNEUMONIA", r"bacterial pneumonia"),
     ("benzodiazepine_dependence", "Benzodiazepine dependence", "ACKZBENZODIAZEPINEDEPENDENCE", r"benzodiazepine dependence|benzodiazepine withdrawal"),
     ("cardiogenic_shock", "Cardiogenic shock", "ACKZCARDIOGENICSHOCK", r"cardiogenic shock"),
+    ("chylous_effusion", "Chylothorax or chylous pleural effusion", "ACKZCHYLOUSEFFUSION", r"chylothorax|(?<!non-)(?<!non )chylous (?:pleural )?effusion|pleural effusion\s*[,(-]\s*chylous"),
     ("central_diabetes_insipidus", "Central diabetes insipidus", "ACKZCENTRALDIABETESINSIPIDUS", r"central diabetes insipidus|central DI"),
     ("coagulopathy", "Coagulopathy", "ACKZCOAGULOPATHY", r"coagulopathy"),
     ("constipation", "Constipation", "ACKZCONSTIPATION", r"constipation"),
@@ -68,6 +69,7 @@ _RULES = (
     ("exposure_keratopathy", "Exposure keratopathy", "ACKZEXPOSUREKERATOPATHY", r"exposure keratopathy"),
     ("febrile_neutropenia", "Febrile neutropenia", "ACKZFEBRILENEUTROPENIA", r"febrile neutropenia|neutropenic fever"),
     ("heart_failure", "Heart failure", "ACKZHEARTFAILURE", r"heart failure|cardiac failure"),
+    ("hlhs", "Hypoplastic left heart syndrome", "ACKZHLHS", r"hypoplastic[- ]left[- ]heart[- ]syndrome|HLHS"),
     ("hemorrhagic_shock", "Hemorrhagic shock", "ACKZHEMORRHAGICSHOCK", r"h(?:ae|e)morrhagic shock"),
     ("herpes_simplex_encephalitis", "Herpes simplex encephalitis", "ACKZHERPESSIMPLEXENCEPHALITIS", r"herpes simplex encephalitis|HSV encephalitis"),
     ("hyperkalemia", "Hyperkalemia", "ACKZHYPERKALEMIA", r"hyperkal(?:ae|e)mia"),
@@ -87,6 +89,7 @@ _RULES = (
     ("lymphopenia", "Lymphopenia", "ACKZLYMPHOPENIA", r"lymphopenia|lymphocytopenia"),
     ("metabolic_acidosis_respiratory_distress", "Metabolic acidosis due to respiratory distress", "ACKZMETABOLICACIDOSISRESPIRATORYDISTRESS", r"metabolic acidosis (?:due to|from|secondary to|in the setting of) (?:decreased perfusion (?:from|due to) )?respiratory distress"),
     ("metabolic_acidosis_shock", "Metabolic acidosis due to shock", "ACKZMETABOLICACIDOSISSHOCK", r"metabolic acidosis (?:due to|from|secondary to|in the setting of) (?:\w+ )?shock"),
+    ("metachromatic_leukodystrophy", "Metachromatic leukodystrophy", "ACKZMETACHROMATICLEUKODYSTROPHY", r"metachromatic[- ]leu[ck]odystrophy|MLD"),
     ("neurogenic_shock", "Neurogenic shock", "ACKZNEUROGENICSHOCK", r"neurogenic shock"),
     ("neutropenia", "Neutropenia", "ACKZNEUTROPENIA", r"(?<!febrile )neutropenia"),
     ("opioid_dependence", "Opioid dependence", "ACKZOPIOIDDEPENDENCE", r"opioid dependence|opioid withdrawal"),
@@ -94,6 +97,7 @@ _RULES = (
     ("pards", "Pediatric acute respiratory distress syndrome", "ACKZPARDS", r"PARDS|ARDS|(?:pediatric )?acute respiratory distress syndrome"),
     ("pleural_effusion_empyema", "Pleural effusion or empyema", "ACKZPLEURALEFFUSIONEMPYEMA", r"pleural effusion|empyema"),
     ("pneumothorax", "Pneumothorax", "ACKZPNEUMOTHORAX", r"pneumothorax"),
+    ("prematurity", "Prematurity", "ACKZPREMATURITY", r"prematurity|(?:premature|pre[- ]?term) (?:infant|newborn|neonate|baby|birth|delivery)|(?:born|delivered) (?:prematurely|premature|pre[- ]?term)"),
     ("post_cardiac_arrest_syndrome", "Post cardiac arrest syndrome", "ACKZPOSTCARDIACARRESTSYNDROME", r"post[- ]cardiac[- ]arrest syndrome"),
     ("prolonged_qt", "Prolonged QT interval", "ACKZPROLONGEDQTINTERVAL", r"prolonged QTc?(?: interval)?|long QTc?(?: interval)?|QTc? prolongation"),
     ("pulmonary_hypertension", "Pulmonary hypertension", "ACKZPULMONARYHYPERTENSION", r"pulmonary hypertension"),
@@ -114,6 +118,9 @@ _RULES = (
     ("tracheobronchomalacia", "Tracheobronchomalacia", "ACKZTRACHEOBRONCHOMALACIA", r"tracheobronchomalacia|tracheomalacia|bronchomalacia"),
     ("tracheostomy", "Tracheostomy", "ACKZTRACHEOSTOMY", r"tracheostomy(?: dependence| status)?|trach dependence"),
     ("transaminitis", "Transaminitis", "ACKZTRANSAMINITIS", r"transaminitis"),
+    ("trisomy13", "Trisomy 13 (Patau syndrome)", "ACKZTRISOMY13", r"trisomy[- ]?13|T13|Patau(?:['’]s)? syndrome|47\s*,\s*(?:XX|XY)\s*,\s*\+\s*13"),
+    ("trisomy18", "Trisomy 18 (Edwards syndrome)", "ACKZTRISOMY18", r"trisomy[- ]?18|T18|Edwards(?:['’]s|['’])? syndrome|47\s*,\s*(?:XX|XY)\s*,\s*\+\s*18"),
+    ("trisomy21", "Trisomy 21 (Down syndrome)", "ACKZTRISOMY21", r"trisomy[- ]?21|T21|Down(?:['’]s)? syndrome|47\s*,\s*(?:XX|XY)\s*,\s*\+\s*21"),
     ("upper_airway_edema", "Upper airway edema", "ACKZUPPERAIRWAYEDEMA", r"upper airway (?:oe|e)dema|laryngeal (?:oe|e)dema"),
     ("upper_gi_bleeding", "Upper gastrointestinal bleeding", "ACKZUPPERGIBLEEDING", r"upper (?:GI|gastrointestinal) bleed(?:ing)?"),
     ("viral_bronchiolitis", "Viral bronchiolitis", "ACKZVIRALBRONCHIOLITIS", r"viral bronchiolitis|(?:RSV|rhinovirus|adenovirus)[- ](?:associated )?bronchiolitis"),
@@ -127,19 +134,20 @@ _PLAN_GROUPS = (
     ("Neurologic", (
         "agitation_intubated", "agitation_nonintubated", "acute_pain",
         "opioid_dependence", "benzodiazepine_dependence", "delirium", "insomnia",
-        "seizure_risk", "status_epilepticus", "encephalopathy", "tbi",
+        "seizure_risk", "status_epilepticus", "encephalopathy", "tbi", "metachromatic_leukodystrophy",
         "acute_poisoning", "central_diabetes_insipidus", "siadh",
         "exposure_keratopathy", "pressure_injury_risk",
+        "prematurity", "trisomy13", "trisomy18", "trisomy21",
     )),
     ("Respiratory", (
         "acute_hypoxemic_invasive", "acute_hypoxemic_noninvasive", "pards",
         "status_asthmaticus", "croup", "tracheobronchomalacia", "tracheostomy",
-        "upper_airway_edema", "pleural_effusion_empyema", "pneumothorax",
+        "upper_airway_edema", "chylous_effusion", "pleural_effusion_empyema", "pneumothorax",
         "pulmonary_hypertension", "metabolic_acidosis_respiratory_distress",
         "viral_bronchiolitis",
     )),
     ("Cardiovascular", (
-        "arrhythmia", "supraventricular_tachycardia", "prolonged_qt",
+        "hlhs", "arrhythmia", "supraventricular_tachycardia", "prolonged_qt",
         "heart_failure", "post_cardiac_arrest_syndrome", "ecls_status",
         "hypertension", "medication_hypotension", "cardiogenic_shock",
         "hypovolemic_shock", "hemorrhagic_shock", "neurogenic_shock",
@@ -187,6 +195,26 @@ _RESP_FAILURE = re.compile(
     r"|acute respiratory failure with hypoxia)\b", re.I
 )
 _AGITATION = re.compile(r"\b(?:restlessness(?: and agitation)?|agitation)\b", re.I)
+_BASELINE_IDS = frozenset({
+    "hlhs", "metachromatic_leukodystrophy", "prematurity", "trisomy13", "trisomy18", "trisomy21",
+})
+_NEW_DIAGNOSIS_IDS = _BASELINE_IDS | {"chylous_effusion"}
+_RELATIVE = r"(?:mother|father|sibling|brother|sister|cousin|aunt|uncle|grandmother|grandfather|grandparent)"
+_FAMILY_CONTEXT = re.compile(r"\b(?:family\s+(?:history|hx)|maternal|paternal|FHx|" + _RELATIVE + r")\b", re.I)
+_UNCERTAIN_NEW = re.compile(r"\b(?:possible|possibly|suspected|concern|risk|screening|rule[- ]out|r/o|question|uncertain|unconfirmed)\b|\?", re.I)
+_PATIENT_HISTORY = re.compile(r"\b(?:history(?:\s+of)?|hx(?:\s+of)?|previous(?:ly)?|prior|status post|s/p|h/o)\b", re.I)
+_GESTATION_VALUE = (
+    r"(?P<weeks>\d{1,2})(?:\s*(?:(?P<fraction>\d)/7|\+(?P<plus_days>\d{1,2})))?"
+    r"\s*[- ]?(?:completed\s+)?(?:weeks?|wks?|w)"
+    r"(?:\s*(?P<days>\d{1,2})\s*(?:days?|d))?(?:[- ]?er)?\b"
+)
+_BIRTH_GESTATION = tuple(re.compile(r"\b" + prefix + _GESTATION_VALUE, re.I) for prefix in (
+    r"(?:born|delivered)\s*:?\s+(?:at\s+)?(?:a\s+gestational\s+age\s+of\s+)?",
+    r"(?:birth(?:\s+history\s*:)?\s*(?:GA|gestational\s+age)|(?:GA|gestational\s+age)\s+at\s+(?:birth|delivery))\s*[:=]?\s*",
+    r"ex[- ]?",
+    r"former\s+",
+    r"(?:premature|pre[- ]?term)\s+(?:infant|newborn|neonate)\s*,?\s+(?:of\s+|gestational\s+age\s*[:=]?\s*)",
+))
 
 
 def _phrase_name(value: object) -> str:
@@ -270,6 +298,100 @@ def _assertion(line: str, match: re.Match) -> str:
     return "positive"
 
 
+def _new_diagnosis_lines(sheet: dict, settings: dict | None) -> list[str]:
+    """Retain explicit family/birth headers only for the newly added conditions."""
+    fields = sheet.get("fields", {})
+    keys = list(dict.fromkeys(("Diagnoses", (settings or {}).get("diagnoses_destination", "Diagnoses"))))
+    result = []
+    for key in keys:
+        source = fields.get(key, "")
+        if not isinstance(source, str):
+            continue
+        context = ""
+        for raw in source.splitlines():
+            value = raw.strip()
+            if re.fullmatch(r"(?:family|maternal|paternal)\s+(?:history|hx)\s*:?|FHx\s*:", value, re.I):
+                context = value.rstrip(":") + ": "
+                continue
+            if re.fullmatch(r"birth\s+history\s*:", value, re.I):
+                context = "Birth history: "
+                continue
+            if re.fullmatch(r"(?:diagnoses|problems|patient|personal history|medical history|past medical history|PMH)\s*:", value, re.I):
+                context = ""
+                continue
+            for line in _diagnosis_lines({"fields": {"Diagnoses": raw}}, None):
+                contextualized = context + line
+                if contextualized not in result:
+                    result.append(contextualized)
+    return result
+
+
+def _new_diagnosis_assertion(key: str, line: str, match: re.Match) -> str | None:
+    """Keep persistent patient conditions without treating family history as disease."""
+    before = line[:match.start()]
+    after = re.sub(r"^[\s,:()\-]+", "", line[match.end():])
+    # A clearly stated patient clause can follow a relative's history.
+    patient_before = re.split(r"\b(?:patient|this infant|this child)\s+(?:has|with|is|was|born|diagnosed)\b", before, flags=re.I)[-1]
+    if (_FAMILY_CONTEXT.search(patient_before)
+            or re.match(r"(?:(?:in|of|affecting)\s+)?(?:the\s+)?(?:patient['’]s\s+)?(?:" + _RELATIVE + r"|family history|maternal|paternal)\b", after, re.I)):
+        return None
+    if (re.search(r"\bnot\s+(?:an?\s+)?$", before, re.I)
+            or re.search(r"\b(?:no|not)\s+currently\s+diagnosed(?:\s+with)?\s*$", before, re.I)
+            or re.match(r"(?:is\s+|was\s+)?negative\b", after, re.I)
+            or re.fullmatch(r"(?:no|none)\s*[.!)]?", after, re.I)):
+        return "negative"
+    if (re.search(r"\b(?:prenatal|antenatal|fetal|fetus|pregnancy)\b", line, re.I) and _UNCERTAIN_NEW.search(line)):
+        return "risk"
+    if (re.search(r"\b(?:screen(?:ing)?|NIPT|cfDNA)\b", line, re.I)
+            and not re.search(r"\b(?:confirmed diagnosis|diagnosed with)\b", line, re.I)):
+        return "risk"
+    state = _assertion(line, match)
+    if key in _BASELINE_IDS and state == "history":
+        if re.search(r"\b(?:resolved|historical|remote|in the past)\b", after, re.I) or re.search(r"\bresolved\b", before, re.I):
+            return "history"
+        if _UNCERTAIN_NEW.search(before):
+            return "history"
+        # Only these persistent baseline conditions accept explicit patient
+        # history. Acute conditions retain the existing assertion behavior.
+        prefix = _PATIENT_HISTORY.sub(" ", before)
+        revised = prefix + line[match.start():]
+        current = match.re.match(revised, len(prefix))
+        if current is not None:
+            state = _assertion(revised, current)
+    return state
+
+
+def _mld_is_diagnosis(line: str, match: re.Match) -> bool:
+    if match.group().casefold() != "mld":
+        return True
+    if re.search(r"\bmetachromatic[- ]leu[ck]odystrophy\b", line, re.I):
+        return True
+    if re.search(r"\b(?:(?:late[- ]|early[- ])?(?:infantile|juvenile)|adult[- ]onset)\s+$", line[:match.start()], re.I):
+        return True
+    # MLD alone in the diagnosis list, or an explicit diagnosis label, is a
+    # diagnostic abbreviation. Therapy/dose prose is not sufficient evidence.
+    return (line.strip().casefold() == "mld"
+            or bool(re.fullmatch(r"\s*(?:(?:primary|known|confirmed)\s+)?(?:diagnosis|dx)\s*:\s*", line[:match.start()], re.I)))
+
+
+def _prematurity_evidence(line: str):
+    for match in _PATTERNS["prematurity"].finditer(line):
+        yield match, None
+    for pattern in _BIRTH_GESTATION:
+        for match in pattern.finditer(line):
+            parts = match.groupdict()
+            days = [int(parts[name]) for name in ("fraction", "plus_days", "days") if parts.get(name) is not None]
+            if len(days) > 1 or any(day > 6 for day in days) or int(parts["weeks"]) == 0:
+                continue
+            suffix = re.sub(r"^[\s,:()\-]+", "", line[match.end():])
+            if re.match(r"(?:ago|old|of age|corrected|postnatal|postmenstrual)\b", suffix, re.I):
+                continue
+            # WHO defines preterm birth as before 37 completed weeks. Read the
+            # recorded birth week only, without calculating a corrected age.
+            # https://www.who.int/news-room/fact-sheets/detail/preterm-birth
+            yield match, int(parts["weeks"]) < 37
+
+
 def _current_support(sheet: dict) -> dict:
     """Use only the primary snapshot and current included airway devices."""
     current_devices = []
@@ -348,7 +470,13 @@ def _suggestions(sheet: dict, medications: dict, catalog: list[dict], settings: 
 
     for line in _diagnosis_lines(sheet, settings):
         for key, pattern in _PATTERNS.items():
+            if key in _NEW_DIAGNOSIS_IDS:
+                continue
             for match in pattern.finditer(line):
+                if key == "pleural_effusion_empyema" and any(
+                        specific.start() <= match.start() and specific.end() >= match.end()
+                        for specific in _PATTERNS["chylous_effusion"].finditer(line)):
+                    continue
                 state = _assertion(line, match)
                 if key == "deep_vein_thrombosis" and re.match(r"\s+prophylaxis\b", line[match.end():], re.I):
                     continue
@@ -385,6 +513,28 @@ def _suggestions(sheet: dict, medications: dict, catalog: list[dict], settings: 
                 for key in keys:
                     record(key, "uncertain" if state == "positive" else state,
                            "The handoff lists this diagnosis without one clear current support route.", include=False)
+
+    new_lines = _new_diagnosis_lines(sheet, settings)
+    for line in new_lines:
+        for key in _NEW_DIAGNOSIS_IDS - {"prematurity"}:
+            for match in _PATTERNS[key].finditer(line):
+                if key == "metachromatic_leukodystrophy" and not _mld_is_diagnosis(line, match):
+                    continue
+                state = _new_diagnosis_assertion(key, line, match)
+                if state is not None:
+                    reason = ("Uncertain diagnosis in handoff: " if state == "uncertain" else "Documented diagnosis: ") + line
+                    record(key, state, reason)
+    demographics = sheet.get("fields", {}).get("Demographics / Weight", "")
+    birth_lines = _new_diagnosis_lines({"fields": {"Diagnoses": demographics}}, None)
+    for line in dict.fromkeys(new_lines + birth_lines):
+        for match, preterm in _prematurity_evidence(line):
+            state = _new_diagnosis_assertion("prematurity", line, match)
+            if state is None:
+                continue
+            if preterm is False and state in {"positive", "uncertain"}:
+                state = "negative"
+            reason = ("Uncertain birth history in handoff: " if state == "uncertain" else "Documented birth history: ") + line
+            record("prematurity", state, reason)
 
     if support["kind"] in ("invasive", "noninvasive"):
         key = "acute_hypoxemic_" + support["kind"]

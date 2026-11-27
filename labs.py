@@ -19,6 +19,8 @@ ARTERIAL = ('PHA', 'PCO2A', 'PO2ART', 'HCO3A', 'BEART', 'O2SATA')
 VENOUS = ('PHV', 'PCO2V', 'PO2VEN', 'HCO3V', 'BEV', 'O2SATV')
 CAPILLARY = ('PHC', 'PCO2C', 'PO2CAP', 'HCO3C', 'BEC')
 INFLAMMATORY = ('CRP', 'PROCAL', 'ESR')
+ENDOCRINE = ('TSH', 'FREET4', 'CORTISOL')
+ENDOCRINE_LABELS = {'TSH': 'TSH', 'FREET4': 'Free T4', 'CORTISOL': 'Cortisol'}
 MRSA_COMPONENTS = frozenset(('MRSADNA', 'MRSANPADM'))
 PANELS = {'CBC': CBC, 'BMP': BMP, 'Hepatic': HEPATIC, 'Coagulation': COAG,
           'Arterial gas': ARTERIAL, 'Venous gas': VENOUS,
@@ -57,7 +59,23 @@ ALIASES = {
     'LACTIC': 'LACTATE', 'LACTIC ACID, PLASMA': 'LACTATE',
     'LACTATEART': 'LACTATE ARTERIAL', 'LACTATE ART': 'LACTATE ARTERIAL',
     'LACTATEVEN': 'LACTATE VENOUS', 'LACTATE VEN': 'LACTATE VENOUS',
+    'THYROID STIMULATING HORMONE': 'TSH',
+    'THYROID-STIMULATING HORMONE': 'TSH',
+    'FREE T4': 'FREET4', 'T4 FREE': 'FREET4', 'FT4': 'FREET4',
+    'T4, FREE': 'FREET4', 'T4FREE': 'FREET4',
+    'CORT': 'CORTISOL',
 }
+_ENDOCRINE_NAMES = set(ENDOCRINE) | {name for name, key in ALIASES.items() if key in ENDOCRINE}
+_ENDOCRINE_ROW = re.compile(
+    r'^(' + '|'.join(re.escape(name).replace(r'\ ', r'\s+')
+                     for name in sorted(_ENDOCRINE_NAMES, key=len, reverse=True))
+    + r')(?:\s*:\s*|\s+)(.+)$', re.I,
+)
+_ENDOCRINE_STATUS = re.compile(
+    r'^(?:pending|cancelled|canceled|hemolyzed|haemolysed|rejected|invalid|'
+    r'unavailable|insufficient|qns|unable|unknown|unk|none|n/a|not\s+\w+|'
+    r'no\s+results?|see\s+(?:comment|note))\b|^[-]+$', re.I,
+)
 DATE_TAIL = re.compile(r'(?P<date>\d{1,2}/\d{1,2}/(?:\d{4}|\d{2})(?:\s+(?:\d{1,2}:\d{2}(?::\d{2})?|\d{4})(?:\s*[APap][Mm])?)?)\s*$')
 DATE_FORMATS = ('%m/%d/%Y', '%m/%d/%y')
 MAX_ROWS = 2000
@@ -66,6 +84,26 @@ MAX_ROWS = 2000
 def canonical(component: str) -> str:
     key = re.sub(r'\s+', ' ', component.strip()).upper()
     return ALIASES.get(key, key)
+
+
+def is_numeric_endocrine(value: str) -> bool:
+    """Use the last actual level, retaining status-only records for editing.
+
+    A single numeric measurement may retain supplied units and flags before
+    or after those units. Unusable-result messages are excluded. This does
+    not interpret the value, supply units, or establish a diagnosis.
+    """
+    text = str(value).strip()
+    if re.search(r'\b(?:pending|cancelled|canceled|hemolyzed|haemolysed|rejected|'
+                 r'invalid|unavailable|insufficient|qns|unable|not\s+(?:done|performed|available)|'
+                 r'no\s+result|see\s+(?:comment|note))\b', text, re.I):
+        return False
+    return bool(re.fullmatch(
+        r'[<>≤≥]?\s*[+-]?(?:\d[\d,]*(?:\.\d*)?|\.\d+)'
+        r'(?:\s*(?:\*|\((?:H|L|HH|LL|A|C|CRIT|HIGH|LOW)\)))*'
+        r'(?:\s*(?:[A-Za-zµμ%]+(?:\s*/\s*[A-Za-zµμ0-9^]+)?))?'
+        r'(?:\s*(?:\*|\((?:H|L|HH|LL|A|C|CRIT|HIGH|LOW)\)))*',
+        text, re.I))
 
 
 def is_lactate(component: str) -> bool:
@@ -129,6 +167,8 @@ def panel_for(component: str, source_panel: str = 'Other labs') -> str:
         return 'ID drug levels'
     if key == 'THEOPH':
         return 'Respiratory drug levels'
+    if key in ENDOCRINE:
+        return 'Other labs'
     for group, components in PANELS.items():
         if key in components:
             return group
@@ -171,11 +211,17 @@ def parse_labs(block: str) -> LabResult:
         else:
             # Copy/paste may replace tabs. The date tail and a numeric result
             # boundary allow deterministic parsing without medication-like guessing.
-            # The requested MRSA codes provide an exact component boundary
-            # for text results, including negative and pending results.
+            # Exact MRSA/endocrine identities also provide a safe boundary
+            # for text results. Pending endocrine rows remain editable but
+            # do not replace the latest actual level in the handoff.
             tail = DATE_TAIL.search(line)
             body = line[:tail.start()].rstrip() if tail else ''
+            endocrine = _ENDOCRINE_ROW.match(body)
+            if endocrine and not (is_numeric_endocrine(endocrine.group(2))
+                                  or _ENDOCRINE_STATUS.match(endocrine.group(2))):
+                endocrine = None  # Do not absorb a different assay such as TSH receptor antibody.
             match = (re.match(r'^(MRSADNA|MRSANPADM)(?:\s*:\s*|\s+)(.+)$', body, re.I)
+                     or endocrine
                      or re.match(r'^(.*?)\s+([<>≤≥]?\s*[-+]?\d.*)$', body)) if tail else None
             if not match:
                 out.error = f'Lab block line {number} could not be separated into component, value and date. Nothing was imported.'
@@ -230,7 +276,12 @@ def result_cards(data: dict, include_id_panels: bool = True, blood_gas: dict | N
     """
     from aed_levels import aed_component, LABELS as AED_LABELS
     from lysis_labs import lysis_component
-    groups = ordered_components(data)
+    # Filter only these requested identities before ordering so an untimed
+    # pending row cannot change the ordering of timed actual measurements.
+    candidates = {'rows': [row for row in data['rows']
+                            if canonical(row['component']) not in ENDOCRINE
+                            or is_numeric_endocrine(row['value'])], 'notes': data['notes']}
+    groups = ordered_components(candidates)
     from cbc import cbc_cards, cbc_component
     cards = cbc_cards(data, cbc)
     consumed = {key for key in groups if cbc_component(key)}
@@ -277,7 +328,9 @@ def result_cards(data: dict, include_id_panels: bool = True, blood_gas: dict | N
     other = defaultdict(dict)
     for key, rows in groups.items():
         if key not in consumed and not is_lactate(key):
-            other[rows[0]['panel']][key] = rows[0]
+            # Reformat saved snapshots too, without changing their source panel.
+            panel = 'Other labs' if key in ENDOCRINE else rows[0]['panel']
+            other[panel][key] = rows[0]
     for name, rows in other.items():
         cards.append({'title': name + ' | latest', 'kind': 'branch', 'rows': rows})
     return cards
@@ -363,7 +416,10 @@ def display_component(component: str) -> str:
     aed = aed_component(component)
     if aed:
         return AED_LABELS[aed]
-    return 'Anti-Xa (HEPLMW)' if canonical(component) == 'HEPLMW' else component
+    key = canonical(component)
+    if key in ENDOCRINE_LABELS:
+        return ENDOCRINE_LABELS[key]
+    return 'Anti-Xa (HEPLMW)' if key == 'HEPLMW' else component
 
 
 def printable_source_notes(notes: list[str]) -> list[str]:
